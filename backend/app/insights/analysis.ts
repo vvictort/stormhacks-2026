@@ -154,8 +154,9 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
     for (const [i, a] of tactics.entries()) {
       for (const b of tactics.slice(i + 1)) {
         addPattern(`pair:${a}+${b}`, row);
-        if (!row.success)
+        if (!row.success) {
           pairs.set(`${a}+${b}`, (pairs.get(`${a}+${b}`) ?? 0) + 1);
+        }
       }
     }
   }
@@ -353,41 +354,43 @@ export function buildInsights(
     (r) =>
       (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 1) <= 0.3,
   );
-  if (behind)
+  if (behind) {
     sentences.push(
       `Compared with other trainees, you're weaker than most on ${areaLabel(behind)}.`,
     );
-  else if (ahead)
+  } else if (ahead) {
     sentences.push(
       `Compared with other trainees, you're ahead of most on ${areaLabel(ahead)}.`,
     );
+  }
   const { correct: rightMs, fellFor: fooledMs } = summary.responseMs;
   const { easy, hard } = summary.byDifficulty;
   const trend =
     overall.recentAccuracy !== null && overall.earlierAccuracy !== null
       ? overall.recentAccuracy - overall.earlierAccuracy
       : 0;
-  if (rightMs && fooledMs && fooledMs < 0.7 * rightMs)
+  if (rightMs && fooledMs && fooledMs < 0.7 * rightMs) {
     sentences.push(
       "You decide faster on the ones that fool you, so slowing down is your best defence.",
     );
-  else if (
+  } else if (
     hard.attempts >= 2 &&
     pct(hard.correct, hard.attempts) < 0.5 &&
     easy.attempts &&
     pct(easy.correct, easy.attempts) >= 0.75
-  )
+  ) {
     sentences.push(
       "You handle the obvious ones well, but the more convincing scams still get through.",
     );
-  else if (trend >= 0.15)
+  } else if (trend >= 0.15) {
     sentences.push(
       "Your recent attempts are more accurate than your early ones.",
     );
-  else if (trend <= -0.15)
+  } else if (trend <= -0.15) {
     sentences.push(
       "Your recent attempts have slipped a little, so take the next few slowly.",
     );
+  }
 
   const tip = (weak.find((r) => r.dimension === "tactic")?.area ??
     pair?.[0]) as Tactic | undefined;

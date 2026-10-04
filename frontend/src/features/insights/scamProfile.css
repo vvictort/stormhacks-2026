@@ -1,18 +1,92 @@
 /* "How you're doing": the summary that closes Progress, after the numbers. A section, not a card. */
-.scam-profile { margin-top: var(--space-section, 48px); }
-.scam-profile h2 { margin: 0 0 8px; font-family: var(--font-editorial); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
-.scam-profile h3 { margin: 24px 0 4px; font-size: 14px; font-weight: 600; }
-.scam-profile p { max-width: 60ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); text-wrap: pretty; }
-.scam-profile .home-flags { margin-top: 10px; }
-.scam-profile-facts { display: flex; flex-wrap: wrap; gap: 4px 24px; margin: 12px 0 0; font-size: 14px; }
-.scam-profile-facts > div { display: inline-flex; align-items: baseline; gap: 6px; }
-.scam-profile-facts dt { color: var(--color-muted-strong); }
-.scam-profile-facts dd { margin: 0; font-weight: 600; }
-.scam-profile-facts .is-strong dd { color: var(--color-success-strong); }
-.scam-profile-facts .is-weak dd { color: var(--color-primary-strong); }
-.scam-profile p.scam-profile-source { margin-top: 14px; font-size: 12px; }
-.scam-profile-skeleton { display: grid; gap: 10px; }
-.scam-profile-skeleton span { height: 14px; border-radius: 7px; background: var(--color-border); animation: pulse 900ms ease-in-out infinite alternate; }
-.scam-profile-skeleton span:nth-child(2) { width: 82%; }
-.scam-profile-skeleton span:nth-child(3) { width: 60%; }
-@media (prefers-reduced-motion: reduce) { .scam-profile-skeleton span { animation: none; } }
+.scam-profile {
+  margin-top: var(--space-section, 48px);
+}
+
+.scam-profile h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-editorial);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.scam-profile h3 {
+  margin: 24px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.scam-profile p {
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-muted-strong);
+  text-wrap: pretty;
+}
+
+.scam-profile .home-flags {
+  margin-top: 10px;
+}
+
+.scam-profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin: 12px 0 0;
+  font-size: 14px;
+}
+
+.scam-profile-facts > div {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.scam-profile-facts dt {
+  color: var(--color-muted-strong);
+}
+
+.scam-profile-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.scam-profile-facts .is-strong dd {
+  color: var(--color-success-strong);
+}
+
+.scam-profile-facts .is-weak dd {
+  color: var(--color-primary-strong);
+}
+
+.scam-profile p.scam-profile-source {
+  margin-top: 14px;
+  font-size: 12px;
+}
+
+.scam-profile-skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.scam-profile-skeleton span {
+  height: 14px;
+  border-radius: 7px;
+  background: var(--color-border);
+  animation: pulse 900ms ease-in-out infinite alternate;
+}
+
+.scam-profile-skeleton span:nth-child(2) {
+  width: 82%;
+}
+
+.scam-profile-skeleton span:nth-child(3) {
+  width: 60%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scam-profile-skeleton span {
+    animation: none;
+  }
+}

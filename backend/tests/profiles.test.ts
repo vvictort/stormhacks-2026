@@ -44,8 +44,9 @@ test("profile validation normalizes phone and rejects empty fields, credentials 
     { name: "Alex", phone: "+16045551234", uid: "sam" },
     { name: "Alex", phone: "+16045551234", password: "private" },
     { name: "Alex", phone: "+16045551234", email: "sam@example.test" },
-  ])
+  ]) {
     assert.equal(profileSchema.safeParse(input).success, false);
+  }
 });
 test("Firebase rejection is 401 but database/provider failures remain retryable without leaking details", async () => {
   const repo = createRepositories({

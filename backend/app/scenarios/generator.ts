@@ -150,11 +150,12 @@ export function pickCategory(request: CallScenarioRequest): {
   why: string;
 } {
   const named = (category: ScamCategory) => CATEGORY_NAMES[category];
-  if (request.focus?.[0])
+  if (request.focus?.[0]) {
     return {
       category: request.focus[0],
       why: `Your training focus right now is ${named(request.focus[0])} scams.`,
     };
+  }
   if (request.weakCategories?.[0]) {
     return {
       category: request.weakCategories[0],
@@ -165,16 +166,18 @@ export function pickCategory(request: CallScenarioRequest): {
   const shopping = interests.find((interest) =>
     /shop|travel|online|fashion|gadget/i.test(interest),
   );
-  if (shopping)
+  if (shopping) {
     return {
       category: "shipping",
       why: `Matched to your interest in ${shopping.toLowerCase()}.`,
     };
-  if (profession && !/student|retired|unemployed/i.test(profession))
+  }
+  if (profession && !/student|retired|unemployed/i.test(profession)) {
     return {
       category: "workplace",
       why: `Matched to your work as ${/^[aeiou]/i.test(profession) ? "an" : "a"} ${profession.toLowerCase()}.`,
     };
+  }
   return {
     category: "banking",
     why: "Bank calls are the most common phone scam, so they come first.",
@@ -240,11 +243,12 @@ export async function generateCallScenario(
   const { category, why } = pickCategory(request);
   const difficulty = difficultyNumber[request.difficulty];
   const reason = reasonFor(why, difficulty);
-  if (!request.model)
+  if (!request.model) {
     return {
       scenario: fallbackCallScenario(id, category, request, reason),
       source: "fallback",
     };
+  }
 
   const { first, profession, interests } = persona(request);
   const prompt = `
@@ -291,8 +295,9 @@ SPECIFICATION RULES:
     15_000,
     (raw): { value: StoredCallScenario } | { problems: string[] } => {
       const parsed = parseModelJson(raw) as Record<string, unknown> | undefined;
-      if (!parsed || typeof parsed !== "object")
+      if (!parsed || typeof parsed !== "object") {
         return { problems: ["The answer was not valid JSON."] };
+      }
       const call = CallScenario.safeParse({
         id,
         title: parsed.title,
@@ -308,7 +313,7 @@ SPECIFICATION RULES:
             : undefined,
         firstMessage: parsed.firstMessage,
       });
-      if (!call.success)
+      if (!call.success) {
         return {
           problems: call.error.issues
             .slice(0, 8)
@@ -317,6 +322,7 @@ SPECIFICATION RULES:
                 `${issue.path.join(".") || "answer"}: ${issue.message}`,
             ),
         };
+      }
       if (
         [
           call.data.callerLabel,

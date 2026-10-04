@@ -50,7 +50,11 @@ export class AttemptsRepository {
         a.startedAt,
         a.completedAt,
         a.durationSecs,
-        JSON.stringify({ summary: a.summary, transcript: a.transcript, ...(a.metadata ?? {}) }),
+        JSON.stringify({
+          summary: a.summary,
+          transcript: a.transcript,
+          ...(a.metadata ?? {}),
+        }),
         a.scamCategory,
       ],
     );

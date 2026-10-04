@@ -184,8 +184,9 @@ test("the SSE stream replays the thread through the real middleware, and a track
   assert.equal(res.headers.get("content-encoding"), null);
   const reader = res.body!.getReader();
   let text = "";
-  while (!text.includes("event: message"))
+  while (!text.includes("event: message")) {
     text += new TextDecoder().decode((await reader.read()).value);
+  }
   await reader.cancel();
   assert.match(text, /^retry: 3000/);
 

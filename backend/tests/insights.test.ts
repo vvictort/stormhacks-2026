@@ -216,8 +216,9 @@ function fakeSnowflake(
         ]),
       );
     }
-    if (body.statement.includes("CORTEX"))
+    if (body.statement.includes("CORTEX")) {
       return result(["TEXT"], [[cortex ?? null]]);
+    }
     return done();
   }) as typeof fetch;
   return { requests, snowflake: new Snowflake(config, fetchImpl) };
@@ -475,8 +476,9 @@ test("Snowflake gets pseudonymous aggregates over bound variables and ranks agai
     "Executive",
     "exec-vendor",
     "gen-email",
-  ])
+  ]) {
     assert.equal(sent.includes(secret), false, secret);
+  }
   assert.deepEqual(
     Object.keys(JSON.parse(merge.bindings["2"].value)[0]).sort(),
     [

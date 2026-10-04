@@ -1,4 +1,5 @@
 """python -m unittest (from data-pipeline/). Uses only the SYNTHETIC fixtures in tests/fixtures/."""
+
 import json
 import re
 import unittest
@@ -9,7 +10,14 @@ from tellio_data.build import build
 from tellio_data.curate import dedupe, jaccard, shingles
 from tellio_data.normalize import calls, email, sms
 from tellio_data.scrub import SUSPICIOUS_HOSTS, scrub, scrub_text
-from tellio_data.tagging import categorize, find_tags, pattern, pick_cues, split_tags, tag_excerpt
+from tellio_data.tagging import (
+    categorize,
+    find_tags,
+    pattern,
+    pick_cues,
+    split_tags,
+    tag_excerpt,
+)
 from tellio_data.validate import validate
 from tellio_data.vocabulary import SIGNALS, VOCAB_TS, load, parse
 
@@ -34,20 +42,37 @@ def assert_cues_exact(case, text, cues):
 class Vocabulary(unittest.TestCase):
     def test_parses_real_vocabulary_ts(self):
         v = load()
-        self.assertEqual(v['Tactic'], ('urgency', 'authority', 'suspicious_link', 'otp_request', 'info_request',
-                                       'reward', 'fear'))
+        self.assertEqual(
+            v['Tactic'],
+            (
+                'urgency',
+                'authority',
+                'suspicious_link',
+                'otp_request',
+                'info_request',
+                'reward',
+                'fear',
+            ),
+        )
         self.assertEqual(len(v['ScamCategory']), 6)
         self.assertEqual(set(v['Channel']), {'sms', 'email', 'call'})
-        self.assertFalse(set(SIGNALS) & set(v['Tactic']), 'signals must not duplicate tactics')
+        self.assertFalse(
+            set(SIGNALS) & set(v['Tactic']), 'signals must not duplicate tactics'
+        )
 
     def test_parses_either_quote_style_across_lines(self):
-        src = 'export const Channel = z.enum([\n  "sms",\n  "email",\n]);\n' + "export const Tactic = z.enum(['urgency', 'fear']);\n"
+        src = (
+            'export const Channel = z.enum([\n  "sms",\n  "email",\n]);\n'
+            + "export const Tactic = z.enum(['urgency', 'fear']);\n"
+        )
         src += 'export const ScamCategory = z.enum(["banking"]);\nexport const Difficulty = z.enum(["easy"]);\n'
         self.assertEqual(parse(src)['Channel'], ('sms', 'email'))
         self.assertEqual(parse(src)['Tactic'], ('urgency', 'fear'))
 
     def test_fails_loudly_if_enum_shape_changes(self):
-        src = VOCAB_TS.read_text().replace("export const Tactic = z.enum(", "export const Tactic = z.union(")
+        src = VOCAB_TS.read_text().replace(
+            'export const Tactic = z.enum(', 'export const Tactic = z.union('
+        )
         with self.assertRaises(ValueError):
             parse(src)
 
@@ -56,7 +81,9 @@ class Readers(unittest.TestCase):
     def test_email_skips_malformed_and_empty_rows(self):
         rows = list(email.read(DIRS['email'], files=('Nazario.csv',)))
         self.assertEqual(len(rows), 8)  # 10 rows minus missing label and empty body
-        self.assertTrue(all(r['label'] in ('0', '1') and r['text'].strip() for r in rows))
+        self.assertTrue(
+            all(r['label'] in ('0', '1') and r['text'].strip() for r in rows)
+        )
 
     def test_calls_split_transcripts(self):
         rows = list(calls.read(DIRS['call']))
@@ -70,47 +97,92 @@ class Readers(unittest.TestCase):
 
 class Scrubbing(unittest.TestCase):
     def test_pii_urls_and_brands(self):
-        out = scrub_text('Dear John Smith, your PayPal and UPS account at 123 Main Street. Call (604) 555-1234, '
-                         'mail john.smith@gmail.com, visit http://192.0.2.1/paypal/login?u=john. sign ups welcome. '
-                         'Regards, Jane Doe')
-        for leaked in ('John', 'Smith', 'PayPal', '604', 'gmail', '192.0.2.1', 'Main Street', 'Jane'):
+        out = scrub_text(
+            'Dear John Smith, your PayPal and UPS account at 123 Main Street. Call (604) 555-1234, '
+            'mail john.smith@gmail.com, visit http://192.0.2.1/paypal/login?u=john. sign ups welcome. '
+            'Regards, Jane Doe'
+        )
+        for leaked in (
+            'John',
+            'Smith',
+            'PayPal',
+            '604',
+            'gmail',
+            '192.0.2.1',
+            'Main Street',
+            'Jane',
+        ):
             self.assertNotIn(leaked, out)
         self.assertIn('Dear Customer', out)
         self.assertIn('[Payment Service]', out)
         self.assertIn('[Courier]', out)
         self.assertIn('sign ups', out)  # all-caps brands match case-sensitively
-        self.assertRegex(out, r'http://(%s)/login\.' % '|'.join(map(re.escape, SUSPICIOUS_HOSTS)))
+        self.assertRegex(
+            out, r'http://(%s)/login\.' % '|'.join(map(re.escape, SUSPICIOUS_HOSTS))
+        )
 
     def test_legitimate_links_stay_unsuspicious(self):
-        self.assertIn('http://links.example/', scrub_text('see http://secure-login.example-bank.com/x', scam=False))
+        self.assertIn(
+            'http://links.example/',
+            scrub_text('see http://secure-login.example-bank.com/x', scam=False),
+        )
 
     def test_junk_and_off_topic_rows_dropped(self):
         rec = {'kind': 'scam', 'subject': '', 'text': 'hi'}
         self.assertIsNone(scrub(rec))
-        self.assertIsNone(scrub({**rec, 'text': 'Buy viagra pills now at the lowest price on the whole internet, '
-                                                'friends, you will not regret it at all.'}))
-        self.assertIsNone(scrub({**rec, 'kind': 'legitimate', 'subject': 'Re: lunch',
-                                 'text': '> lunch?\nsure, see you at noon by the fountain, and bring the notes too.'}))
+        self.assertIsNone(
+            scrub(
+                {
+                    **rec,
+                    'text': 'Buy viagra pills now at the lowest price on the whole internet, '
+                    'friends, you will not regret it at all.',
+                }
+            )
+        )
+        self.assertIsNone(
+            scrub(
+                {
+                    **rec,
+                    'kind': 'legitimate',
+                    'subject': 'Re: lunch',
+                    'text': '> lunch?\nsure, see you at noon by the fountain, and bring the notes too.',
+                }
+            )
+        )
 
     def test_double_encoded_pound_fixed_and_other_mojibake_dropped(self):
         text = 'URGENT! You have won a å£900 prize. Call now to claim your reward before it expires today.'
-        self.assertIn('£900', scrub({'kind': 'scam', 'subject': '', 'text': text})['text'])
-        self.assertIsNone(scrub({'kind': 'scam', 'subject': '', 'text': text.replace('å£', 'Û_')}))
+        self.assertIn(
+            '£900', scrub({'kind': 'scam', 'subject': '', 'text': text})['text']
+        )
+        self.assertIsNone(
+            scrub({'kind': 'scam', 'subject': '', 'text': text.replace('å£', 'Û_')})
+        )
 
     def test_truncates_to_contract_limit(self):
-        out = scrub({'kind': 'scam', 'subject': 'S' * 300, 'text': ' '.join(f'Notice {i}: please verify the account.' for i in range(200))})
+        out = scrub(
+            {
+                'kind': 'scam',
+                'subject': 'S' * 300,
+                'text': ' '.join(
+                    f'Notice {i}: please verify the account.' for i in range(200)
+                ),
+            }
+        )
         self.assertLessEqual(len(out['text']), 1200)
         self.assertLessEqual(len(out['subject']), 200)
 
 
 class Tagging(unittest.TestCase):
-    TEXT = ('Your account has been suspended. Click here and enter the verification code we sent, plus your '
-            'password, immediately or face legal action.')
+    TEXT = (
+        'Your account has been suspended. Click here and enter the verification code we sent, plus your '
+        'password, immediately or face legal action.'
+    )
 
     def test_tactics_signals_and_implications(self):
         tactics, signals = split_tags(find_tags(self.TEXT))
-        self.assertIn('otp_request', tactics)     # implied by verification_code
-        self.assertIn('info_request', tactics)    # implied by credential_request
+        self.assertIn('otp_request', tactics)  # implied by verification_code
+        self.assertIn('info_request', tactics)  # implied by credential_request
         self.assertIn('suspicious_link', tactics)
         self.assertIn('verification_code', signals)
         self.assertIn('credential_request', signals)
@@ -130,25 +202,55 @@ class Tagging(unittest.TestCase):
         self.assertEqual((tags['tactics'], tags['signals'], tags['cues']), ([], [], []))
 
     def test_category_mapping(self):
-        self.assertEqual(categorize('Your [Courier] parcel is held. Pay the redelivery fee with the tracking number.'),
-                         'shipping')
-        self.assertEqual(categorize('Unusual activity on your [Bank] debit card: review the transaction.'), 'banking')
-        self.assertEqual(categorize('Your mailbox quota is full; log in with your password.'), 'account_security')
-        self.assertEqual(categorize('Payroll update from human resources for every employee.'), 'workplace')
-        self.assertIsNone(categorize('I am a barrister; my late client left an inheritance in a bank account.'))
-        self.assertEqual(categorize('WINNER!! You have been selected to receive a prize. To claim call now.'), 'promotional')
+        self.assertEqual(
+            categorize(
+                'Your [Courier] parcel is held. Pay the redelivery fee with the tracking number.'
+            ),
+            'shipping',
+        )
+        self.assertEqual(
+            categorize(
+                'Unusual activity on your [Bank] debit card: review the transaction.'
+            ),
+            'banking',
+        )
+        self.assertEqual(
+            categorize('Your mailbox quota is full; log in with your password.'),
+            'account_security',
+        )
+        self.assertEqual(
+            categorize('Payroll update from human resources for every employee.'),
+            'workplace',
+        )
+        self.assertIsNone(
+            categorize(
+                'I am a barrister; my late client left an inheritance in a bank account.'
+            )
+        )
+        self.assertEqual(
+            categorize(
+                'WINNER!! You have been selected to receive a prize. To claim call now.'
+            ),
+            'promotional',
+        )
         self.assertIsNone(categorize('hello there'))
 
     def test_pattern_uses_own_words_and_exact_cues(self):
-        src = ('[Greetings], this is the fraud department of your bank. We noticed suspicious activity on your '
-               'account. Please read me the one-time code we sent, and act immediately or it will be frozen.')
+        src = (
+            '[Greetings], this is the fraud department of your bank. We noticed suspicious activity on your '
+            'account. Please read me the one-time code we sent, and act immediately or it will be frozen.'
+        )
         p = pattern(src, 'scam', 'call')
         self.assertEqual(p['category'], 'banking')
         self.assertIn('otp_request', p['tactics'])
         assert_cues_exact(self, p['text'], p['cues'])
         src_words = re.findall(r'\w+', src.lower())
-        five_grams = {' '.join(src_words[i:i + 5]) for i in range(len(src_words) - 4)}
-        self.assertFalse(any(g in ' '.join(re.findall(r'\w+', p['text'].lower())) for g in five_grams))
+        five_grams = {' '.join(src_words[i : i + 5]) for i in range(len(src_words) - 4)}
+        self.assertFalse(
+            any(
+                g in ' '.join(re.findall(r'\w+', p['text'].lower())) for g in five_grams
+            )
+        )
 
 
 class Curation(unittest.TestCase):
@@ -169,15 +271,23 @@ class Output(unittest.TestCase):
         self.assertEqual(validate(doc), [])
         ex = doc['examples']
         texts = [e['text'] for e in ex if e['channel'] == 'email']
-        self.assertEqual(sum('unusual activity' in t for t in texts), 1, 'exact + near duplicates collapse to one')
+        self.assertEqual(
+            sum('unusual activity' in t for t in texts),
+            1,
+            'exact + near duplicates collapse to one',
+        )
         self.assertFalse(any('viagra' in t.lower() for t in texts))
-        self.assertTrue(all(e['textKind'] == 'pattern' for e in ex if e['channel'] == 'call'))
+        self.assertTrue(
+            all(e['textKind'] == 'pattern' for e in ex if e['channel'] == 'call')
+        )
         self.assertEqual(report['email']['raw_rows'], 8)
         for e in ex:
             assert_cues_exact(self, e['text'], e['cues'])
         again = fixture_build()
         again.pop('_report')
-        self.assertEqual(json.dumps(doc, sort_keys=True), json.dumps(again, sort_keys=True))
+        self.assertEqual(
+            json.dumps(doc, sort_keys=True), json.dumps(again, sort_keys=True)
+        )
 
     def test_validator_catches_contract_breaks(self):
         doc = fixture_build()

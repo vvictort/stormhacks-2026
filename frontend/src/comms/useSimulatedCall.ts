@@ -1,7 +1,16 @@
 import { useConversation } from '@elevenlabs/react'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { comms } from './api'
-import { callReducer, connectDrop, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer, type CallCaption, type CallPhase } from './callState'
+import {
+  callReducer,
+  connectDrop,
+  INITIAL_CALL_STATE,
+  microphoneBlocker,
+  microphoneErrorCode,
+  ringsOnServer,
+  type CallCaption,
+  type CallPhase,
+} from './callState'
 import { CommsError, describeError, isAbortError } from './client'
 import { pollUntilCompleted } from './poll'
 import type { CallRecord, DeclineReason, Outcome } from './types'
@@ -33,7 +42,8 @@ export interface SimulatedCallHandle {
 }
 
 // Where this browser is with the server-side call; guards the actions without reading render state.
-type Stage = 'starting' | 'ringing' | 'answering' | 'in_call' | 'analyzing' | 'done'
+type Stage =
+  'starting' | 'ringing' | 'answering' | 'in_call' | 'analyzing' | 'done'
 
 interface Session {
   abort: AbortController
@@ -57,7 +67,9 @@ function abandonRinging(s: Session | null) {
   s.stage = 'done'
   comms.abandonCall(callId).catch((error: unknown) => {
     // An accept already on its way won the race, so the call is in_call: end it instead (unscored, no conversation).
-    if (error instanceof CommsError && error.code === 'not_ringing') comms.callEnded(callId, s.conversationId ?? undefined).catch(() => {})
+    if (error instanceof CommsError && error.code === 'not_ringing') {
+      comms.callEnded(callId, s.conversationId ?? undefined).catch(() => {})
+    }
   })
 }
 
@@ -68,7 +80,13 @@ function abandonRinging(s: Session | null) {
  * must not unmount mid-call (unmounting it ends the voice session). Unmounting this hook
  * mid-call hangs up.
  */
-export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20_000 }: { ringTimeoutMs?: number; connectTimeoutMs?: number } = {}): SimulatedCallHandle {
+export function useSimulatedCall({
+  ringTimeoutMs = 30_000,
+  connectTimeoutMs = 20_000,
+}: {
+  ringTimeoutMs?: number
+  connectTimeoutMs?: number
+} = {}): SimulatedCallHandle {
   const [state, dispatch] = useReducer(callReducer, INITIAL_CALL_STATE)
   const session = useRef<Session | null>(null)
   const lifetime = useRef<AbortController | null>(null)
@@ -80,7 +98,11 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     s.stage = poll ? 'analyzing' : 'done'
     if (poll) dispatch({ type: 'hung_up', callId })
     try {
-      const record = await comms.callEnded(callId, s.conversationId ?? undefined, s.signal)
+      const record = await comms.callEnded(
+        callId,
+        s.conversationId ?? undefined,
+        s.signal,
+      )
       if (!poll) return
       dispatch({ type: 'record', callId, record })
       await pollUntilCompleted(comms.getCall, callId, {
@@ -89,19 +111,29 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
       })
     } catch (error) {
       // Without polling this is a best-effort report after a failed start, which already shows its own error.
-      if (poll && !isAbortError(error)) dispatch({ type: 'failed', callId, error: describeError(error), phase: 'error' })
+      if (poll && !isAbortError(error)) {
+        dispatch({
+          type: 'failed',
+          callId,
+          error: describeError(error),
+          phase: 'error',
+        })
+      }
     } finally {
       if (s.stage === 'analyzing') s.stage = 'done'
     }
   }, [])
 
   // The voice session never connected, but the server already marked the call in_call on accept.
-  const failSession = useCallback((error: string) => {
-    const s = session.current
-    if (!s?.callId || s.stage !== 'in_call' || s.connected) return
-    dispatch({ type: 'failed', callId: s.callId, error, phase: 'error' })
-    void reportEnded(false)
-  }, [reportEnded])
+  const failSession = useCallback(
+    (error: string) => {
+      const s = session.current
+      if (!s?.callId || s.stage !== 'in_call' || s.connected) return
+      dispatch({ type: 'failed', callId: s.callId, error, phase: 'error' })
+      void reportEnded(false)
+    },
+    [reportEnded],
+  )
 
   // Callbacks are registered with the provider through stable wrappers that call the latest render's version.
   const { startSession, endSession, isSpeaking } = useConversation({
@@ -114,12 +146,27 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
       dispatch({ type: 'connected', callId })
       if (!conversationId) return
       // Binds the id if the token response had none. Other failures are fine: /ended carries the id too.
-      comms.callConnected(callId, conversationId, s.signal).catch((error: unknown) => {
-        if (!(error instanceof CommsError && error.code === 'conversation_mismatch') || s.stage !== 'in_call') return
-        s.stage = 'done'
-        endSession()
-        dispatch({ type: 'failed', callId, error: error.code, phase: 'error' })
-      })
+      comms
+        .callConnected(callId, conversationId, s.signal)
+        .catch((error: unknown) => {
+          if (
+            !(
+              error instanceof CommsError &&
+              error.code === 'conversation_mismatch'
+            ) ||
+            s.stage !== 'in_call'
+          ) {
+            return
+          }
+          s.stage = 'done'
+          endSession()
+          dispatch({
+            type: 'failed',
+            callId,
+            error: error.code,
+            phase: 'error',
+          })
+        })
     },
     onDisconnect: () => {
       const s = session.current
@@ -130,34 +177,45 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     onMessage: ({ role, message }) => {
       const s = session.current
       if (!s?.callId || s.stage !== 'in_call' || !message) return
-      dispatch({ type: 'caption', callId: s.callId, caption: { role, message } })
+      dispatch({
+        type: 'caption',
+        callId: s.callId,
+        caption: { role, message },
+      })
     },
     onError: (message) => {
       const s = session.current
       if (!s?.callId || s.stage !== 'in_call') return
-      if (s.connected) dispatch({ type: 'failed', callId: s.callId, error: message })
-      else failSession(message)
+      if (s.connected) {
+        dispatch({ type: 'failed', callId: s.callId, error: message })
+      } else failSession(message)
     },
   })
 
   // Cancel or the connect timeout: give up on a call that hasn't connected, then show the failure screen.
-  const dropConnecting = useCallback((error: string) => {
-    const s = session.current
-    const drop = s?.callId ? connectDrop(s.stage, s.connected) : null
-    if (!s?.callId || !drop) return
-    const { callId } = s
-    s.abort.abort()
-    if (drop === 'abandon') abandonRinging(s)
-    else {
-      s.stage = 'done'
-      endSession()
-      // Not tied to the aborted signal. Without a connected conversation the server completes the call as `error`.
-      comms.callEnded(callId, s.conversationId ?? undefined).catch(() => {})
-    }
-    dispatch({ type: 'failed', callId, error, phase: 'error' })
-  }, [endSession])
+  const dropConnecting = useCallback(
+    (error: string) => {
+      const s = session.current
+      const drop = s?.callId ? connectDrop(s.stage, s.connected) : null
+      if (!s?.callId || !drop) return
+      const { callId } = s
+      s.abort.abort()
+      if (drop === 'abandon') abandonRinging(s)
+      else {
+        s.stage = 'done'
+        endSession()
+        // Not tied to the aborted signal. Without a connected conversation the server completes the call as `error`.
+        comms.callEnded(callId, s.conversationId ?? undefined).catch(() => {})
+      }
+      dispatch({ type: 'failed', callId, error, phase: 'error' })
+    },
+    [endSession],
+  )
 
-  const cancel = useCallback(() => dropConnecting('connect_cancelled'), [dropConnecting])
+  const cancel = useCallback(
+    () => dropConnecting('connect_cancelled'),
+    [dropConnecting],
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -185,7 +243,9 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     const abort = new AbortController()
     const s: Session = {
       abort,
-      signal: lifetime.current ? AbortSignal.any([abort.signal, lifetime.current.signal]) : abort.signal,
+      signal: lifetime.current
+        ? AbortSignal.any([abort.signal, lifetime.current.signal])
+        : abort.signal,
       stage: 'starting',
       callId: null,
       conversationId: null,
@@ -194,7 +254,10 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     session.current = s
     dispatch({ type: 'start' })
     try {
-      const { callId, callerLabel, call } = await comms.startCall(scenarioId, s.signal)
+      const { callId, callerLabel, call } = await comms.startCall(
+        scenarioId,
+        s.signal,
+      )
       if (session.current !== s) return
       s.callId = callId
       s.stage = 'ringing'
@@ -202,7 +265,12 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     } catch (error) {
       if (session.current !== s || isAbortError(error)) return
       s.stage = 'done'
-      dispatch({ type: 'failed', callId: null, error: describeError(error), phase: 'error' })
+      dispatch({
+        type: 'failed',
+        callId: null,
+        error: describeError(error),
+        phase: 'error',
+      })
     }
   }, [])
 
@@ -214,7 +282,10 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     dispatch({ type: 'connecting', callId })
 
     // Ask for the mic before accepting: a refusal leaves the call ringing on the server.
-    const blocker = microphoneBlocker({ secureContext: window.isSecureContext, getUserMedia: Boolean(navigator.mediaDevices?.getUserMedia) })
+    const blocker = microphoneBlocker({
+      secureContext: window.isSecureContext,
+      getUserMedia: Boolean(navigator.mediaDevices?.getUserMedia),
+    })
     try {
       if (blocker) throw new Error(blocker)
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -222,26 +293,49 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     } catch (error) {
       if (session.current !== s || s.signal.aborted) return
       s.stage = 'ringing'
-      dispatch({ type: 'failed', callId, error: blocker ?? microphoneErrorCode(error), phase: 'ringing' })
+      dispatch({
+        type: 'failed',
+        callId,
+        error: blocker ?? microphoneErrorCode(error),
+        phase: 'ringing',
+      })
       return
     }
     if (session.current !== s || s.signal.aborted) return
 
     // Started after the microphone prompt, which can rightly take a while: from here on the call should connect.
     clearTimeout(s.connectTimer)
-    if (connectTimeoutMs > 0) s.connectTimer = setTimeout(() => { if (session.current === s) dropConnecting('connect_timeout') }, connectTimeoutMs)
+    if (connectTimeoutMs > 0) {
+      s.connectTimer = setTimeout(() => {
+        if (session.current === s) dropConnecting('connect_timeout')
+      }, connectTimeoutMs)
+    }
     try {
-      const { conversationToken, conversationId, overrides } = await comms.acceptCall(callId, s.signal)
+      const { conversationToken, conversationId, overrides } =
+        await comms.acceptCall(callId, s.signal)
       if (session.current !== s || s.stage !== 'answering') return
       s.stage = 'in_call'
       s.conversationId = conversationId ?? null
       startSession({ conversationToken, connectionType: 'webrtc', overrides })
     } catch (error) {
-      if (session.current !== s || s.stage !== 'answering' || isAbortError(error)) return
+      if (
+        session.current !== s ||
+        s.stage !== 'answering' ||
+        isAbortError(error)
+      ) {
+        return
+      }
       // 502/503: ElevenLabs is unavailable and the server left the call ringing.
-      const ringing = error instanceof CommsError && (error.status === 502 || error.status === 503)
+      const ringing =
+        error instanceof CommsError &&
+        (error.status === 502 || error.status === 503)
       s.stage = ringing ? 'ringing' : 'done'
-      dispatch({ type: 'failed', callId, error: describeError(error), phase: ringing ? 'ringing' : 'error' })
+      dispatch({
+        type: 'failed',
+        callId,
+        error: describeError(error),
+        phase: ringing ? 'ringing' : 'error',
+      })
     }
   }, [startSession, connectTimeoutMs, dropConnecting])
 
@@ -254,7 +348,14 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
       const record = await comms.declineCall(callId, reason, s.signal)
       dispatch({ type: 'record', callId, record })
     } catch (error) {
-      if (!isAbortError(error)) dispatch({ type: 'failed', callId, error: describeError(error), phase: 'error' })
+      if (!isAbortError(error)) {
+        dispatch({
+          type: 'failed',
+          callId,
+          error: describeError(error),
+          phase: 'error',
+        })
+      }
     }
   }, [])
 
@@ -295,7 +396,9 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     s.stage = 'done'
     endSession()
     // Not tied to the aborted signal: this must reach the server before the page (or the session) goes away.
-    await comms.callEnded(s.callId, s.conversationId ?? undefined).catch(() => {})
+    await comms
+      .callEnded(s.callId, s.conversationId ?? undefined)
+      .catch(() => {})
   }, [endSession])
 
   return {
@@ -303,7 +406,8 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20
     callId: state.callId,
     callerLabel: state.callerLabel,
     record: state.record,
-    outcome: state.phase === 'completed' ? state.record?.outcome ?? null : null,
+    outcome:
+      state.phase === 'completed' ? (state.record?.outcome ?? null) : null,
     captions: state.captions,
     agentSpeaking: state.phase === 'in_call' && isSpeaking,
     error: state.error,

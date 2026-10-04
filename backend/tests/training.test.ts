@@ -338,8 +338,9 @@ test("a generated call reads back as the frontend CallScenario, owner only and w
     "voiceId",
     "teaching",
     call.scenario.systemPrompt,
-  ])
+  ]) {
     assert.ok(!json.includes(secret), secret);
+  }
   assert.equal(call.scenario.scamCategory, "workplace");
 
   assert.equal(
@@ -422,8 +423,9 @@ test("category inference covers the contract call scenarios", () => {
     "tech-support-remote-1": "account_security",
     "exec-vendor-payment-1": "workplace",
   };
-  for (const [id, category] of Object.entries(ids))
+  for (const [id, category] of Object.entries(ids)) {
     assert.equal(inferCategory({ id, title: "" }), category, id);
+  }
   assert.equal(
     inferCategory({
       id: "gen-1",
@@ -591,7 +593,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
       .send({ reason: "declined" })
       .expect(200);
     let saved;
-    for (let i = 0; i < 50 && !saved; i++)
+    for (let i = 0; i < 50 && !saved; i++) {
       saved =
         (
           await db.query(
@@ -599,6 +601,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
             [callId],
           )
         ).rows[0] ?? (await new Promise((r) => setTimeout(r, 20)));
+    }
     assert.deepEqual(saved, {
       outcome: "declined",
       success: true,
@@ -622,8 +625,9 @@ describe("Postgres training persistence", { skip: !url }, () => {
     assert.equal(claims.filter(Boolean).length, 5);
     await db.query("TRUNCATE scenario_generation_requests");
     const [first, second] = [routes(repo), routes(other)];
-    for (let i = 0; i < 5; i++)
+    for (let i = 0; i < 5; i++) {
       await (i % 2 ? first : second).generate().expect(201);
+    }
     assert.equal(
       (await second.generate().expect(429)).body.error.code,
       "RATE_LIMITED",

@@ -49,19 +49,22 @@ export function loadConfig(): Config {
       Object.entries(process.env).filter(([, value]) => value !== ""),
     ),
   );
-  if (!result.success)
+  if (!result.success) {
     throw new Error(
       `Invalid configuration fields: ${result.error.issues.map((issue) => issue.path.join(".")).join(", ")}`,
     );
+  }
   const config = result.data;
   if (
     config.NODE_ENV === "production" &&
     new URL(config.APP_ORIGIN).protocol !== "https:"
-  )
+  ) {
     throw new Error("Production APP_ORIGIN must use HTTPS.");
-  if (new URL(config.APP_ORIGIN).origin !== config.APP_ORIGIN)
+  }
+  if (new URL(config.APP_ORIGIN).origin !== config.APP_ORIGIN) {
     throw new Error(
       "APP_ORIGIN must be an origin without a path or trailing slash.",
     );
+  }
   return config;
 }

@@ -1,4 +1,11 @@
-import { Check, History as HistoryIcon, Mail, MessageSquareText, Phone, RotateCcw } from 'lucide-react'
+import {
+  Check,
+  History as HistoryIcon,
+  Mail,
+  MessageSquareText,
+  Phone,
+  RotateCcw,
+} from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { TransitionLink } from '../../../components/TransitionLink'
@@ -6,7 +13,12 @@ import { spring } from '../../../lib/motion'
 import type { Progress } from '../progress'
 import { timeline } from '../progress'
 import { getCachedScenarioMeta } from '../scenarioCache'
-import { getScenario, type Channel, type Difficulty, type Scenario } from '../scenarios'
+import {
+  getScenario,
+  type Channel,
+  type Difficulty,
+  type Scenario,
+} from '../scenarios'
 
 const channelIcon: Record<Channel, typeof MessageSquareText> = {
   sms: MessageSquareText,
@@ -20,7 +32,6 @@ const channelLabels: Record<Channel, string> = {
   call: 'Call',
 }
 
-
 const channelTabs = [
   { id: 'all', label: 'All' },
   { id: 'sms', label: 'Texts' },
@@ -33,7 +44,11 @@ const statusTabs = [
   { id: 'right', label: 'Right' },
 ] as const
 
-const statusText = { right: 'Right call', missed: 'Missed', todo: 'Not tried' } as const
+const statusText = {
+  right: 'Right call',
+  missed: 'Missed',
+  todo: 'Not tried',
+} as const
 const PAGE = 12
 
 export interface HistoryAttempt {
@@ -58,18 +73,34 @@ function formatRelativeTime(timestamp: number): string {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days}d ago`
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(timestamp))
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(timestamp))
 }
 
-function resolveAttempt(attempt: { id: string; correct: boolean; at: number }, index: number): HistoryAttempt {
+function resolveAttempt(
+  attempt: { id: string; correct: boolean; at: number },
+  index: number,
+): HistoryAttempt {
   const staticScenario = getScenario(attempt.id)
   const cached = getCachedScenarioMeta(attempt.id)
 
   let type: Channel = staticScenario?.type ?? cached?.type ?? 'call'
   if (!staticScenario && !cached) {
-    if (attempt.id.startsWith('gen-sms-') || attempt.id.includes('sms')) type = 'sms'
-    else if (attempt.id.startsWith('gen-email-') || attempt.id.includes('email')) type = 'email'
-    else if (attempt.id.startsWith('gen-call-') || attempt.id.includes('call')) type = 'call'
+    if (attempt.id.startsWith('gen-sms-') || attempt.id.includes('sms')) {
+      type = 'sms'
+    } else if (
+      attempt.id.startsWith('gen-email-') ||
+      attempt.id.includes('email')
+    ) {
+      type = 'email'
+    } else if (
+      attempt.id.startsWith('gen-call-') ||
+      attempt.id.includes('call')
+    ) {
+      type = 'call'
+    }
   }
 
   const defaultTitle = {
@@ -86,7 +117,10 @@ function resolveAttempt(attempt: { id: string; correct: boolean; at: number }, i
   }[type]
   const summary = staticScenario?.summary ?? cached?.summary ?? defaultSummary
 
-  const at = typeof attempt.at === 'number' && !Number.isNaN(attempt.at) ? attempt.at : Date.now()
+  const at =
+    typeof attempt.at === 'number' && !Number.isNaN(attempt.at)
+      ? attempt.at
+      : Date.now()
 
   return {
     id: attempt.id,
@@ -120,11 +154,19 @@ export function PracticePath({ progress }: { progress: Progress }) {
     .map(resolveAttempt)
     .sort((a, b) => b.at - a.at)
 
-  const inChannel = channel === 'all' ? allAttempts : allAttempts.filter((item) => item.type === channel)
-  const count = (id: 'missed' | 'right') => inChannel.filter((item) => (id === 'right' ? item.correct : !item.correct)).length
-  const list = status === 'missed' || status === 'right'
-    ? inChannel.filter((item) => (status === 'right' ? item.correct : !item.correct))
-    : inChannel
+  const inChannel =
+    channel === 'all'
+      ? allAttempts
+      : allAttempts.filter((item) => item.type === channel)
+  const count = (id: 'missed' | 'right') =>
+    inChannel.filter((item) => (id === 'right' ? item.correct : !item.correct))
+      .length
+  const list =
+    status === 'missed' || status === 'right'
+      ? inChannel.filter((item) =>
+          status === 'right' ? item.correct : !item.correct,
+        )
+      : inChannel
 
   return (
     <section className="path" aria-label="Practice history">
@@ -150,7 +192,8 @@ export function PracticePath({ progress }: { progress: Progress }) {
               aria-pressed={status === tab.id}
               onClick={() => pick('status', tab.id)}
             >
-              {tab.label} <span className="path-chip-count">{count(tab.id)}</span>
+              {tab.label}{' '}
+              <span className="path-chip-count">{count(tab.id)}</span>
             </button>
           ))}
         </div>
@@ -163,10 +206,14 @@ export function PracticePath({ progress }: { progress: Progress }) {
           </div>
           <h3>No completed scenarios yet</h3>
           <p>
-            When you practice phone calls, inspect phishing emails, or review smishing texts,
-            your completed simulations and decisions will appear here.
+            When you practice phone calls, inspect phishing emails, or review
+            smishing texts, your completed simulations and decisions will appear
+            here.
           </p>
-          <TransitionLink to="/?tab=practice" className="train-primary path-empty-btn">
+          <TransitionLink
+            to="/?tab=practice"
+            className="train-primary path-empty-btn"
+          >
             Start practicing
           </TransitionLink>
         </div>
@@ -174,10 +221,10 @@ export function PracticePath({ progress }: { progress: Progress }) {
         <div className="path-empty-filter">
           <p>
             {status === 'missed'
-              ? `No missed scenarios in ${channel === 'all' ? 'history' : channelTabs.find((t) => t.id === channel)?.label ?? channel}. Nice work!`
+              ? `No missed scenarios in ${channel === 'all' ? 'history' : (channelTabs.find((t) => t.id === channel)?.label ?? channel)}. Nice work!`
               : status === 'right'
-              ? `No right calls recorded in ${channel === 'all' ? 'history' : channelTabs.find((t) => t.id === channel)?.label ?? channel} yet.`
-              : `No ${channelTabs.find((t) => t.id === channel)?.label ?? channel} scenarios completed yet.`}
+                ? `No right calls recorded in ${channel === 'all' ? 'history' : (channelTabs.find((t) => t.id === channel)?.label ?? channel)} yet.`
+                : `No ${channelTabs.find((t) => t.id === channel)?.label ?? channel} scenarios completed yet.`}
           </p>
         </div>
       ) : (
@@ -194,7 +241,8 @@ export function PracticePath({ progress }: { progress: Progress }) {
           className="train-ghost path-more"
           onClick={() => setShown(shown + PAGE)}
         >
-          Show more <span className="path-chip-count">{list.length - shown}</span>
+          Show more{' '}
+          <span className="path-chip-count">{list.length - shown}</span>
         </button>
       )}
     </section>
@@ -207,7 +255,11 @@ export function HistoryStop({ attempt }: { attempt: HistoryAttempt }) {
   return (
     <li className={`path-stop is-${state}`}>
       <span className="path-dot" aria-hidden="true">
-        {attempt.correct ? <Check size={12} strokeWidth={3} /> : <RotateCcw size={11} strokeWidth={3} />}
+        {attempt.correct ? (
+          <Check size={12} strokeWidth={3} />
+        ) : (
+          <RotateCcw size={11} strokeWidth={3} />
+        )}
       </span>
       <div className="path-stop-body">
         <div className="path-stop-meta">
@@ -243,22 +295,42 @@ export function HistoryStop({ attempt }: { attempt: HistoryAttempt }) {
 }
 
 /** Legacy PathStop for backwards compatibility if referenced */
-export function PathStop({ scenario, progress, upNext = false }: { scenario: Scenario; progress: Progress; upNext?: boolean }) {
+export function PathStop({
+  scenario,
+  progress,
+  upNext = false,
+}: {
+  scenario: Scenario
+  progress: Progress
+  upNext?: boolean
+}) {
   const Icon = channelIcon[scenario.type]
   const attempt = progress[scenario.id]
   const state = attempt ? (attempt.correct ? 'right' : 'missed') : 'todo'
   return (
     <li className={`path-stop is-${state}${upNext ? ' is-upnext' : ''}`}>
       <span className="path-dot" aria-hidden="true">
-        {state === 'right' ? <Check size={12} strokeWidth={3} /> : state === 'missed' ? <RotateCcw size={11} strokeWidth={3} /> : <Icon size={15} />}
+        {state === 'right' ? (
+          <Check size={12} strokeWidth={3} />
+        ) : state === 'missed' ? (
+          <RotateCcw size={11} strokeWidth={3} />
+        ) : (
+          <Icon size={15} />
+        )}
       </span>
       <div className="path-stop-body">
-        <TransitionLink className="path-stop-link" to={`/train/${scenario.id}`} style={{ viewTransitionName: `title-${scenario.id}` }}>
+        <TransitionLink
+          className="path-stop-link"
+          to={`/train/${scenario.id}`}
+          style={{ viewTransitionName: `title-${scenario.id}` }}
+        >
           {scenario.title}
         </TransitionLink>
         <p>{scenario.summary}</p>
       </div>
-      <span className="path-status">{upNext ? 'Up next' : statusText[state]}</span>
+      <span className="path-status">
+        {upNext ? 'Up next' : statusText[state]}
+      </span>
     </li>
   )
 }

@@ -97,8 +97,9 @@ export class InsightsRepository {
    */
   async latestFocus(uid: string): Promise<ScamCategory[]> {
     const { cached, lastAttemptAt } = await this.state(uid);
-    if (cached && cached.lastAttemptAt === lastAttemptAt)
+    if (cached && cached.lastAttemptAt === lastAttemptAt) {
       return cached.nextTrainingFocus;
+    }
     const summary = summarize(await this.attemptRows(uid));
     return summary.overall.attempts
       ? buildInsights(summary, rankLocally(summary), "fallback")

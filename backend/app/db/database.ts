@@ -15,11 +15,13 @@ export function createDatabase(connectionString: string) {
       "Database TLS configuration must verify server certificates.",
     );
   }
-  if (mode && mode !== "disable")
+  if (mode && mode !== "disable") {
     url.searchParams.set("sslmode", "verify-full");
+  }
   const rootCert = url.searchParams.get("sslrootcert");
-  if (rootCert && !isAbsolute(rootCert))
+  if (rootCert && !isAbsolute(rootCert)) {
     url.searchParams.set("sslrootcert", backendDir + rootCert);
+  }
   // Preserve CA/cert parameters while making certificate verification explicit.
   return new pg.Pool({
     connectionString: url.toString(),

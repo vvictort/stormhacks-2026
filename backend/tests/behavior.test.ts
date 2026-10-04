@@ -134,12 +134,13 @@ test("invalid batches are rejected whole with a 400", async () => {
     [event({ responseTimeMs: -1 })],
     [event(), event({ type: "nope" })], // one bad event fails the batch
   ];
-  for (const events of bad)
+  for (const events of bad) {
     assert.equal(
       (await post(events)).status,
       400,
       JSON.stringify(events).slice(0, 120),
     );
+  }
   assert.equal(recorded.length, 0);
   assert.equal((await post([event()], null)).status, 401);
   assert.equal(
@@ -432,8 +433,9 @@ test("call lifecycle maps to behaviour events; declining is a completed, timed d
 
 test("an answered call records answer, end and its analysed outcome", async () => {
   mockOutbound((url) => {
-    if (url.includes("/conversation/token"))
+    if (url.includes("/conversation/token")) {
       return json({ token: "t", conversation_id: "conv_1" });
+    }
     return json({
       conversation_id: "conv_1",
       status: "done",

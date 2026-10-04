@@ -1,20 +1,106 @@
 /* "Speed and trend" in Insights: continues the results block (.home-stat-head comes from training.css). */
-.home-instincts > p { font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
-.instincts-list { display: grid; gap: 10px; margin: 0; }
-.instincts-list > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
-.instincts-list dt { font-size: 14px; color: var(--color-muted-strong); }
-.instincts-list dd { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 16px; font-variant-numeric: tabular-nums; }
-.instincts-list strong { font-weight: 600; color: var(--color-foreground); }
-.instincts-list strong.is-better { color: var(--color-success-strong); }
-.instincts-then { color: var(--color-muted-strong); }
-.instincts-arrow { color: var(--color-control); }
-.home-instincts .instincts-source { margin-top: 10px; font-size: 12px; color: var(--color-muted-strong); }
-.instincts-chart { display: grid; gap: 6px; margin: 20px 0 0; }
-.instincts-chart svg { display: block; max-width: 100%; }
-.instincts-chart .is-good { fill: var(--color-success-strong); }
-.instincts-chart .is-missed { fill: var(--color-accent-strong); }
-.instincts-chart figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13px; color: var(--color-muted-strong); }
-.instincts-key { display: inline-flex; align-items: center; gap: 5px; }
-.instincts-key::before { content: ''; width: 8px; height: 8px; border-radius: 2px; }
-.instincts-key.is-good::before { background: var(--color-success-strong); }
-.instincts-key.is-missed::before { background: var(--color-accent-strong); }
+.home-instincts > p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-muted-strong);
+}
+
+.instincts-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.instincts-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.instincts-list dt {
+  font-size: 14px;
+  color: var(--color-muted-strong);
+}
+
+.instincts-list dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.instincts-list strong {
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.instincts-list strong.is-better {
+  color: var(--color-success-strong);
+}
+
+.instincts-then {
+  color: var(--color-muted-strong);
+}
+
+.instincts-arrow {
+  color: var(--color-control);
+}
+
+.home-instincts .instincts-source {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--color-muted-strong);
+}
+
+.instincts-chart {
+  display: grid;
+  gap: 6px;
+  margin: 20px 0 0;
+}
+
+.instincts-chart svg {
+  display: block;
+  max-width: 100%;
+}
+
+.instincts-chart .is-good {
+  fill: var(--color-success-strong);
+}
+
+.instincts-chart .is-missed {
+  fill: var(--color-accent-strong);
+}
+
+.instincts-chart figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 13px;
+  color: var(--color-muted-strong);
+}
+
+.instincts-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.instincts-key::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.instincts-key.is-good::before {
+  background: var(--color-success-strong);
+}
+
+.instincts-key.is-missed::before {
+  background: var(--color-accent-strong);
+}

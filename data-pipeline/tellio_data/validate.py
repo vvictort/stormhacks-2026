@@ -1,4 +1,5 @@
 """Schema check for scam-library.json (the contract shared with backend/app library loader)."""
+
 import hashlib
 
 from .vocabulary import SIGNALS, load
@@ -12,7 +13,10 @@ def validate(doc: dict) -> list[str]:
         errors.append('version must be 1')
     sources = {}
     for s in doc.get('sources', []):
-        if s.get('channel') not in v['Channel'] or s.get('redistribution') not in ('excerpts', 'derived-only'):
+        if s.get('channel') not in v['Channel'] or s.get('redistribution') not in (
+            'excerpts',
+            'derived-only',
+        ):
             errors.append(f'bad source {s}')
         for k in ('dataset', 'url', 'license'):
             if not isinstance(s.get(k), str) or not s[k]:
@@ -26,8 +30,10 @@ def validate(doc: dict) -> list[str]:
         if eid in ids:
             err('duplicate id')
         ids.add(eid)
-        expected = hashlib.sha1(f"{src.get('dataset')}:{src.get('row')}".encode()).hexdigest()[:12]
-        if eid != f"{ex.get('channel')}-{expected}":
+        expected = hashlib.sha1(
+            f'{src.get("dataset")}:{src.get("row")}'.encode()
+        ).hexdigest()[:12]
+        if eid != f'{ex.get("channel")}-{expected}':
             err('id is not <channel>-sha1(dataset:row)[:12]')
         if ex.get('channel') not in v['Channel']:
             err('bad channel')
@@ -56,14 +62,18 @@ def validate(doc: dict) -> list[str]:
             err('source dataset not listed in sources for this channel')
         elif s['redistribution'] == 'derived-only' and ex.get('textKind') != 'pattern':
             err('derived-only source must use textKind=pattern')
-        if not all(isinstance(src.get(k), str) and src[k] for k in ('license', 'row', 'label')):
+        if not all(
+            isinstance(src.get(k), str) and src[k] for k in ('license', 'row', 'label')
+        ):
             err('source needs license, row, label')
         cues = ex.get('cues', [])
         if len(cues) > 6:
             err('more than 6 cues')
         allowed = set(ex.get('tactics', [])) | set(ex.get('signals', []))
         pos = 0
-        for c in cues:  # cues are in text order, so each must be found after the previous one ends
+        for c in (
+            cues
+        ):  # cues are in text order, so each must be found after the previous one ends
             q = c.get('quote', '')
             if c.get('tag') not in allowed:
                 err(f'cue tag {c.get("tag")} not in tactics/signals')

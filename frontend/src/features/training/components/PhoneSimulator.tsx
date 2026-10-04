@@ -29,11 +29,18 @@ export function PhoneSimulator({
   onInspect,
 }: SimulatorProps) {
   return (
-    <section className={`phone-wrap${scenario.correctAction === 'safe' ? ' is-safe-scenario' : ''}`} aria-label="Practice phone">
+    <section
+      className={`phone-wrap${scenario.correctAction === 'safe' ? ' is-safe-scenario' : ''}`}
+      aria-label="Practice phone"
+    >
       <PhoneFrame time={scenario.receivedAt}>
         {scenario.type === 'sms' && (
           <>
-            <AppHeader label="Text messages from" title={scenario.sender} subtitle="Not in your contacts" />
+            <AppHeader
+              label="Text messages from"
+              title={scenario.sender}
+              subtitle="Not in your contacts"
+            />
             <MessageThread
               scenario={scenario}
               revealed={choice !== null}
@@ -111,7 +118,11 @@ export function ResponseControls({
 
   if (pendingAction) {
     return (
-      <div className="phone-actions phone-actions-conf" role="group" aria-labelledby="conf-label">
+      <div
+        className="phone-actions phone-actions-conf"
+        role="group"
+        aria-labelledby="conf-label"
+      >
         <div className="phone-conf-head">
           <p id="conf-label">How sure are you?</p>
           <button
@@ -150,12 +161,16 @@ export function ResponseControls({
     <div className="phone-actions" role="group" aria-labelledby="decide-label">
       <div className="phone-actions-hint" role="status" aria-live="polite">
         {flaggedCount > 0 ? (
-          <span>{flaggedCount} phrase{flaggedCount === 1 ? '' : 's'} flagged</span>
+          <span>
+            {flaggedCount} phrase{flaggedCount === 1 ? '' : 's'} flagged
+          </span>
         ) : (
           <span>Tap suspicious phrases to flag them</span>
         )}
       </div>
-      <p id="decide-label" className="sr-only">What would you do?</p>
+      <p id="decide-label" className="sr-only">
+        What would you do?
+      </p>
       <div className="phone-decision-buttons">
         <button type="button" onClick={() => setPendingAction('safe')}>
           Looks safe

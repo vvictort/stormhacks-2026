@@ -24,8 +24,9 @@ export const requireAuth =
       : queryToken && typeof query === "string"
         ? query
         : undefined;
-    if (!token)
+    if (!token) {
       throw new AppError(401, "UNAUTHENTICATED", "Please sign in to continue.");
+    }
     try {
       req.user = await verify(token);
     } catch (error) {
@@ -38,19 +39,21 @@ export const requireAuth =
         "auth/user-disabled",
         "auth/user-not-found",
       ];
-      if (code && invalid.includes(code))
+      if (code && invalid.includes(code)) {
         throw new AppError(
           401,
           "INVALID_TOKEN",
           "Your session has ended. Please sign in again.",
         );
+      }
       throw error;
     }
-    if (!req.user.uid || !req.user.email)
+    if (!req.user.uid || !req.user.email) {
       throw new AppError(
         401,
         "INVALID_TOKEN",
         "Sign in with an account that has an email address.",
       );
+    }
     next();
   };

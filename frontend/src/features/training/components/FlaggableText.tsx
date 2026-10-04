@@ -54,7 +54,9 @@ export function FlaggableText({
             onClick={() => onToggleFlag(phrase)}
             onKeyDown={handleKey}
           >
-            {isFlagged && <Flag size={11} className="flag-icon" aria-hidden="true" />}
+            {isFlagged && (
+              <Flag size={11} className="flag-icon" aria-hidden="true" />
+            )}
             {phrase}{' '}
           </span>
         )

@@ -70,12 +70,13 @@ test("the committed practice path is exactly what the library builds (rebuild wi
     .filter((f) => f.endsWith(".json"))
     .sort();
   assert.deepEqual(onDisk, Object.keys(fixtures).sort());
-  for (const file of onDisk)
+  for (const file of onDisk) {
     assert.deepEqual(
       JSON.parse(readFileSync(join(FIXTURE_DIR, file), "utf8")),
       JSON.parse(JSON.stringify(fixtures[file])),
       file,
     );
+  }
 });
 
 test("the practice path has no hand-written scams: library emails and calls, Gemini texts, every level", () => {
@@ -118,16 +119,18 @@ test("the practice path has no hand-written scams: library emails and calls, Gem
 
 test("the app catalog loads the library-built comms fixtures", () => {
   const catalog = new ScenarioCatalog(fakeRepos().scenarios);
-  for (const call of committed.calls)
+  for (const call of committed.calls) {
     assert.ok(
       catalog.list("call").some((s) => s.id === call.id),
       call.id,
     );
-  for (const text of texts)
+  }
+  for (const text of texts) {
     assert.ok(
       catalog.list("text").some((s) => s.id === text.id),
       text.id,
     );
+  }
 });
 
 test("practice texts: near-miss quotes are repaired, and fake numbers, real brands and hidden flags are refused", () => {

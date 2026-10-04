@@ -32,8 +32,9 @@ const unhandled = (t: TextThread) =>
   userMessages(t).slice(t.userMessagesHandled);
 
 function textOutcome(t: TextThread, reason: ThreadEndReason): SimOutcome {
-  if (t.signals.some((s) => COMPROMISING_SIGNALS.includes(s)))
+  if (t.signals.some((s) => COMPROMISING_SIGNALS.includes(s))) {
     return "compromised";
+  }
   if (reason === "reported") return "reported";
   if (userMessages(t).length === 0) return "ignored";
   return "resisted";
@@ -99,8 +100,9 @@ export class TextService {
     if (opening.links) thread.linkFirstSentAt = at;
 
     // Another request (or process) started one since the check above: report that one instead.
-    if (!(await this.store.createThread(thread)))
+    if (!(await this.store.createThread(thread))) {
       return this.start(userId, scenario);
+    }
     await this.events.emit(
       textEvent("text.thread_started", thread, {
         senderLabel: scenario.senderLabel,
@@ -306,14 +308,16 @@ export class TextService {
         sse.publish(threadId, "typing", { on: true });
         await sleep(typingDelayMs(result.reply));
         sse.publish(threadId, "typing", { on: false });
-        if (!(await this.sendScammerMessage(threadId, result.reply, false)))
+        if (!(await this.sendScammerMessage(threadId, result.reply, false))) {
           return;
+        }
       }
 
       const latest = await this.store.getThread(threadId);
       if (result.done) await this.end(threadId, "provider_done");
-      else if (latest && latest.scammerTurns >= latest.scenario.maxTurns)
+      else if (latest && latest.scammerTurns >= latest.scenario.maxTurns) {
         await this.end(threadId, "max_turns");
+      }
     } finally {
       this.turnsInFlight.delete(threadId);
     }

@@ -23,9 +23,22 @@ export function TrainingHeader({ children }: { children?: ReactNode }) {
       <Brand to="/home" />
       {children}
       <div className="train-header-actions">
-        {failed && error && <p className="train-header-error" role="alert">{error}</p>}
-        <button type="button" className="train-ghost" onClick={() => void signOut()} disabled={Boolean(pending)} aria-busy={signingOut} title="Sign out">
-          {signingOut && <LoaderCircle size={17} className="spinner" aria-hidden="true" />}
+        {failed && error && (
+          <p className="train-header-error" role="alert">
+            {error}
+          </p>
+        )}
+        <button
+          type="button"
+          className="train-ghost"
+          onClick={() => void signOut()}
+          disabled={Boolean(pending)}
+          aria-busy={signingOut}
+          title="Sign out"
+        >
+          {signingOut && (
+            <LoaderCircle size={17} className="spinner" aria-hidden="true" />
+          )}
           <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
         </button>
       </div>

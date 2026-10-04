@@ -84,8 +84,9 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
     if (attempt.success) successes++;
     if (fellForScam(attempt.outcome)) {
       compromised++;
-      for (const tactic of attempt.tactics)
+      for (const tactic of attempt.tactics) {
         tacticMisses.set(tactic, (tacticMisses.get(tactic) ?? 0) + 1);
+      }
     }
 
     const category =
@@ -118,15 +119,23 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
       levels[Math.min(2, Math.max(0, levels.indexOf(difficulty) + step))];
   }
 
-  const tacticStats = new Map<string, { attempts: number; correct: number; confidentlyWrong: number }>();
+  const tacticStats = new Map<
+    string,
+    { attempts: number; correct: number; confidentlyWrong: number }
+  >();
   for (const t of CORE_TACTICS) {
     tacticStats.set(t, { attempts: 0, correct: 0, confidentlyWrong: 0 });
   }
 
   for (const attempt of scored) {
-    const isCertainWrong = attempt.success === false && attempt.confidence === "certain";
+    const isCertainWrong =
+      attempt.success === false && attempt.confidence === "certain";
     for (const tactic of attempt.tactics) {
-      const current = tacticStats.get(tactic) ?? { attempts: 0, correct: 0, confidentlyWrong: 0 };
+      const current = tacticStats.get(tactic) ?? {
+        attempts: 0,
+        correct: 0,
+        confidentlyWrong: 0,
+      };
       current.attempts++;
       if (attempt.success) current.correct++;
       if (isCertainWrong) current.confidentlyWrong++;
@@ -136,7 +145,8 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
 
   const tacticMastery: Record<string, TacticMastery> = {};
   for (const [tactic, st] of tacticStats.entries()) {
-    const accuracy = st.attempts > 0 ? Math.round((st.correct / st.attempts) * 100) : 0;
+    const accuracy =
+      st.attempts > 0 ? Math.round((st.correct / st.attempts) * 100) : 0;
     const state: TacticMasteryState =
       st.attempts === 0
         ? "untouched"

@@ -24,7 +24,13 @@ export function useScenarios(channel?: Channel): {
     comms.listScenarios(channel, abort.signal).then(
       (scenarios) => setResult({ channel, scenarios, error: null }),
       (error) => {
-        if (!isAbortError(error)) setResult({ channel, scenarios: NO_SCENARIOS, error: describeError(error) })
+        if (!isAbortError(error)) {
+          setResult({
+            channel,
+            scenarios: NO_SCENARIOS,
+            error: describeError(error),
+          })
+        }
       },
     )
     return () => abort.abort()

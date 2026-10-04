@@ -38,8 +38,9 @@ export class MemoryStore implements SimStore {
     if (
       thread.status === "active" &&
       (await this.findActiveThreadByUser(thread.userId))
-    )
+    ) {
       return false;
+    }
     this.threads.set(thread.id, structuredClone(thread));
     return true;
   }

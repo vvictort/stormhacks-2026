@@ -25,8 +25,9 @@ export class UsersRepository {
     this.db = db;
   }
   async ensureUser(identity: DecodedIdToken) {
-    if (!identity.email)
+    if (!identity.email) {
       throw new AppError(401, "INVALID_TOKEN", "An account email is required.");
+    }
     const name =
       typeof identity.name === "string"
         ? identity.name.trim().slice(0, 100) || null
@@ -46,8 +47,9 @@ export class UsersRepository {
     return mapUser(rows[0]);
   }
   async updateProfile(identity: DecodedIdToken, profile: ProfileInput) {
-    if (!identity.email)
+    if (!identity.email) {
       throw new AppError(401, "INVALID_TOKEN", "An account email is required.");
+    }
     const { rows } = await this.db.query(
       `INSERT INTO user_profiles(id,firebase_uid,email,email_verified,name,phone,profession,interests,onboarding_completed_at)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,now()) ON CONFLICT(firebase_uid) DO UPDATE SET email=EXCLUDED.email,email_verified=EXCLUDED.email_verified,

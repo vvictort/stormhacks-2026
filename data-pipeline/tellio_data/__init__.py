@@ -1,4 +1,5 @@
 """Offline pipeline: Kaggle scam datasets -> backend/fixtures/scam-library.json."""
+
 from pathlib import Path
 
 PIPELINE_DIR = Path(__file__).resolve().parent.parent

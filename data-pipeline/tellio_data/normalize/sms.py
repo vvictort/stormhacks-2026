@@ -1,4 +1,5 @@
 """Columns are found by name (UCI uses v1/v2), so another labelled SMS CSV can be dropped in."""
+
 from pathlib import Path
 
 import pandas as pd
@@ -24,13 +25,30 @@ def read(directory: Path):
         except UnicodeDecodeError:  # the UCI file is Windows-1252
             df = pd.read_csv(path, dtype=str, keep_default_na=False, encoding='cp1252')
         text_col, label_col = _col(df, TEXT_COLS), _col(df, LABEL_COLS)
-        spill = [c for c in df.columns if c.startswith('Unnamed')]  # UCI rows with stray commas spill into these
+        spill = [
+            c for c in df.columns if c.startswith('Unnamed')
+        ]  # UCI rows with stray commas spill into these
         if not text_col or not label_col:
             continue  # e.g. an unlabeled test split or a submission template
         for i, r in df.iterrows():
             label = str(r[label_col]).strip()
-            kind = 'scam' if label.lower() in SCAM else 'legitimate' if label.lower() in LEGIT else None
-            text = ' '.join([str(r[text_col]), *(str(r[c]) for c in spill if str(r[c]).strip())]).strip()
+            kind = (
+                'scam'
+                if label.lower() in SCAM
+                else 'legitimate'
+                if label.lower() in LEGIT
+                else None
+            )
+            text = ' '.join(
+                [str(r[text_col]), *(str(r[c]) for c in spill if str(r[c]).strip())]
+            ).strip()
             if kind and text:
-                yield {'channel': 'sms', 'dataset': SRC['dataset'], 'row': f'{path.name}:{i}', 'label': label,
-                       'kind': kind, 'text': text, 'subject': ''}
+                yield {
+                    'channel': 'sms',
+                    'dataset': SRC['dataset'],
+                    'row': f'{path.name}:{i}',
+                    'label': label,
+                    'kind': kind,
+                    'text': text,
+                    'subject': '',
+                }

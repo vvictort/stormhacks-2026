@@ -1,6 +1,6 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -14,12 +14,21 @@ export default defineConfig({
         // CallExperience chunk, so their chunks load with a call and never for SMS, email or home.
         codeSplitting: {
           groups: [
-            { name: "react", test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/ },
-            { name: "firebase", test: /node_modules[\\/](firebase|@firebase)[\\/]/ },
-            { name: "livekit", test: /node_modules[\\/](livekit-client|@livekit)[\\/]/ },
-            { name: "elevenlabs", test: /node_modules[\\/]@elevenlabs[\\/]/ },
+            {
+              name: 'react',
+              test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/,
+            },
+            {
+              name: 'firebase',
+              test: /node_modules[\\/](firebase|@firebase)[\\/]/,
+            },
+            {
+              name: 'livekit',
+              test: /node_modules[\\/](livekit-client|@livekit)[\\/]/,
+            },
+            { name: 'elevenlabs', test: /node_modules[\\/]@elevenlabs[\\/]/ },
             // Icons are tiny; one chunk instead of a request per icon.
-            { name: "icons", test: /node_modules[\\/]lucide-react[\\/]/ },
+            { name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/ },
           ],
         },
       },
@@ -29,7 +38,7 @@ export default defineConfig({
   // /api/comms text and call routes and their SSE stream.
   server: {
     proxy: {
-      "/api": "http://localhost:3000",
+      '/api': 'http://localhost:3000',
     },
   },
-});
+})

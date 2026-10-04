@@ -19,8 +19,15 @@ export interface CreatedCallScenario {
  * navigate to `/train/${id}` to ring it. Rejects on any failure, including the rate limit (the message names the
  * status, e.g. 429), so the caller can fall back to a built-in call.
  */
-export async function requestPersonalisedCall(signal?: AbortSignal, expectedUid?: string): Promise<string> {
-  const created = await api<CreatedCallScenario>('/training/call-scenarios', { method: 'POST', body: '{}', signal }, expectedUid)
+export async function requestPersonalisedCall(
+  signal?: AbortSignal,
+  expectedUid?: string,
+): Promise<string> {
+  const created = await api<CreatedCallScenario>(
+    '/training/call-scenarios',
+    { method: 'POST', body: '{}', signal },
+    expectedUid,
+  )
   saveCachedScenarioMeta({
     id: created.scenarioId,
     title: created.title || 'Personalised scam call',

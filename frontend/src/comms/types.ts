@@ -24,7 +24,14 @@ export type Signal =
   | 'reported'
   | 'stop'
 
-export type Outcome = 'compromised' | 'resisted' | 'reported' | 'ignored' | 'declined' | 'missed' | 'error'
+export type Outcome =
+  | 'compromised'
+  | 'resisted'
+  | 'reported'
+  | 'ignored'
+  | 'declined'
+  | 'missed'
+  | 'error'
 
 export type Difficulty = 1 | 2 | 3
 
@@ -83,7 +90,8 @@ export interface TextMessage {
   followUp?: boolean
 }
 
-export type ThreadEndReason = 'provider_done' | 'max_turns' | 'reported' | 'link_clicked' | 'idle'
+export type ThreadEndReason =
+  'provider_done' | 'max_turns' | 'reported' | 'link_clicked' | 'idle'
 
 export interface TextThread {
   id: string
@@ -114,7 +122,8 @@ export interface CallTranscriptTurn {
 }
 
 /** Canonical training result vocabulary (docs/call-integration.md). */
-export type TrainingOutcome = 'resisted' | 'compromised' | 'declined' | 'missed' | 'error'
+export type TrainingOutcome =
+  'resisted' | 'compromised' | 'declined' | 'missed' | 'error'
 
 /** Comms' normalised result on a completed call: `success` is null when the call isn't scored. */
 export interface CallTraining {

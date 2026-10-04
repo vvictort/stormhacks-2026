@@ -129,13 +129,14 @@ test("a malformed library throws a message naming the file and the problem", () 
       /duplicate example id "syn-email-work-1"/,
     ],
   ];
-  for (const [content, message] of cases)
+  for (const [content, message] of cases) {
     assert.throws(
       () => ScamLibrary.load(writeLibrary(content)),
       (error: Error) =>
         /^\[scam library\] /.test(error.message) && message.test(error.message),
       String(message),
     );
+  }
 });
 
 // ---------- Retrieval ----------
@@ -778,11 +779,12 @@ test("without Gemini, generated emails come from the library with attribution, o
         fromLibrary,
         `${category}: ${scenario.generated.reason}`,
       );
-      if (!fromLibrary)
+      if (!fromLibrary) {
         assert.equal(
           scenario.subject,
           "Action needed: confirm your account details",
         );
+      }
     }
   }
 });
@@ -829,11 +831,12 @@ test("without Gemini, generated calls follow a library pattern with attribution,
           fromLibrary,
           `${category}: ${teaching.generated.reason}`,
         );
-        if (!fromLibrary)
+        if (!fromLibrary) {
           assert.equal(
             scenario.title,
             "There is an urgent problem with your account",
           );
+        }
       }
     }
   }

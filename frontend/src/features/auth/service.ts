@@ -22,15 +22,30 @@ export async function signUp(email: string, password: string, name: string) {
   if (!policy.isValid) {
     const requirements: string[] = []
     const strength = policy.passwordPolicy.customStrengthOptions
-    if (policy.meetsMinPasswordLength === false) requirements.push(`at least ${strength.minPasswordLength} characters`)
-    if (policy.meetsMaxPasswordLength === false) requirements.push(`no more than ${strength.maxPasswordLength} characters`)
-    if (policy.containsLowercaseLetter === false) requirements.push('a lowercase letter')
-    if (policy.containsUppercaseLetter === false) requirements.push('an uppercase letter')
+    if (policy.meetsMinPasswordLength === false) {
+      requirements.push(`at least ${strength.minPasswordLength} characters`)
+    }
+    if (policy.meetsMaxPasswordLength === false) {
+      requirements.push(`no more than ${strength.maxPasswordLength} characters`)
+    }
+    if (policy.containsLowercaseLetter === false) {
+      requirements.push('a lowercase letter')
+    }
+    if (policy.containsUppercaseLetter === false) {
+      requirements.push('an uppercase letter')
+    }
     if (policy.containsNumericCharacter === false) requirements.push('a number')
-    if (policy.containsNonAlphanumericCharacter === false) requirements.push('a symbol')
+    if (policy.containsNonAlphanumericCharacter === false) {
+      requirements.push('a symbol')
+    }
     // Short enough for the form's error row (no symbol list); "a, b and c" reads better than a comma dump.
-    const list = requirements.length > 1 ? `${requirements.slice(0, -1).join(', ')} and ${requirements.at(-1)}` : requirements[0]
-    throw new PasswordPolicyError(`Your password needs ${list ?? 'to meet the account requirements'}.`)
+    const list =
+      requirements.length > 1
+        ? `${requirements.slice(0, -1).join(', ')} and ${requirements.at(-1)}`
+        : requirements[0]
+    throw new PasswordPolicyError(
+      `Your password needs ${list ?? 'to meet the account requirements'}.`,
+    )
   }
 
   const credential = await createUserWithEmailAndPassword(auth, email, password)
@@ -41,7 +56,8 @@ export async function signUp(email: string, password: string, name: string) {
   try {
     await updateProfile(credential.user, { displayName: name })
   } catch {
-    profileWarning = 'Your account is ready, but we couldn’t save your name. You can add it later.'
+    profileWarning =
+      'Your account is ready, but we couldn’t save your name. You can add it later.'
   }
 
   return { credential, profileWarning }
@@ -59,7 +75,14 @@ export async function resetPassword(email: string) {
   } catch (error) {
     // Give the same response for unknown accounts, even if enumeration
     // protection has not been enabled in the Firebase project.
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'auth/user-not-found') return
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'auth/user-not-found'
+    ) {
+      return
+    }
     throw error
   }
 }

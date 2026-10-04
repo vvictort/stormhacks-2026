@@ -8,7 +8,13 @@ export type Channel = 'sms' | 'email' | 'call'
 export type Action = 'report' | 'safe'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 /** backend/app/shared/vocabulary.ts ScamCategory. */
-export type ScamCategory = 'banking' | 'government' | 'shipping' | 'account_security' | 'workplace' | 'promotional'
+export type ScamCategory =
+  | 'banking'
+  | 'government'
+  | 'shipping'
+  | 'account_security'
+  | 'workplace'
+  | 'promotional'
 
 /** Set on scenarios the backend generated for this user (ids `gen-email-…`, `gen-sms-…`, `gen-call-…`). */
 export interface GeneratedInfo {
@@ -98,22 +104,54 @@ export interface CallScenario extends ScenarioCore {
 export type MessageScenario = SmsScenario | EmailScenario
 export type Scenario = MessageScenario | CallScenario
 
-export const channels: { type: Channel; name: string; ready: boolean; blurb: string }[] = [
-  { type: 'sms', name: 'Text messages', ready: true, blurb: 'Texts that land on the practice phone.' },
-  { type: 'email', name: 'Email', ready: true, blurb: 'Phishing emails in a practice inbox, with sender details you can inspect.' },
-  { type: 'call', name: 'Phone calls', ready: true, blurb: 'Voiced scam calls you can answer or hang up on, with captions.' },
+export const channels: {
+  type: Channel
+  name: string
+  ready: boolean
+  blurb: string
+}[] = [
+  {
+    type: 'sms',
+    name: 'Text messages',
+    ready: true,
+    blurb: 'Texts that land on the practice phone.',
+  },
+  {
+    type: 'email',
+    name: 'Email',
+    ready: true,
+    blurb:
+      'Phishing emails in a practice inbox, with sender details you can inspect.',
+  },
+  {
+    type: 'call',
+    name: 'Phone calls',
+    ready: true,
+    blurb: 'Voiced scam calls you can answer or hang up on, with captions.',
+  },
 ]
 
-const built = practice as unknown as { texts: SmsScenario[]; emails: EmailScenario[]; calls: CallScenario[] }
+const built = practice as unknown as {
+  texts: SmsScenario[]
+  emails: EmailScenario[]
+  calls: CallScenario[]
+}
 const levels: Difficulty[] = ['easy', 'medium', 'hard']
 
 /** a1, b1, a2, b2, …: with the stable sort below, the path alternates scams and genuine messages instead of running long on one answer. */
-const interleave = <T>(a: T[], b: T[]) => [...a.flatMap((item, i) => (i < b.length ? [item, b[i]] : [item])), ...b.slice(a.length)]
-const genuine = (type: MessageScenario['type']) => genuineScenarios.filter((scenario) => scenario.type === type)
+const interleave = <T>(a: T[], b: T[]) => [
+  ...a.flatMap((item, i) => (i < b.length ? [item, b[i]] : [item])),
+  ...b.slice(a.length),
+]
+const genuine = (type: MessageScenario['type']) =>
+  genuineScenarios.filter((scenario) => scenario.type === type)
 
 /** The practice path: the library-built scams with the genuine messages mixed in, easiest first. */
-export const scenarios: Scenario[] = [...interleave<Scenario>(built.texts, genuine('sms')), ...interleave<Scenario>(built.emails, genuine('email')), ...built.calls]
-  .sort((a, b) => levels.indexOf(a.difficulty) - levels.indexOf(b.difficulty))
+export const scenarios: Scenario[] = [
+  ...interleave<Scenario>(built.texts, genuine('sms')),
+  ...interleave<Scenario>(built.emails, genuine('email')),
+  ...built.calls,
+].sort((a, b) => levels.indexOf(a.difficulty) - levels.indexOf(b.difficulty))
 
 export function getScenario(id: string | undefined) {
   return scenarios.find((scenario) => scenario.id === id)
@@ -122,17 +160,25 @@ export function getScenario(id: string | undefined) {
 /** Whether the scenario has a link worth inspecting. Calls never do. */
 export function hasLink(scenario: Scenario) {
   if (scenario.type === 'call') return false
-  return scenario.type === 'sms' ? scenario.messages.some((message) => message.link) : Boolean(scenario.links?.length)
+  return scenario.type === 'sms'
+    ? scenario.messages.some((message) => message.link)
+    : Boolean(scenario.links?.length)
 }
 
 /** Every call is a scam; texts and emails say so with `correctAction`. */
-export const isScam = (scenario: Scenario) => scenario.type === 'call' || scenario.correctAction === 'report'
+export const isScam = (scenario: Scenario) =>
+  scenario.type === 'call' || scenario.correctAction === 'report'
 
 /** Whether a channel's scenarios can be practised. */
-export const channelReady = (channel: Channel) => channels.some((item) => item.type === channel && item.ready)
+export const channelReady = (channel: Channel) =>
+  channels.some((item) => item.type === channel && item.ready)
 
 /** How the channel is named in copy: "text message", "email", "phone call". */
-export const channelNoun: Record<Channel, string> = { sms: 'text message', email: 'email', call: 'phone call' }
+export const channelNoun: Record<Channel, string> = {
+  sms: 'text message',
+  email: 'email',
+  call: 'phone call',
+}
 
 export interface Segment {
   text: string
@@ -143,7 +189,12 @@ export interface Segment {
 /** Splits text into plain and marked pieces. Overlapping quotes keep the earliest. */
 export function markText(text: string, indicators: Indicator[]): Segment[] {
   const hits = indicators
-    .map((indicator, i) => ({ start: indicator.quote ? text.indexOf(indicator.quote) : -1, end: 0, mark: i + 1, quote: indicator.quote ?? '' }))
+    .map((indicator, i) => ({
+      start: indicator.quote ? text.indexOf(indicator.quote) : -1,
+      end: 0,
+      mark: i + 1,
+      quote: indicator.quote ?? '',
+    }))
     .filter((hit) => hit.start >= 0)
     .map((hit) => ({ ...hit, end: hit.start + hit.quote.length }))
     .sort((a, b) => a.start - b.start)
@@ -152,7 +203,9 @@ export function markText(text: string, indicators: Indicator[]): Segment[] {
   let cursor = 0
   for (const hit of hits) {
     if (hit.start < cursor) continue
-    if (hit.start > cursor) segments.push({ text: text.slice(cursor, hit.start) })
+    if (hit.start > cursor) {
+      segments.push({ text: text.slice(cursor, hit.start) })
+    }
     segments.push({ text: hit.quote, mark: hit.mark })
     cursor = hit.end
   }

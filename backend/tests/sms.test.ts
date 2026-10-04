@@ -3,7 +3,10 @@ import { test } from "node:test";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import supertest from "supertest";
 import type { Repositories } from "../app/repositories.ts";
-import { generateSmsScenario, SmsScenario } from "../app/scenarios/sms-generator.ts";
+import {
+  generateSmsScenario,
+  SmsScenario,
+} from "../app/scenarios/sms-generator.ts";
 import { createApp } from "../app/server.ts";
 import { fakeRepos, origin, testServices } from "./harness.ts";
 

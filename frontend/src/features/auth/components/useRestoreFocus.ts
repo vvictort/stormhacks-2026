@@ -8,11 +8,18 @@ export function useRestoreFocus(busy: boolean) {
 
   useEffect(() => {
     if (busy) return
-    if (target.current?.isConnected && document.activeElement === document.body) target.current.focus()
+    if (
+      target.current?.isConnected &&
+      document.activeElement === document.body
+    ) {
+      target.current.focus()
+    }
     target.current = null
   }, [busy])
 
   return () => {
-    if (document.activeElement instanceof HTMLElement) target.current = document.activeElement
+    if (document.activeElement instanceof HTMLElement) {
+      target.current = document.activeElement
+    }
   }
 }

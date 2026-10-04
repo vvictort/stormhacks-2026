@@ -59,8 +59,9 @@ export function scenariosRouter(
     const stored = req.params.id.startsWith("gen-")
       ? await scenarios.get(req.user!.uid, req.params.id)
       : null;
-    if (!stored)
+    if (!stored) {
       throw new AppError(404, "scenario_not_found", "Scenario not found.");
+    }
     res.json(trainingCallScenario(stored));
   });
   return router;

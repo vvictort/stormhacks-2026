@@ -121,7 +121,7 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
     );
 
     // Three right calls on built-in delivery texts: difficulty steps up, and both sides agree on it.
-    for (let i = 0; i < 3; i++)
+    for (let i = 0; i < 3; i++) {
       await finish(
         {
           id: "parcel-redelivery",
@@ -131,6 +131,7 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
         },
         "reported_correct",
       );
+    }
     const warmedUp = await get("/training/progress");
     assert.equal(warmedUp.difficulty, "medium");
     const first = (

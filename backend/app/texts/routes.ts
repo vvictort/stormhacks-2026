@@ -31,8 +31,9 @@ export function textsRouter({
   router.post("/", async (req, res) => {
     const { scenarioId } = StartSimulation.parse(req.body ?? {});
     const scenario = catalog.pickText(scenarioId);
-    if (!scenario)
+    if (!scenario) {
       throw new AppError(404, "scenario_not_found", "Scenario not found.");
+    }
     const started = await texts.start(req.user!.uid, scenario);
     if ("conflict" in started) {
       throw new AppError(

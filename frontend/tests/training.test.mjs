@@ -1,56 +1,146 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { hasLink, markFor, markText, scenarios, siteOf } from '../src/features/training/scenarios.ts'
-import { channelStats, currentLevel, loadProgress, recommend, recordAttempt, saveProgress, summarize, timeline } from '../src/features/training/progress.ts'
+import {
+  hasLink,
+  markFor,
+  markText,
+  scenarios,
+  siteOf,
+} from '../src/features/training/scenarios.ts'
+import {
+  channelStats,
+  currentLevel,
+  loadProgress,
+  recommend,
+  recordAttempt,
+  saveProgress,
+  summarize,
+  timeline,
+} from '../src/features/training/progress.ts'
 
 test('every quoted indicator appears in its scenario text and ids are unique', () => {
   for (const scenario of scenarios.filter((item) => item.type !== 'call')) {
-    const text = scenario.type === 'email'
-      ? [scenario.subject, scenario.fromName, scenario.fromAddress, scenario.replyTo, ...scenario.body, ...(scenario.links ?? []), scenario.attachment].join(' ')
-      : scenario.messages.map((message) => `${message.text} ${message.link ?? ''}`).join(' ')
+    const text =
+      scenario.type === 'email'
+        ? [
+            scenario.subject,
+            scenario.fromName,
+            scenario.fromAddress,
+            scenario.replyTo,
+            ...scenario.body,
+            ...(scenario.links ?? []),
+            scenario.attachment,
+          ].join(' ')
+        : scenario.messages
+            .map((message) => `${message.text} ${message.link ?? ''}`)
+            .join(' ')
     for (const indicator of scenario.indicators) {
-      if (indicator.quote) assert.ok(text.includes(indicator.quote), `${scenario.id}: "${indicator.quote}"`)
+      if (indicator.quote) {
+        assert.ok(
+          text.includes(indicator.quote),
+          `${scenario.id}: "${indicator.quote}"`,
+        )
+      }
     }
     assert.ok(['report', 'safe'].includes(scenario.correctAction))
   }
-  assert.equal(new Set(scenarios.map((scenario) => scenario.id)).size, scenarios.length)
+  assert.equal(
+    new Set(scenarios.map((scenario) => scenario.id)).size,
+    scenarios.length,
+  )
   const emails = scenarios.filter((scenario) => scenario.type === 'email')
-  assert.ok(emails.some((scenario) => scenario.correctAction === 'safe'), 'at least one genuine email')
-  assert.deepEqual(new Set(emails.map((scenario) => scenario.difficulty)), new Set(['easy', 'medium', 'hard']))
+  assert.ok(
+    emails.some((scenario) => scenario.correctAction === 'safe'),
+    'at least one genuine email',
+  )
+  assert.deepEqual(
+    new Set(emails.map((scenario) => scenario.difficulty)),
+    new Set(['easy', 'medium', 'hard']),
+  )
 })
 
 test('every built-in text and email names its tactics; genuine ones have none', () => {
-  const vocabulary = ['urgency', 'authority', 'suspicious_link', 'otp_request', 'info_request', 'reward', 'fear']
+  const vocabulary = [
+    'urgency',
+    'authority',
+    'suspicious_link',
+    'otp_request',
+    'info_request',
+    'reward',
+    'fear',
+  ]
   for (const scenario of scenarios.filter((item) => item.type !== 'call')) {
     assert.ok(Array.isArray(scenario.tactics), scenario.id)
-    assert.ok(scenario.tactics.every((tactic) => vocabulary.includes(tactic)) && scenario.tactics.length <= 4, scenario.id)
-    assert.equal(scenario.tactics.length > 0, scenario.correctAction === 'report', scenario.id)
+    assert.ok(
+      scenario.tactics.every((tactic) => vocabulary.includes(tactic)) &&
+        scenario.tactics.length <= 4,
+      scenario.id,
+    )
+    assert.equal(
+      scenario.tactics.length > 0,
+      scenario.correctAction === 'report',
+      scenario.id,
+    )
   }
 })
 
 test('hasLink covers both channels', () => {
-  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'lib-sms-shipping')), true)
-  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'dental-reminder')), false)
-  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'lib-email-b2fc6048da88')), true)
-  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'lib-email-8ec97af8877d')), false)
+  assert.equal(
+    hasLink(scenarios.find((scenario) => scenario.id === 'lib-sms-shipping')),
+    true,
+  )
+  assert.equal(
+    hasLink(scenarios.find((scenario) => scenario.id === 'dental-reminder')),
+    false,
+  )
+  assert.equal(
+    hasLink(
+      scenarios.find((scenario) => scenario.id === 'lib-email-b2fc6048da88'),
+    ),
+    true,
+  )
+  assert.equal(
+    hasLink(
+      scenarios.find((scenario) => scenario.id === 'lib-email-8ec97af8877d'),
+    ),
+    false,
+  )
 })
 
 test('markText splits text into plain and numbered pieces without losing characters', () => {
-  const indicators = [{ quote: 'fee', title: '', detail: '' }, { quote: 'missing', title: '', detail: '' }, { quote: 'A $2', title: '', detail: '' }]
+  const indicators = [
+    { quote: 'fee', title: '', detail: '' },
+    { quote: 'missing', title: '', detail: '' },
+    { quote: 'A $2', title: '', detail: '' },
+  ]
   const segments = markText('A $2 fee is due', indicators)
-  assert.deepEqual(segments, [{ text: 'A $2', mark: 3 }, { text: ' ' }, { text: 'fee', mark: 1 }, { text: ' is due' }])
-  assert.equal(segments.map((segment) => segment.text).join(''), 'A $2 fee is due')
+  assert.deepEqual(segments, [
+    { text: 'A $2', mark: 3 },
+    { text: ' ' },
+    { text: 'fee', mark: 1 },
+    { text: ' is due' },
+  ])
+  assert.equal(
+    segments.map((segment) => segment.text).join(''),
+    'A $2 fee is due',
+  )
   assert.deepEqual(markText('abc', []), [{ text: 'abc' }])
   assert.equal(markFor('missing', indicators), 2)
   assert.equal(markFor('nope', indicators), undefined)
 })
 
 const list = [
-  { id: 'e1', difficulty: 'easy' }, { id: 'e2', difficulty: 'easy' },
-  { id: 'm1', difficulty: 'medium' }, { id: 'm2', difficulty: 'medium' },
+  { id: 'e1', difficulty: 'easy' },
+  { id: 'e2', difficulty: 'easy' },
+  { id: 'm1', difficulty: 'medium' },
+  { id: 'm2', difficulty: 'medium' },
   { id: 'h1', difficulty: 'hard' },
 ]
-const play = (calls) => calls.reduce((progress, [id, correct], at) => recordAttempt(progress, id, correct, at), {})
+const play = (calls) =>
+  calls.reduce(
+    (progress, [id, correct], at) => recordAttempt(progress, id, correct, at),
+    {},
+  )
 
 test('recommend starts easy and prefers untried after the current one, then missed, then nothing', () => {
   assert.equal(recommend({}, undefined, list)?.id, 'e1')
@@ -59,7 +149,10 @@ test('recommend starts easy and prefers untried after the current one, then miss
   let progress = play([['e1', false]])
   assert.equal(currentLevel(progress, list), 'easy')
   assert.equal(recommend(progress, 'e1', list)?.id, 'e2')
-  progress = play([['e1', false], ['e2', true]])
+  progress = play([
+    ['e1', false],
+    ['e2', true],
+  ])
   assert.equal(recommend(progress, 'e2', list)?.id, 'e1')
   assert.deepEqual(summarize(progress, list), { total: 5, done: 2, correct: 1 })
   progress = play(list.map((scenario) => [scenario.id, true]))
@@ -67,48 +160,112 @@ test('recommend starts easy and prefers untried after the current one, then miss
 })
 
 test('channelStats counts every attempt per channel, made-for-you ones by their id', () => {
-  const typed = [{ id: 't1', type: 'sms' }, { id: 'm1', type: 'email' }]
-  const stats = channelStats(play([['t1', false], ['t1', true], ['m1', true], ['gen-call-x', false], ['gen-email-y', true], ['retired', false]]), typed)
-  assert.deepEqual(stats, { sms: { attempts: 2, right: 1 }, email: { attempts: 2, right: 2 }, call: { attempts: 1, right: 0 }, other: { attempts: 1, right: 0 } })
+  const typed = [
+    { id: 't1', type: 'sms' },
+    { id: 'm1', type: 'email' },
+  ]
+  const stats = channelStats(
+    play([
+      ['t1', false],
+      ['t1', true],
+      ['m1', true],
+      ['gen-call-x', false],
+      ['gen-email-y', true],
+      ['retired', false],
+    ]),
+    typed,
+  )
+  assert.deepEqual(stats, {
+    sms: { attempts: 2, right: 1 },
+    email: { attempts: 2, right: 2 },
+    call: { attempts: 1, right: 0 },
+    other: { attempts: 1, right: 0 },
+  })
 })
 
 test('the level steps up after two right calls and back down after a miss', () => {
-  const twoEasy = play([['e1', true], ['e2', true]])
+  const twoEasy = play([
+    ['e1', true],
+    ['e2', true],
+  ])
   assert.equal(currentLevel(twoEasy, list), 'medium')
   assert.equal(recommend(twoEasy, 'e2', list)?.id, 'm1')
-  const fourRight = play([['e1', true], ['e2', true], ['m1', true], ['m2', true]])
+  const fourRight = play([
+    ['e1', true],
+    ['e2', true],
+    ['m1', true],
+    ['m2', true],
+  ])
   assert.equal(currentLevel(fourRight, list), 'hard')
   assert.equal(recommend(fourRight, 'm2', list)?.id, 'h1')
   // A miss on a medium drops back to easy; with easy all done, the missed medium comes back first.
-  const missed = play([['e1', true], ['e2', true], ['m1', false]])
+  const missed = play([
+    ['e1', true],
+    ['e2', true],
+    ['m1', false],
+  ])
   assert.equal(currentLevel(missed, list), 'easy')
   assert.equal(recommend(missed, 'm1', list)?.id, 'm2')
   assert.equal(recommend(missed, 'm2', list)?.id, 'm1')
   // A miss on a stretch scenario above the level doesn't count against you.
   assert.equal(currentLevel(play([['h1', false]]), list), 'easy')
   // Scenarios not in the list (another channel, removed) are ignored.
-  assert.equal(currentLevel(play([['gone', true], ['gone', true]]), list), 'easy')
+  assert.equal(
+    currentLevel(
+      play([
+        ['gone', true],
+        ['gone', true],
+      ]),
+      list,
+    ),
+    'easy',
+  )
 })
 
 test('history keeps every attempt and old saves without history still load', () => {
   const old = { e1: { correct: false, at: 1 }, m1: { correct: true, at: 3 } }
   const progress = recordAttempt(old, 'e1', true, 5)
-  assert.deepEqual(progress.e1, { correct: true, at: 5, history: [{ correct: false, at: 1 }, { correct: true, at: 5 }] })
-  assert.deepEqual(timeline(progress), [{ id: 'e1', correct: false, at: 1 }, { id: 'm1', correct: true, at: 3 }, { id: 'e1', correct: true, at: 5 }])
+  assert.deepEqual(progress.e1, {
+    correct: true,
+    at: 5,
+    history: [
+      { correct: false, at: 1 },
+      { correct: true, at: 5 },
+    ],
+  })
+  assert.deepEqual(timeline(progress), [
+    { id: 'e1', correct: false, at: 1 },
+    { id: 'm1', correct: true, at: 3 },
+    { id: 'e1', correct: true, at: 5 },
+  ])
   assert.deepEqual(summarize(progress, list), { total: 5, done: 2, correct: 2 })
   assert.equal(currentLevel(old, list), 'easy')
 })
 
 test('the real scenarios cover every difficulty and both answers', () => {
-  for (const difficulty of ['easy', 'medium', 'hard']) assert.ok(scenarios.some((scenario) => scenario.difficulty === difficulty), difficulty)
+  for (const difficulty of ['easy', 'medium', 'hard']) {
+    assert.ok(
+      scenarios.some((scenario) => scenario.difficulty === difficulty),
+      difficulty,
+    )
+  }
   // "Report" must not be the right answer nearly every time, or the path teaches a habit instead of a judgment.
   const messages = scenarios.filter((scenario) => scenario.type !== 'call')
   for (const type of ['sms', 'email']) {
     const ofType = messages.filter((scenario) => scenario.type === type)
-    assert.ok(ofType.filter((scenario) => scenario.correctAction === 'safe').length / ofType.length >= 0.4, `${type}: at least 40% genuine`)
+    assert.ok(
+      ofType.filter((scenario) => scenario.correctAction === 'safe').length /
+        ofType.length >=
+        0.4,
+      `${type}: at least 40% genuine`,
+    )
   }
   const answers = messages.map((scenario) => scenario.correctAction).join(' ')
-  assert.doesNotMatch(answers, /(report ?){3}|(safe ?){3}/, 'never three of the same answer in a row')
+  assert.doesNotMatch(
+    answers,
+    /(report ?){3}|(safe ?){3}/,
+    'never three of the same answer in a row',
+  )
   assert.equal(recommend({})?.difficulty, 'easy')
 })
 
@@ -120,7 +277,10 @@ test('progress falls back to memory when localStorage is unavailable', () => {
 })
 
 test('siteOf shows the domain a look-alike link really belongs to', () => {
-  assert.equal(siteOf('https://canadapost.ca-redelivery.info/update'), 'ca-redelivery.info')
+  assert.equal(
+    siteOf('https://canadapost.ca-redelivery.info/update'),
+    'ca-redelivery.info',
+  )
   assert.equal(siteOf('not a url'), 'not a url')
 })
 
@@ -133,7 +293,10 @@ test('timeline keeps track of completed generated scenarios alongside library on
 
   const attempts = timeline(progress)
   assert.equal(attempts.length, 4)
-  assert.deepEqual(attempts.map((a) => a.id), ['lib-sms-shipping', 'gen-email-12345', 'gen-sms-67890', 'gen-call-99999'])
+  assert.deepEqual(
+    attempts.map((a) => a.id),
+    ['lib-sms-shipping', 'gen-email-12345', 'gen-sms-67890', 'gen-call-99999'],
+  )
 
   // Newest first sorting for history view
   const newestFirst = [...attempts].sort((a, b) => b.at - a.at)
@@ -143,11 +306,16 @@ test('timeline keeps track of completed generated scenarios alongside library on
   assert.equal(newestFirst[1].correct, true)
 
   // Channel identification
-  const smsAttempts = newestFirst.filter((a) => a.id.startsWith('gen-sms-') || a.id.includes('sms'))
+  const smsAttempts = newestFirst.filter(
+    (a) => a.id.startsWith('gen-sms-') || a.id.includes('sms'),
+  )
   assert.equal(smsAttempts.length, 2)
-  const emailAttempts = newestFirst.filter((a) => a.id.startsWith('gen-email-') || a.id.includes('email'))
+  const emailAttempts = newestFirst.filter(
+    (a) => a.id.startsWith('gen-email-') || a.id.includes('email'),
+  )
   assert.equal(emailAttempts.length, 1)
-  const callAttempts = newestFirst.filter((a) => a.id.startsWith('gen-call-') || a.id.includes('call'))
+  const callAttempts = newestFirst.filter(
+    (a) => a.id.startsWith('gen-call-') || a.id.includes('call'),
+  )
   assert.equal(callAttempts.length, 1)
 })
-

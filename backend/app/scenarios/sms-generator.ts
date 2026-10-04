@@ -9,10 +9,7 @@ import {
 } from "./email-generator.ts";
 import { generateChecked, parseModelJson, type JsonModel } from "./gemini.ts";
 import { cleanProfileText } from "./generator.ts";
-import {
-  groundingBlock,
-  type ScamLibrary,
-} from "./library.ts";
+import { groundingBlock, type ScamLibrary } from "./library.ts";
 import { PRACTICE_FILE } from "./practice.ts";
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
@@ -230,11 +227,15 @@ const categoryNoun: Record<ScamCategory, string> = {
   promotional: "prize and promotion text scams",
 };
 
-const pick = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+const pick = <T>(arr: readonly T[]): T =>
+  arr[Math.floor(Math.random() * arr.length)];
 
 function plan(input: SmsGenerationInput) {
   const profession = cleanProfileText(input.profession ?? "", 60);
-  const interests = (input.interests ?? []).slice(0, 5).map((i) => cleanProfileText(i ?? "", 40)).filter(Boolean);
+  const interests = (input.interests ?? [])
+    .slice(0, 5)
+    .map((i) => cleanProfileText(i ?? "", 40))
+    .filter(Boolean);
   const focus = (input.focus ?? []).find(
     (category) => ScamCategory.safeParse(category).success,
   );
@@ -308,13 +309,17 @@ function checkSms(
   },
 ): { value: SmsScenario } | { problems: string[] } {
   const json = parseModelJson(raw);
-  if (json === undefined) return { problems: ["The answer was not valid JSON."] };
+  if (json === undefined) {
+    return { problems: ["The answer was not valid JSON."] };
+  }
   const parsed = ModelText.safeParse(json);
   if (!parsed.success) {
     return {
       problems: parsed.error.issues
         .slice(0, 8)
-        .map((issue) => `${issue.path.join(".") || "answer"}: ${issue.message}`),
+        .map(
+          (issue) => `${issue.path.join(".") || "answer"}: ${issue.message}`,
+        ),
     };
   }
   const sms = parsed.data;
@@ -470,8 +475,10 @@ export async function generateSmsScenario(
     id,
     type: "sms",
     title: "Suspicious parcel delivery reschedule",
-    summary: "A text claims your delivery is paused until you confirm your details.",
-    situation: "You receive a text notification on your phone about an unexpected package.",
+    summary:
+      "A text claims your delivery is paused until you confirm your details.",
+    situation:
+      "You receive a text notification on your phone about an unexpected package.",
     difficulty: input.difficulty,
     correctAction: "report",
     sender: "555-0192",
@@ -486,7 +493,8 @@ export async function generateSmsScenario(
       {
         quote: "on hold due to missing address info",
         title: "Vague package problem",
-        detail: "Legitimate couriers do not send abrupt text warnings without prior tracking info.",
+        detail:
+          "Legitimate couriers do not send abrupt text warnings without prior tracking info.",
       },
       {
         quote: "immediately",
@@ -496,11 +504,14 @@ export async function generateSmsScenario(
       {
         quote: "https://courier-express-hold.example/update",
         title: "Look-alike web link",
-        detail: "The link points to an unverified address instead of an official delivery website.",
+        detail:
+          "The link points to an unverified address instead of an official delivery website.",
       },
     ],
-    explanation: "This is a package delivery smishing scam designed to steal your personal and payment details.",
-    nextTime: "Never tap links in delivery texts. Look up the courier's official portal yourself.",
+    explanation:
+      "This is a package delivery smishing scam designed to steal your personal and payment details.",
+    nextTime:
+      "Never tap links in delivery texts. Look up the courier's official portal yourself.",
     scamCategory: p.category,
     tactics: ["urgency", "suspicious_link"],
     generated: {

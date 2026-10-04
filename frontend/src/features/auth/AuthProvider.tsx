@@ -14,21 +14,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileWarning, setProfileWarning] = useState<string | null>(null)
   const busy = useRef(false)
 
-  useEffect(() => authService.observeAuthState(
-    (nextUser) => {
-      setUser(nextUser)
-      // Covers sign-out from another tab, so a warning never outlives its session.
-      if (!nextUser) setProfileWarning(null)
-      // Have the backend confirm the session in the background: api() signs out on 401.
-      // An unreachable backend shouldn't lock anyone out of the UI, so that only warns.
-      else api('/users/me').catch((apiError) => console.warn('Backend session check failed:', apiError))
-      setInitializing(false)
-    },
-    (authError) => {
-      setError(getAuthErrorMessage(authError))
-      setInitializing(false)
-    },
-  ), [])
+  useEffect(
+    () =>
+      authService.observeAuthState(
+        (nextUser) => {
+          setUser(nextUser)
+          // Covers sign-out from another tab, so a warning never outlives its session.
+          if (!nextUser) setProfileWarning(null)
+          // Have the backend confirm the session in the background: api() signs out on 401.
+          // An unreachable backend shouldn't lock anyone out of the UI, so that only warns.
+          else {
+            api('/users/me').catch((apiError) =>
+              console.warn('Backend session check failed:', apiError),
+            )
+          }
+          setInitializing(false)
+        },
+        (authError) => {
+          setError(getAuthErrorMessage(authError))
+          setInitializing(false)
+        },
+      ),
+    [],
+  )
 
   const clearError = useCallback(() => {
     setError(null)
@@ -46,8 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await action()
       return true
     } catch (actionError) {
-      if (actionError instanceof PasswordPolicyError) setPasswordError(actionError.message)
-      else setError(getAuthErrorMessage(actionError))
+      if (actionError instanceof PasswordPolicyError) {
+        setPasswordError(actionError.message)
+      } else setError(getAuthErrorMessage(actionError))
       return false
     } finally {
       busy.current = false
@@ -56,28 +65,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{
-      user, initializing, pending, error, passwordError, profileWarning, clearError, dismissProfileWarning,
-      login: (email, password) => run('login', async () => {
-        await authService.signIn(email, password)
-        setUser(authService.currentUser())
-      }),
-      register: (email, password, name) => run('signup', async () => {
-        const result = await authService.signUp(email, password, name)
-        setProfileWarning(result.profileWarning)
-        setUser(authService.currentUser())
-      }),
-      google: () => run('google', async () => {
-        await authService.signInWithGoogle()
-        setUser(authService.currentUser())
-      }),
-      recoverPassword: (email) => run('reset', () => authService.resetPassword(email)),
-      logout: () => run('signout', async () => {
-        await authService.signOut()
-        setUser(null)
-        setProfileWarning(null)
-      }),
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        initializing,
+        pending,
+        error,
+        passwordError,
+        profileWarning,
+        clearError,
+        dismissProfileWarning,
+        login: (email, password) =>
+          run('login', async () => {
+            await authService.signIn(email, password)
+            setUser(authService.currentUser())
+          }),
+        register: (email, password, name) =>
+          run('signup', async () => {
+            const result = await authService.signUp(email, password, name)
+            setProfileWarning(result.profileWarning)
+            setUser(authService.currentUser())
+          }),
+        google: () =>
+          run('google', async () => {
+            await authService.signInWithGoogle()
+            setUser(authService.currentUser())
+          }),
+        recoverPassword: (email) =>
+          run('reset', () => authService.resetPassword(email)),
+        logout: () =>
+          run('signout', async () => {
+            await authService.signOut()
+            setUser(null)
+            setProfileWarning(null)
+          }),
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

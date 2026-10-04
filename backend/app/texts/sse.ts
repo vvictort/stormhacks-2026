@@ -29,8 +29,9 @@ export function subscribe(thread: TextThread, req: Request, res: Response) {
     ? thread.messages.findIndex((m) => m.id === lastEventId) + 1
     : 0;
   for (const m of thread.messages.slice(start)) write(res, "message", m, m.id);
-  if (thread.status === "ended")
+  if (thread.status === "ended") {
     write(res, "ended", { outcome: thread.outcome, reason: thread.endReason });
+  }
 
   let set = subscribers.get(thread.id);
   if (!set) subscribers.set(thread.id, (set = new Set()));
@@ -47,8 +48,9 @@ export function publish(
   data: unknown,
   id?: string,
 ) {
-  for (const res of subscribers.get(threadId) ?? [])
+  for (const res of subscribers.get(threadId) ?? []) {
     write(res, event, data, id);
+  }
 }
 
 /** Ends every open stream (shutdown). */
@@ -58,6 +60,7 @@ export function closeAll() {
 
 // Comment heartbeat keeps idle connections open through proxies.
 setInterval(() => {
-  for (const set of subscribers.values())
+  for (const set of subscribers.values()) {
     for (const res of set) res.write(": ping\n\n");
+  }
 }, 25_000).unref();

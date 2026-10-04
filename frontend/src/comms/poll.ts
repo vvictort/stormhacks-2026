@@ -45,7 +45,12 @@ export interface PollOptions {
 export async function pollUntilCompleted(
   getCall: (callId: string, signal?: AbortSignal) => Promise<CallRecord>,
   callId: string,
-  { signal, onRecord, delaysMs = ANALYSIS_POLL_DELAYS_MS, timeoutMs = ANALYSIS_TIMEOUT_MS }: PollOptions = {},
+  {
+    signal,
+    onRecord,
+    delaysMs = ANALYSIS_POLL_DELAYS_MS,
+    timeoutMs = ANALYSIS_TIMEOUT_MS,
+  }: PollOptions = {},
 ): Promise<CallRecord> {
   const deadline = Date.now() + timeoutMs
   for (let attempt = 0; ; attempt++) {

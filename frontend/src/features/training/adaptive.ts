@@ -8,7 +8,12 @@ import type { Difficulty, ScamCategory } from './scenarios.ts'
 export interface Adaptive {
   difficulty: Difficulty
   focus: ScamCategory[]
-  categoryAccuracy: Partial<Record<ScamCategory, { attempts: number; correct: number; accuracy: number }>>
+  categoryAccuracy: Partial<
+    Record<
+      ScamCategory,
+      { attempts: number; correct: number; accuracy: number }
+    >
+  >
   vulnerableTactics: string[]
   attempts: { id: string; scamCategory?: ScamCategory | null }[]
 }
@@ -26,29 +31,53 @@ const isList = (value: unknown): value is unknown[] => Array.isArray(value)
 /** The progress response's adaptive part; null when the backend predates it or the shape is off. */
 export function readAdaptive(data: unknown): Adaptive | null {
   const d = data as Record<string, unknown> | null
-  if (!d || !levels.includes(d.difficulty as Difficulty) || !isList(d.focus) || !isList(d.attempts)) return null
+  if (
+    !d ||
+    !levels.includes(d.difficulty as Difficulty) ||
+    !isList(d.focus) ||
+    !isList(d.attempts)
+  ) {
+    return null
+  }
   const vulnerability = (d.vulnerability ?? {}) as Partial<Adaptive>
   return {
     difficulty: d.difficulty as Difficulty,
     focus: d.focus as ScamCategory[],
     categoryAccuracy: vulnerability.categoryAccuracy ?? {},
-    vulnerableTactics: isList(vulnerability.vulnerableTactics) ? vulnerability.vulnerableTactics : [],
+    vulnerableTactics: isList(vulnerability.vulnerableTactics)
+      ? vulnerability.vulnerableTactics
+      : [],
     attempts: d.attempts as Adaptive['attempts'],
   }
 }
 
 const plural: Record<ScamCategory, string> = {
-  banking: 'bank scams', government: 'tax and government scams', shipping: 'delivery scams',
-  account_security: 'account-security scams', workplace: 'workplace scams', promotional: 'prize and promo scams',
+  banking: 'bank scams',
+  government: 'tax and government scams',
+  shipping: 'delivery scams',
+  account_security: 'account-security scams',
+  workplace: 'workplace scams',
+  promotional: 'prize and promo scams',
 }
 const emailKind: Record<ScamCategory, string> = {
-  banking: 'a bank', government: 'a tax-office', shipping: 'a delivery', account_security: 'an account-security', workplace: 'a workplace', promotional: 'a prize',
+  banking: 'a bank',
+  government: 'a tax-office',
+  shipping: 'a delivery',
+  account_security: 'an account-security',
+  workplace: 'a workplace',
+  promotional: 'a prize',
 }
 const tactics: Record<string, string> = {
-  urgency: 'urgency', authority: 'someone claiming authority', suspicious_link: 'a link', otp_request: 'a request for a code',
-  info_request: 'a request for personal details', reward: 'a promised reward', fear: 'threats',
+  urgency: 'urgency',
+  authority: 'someone claiming authority',
+  suspicious_link: 'a link',
+  otp_request: 'a request for a code',
+  info_request: 'a request for personal details',
+  reward: 'a promised reward',
+  fear: 'threats',
 }
-export const levelName = (difficulty: Difficulty) => difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+export const levelName = (difficulty: Difficulty) =>
+  difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
 const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 export interface NextView {
@@ -58,12 +87,17 @@ export interface NextView {
 }
 
 /** What Tellio trains next and why, from the server's state. Without it (API down), a plain personalised email at the local level. */
-export function nextForYou(adaptive: Adaptive | null, localLevel: Difficulty): NextView {
+export function nextForYou(
+  adaptive: Adaptive | null,
+  localLevel: Difficulty,
+): NextView {
   const category = adaptive?.focus[0]
   if (!adaptive || !category) {
     return {
       title: 'An email made for you',
-      reason: adaptive ? 'Tellio writes it around your profile. Each result you give it shapes what comes next.' : 'Tellio writes it around your profile and how you\'ve done so far.',
+      reason: adaptive
+        ? 'Tellio writes it around your profile. Each result you give it shapes what comes next.'
+        : "Tellio writes it around your profile and how you've done so far.",
       difficulty: adaptive?.difficulty ?? localLevel,
     }
   }
@@ -76,7 +110,9 @@ export function nextForYou(adaptive: Adaptive | null, localLevel: Difficulty): N
       : `You've caught every one of the ${plural[category]} so far. This one keeps that sharp.`
   return {
     title: `${capital(emailKind[category])} email, made for you`,
-    reason: tactic ? `${reason} You also tend to go along with ${tactic}.` : reason,
+    reason: tactic
+      ? `${reason} You also tend to go along with ${tactic}.`
+      : reason,
     difficulty: adaptive.difficulty,
   }
 }
@@ -92,50 +128,94 @@ export interface Learned {
 }
 
 /** What changed between the state before a run and after it was recorded. Null without the after state. */
-export function learned(before: Snapshot, after: Snapshot, attemptId: string): Learned | null {
+export function learned(
+  before: Snapshot,
+  after: Snapshot,
+  attemptId: string,
+): Learned | null {
   const now = after.adaptive
   if (!now) return null
   const then = before.adaptive
   const lines: string[] = []
-  const category = now.attempts.find((a) => a.id === attemptId)?.scamCategory ?? undefined
+  const category =
+    now.attempts.find((a) => a.id === attemptId)?.scamCategory ?? undefined
 
   if (then && then.difficulty !== now.difficulty) {
-    lines.push(levels.indexOf(now.difficulty) > levels.indexOf(then.difficulty)
-      ? `Difficulty increased to ${levelName(now.difficulty)}.`
-      : `Difficulty eased back to ${levelName(now.difficulty)}.`)
+    lines.push(
+      levels.indexOf(now.difficulty) > levels.indexOf(then.difficulty)
+        ? `Difficulty increased to ${levelName(now.difficulty)}.`
+        : `Difficulty eased back to ${levelName(now.difficulty)}.`,
+    )
   }
-  if (then && now.focus[0] && now.focus[0] !== then.focus[0]) lines.push(`Your focus moved to ${plural[now.focus[0]]}.`)
+  if (then && now.focus[0] && now.focus[0] !== then.focus[0]) {
+    lines.push(`Your focus moved to ${plural[now.focus[0]]}.`)
+  }
   if (category) {
     const a = now.categoryAccuracy[category]
     const b = then?.categoryAccuracy[category]
-    if (a && b && a.accuracy !== b.accuracy) lines.push(`${capital(plural[category])}: right calls ${b.accuracy}% → ${a.accuracy}%.`)
-    else if (a && then && !b) lines.push(`Your first result on ${plural[category]} is on your record.`)
+    if (a && b && a.accuracy !== b.accuracy) {
+      lines.push(
+        `${capital(plural[category])}: right calls ${b.accuracy}% → ${a.accuracy}%.`,
+      )
+    } else if (a && then && !b) {
+      lines.push(`Your first result on ${plural[category]} is on your record.`)
+    }
   }
   const mBefore = before.metrics?.avgDetectionMs
   const mAfter = after.metrics?.avgDetectionMs
   const accBefore = before.metrics?.accuracy
   const accAfter = after.metrics?.accuracy
   // Deciding faster isn't an improvement when the run lowered the right-call rate (falling for it faster).
-  const accuracyDropped = typeof accBefore === 'number' && typeof accAfter === 'number' && accAfter < accBefore
+  const accuracyDropped =
+    typeof accBefore === 'number' &&
+    typeof accAfter === 'number' &&
+    accAfter < accBefore
   if (mBefore && mAfter && mAfter < mBefore && !accuracyDropped) {
     const pct = Math.round((1 - mAfter / mBefore) * 100)
-    if (pct >= 1) lines.push(`Your average time to decide improved by ${pct}% (${seconds(mBefore)} → ${seconds(mAfter)}).`)
+    if (pct >= 1) {
+      lines.push(
+        `Your average time to decide improved by ${pct}% (${seconds(mBefore)} → ${seconds(mAfter)}).`,
+      )
+    }
   }
-  if (typeof accBefore === 'number' && typeof accAfter === 'number' && accBefore !== accAfter) lines.push(`Right calls overall: ${accBefore}% → ${accAfter}%.`)
+  if (
+    typeof accBefore === 'number' &&
+    typeof accAfter === 'number' &&
+    accBefore !== accAfter
+  ) {
+    lines.push(`Right calls overall: ${accBefore}% → ${accAfter}%.`)
+  }
 
   if (lines.length === 0) {
     const keep = now.focus[0] ?? category
-    lines.push(keep ? `Nothing to adjust yet. Tellio will keep practising ${plural[keep]} with you.` : 'Nothing to adjust yet. Tellio will keep practising with you.')
+    lines.push(
+      keep
+        ? `Nothing to adjust yet. Tellio will keep practising ${plural[keep]} with you.`
+        : 'Nothing to adjust yet. Tellio will keep practising with you.',
+    )
   }
-  const insight = after.insight && after.insight.pattern !== before.insight?.pattern ? after.insight : null
-  return { lines: lines.slice(0, 4), insight, next: nextForYou(now, now.difficulty) }
+  const insight =
+    after.insight && after.insight.pattern !== before.insight?.pattern
+      ? after.insight
+      : null
+  return {
+    lines: lines.slice(0, 4),
+    insight,
+    next: nextForYou(now, now.difficulty),
+  }
 }
 
 /**
  * The debrief's buttons: one clear next step. When the adaptive panel shows (it carries "Next scenario made for you"),
  * the local "Next on your path" link hides; without the panel it is the next step.
  */
-export function debriefActions({ hasNext, adaptive }: { hasNext: boolean; adaptive: boolean }) {
+export function debriefActions({
+  hasNext,
+  adaptive,
+}: {
+  hasNext: boolean
+  adaptive: boolean
+}) {
   const pathNext = hasNext && !adaptive
   return { pathNext, homePrimary: !pathNext && !adaptive }
 }

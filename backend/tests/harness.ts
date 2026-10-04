@@ -160,8 +160,9 @@ export function fakeRepos() {
         if (
           mine.length >= perDay ||
           mine.filter((g) => now - g.at < 60_000).length >= perMinute
-        )
+        ) {
           return false;
+        }
         generations.push({ uid, at: now });
         return true;
       },

@@ -50,12 +50,13 @@ const Example = z
   })
   .superRefine((example, ctx) => {
     example.cues.forEach((cue, i) => {
-      if (!example.text.includes(cue.quote))
+      if (!example.text.includes(cue.quote)) {
         ctx.addIssue({
           code: "custom",
           path: ["cues", i, "quote"],
           message: "must be an exact substring of text",
         });
+      }
     });
   });
 export type LibraryExample = z.infer<typeof Example>;
@@ -138,8 +139,9 @@ export class ScamLibrary {
     try {
       raw = readFileSync(path, "utf8");
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT")
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return new ScamLibrary([], { found: false, rng });
+      }
       throw error;
     }
     try {
@@ -217,8 +219,9 @@ export class ScamLibrary {
 
   /** One startup log line. */
   summary() {
-    if (!this.examples.length)
+    if (!this.examples.length) {
       return `Scam library: ${this.found ? "empty" : "missing"} — generation runs ungrounded`;
+    }
     const counts = Channel.options
       .map(
         (channel) =>

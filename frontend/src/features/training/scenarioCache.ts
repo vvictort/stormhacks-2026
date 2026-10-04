@@ -24,7 +24,9 @@ export function saveCachedScenarioMeta(meta: CachedScenarioMeta): void {
 }
 
 /** Retrieves cached metadata for a scenario by id. */
-export function getCachedScenarioMeta(id: string | undefined): CachedScenarioMeta | undefined {
+export function getCachedScenarioMeta(
+  id: string | undefined,
+): CachedScenarioMeta | undefined {
   if (typeof window === 'undefined' || !id) return undefined
   try {
     const raw = localStorage.getItem(CACHE_KEY)

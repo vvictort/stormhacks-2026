@@ -1,18 +1,101 @@
 /* The mascot keeps its own colors; the beacon borrows the semantic ones. */
-.mascot { display: block; overflow: visible; touch-action: manipulation; }
-.mascot .body, .mascot .tail { fill: var(--color-primary); }
-.mascot .shine { fill: none; stroke: var(--color-surface); stroke-opacity: .32; stroke-width: 6; stroke-linecap: round; }
-.mascot .sclera { fill: var(--color-surface); }
-.mascot .pupil, .mascot .mouth.filled { fill: #2A211C; }
-.mascot .glint { fill: #fff; }
-.mascot .happy-eye, .mascot .brow, .mascot .mouth { fill: none; stroke: #2A211C; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
-.mascot .mouth.filled { stroke-width: 2; }
-.mascot .cheek { fill: #EE9C82; opacity: .55; }
-.mascot .shadow { fill: var(--color-border); opacity: .5; }
-.mascot .beacon circle { fill: var(--color-accent); transition: fill 250ms var(--ease-out-quint); }
-.mascot .beacon .ring { fill: none; stroke: var(--color-danger); stroke-width: 3; opacity: 0; transform-box: fill-box; transform-origin: center; }
-.mascot[data-mood="alert"] .beacon circle { fill: var(--color-danger); }
-.mascot[data-mood="alert"] .beacon .ring { fill: none; animation: mascot-ring 1s ease-out infinite; }
-.mascot[data-mood="happy"] .beacon circle { fill: var(--color-success); }
-@keyframes mascot-ring { from { opacity: .8; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }
-@media (prefers-reduced-motion: reduce) { .mascot[data-mood="alert"] .beacon .ring { animation: none; } }
+.mascot {
+  display: block;
+  overflow: visible;
+  touch-action: manipulation;
+}
+
+.mascot .body,
+.mascot .tail {
+  fill: var(--color-primary);
+}
+
+.mascot .shine {
+  fill: none;
+  stroke: var(--color-surface);
+  stroke-opacity: 0.32;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.mascot .sclera {
+  fill: var(--color-surface);
+}
+
+.mascot .pupil,
+.mascot .mouth.filled {
+  fill: #2a211c;
+}
+
+.mascot .glint {
+  fill: #fff;
+}
+
+.mascot .happy-eye,
+.mascot .brow,
+.mascot .mouth {
+  fill: none;
+  stroke: #2a211c;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mascot .mouth.filled {
+  stroke-width: 2;
+}
+
+.mascot .cheek {
+  fill: #ee9c82;
+  opacity: 0.55;
+}
+
+.mascot .shadow {
+  fill: var(--color-border);
+  opacity: 0.5;
+}
+
+.mascot .beacon circle {
+  fill: var(--color-accent);
+  transition: fill 250ms var(--ease-out-quint);
+}
+
+.mascot .beacon .ring {
+  fill: none;
+  stroke: var(--color-danger);
+  stroke-width: 3;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mascot[data-mood='alert'] .beacon circle {
+  fill: var(--color-danger);
+}
+
+.mascot[data-mood='alert'] .beacon .ring {
+  fill: none;
+  animation: mascot-ring 1s ease-out infinite;
+}
+
+.mascot[data-mood='happy'] .beacon circle {
+  fill: var(--color-success);
+}
+
+@keyframes mascot-ring {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot[data-mood='alert'] .beacon .ring {
+    animation: none;
+  }
+}

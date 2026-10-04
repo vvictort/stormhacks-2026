@@ -53,8 +53,9 @@ export function createElevenLabs({
   agentId?: string;
 }) {
   async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-    if (!apiKey)
+    if (!apiKey) {
       throw new ElevenLabsNotConfigured("ELEVENLABS_API_KEY is not set");
+    }
     const res = await fetch(`${API_BASE}${path}`, {
       ...init,
       headers: {
@@ -76,10 +77,11 @@ export function createElevenLabs({
   return {
     /** Short-lived WebRTC token the browser uses to start a session with the (private) agent. */
     conversationToken() {
-      if (!agentId)
+      if (!agentId) {
         throw new ElevenLabsNotConfigured(
           "ELEVENLABS_AGENT_ID is not set (run `npm run setup:agent`)",
         );
+      }
       return request<{ token: string; conversation_id?: string }>(
         `/v1/convai/conversation/token?agent_id=${encodeURIComponent(agentId)}`,
       );

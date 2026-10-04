@@ -3,6 +3,7 @@
 Public datasets download anonymously. The SMS competition needs credentials (KAGGLE_USERNAME/KAGGLE_KEY or
 ~/.kaggle/kaggle.json, read by kagglehub itself) and its rules accepted on kaggle.com.
 """
+
 import os
 from pathlib import Path
 
@@ -25,7 +26,9 @@ def download(channel: str) -> Path:
 def local_dir(channel: str) -> Path | None:
     """Where a source's raw files live: the kagglehub cache, or raw/<slug>/ if dropped in by hand."""
     slug = SOURCES[channel]['dataset']
-    candidates = sorted(CACHE.glob(f'datasets/{slug}/versions/*')) + sorted(CACHE.glob(f'competitions/{slug}*'))
+    candidates = sorted(CACHE.glob(f'datasets/{slug}/versions/*')) + sorted(
+        CACHE.glob(f'competitions/{slug}*')
+    )
     manual = RAW_DIR / slug.split('/')[-1]
     if manual.is_dir():
         candidates.append(manual)

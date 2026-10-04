@@ -108,34 +108,41 @@ export const EmailScenario = z
   })
   .strict()
   .superRefine((scenario, ctx) => {
-    if (scenario.generated.grounding && scenario.generated.source !== "gemini")
+    if (
+      scenario.generated.grounding &&
+      scenario.generated.source !== "gemini"
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["generated", "grounding"],
         message: "only on Gemini scenarios",
       });
-    if (scenario.tactics.length > 0 !== (scenario.correctAction === "report"))
+    }
+    if (scenario.tactics.length > 0 !== (scenario.correctAction === "report")) {
       ctx.addIssue({
         code: "custom",
         path: ["tactics"],
         message: "a scam names 1 to 4 tactics; a genuine email has none",
       });
+    }
     const hidden = hiddenIndicators(scenario);
-    if (hidden.length)
+    if (hidden.length) {
       ctx.addIssue({
         code: "custom",
         path: ["indicators"],
         message: `not highlightable: ${hidden.join(" | ")}`,
       });
+    }
     if (
       new Set(scenario.indicators.map((i) => i.title)).size !==
       scenario.indicators.length
-    )
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["indicators"],
         message: "duplicate titles",
       });
+    }
   });
 export type EmailScenario = z.infer<typeof EmailScenario>;
 
@@ -242,10 +249,11 @@ export function toScenario(
   },
 ): Draft {
   const json = parseModelJson(raw);
-  if (json === undefined)
+  if (json === undefined) {
     return { problems: ["The answer was not valid JSON."] };
+  }
   const parsed = ModelEmail.safeParse(json);
-  if (!parsed.success)
+  if (!parsed.success) {
     return {
       problems: parsed.error.issues
         .slice(0, 8)
@@ -253,14 +261,16 @@ export function toScenario(
           (issue) => `${issue.path.join(".") || "answer"}: ${issue.message}`,
         ),
     };
+  }
   const email = parsed.data;
   const problems: string[] = [];
-  if (email.expectedAction !== (meta.genuine ? "safe" : "report"))
+  if (email.expectedAction !== (meta.genuine ? "safe" : "report")) {
     problems.push(
       meta.genuine
         ? 'expectedAction must be "safe": this email is genuine.'
         : 'expectedAction must be "report": this email is a scam.',
     );
+  }
   if (meta.genuine) {
     // A genuine email is only fair to judge when the trainee can check it: one real domain, named in the situation.
     const domain = email.senderEmail.split("@")[1].toLowerCase();
@@ -271,10 +281,11 @@ export function toScenario(
     if (
       !email.situation.toLowerCase().includes(domain) ||
       !hosts.every((host) => host === domain || host.endsWith(`.${domain}`))
-    )
+    ) {
       problems.push(
         `A genuine email must be checkable: name the organisation's real web address (${domain}) in the situation, and use only that domain for senderEmail, replyTo and links.`,
       );
+    }
   }
   if (
     [
@@ -313,8 +324,9 @@ export function toScenario(
     if (
       !visible.some((kept) => kept.title === flag.title) &&
       !hiddenIndicators({ ...rendered, indicators: candidate }).length
-    )
+    ) {
       visible.push(candidate[candidate.length - 1]);
+    }
   }
   if (visible.length < 3) {
     const bad = email.redFlags
@@ -692,8 +704,9 @@ export async function generateEmailScenario(
       ...base,
       generated: { source: "fallback", reason: `${why}${attribution}` },
     });
-    if ("scenario" in draft)
+    if ("scenario" in draft) {
       return { scenario: draft.scenario, source: "fallback" };
+    }
   }
   throw new Error(`Built-in ${p.category} email is invalid`);
 }
@@ -862,8 +875,9 @@ export function emailFromExample(
     text.replace(/[^A-Za-z]/g, "").length < 100 ||
     mostlyCaps(text) ||
     !example.tactics.length
-  )
+  ) {
     return null;
+  }
   const paragraphs: string[] = [];
   // Excerpts often repeat themselves and trail off into legal footers: keep each sentence once, and no footers.
   for (const sentence of new Set(text.split(/(?<=[.!?])\s+/))) {
@@ -872,9 +886,9 @@ export function emailFromExample(
     if (
       paragraphs.length &&
       paragraphs[paragraphs.length - 1].length + sentence.length < 300
-    )
+    ) {
       paragraphs[paragraphs.length - 1] += ` ${sentence}`;
-    else paragraphs.push(sentence);
+    } else paragraphs.push(sentence);
   }
   const body = paragraphs.slice(0, 6);
   const filledSubject = fillPlaceholders(example.subject ?? "");
@@ -905,8 +919,9 @@ export function emailFromExample(
         body,
         indicators,
       }).length
-    )
+    ) {
       continue;
+    }
     titles.add(copy.title);
     cueFlags.push({ quote, title: copy.title, reason: copy.reason });
   }

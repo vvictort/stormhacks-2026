@@ -227,8 +227,9 @@ export class CallService {
     if (!(await this.store.getCall(callId))) return "not_found";
     const { call, result } = await this.store.updateCall(callId, (c) => {
       if (c.status !== "in_call") return "wrong_state" as const;
-      if (conversationId && !bindConversation(c, conversationId))
+      if (conversationId && !bindConversation(c, conversationId)) {
         return "conversation_mismatch" as const;
+      }
       c.status = "analyzing";
       c.endedAt = nowIso();
       return null;
@@ -245,15 +246,17 @@ export class CallService {
   async sweep() {
     const now = Date.now();
     for (const c of await this.store.listCallsByStatus("ringing")) {
-      if (now - Date.parse(c.createdAt) >= RING_ABANDON_MS)
+      if (now - Date.parse(c.createdAt) >= RING_ABANDON_MS) {
         await this.abandon(c.id);
+      }
     }
     for (const c of await this.store.listCallsByStatus("in_call")) {
       if (
         now - Date.parse(c.acceptedAt!) >=
         this.deps.callMaxSeconds * 1000 + IN_CALL_GRACE_MS
-      )
+      ) {
         await this.ended(c.id);
+      }
     }
     for (const c of await this.store.listCallsByStatus("analyzing")) {
       if (!this.analyzing.has(c.id)) void this.analyze(c.id);
@@ -266,8 +269,9 @@ export class CallService {
     try {
       const call = await this.store.getCall(callId);
       if (!call || call.status !== "analyzing") return;
-      if (!call.conversationId)
+      if (!call.conversationId) {
         return await this.fail(callId, "no conversation id");
+      }
 
       const deadline =
         Date.parse(call.endedAt ?? nowIso()) + ANALYSIS_TIMEOUT_MS;
@@ -276,10 +280,12 @@ export class CallService {
           const conv = await this.deps.elevenLabs.getConversation(
             call.conversationId,
           );
-          if (conv.status === "done" && conv.analysis)
+          if (conv.status === "done" && conv.analysis) {
             return await this.complete(callId, conv);
-          if (conv.status === "failed")
+          }
+          if (conv.status === "failed") {
             return await this.fail(callId, "ElevenLabs conversation failed");
+          }
         } catch (err) {
           // The conversation can briefly 404 right after hang-up; keep polling until the deadline.
           console.warn(
@@ -287,8 +293,9 @@ export class CallService {
             err instanceof Error ? err.message : err,
           );
         }
-        if (Date.now() >= deadline)
+        if (Date.now() >= deadline) {
           return await this.fail(callId, "timed out waiting for call analysis");
+        }
         await sleep(
           POLL_DELAYS_MS[Math.min(attempt, POLL_DELAYS_MS.length - 1)]!,
         );

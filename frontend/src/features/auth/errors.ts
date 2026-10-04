@@ -8,7 +8,10 @@ export class PasswordPolicyError extends Error {
 export function getAuthErrorMessage(error: unknown): string {
   if (error instanceof PasswordPolicyError) return error.message
 
-  const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : null
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? error.code
+      : null
   switch (code) {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':

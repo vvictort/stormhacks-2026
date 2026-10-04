@@ -12,21 +12,41 @@ export const genuineScenarios: MessageScenario[] = [
     tactics: [],
     title: 'Delivery update',
     summary: 'A courier texts that your parcel arrives today.',
-    situation: "Last week you ordered a kettle from Juniper Kitchen. The shop's confirmation said Tidewater Parcel would deliver it this week.",
+    situation:
+      "Last week you ordered a kettle from Juniper Kitchen. The shop's confirmation said Tidewater Parcel would deliver it this week.",
     difficulty: 'easy',
     correctAction: 'safe',
     sender: '72930',
     receivedAt: '8:41 AM',
-    messages: [{
-      text: 'Tidewater Parcel: your parcel from Juniper Kitchen is out for delivery today between 1 and 4 PM. No signature needed. To follow it, open the Tidewater app and enter tracking number TW48213067.',
-    }],
-    indicators: [
-      { quote: 'your parcel from Juniper Kitchen', title: 'It matches something you ordered', detail: 'The shop told you this courier would deliver this week. A message about a parcel you were expecting is a good sign.' },
-      { quote: 'No signature needed', title: 'Nothing to pay, nothing to confirm', detail: "It doesn't ask for a fee, an address or card details. A scam delivery text nearly always wants one of those." },
-      { quote: 'open the Tidewater app', title: 'No link to tap', detail: "It points you to the app you would open yourself. You can also check the tracking number on the shop's own order page." },
+    messages: [
+      {
+        text: 'Tidewater Parcel: your parcel from Juniper Kitchen is out for delivery today between 1 and 4 PM. No signature needed. To follow it, open the Tidewater app and enter tracking number TW48213067.',
+      },
     ],
-    explanation: 'Real delivery updates tend to look like this: you were expecting the parcel, nothing is owed, and there is no link to follow.',
-    nextTime: 'Being careful is never wrong. To tell real delivery texts apart, ask: am I expecting a parcel, and does it ask me to pay or tap a link?',
+    indicators: [
+      {
+        quote: 'your parcel from Juniper Kitchen',
+        title: 'It matches something you ordered',
+        detail:
+          'The shop told you this courier would deliver this week. A message about a parcel you were expecting is a good sign.',
+      },
+      {
+        quote: 'No signature needed',
+        title: 'Nothing to pay, nothing to confirm',
+        detail:
+          "It doesn't ask for a fee, an address or card details. A scam delivery text nearly always wants one of those.",
+      },
+      {
+        quote: 'open the Tidewater app',
+        title: 'No link to tap',
+        detail:
+          "It points you to the app you would open yourself. You can also check the tracking number on the shop's own order page.",
+      },
+    ],
+    explanation:
+      'Real delivery updates tend to look like this: you were expecting the parcel, nothing is owed, and there is no link to follow.',
+    nextTime:
+      'Being careful is never wrong. To tell real delivery texts apart, ask: am I expecting a parcel, and does it ask me to pay or tap a link?',
   },
   {
     id: 'dental-reminder',
@@ -39,16 +59,35 @@ export const genuineScenarios: MessageScenario[] = [
     correctAction: 'safe',
     sender: '(604) 555-0182',
     receivedAt: '9:02 AM',
-    messages: [{
-      text: 'Hi, this is Maple Grove Dental. Reminder: your cleaning with Dr. Okafor is tomorrow at 2:30 PM. Reply C to confirm, or call us at 604-555-0182 to reschedule.',
-    }],
-    indicators: [
-      { quote: 'your cleaning with Dr. Okafor is tomorrow at 2:30 PM', title: 'It matches something you did', detail: 'You booked this appointment. A message about something you were expecting is a good sign.' },
-      { quote: 'Reply C to confirm', title: 'Nothing to pay, no link to tap', detail: "It doesn't ask for money, a password or personal details. Replying with one letter gives nothing away." },
-      { quote: '604-555-0182', title: 'A number you can check', detail: "The callback number is the same one the text came from, and you can compare it with the number on the clinic's booking confirmation." },
+    messages: [
+      {
+        text: 'Hi, this is Maple Grove Dental. Reminder: your cleaning with Dr. Okafor is tomorrow at 2:30 PM. Reply C to confirm, or call us at 604-555-0182 to reschedule.',
+      },
     ],
-    explanation: 'Real reminders tend to look like this: you were expecting it, it asks for nothing sensitive, and you can check it on your own.',
-    nextTime: "Being careful is never wrong. To tell real reminders apart, ask: was I expecting this, and does it ask for money, codes or personal details?",
+    indicators: [
+      {
+        quote: 'your cleaning with Dr. Okafor is tomorrow at 2:30 PM',
+        title: 'It matches something you did',
+        detail:
+          'You booked this appointment. A message about something you were expecting is a good sign.',
+      },
+      {
+        quote: 'Reply C to confirm',
+        title: 'Nothing to pay, no link to tap',
+        detail:
+          "It doesn't ask for money, a password or personal details. Replying with one letter gives nothing away.",
+      },
+      {
+        quote: '604-555-0182',
+        title: 'A number you can check',
+        detail:
+          "The callback number is the same one the text came from, and you can compare it with the number on the clinic's booking confirmation.",
+      },
+    ],
+    explanation:
+      'Real reminders tend to look like this: you were expecting it, it asks for nothing sensitive, and you can check it on your own.',
+    nextTime:
+      'Being careful is never wrong. To tell real reminders apart, ask: was I expecting this, and does it ask for money, codes or personal details?',
   },
   {
     id: 'bank-code',
@@ -56,21 +95,41 @@ export const genuineScenarios: MessageScenario[] = [
     tactics: [],
     title: 'Sign-in code from your bank',
     summary: 'Your bank texts a code while you sign in.',
-    situation: "You're signing in to Harbourline Bank on your laptop, and the site says it has texted you a code.",
+    situation:
+      "You're signing in to Harbourline Bank on your laptop, and the site says it has texted you a code.",
     difficulty: 'medium',
     correctAction: 'safe',
     sender: '55501',
     receivedAt: '11:26 AM',
-    messages: [{
-      text: 'Harbourline Bank: 482913 is your code to sign in on a new device. It expires in 10 minutes. We will never call or text to ask for this code.',
-    }],
-    indicators: [
-      { quote: 'your code to sign in on a new device', title: 'It matches what you just did', detail: 'You started a sign-in a moment ago and the site said a code was on its way. The text is the expected next step.' },
-      { quote: 'We will never call or text to ask for this code', title: 'It tells you to keep it', detail: 'A real code message warns you not to share it. You type it into the site you opened yourself, and give it to no one.' },
-      { quote: 'It expires in 10 minutes', title: 'A time limit with no threat', detail: "Codes expire quickly by design. Nothing bad happens if it runs out; you'd simply ask for a new one." },
+    messages: [
+      {
+        text: 'Harbourline Bank: 482913 is your code to sign in on a new device. It expires in 10 minutes. We will never call or text to ask for this code.',
+      },
     ],
-    explanation: "This one is genuine. You asked for the code, it arrived when the site said it would, and it doesn't ask you to reply, tap a link or pass it on.",
-    nextTime: "A code you didn't ask for is a warning sign. A code you did ask for is fine, as long as it only goes into the site you opened yourself.",
+    indicators: [
+      {
+        quote: 'your code to sign in on a new device',
+        title: 'It matches what you just did',
+        detail:
+          'You started a sign-in a moment ago and the site said a code was on its way. The text is the expected next step.',
+      },
+      {
+        quote: 'We will never call or text to ask for this code',
+        title: 'It tells you to keep it',
+        detail:
+          'A real code message warns you not to share it. You type it into the site you opened yourself, and give it to no one.',
+      },
+      {
+        quote: 'It expires in 10 minutes',
+        title: 'A time limit with no threat',
+        detail:
+          "Codes expire quickly by design. Nothing bad happens if it runs out; you'd simply ask for a new one.",
+      },
+    ],
+    explanation:
+      "This one is genuine. You asked for the code, it arrived when the site said it would, and it doesn't ask you to reply, tap a link or pass it on.",
+    nextTime:
+      "A code you didn't ask for is a warning sign. A code you did ask for is fine, as long as it only goes into the site you opened yourself.",
   },
   {
     id: 'card-purchase-check',
@@ -79,21 +138,41 @@ export const genuineScenarios: MessageScenario[] = [
     tactics: [],
     title: 'Purchase check from your bank',
     summary: 'Your bank texts to ask whether a purchase was yours.',
-    situation: 'A minute ago your Harbourline Bank card was declined while you were buying concert tickets online. Harbourline has texted you sign-in codes from 55501 before.',
+    situation:
+      'A minute ago your Harbourline Bank card was declined while you were buying concert tickets online. Harbourline has texted you sign-in codes from 55501 before.',
     difficulty: 'hard',
     correctAction: 'safe',
     sender: '55501',
     receivedAt: '7:18 PM',
-    messages: [{
-      text: 'Harbourline Bank: did you try a $186.40 purchase at TicketNorth with your card ending 4417? Reply Y if it was you or N if it was not. We will never ask for your PIN, password or full card number.',
-    }],
-    indicators: [
-      { quote: '$186.40 purchase at TicketNorth', title: 'It matches what you just did', detail: 'The amount, the shop and the timing are the purchase you tried a minute ago. A scammer guessing would not know them.' },
-      { quote: 'Reply Y if it was you or N if it was not', title: 'It asks only yes or no', detail: 'There is no link to tap and nothing to type but one letter. A fake alert would send you to a page that asks you to sign in.' },
-      { quote: 'We will never ask for your PIN, password or full card number', title: "It says what it won't ask", detail: 'A real alert never needs your PIN, password or card number, and says so.' },
+    messages: [
+      {
+        text: 'Harbourline Bank: did you try a $186.40 purchase at TicketNorth with your card ending 4417? Reply Y if it was you or N if it was not. We will never ask for your PIN, password or full card number.',
+      },
     ],
-    explanation: "This one is genuine, even though it's about fraud. It arrived right after your declined purchase, from the number your bank already uses, and it asks for nothing but a yes or no.",
-    nextTime: 'A fraud alert is not a scam just because it is alarming. Look at what it asks for. If you are ever unsure, call the number on the back of your card instead of replying.',
+    indicators: [
+      {
+        quote: '$186.40 purchase at TicketNorth',
+        title: 'It matches what you just did',
+        detail:
+          'The amount, the shop and the timing are the purchase you tried a minute ago. A scammer guessing would not know them.',
+      },
+      {
+        quote: 'Reply Y if it was you or N if it was not',
+        title: 'It asks only yes or no',
+        detail:
+          'There is no link to tap and nothing to type but one letter. A fake alert would send you to a page that asks you to sign in.',
+      },
+      {
+        quote: 'We will never ask for your PIN, password or full card number',
+        title: "It says what it won't ask",
+        detail:
+          'A real alert never needs your PIN, password or card number, and says so.',
+      },
+    ],
+    explanation:
+      "This one is genuine, even though it's about fraud. It arrived right after your declined purchase, from the number your bank already uses, and it asks for nothing but a yes or no.",
+    nextTime:
+      'A fraud alert is not a scam just because it is alarming. Look at what it asks for. If you are ever unsure, call the number on the back of your card instead of replying.',
   },
   {
     id: 'shop-newsletter',
@@ -101,8 +180,10 @@ export const genuineScenarios: MessageScenario[] = [
     scamCategory: 'promotional',
     tactics: [],
     title: 'Newsletter with a discount',
-    summary: 'A bookshop you subscribe to sends its monthly picks and an offer.',
-    situation: 'You ticked "Send me the newsletter" when you ordered from Fernleaf Books, a shop whose website is fernleafbooks.ca.',
+    summary:
+      'A bookshop you subscribe to sends its monthly picks and an offer.',
+    situation:
+      'You ticked "Send me the newsletter" when you ordered from Fernleaf Books, a shop whose website is fernleafbooks.ca.',
     difficulty: 'easy',
     correctAction: 'safe',
     fromName: 'Fernleaf Books',
@@ -119,13 +200,35 @@ export const genuineScenarios: MessageScenario[] = [
     ],
     links: ['https://fernleafbooks.ca/picks'],
     indicators: [
-      { quote: 'news@fernleafbooks.ca', title: "The address is the shop's own", detail: "Tap the sender name and the address ends in fernleafbooks.ca, the same as the shop's website." },
-      { quote: "there's no code to enter and nothing to claim", title: 'An offer that asks for nothing', detail: "A prize scam wants a fee, your card or your details before you get anything. This is a discount on things you'd choose to buy, with nothing to hand over." },
-      { quote: "You're getting this because you subscribed", title: 'It says why you got it', detail: 'You did sign up, and it tells you how to stop the emails. Scam offers arrive out of nowhere.' },
-      { quote: 'https://fernleafbooks.ca/picks', title: 'The link goes to the real site', detail: 'Read the address up to the first single slash: fernleafbooks.ca, the shop you ordered from.' },
+      {
+        quote: 'news@fernleafbooks.ca',
+        title: "The address is the shop's own",
+        detail:
+          "Tap the sender name and the address ends in fernleafbooks.ca, the same as the shop's website.",
+      },
+      {
+        quote: "there's no code to enter and nothing to claim",
+        title: 'An offer that asks for nothing',
+        detail:
+          "A prize scam wants a fee, your card or your details before you get anything. This is a discount on things you'd choose to buy, with nothing to hand over.",
+      },
+      {
+        quote: "You're getting this because you subscribed",
+        title: 'It says why you got it',
+        detail:
+          'You did sign up, and it tells you how to stop the emails. Scam offers arrive out of nowhere.',
+      },
+      {
+        quote: 'https://fernleafbooks.ca/picks',
+        title: 'The link goes to the real site',
+        detail:
+          'Read the address up to the first single slash: fernleafbooks.ca, the shop you ordered from.',
+      },
     ],
-    explanation: "Not every offer is a scam. You subscribed to this newsletter, it comes from the shop's own address, the link goes to the shop's own site, and it asks for nothing.",
-    nextTime: 'To tell real offers apart, ask: did I sign up for this, does the sender match the real website, and does it want money or details before I get anything?',
+    explanation:
+      "Not every offer is a scam. You subscribed to this newsletter, it comes from the shop's own address, the link goes to the shop's own site, and it asks for nothing.",
+    nextTime:
+      'To tell real offers apart, ask: did I sign up for this, does the sender match the real website, and does it want money or details before I get anything?',
   },
   {
     id: 'book-order',
@@ -133,7 +236,8 @@ export const genuineScenarios: MessageScenario[] = [
     tactics: [],
     title: 'Order confirmation',
     summary: 'A bookshop confirms the order you placed yesterday.',
-    situation: 'Yesterday you ordered two books from Fernleaf Books, a shop whose website is fernleafbooks.ca.',
+    situation:
+      'Yesterday you ordered two books from Fernleaf Books, a shop whose website is fernleafbooks.ca.',
     difficulty: 'medium',
     correctAction: 'safe',
     fromName: 'Fernleaf Books',
@@ -149,13 +253,35 @@ export const genuineScenarios: MessageScenario[] = [
     ],
     links: ['https://fernleafbooks.ca/account/orders/48213'],
     indicators: [
-      { quote: 'The Quiet Garden and A Short History of Tea', title: 'It matches what you did', detail: 'These are the books you ordered, for a price you recognize. An email about something you were expecting is a good sign.' },
-      { quote: 'orders@fernleafbooks.ca', title: "The address is the shop's own", detail: 'Tap the sender name and the address ends in fernleafbooks.ca, the same as the shop\'s website.' },
-      { quote: 'https://fernleafbooks.ca/account/orders/48213', title: 'The link goes to the real site', detail: 'Read the address up to the first single slash: fernleafbooks.ca. That is the shop you ordered from, not a look-alike.' },
-      { quote: "We'll email you again when it ships.", title: 'No pressure, nothing to hand over', detail: "It doesn't ask for a password, a payment or a deadline. It only tells you what happens next." },
+      {
+        quote: 'The Quiet Garden and A Short History of Tea',
+        title: 'It matches what you did',
+        detail:
+          'These are the books you ordered, for a price you recognize. An email about something you were expecting is a good sign.',
+      },
+      {
+        quote: 'orders@fernleafbooks.ca',
+        title: "The address is the shop's own",
+        detail:
+          "Tap the sender name and the address ends in fernleafbooks.ca, the same as the shop's website.",
+      },
+      {
+        quote: 'https://fernleafbooks.ca/account/orders/48213',
+        title: 'The link goes to the real site',
+        detail:
+          'Read the address up to the first single slash: fernleafbooks.ca. That is the shop you ordered from, not a look-alike.',
+      },
+      {
+        quote: "We'll email you again when it ships.",
+        title: 'No pressure, nothing to hand over',
+        detail:
+          "It doesn't ask for a password, a payment or a deadline. It only tells you what happens next.",
+      },
     ],
-    explanation: 'Real receipts tend to look like this: you were expecting it, the details match, the sender and link point to the shop\'s own website, and it asks for nothing.',
-    nextTime: 'Being careful is never wrong. To tell real emails apart, tap the sender name and check the address, check where links really go, and ask whether you were expecting it.',
+    explanation:
+      "Real receipts tend to look like this: you were expecting it, the details match, the sender and link point to the shop's own website, and it asks for nothing.",
+    nextTime:
+      'Being careful is never wrong. To tell real emails apart, tap the sender name and check the address, check where links really go, and ask whether you were expecting it.',
   },
   {
     id: 'pay-statement',
@@ -164,7 +290,8 @@ export const genuineScenarios: MessageScenario[] = [
     tactics: [],
     title: 'Pay statement from payroll',
     summary: 'Payroll says your latest pay statement is ready.',
-    situation: 'You work at Cedar & Pine Design, where staff email addresses end in cedarpine.ca. Today is pay day.',
+    situation:
+      'You work at Cedar & Pine Design, where staff email addresses end in cedarpine.ca. Today is pay day.',
     difficulty: 'medium',
     correctAction: 'safe',
     fromName: 'Cedar & Pine Payroll',
@@ -179,13 +306,35 @@ export const genuineScenarios: MessageScenario[] = [
       'Cedar & Pine Payroll',
     ],
     indicators: [
-      { quote: 'payroll@cedarpine.ca', title: "The address is your employer's own", detail: 'Tap the sender name and the address ends in cedarpine.ca, like every other staff address.' },
-      { quote: 'Your pay statement for this pay period is ready', title: 'It arrives when you would expect it', detail: 'Today is pay day, and this email comes every pay day. It tells you something; it does not ask you to change anything.' },
-      { quote: 'sign in to the staff portal the way you normally do', title: 'No link, no attachment', detail: 'A payroll scam sends a "secure link" to a fake sign-in page. This sends you to the portal you already use.' },
-      { quote: 'Drop by the payroll office or call extension 214', title: 'You can check in person', detail: 'It offers ways to ask that a scammer could not answer: walking over, or an internal extension.' },
+      {
+        quote: 'payroll@cedarpine.ca',
+        title: "The address is your employer's own",
+        detail:
+          'Tap the sender name and the address ends in cedarpine.ca, like every other staff address.',
+      },
+      {
+        quote: 'Your pay statement for this pay period is ready',
+        title: 'It arrives when you would expect it',
+        detail:
+          'Today is pay day, and this email comes every pay day. It tells you something; it does not ask you to change anything.',
+      },
+      {
+        quote: 'sign in to the staff portal the way you normally do',
+        title: 'No link, no attachment',
+        detail:
+          'A payroll scam sends a "secure link" to a fake sign-in page. This sends you to the portal you already use.',
+      },
+      {
+        quote: 'Drop by the payroll office or call extension 214',
+        title: 'You can check in person',
+        detail:
+          'It offers ways to ask that a scammer could not answer: walking over, or an internal extension.',
+      },
     ],
-    explanation: "This one is genuine. It comes from your employer's own address on pay day, has no link or attachment, and asks you to do nothing new.",
-    nextTime: 'Workplace emails are a favourite disguise for scams, so checking is right. Look at the sender address, and at whether you are being sent somewhere new to sign in.',
+    explanation:
+      "This one is genuine. It comes from your employer's own address on pay day, has no link or attachment, and asks you to do nothing new.",
+    nextTime:
+      'Workplace emails are a favourite disguise for scams, so checking is right. Look at the sender address, and at whether you are being sent somewhere new to sign in.',
   },
   {
     id: 'password-changed',
@@ -194,7 +343,8 @@ export const genuineScenarios: MessageScenario[] = [
     tactics: [],
     title: 'Password change notice',
     summary: 'A notes app says your password was just changed.',
-    situation: 'Ten minutes ago you changed your password for Larkspur Notes, an app you use at larkspurnotes.com.',
+    situation:
+      'Ten minutes ago you changed your password for Larkspur Notes, an app you use at larkspurnotes.com.',
     difficulty: 'hard',
     correctAction: 'safe',
     fromName: 'Larkspur Notes',
@@ -209,12 +359,34 @@ export const genuineScenarios: MessageScenario[] = [
       'The Larkspur Notes team',
     ],
     indicators: [
-      { quote: 'changed today at 3:42 PM', title: 'It matches what you just did', detail: 'You changed your password ten minutes ago. The notice is the expected follow-up, at the right time.' },
-      { quote: 'security@larkspurnotes.com', title: "The address is the app's own", detail: 'Tap the sender name and the address ends in larkspurnotes.com, the site you use.' },
-      { quote: 'there is nothing more to do', title: 'No pressure, nothing to hand over', detail: 'A fake security alert wants you to "verify" right now. This one asks for nothing.' },
-      { quote: 'open Larkspur Notes yourself', title: 'No link to follow', detail: 'Even for the worrying case it sends you to the app, not to a link in the email. That is what a careful company does.' },
+      {
+        quote: 'changed today at 3:42 PM',
+        title: 'It matches what you just did',
+        detail:
+          'You changed your password ten minutes ago. The notice is the expected follow-up, at the right time.',
+      },
+      {
+        quote: 'security@larkspurnotes.com',
+        title: "The address is the app's own",
+        detail:
+          'Tap the sender name and the address ends in larkspurnotes.com, the site you use.',
+      },
+      {
+        quote: 'there is nothing more to do',
+        title: 'No pressure, nothing to hand over',
+        detail:
+          'A fake security alert wants you to "verify" right now. This one asks for nothing.',
+      },
+      {
+        quote: 'open Larkspur Notes yourself',
+        title: 'No link to follow',
+        detail:
+          'Even for the worrying case it sends you to the app, not to a link in the email. That is what a careful company does.',
+      },
     ],
-    explanation: "This one is genuine, even though security emails are a favourite disguise for scams. It matches a change you just made, comes from the app's own address, has no link, and asks for nothing.",
-    nextTime: "A security notice is not a scam just because it's alarming. Check whether it matches something you did, who really sent it, and whether it wants you to sign in through a link.",
+    explanation:
+      "This one is genuine, even though security emails are a favourite disguise for scams. It matches a change you just made, comes from the app's own address, has no link, and asks for nothing.",
+    nextTime:
+      "A security notice is not a scam just because it's alarming. Check whether it matches something you did, who really sent it, and whether it wants you to sign in through a link.",
   },
 ]

@@ -24,8 +24,9 @@ test("startup lines say what each integration is doing, without any value", () =
     "ElevenLabs: configured",
     "Snowflake: configured (Cortex on)",
   ]);
-  for (const value of Object.values(secrets))
+  for (const value of Object.values(secrets)) {
     assert.equal(all.join("\n").includes(value), false, value);
+  }
 
   assert.deepEqual(integrationLines({ SNOWFLAKE_SCHEMA: "PUBLIC" } as Config), [
     "Gemini: not configured (fallback templates)",

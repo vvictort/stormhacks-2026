@@ -45,8 +45,9 @@ export function callsRouter({
   router.post("/", async (req, res) => {
     const { scenarioId } = StartSimulation.parse(req.body ?? {});
     const scenario = await catalog.pickCall(scenarioId, req.user!.uid);
-    if (!scenario)
+    if (!scenario) {
       throw new AppError(404, "scenario_not_found", "Scenario not found.");
+    }
     const call = await calls.start(req.user!.uid, scenario);
     res
       .status(201)

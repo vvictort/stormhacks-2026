@@ -9,7 +9,12 @@ SOURCES = {
         # Attribution + ShareAlike: scrubbed excerpts may be committed; the excerpts stay CC BY-SA 4.0.
         'redistribution': 'excerpts',
         # phishing_email.csv is a merge of the others, and Enron/Ling are full of real personal mail; skipped.
-        'files': ('Nazario.csv', 'CEAS_08.csv', 'SpamAssasin.csv', 'Nigerian_Fraud.csv'),
+        'files': (
+            'Nazario.csv',
+            'CEAS_08.csv',
+            'SpamAssasin.csv',
+            'Nigerian_Fraud.csv',
+        ),
     },
     'sms': {
         # The UCI SMS Spam Collection (an input of the same Kaggle notebook as the email data). The preferred

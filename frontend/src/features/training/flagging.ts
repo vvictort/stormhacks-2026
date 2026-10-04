@@ -48,15 +48,21 @@ export function splitIntoPhrases(text: string): string[] {
  * Compares user-flagged phrases against validated scenario red-flag quotes.
  * Uses substring and token overlap matching so minor selection boundary differences match cleanly.
  */
-export function scoreFlags(userFlags: string[], indicators: Indicator[]): FlagScore {
-  const quotableIndicators = indicators.filter((ind) => ind.quote && ind.quote.trim().length > 0)
+export function scoreFlags(
+  userFlags: string[],
+  indicators: Indicator[],
+): FlagScore {
+  const quotableIndicators = indicators.filter(
+    (ind) => ind.quote && ind.quote.trim().length > 0,
+  )
   const normUserFlags = userFlags.map((flag) => ({
     original: flag,
     normalized: normalize(flag),
     tokens: normalize(flag).split(' ').filter(Boolean),
   }))
 
-  const indicatorDetails: { quote: string; title: string; caught: boolean }[] = []
+  const indicatorDetails: { quote: string; title: string; caught: boolean }[] =
+    []
   const matchedFlagIndices = new Set<number>()
 
   let caught = 0
@@ -72,13 +78,15 @@ export function scoreFlags(userFlags: string[], indicators: Indicator[]): FlagSc
       if (!uf.normalized || !normQuote) return
 
       // Direct substring match either way
-      const substringMatch = uf.normalized.includes(normQuote) || normQuote.includes(uf.normalized)
+      const substringMatch =
+        uf.normalized.includes(normQuote) || normQuote.includes(uf.normalized)
 
       // Or significant token overlap (>= 60% of either token set)
       const commonTokens = uf.tokens.filter((tok) => quoteTokens.includes(tok))
       const tokenOverlap =
         quoteTokens.length > 0 &&
-        commonTokens.length / Math.min(uf.tokens.length, quoteTokens.length) >= 0.6
+        commonTokens.length / Math.min(uf.tokens.length, quoteTokens.length) >=
+          0.6
 
       if (substringMatch || tokenOverlap) {
         isCaught = true

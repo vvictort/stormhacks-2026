@@ -20,16 +20,31 @@ export const OUTCOME_TABLE: Record<Outcome, CallResult> = {
   error: { outcome: 'error', success: null },
 }
 
-const CANONICAL = new Set<string>(['resisted', 'compromised', 'declined', 'missed', 'error'])
+const CANONICAL = new Set<string>([
+  'resisted',
+  'compromised',
+  'declined',
+  'missed',
+  'error',
+])
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
 
 export function normalizeCommsOutcome(outcome: unknown): CallResult | null {
-  return typeof outcome === 'string' && Object.hasOwn(OUTCOME_TABLE, outcome) ? { ...OUTCOME_TABLE[outcome as Outcome] } : null
+  return typeof outcome === 'string' && Object.hasOwn(OUTCOME_TABLE, outcome)
+    ? { ...OUTCOME_TABLE[outcome as Outcome] }
+    : null
 }
 
 function canonical(value: unknown): CallResult | null {
-  if (!isRecord(value) || typeof value.outcome !== 'string' || !CANONICAL.has(value.outcome)) return null
+  if (
+    !isRecord(value) ||
+    typeof value.outcome !== 'string' ||
+    !CANONICAL.has(value.outcome)
+  ) {
+    return null
+  }
   if (value.success !== null && typeof value.success !== 'boolean') return null
   const outcome = value.outcome as TrainingOutcome
   return { outcome, success: outcome === 'error' ? null : value.success }
@@ -41,8 +56,14 @@ function canonical(value: unknown): CallResult | null {
  */
 export function readCallResult(source: unknown): CallResult | null {
   if (!isRecord(source)) return null
-  return canonical(source.training) ?? canonical(source) ?? normalizeCommsOutcome(source.outcome)
+  return (
+    canonical(source.training) ??
+    canonical(source) ??
+    normalizeCommsOutcome(source.outcome)
+  )
 }
 
-export const isScored = (result: CallResult | null): result is CallResult & { success: boolean } =>
+export const isScored = (
+  result: CallResult | null,
+): result is CallResult & { success: boolean } =>
   result !== null && result.success !== null

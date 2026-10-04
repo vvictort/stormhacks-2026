@@ -49,7 +49,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 
 /** The API's error body is `{ error: { code, message, ...details } }`. */
-const errorBody = (data: unknown) => (isRecord(data) && isRecord(data.error) ? data.error : null)
+const errorBody = (data: unknown) =>
+  isRecord(data) && isRecord(data.error) ? data.error : null
 
 function errorCode(data: unknown, status: number) {
   const code = errorBody(data)?.code
@@ -90,27 +91,49 @@ export function createCommsClient({
 
     const data: unknown = await res.json().catch(() => null)
     signal?.throwIfAborted()
-    if (!res.ok) throw new CommsError(res.status, errorCode(data, res.status), data)
+    if (!res.ok) {
+      throw new CommsError(res.status, errorCode(data, res.status), data)
+    }
     if (data === null) throw new CommsError(res.status, 'invalid_response')
     return data as T
   }
 
   return {
-    async listScenarios(channel?: Channel, signal?: AbortSignal): Promise<ScenarioSummary[]> {
+    async listScenarios(
+      channel?: Channel,
+      signal?: AbortSignal,
+    ): Promise<ScenarioSummary[]> {
       const query = channel ? `?channel=${enc(channel)}` : ''
-      const data = await request<{ scenarios?: ScenarioSummary[] }>('GET', `/scenarios${query}`, { signal, auth: false })
+      const data = await request<{ scenarios?: ScenarioSummary[] }>(
+        'GET',
+        `/scenarios${query}`,
+        { signal, auth: false },
+      )
       return data.scenarios ?? []
     },
 
     /** Starts a text thread, or resumes the user's active one (`resumed: true`). */
-    async startText(pick: ScenarioPick = {}, signal?: AbortSignal): Promise<StartTextResult> {
+    async startText(
+      pick: ScenarioPick = {},
+      signal?: AbortSignal,
+    ): Promise<StartTextResult> {
       try {
-        const { threadId } = await request<StartTextResponse>('POST', '/texts', { body: pick, signal })
+        const { threadId } = await request<StartTextResponse>(
+          'POST',
+          '/texts',
+          { body: pick, signal },
+        )
         return { threadId, resumed: false }
       } catch (error) {
-        if (error instanceof CommsError && error.status === 409 && error.code === 'active_thread_exists') {
+        if (
+          error instanceof CommsError &&
+          error.status === 409 &&
+          error.code === 'active_thread_exists'
+        ) {
           const threadId = errorBody(error.details)?.threadId
-          if (typeof threadId === 'string' && threadId) return { threadId, resumed: true }
+          if (typeof threadId === 'string' && threadId) {
+            return { threadId, resumed: true }
+          }
         }
         throw error
       }
@@ -120,8 +143,16 @@ export function createCommsClient({
       request<TextThread>('GET', `/texts/${enc(threadId)}`, { signal }),
 
     /** Resolves with the stored (redacted) copy of the user's message. */
-    async reply(threadId: string, body: string, signal?: AbortSignal): Promise<TextMessage> {
-      const data = await request<{ message: TextMessage }>('POST', `/texts/${enc(threadId)}/replies`, { body: { body }, signal })
+    async reply(
+      threadId: string,
+      body: string,
+      signal?: AbortSignal,
+    ): Promise<TextMessage> {
+      const data = await request<{ message: TextMessage }>(
+        'POST',
+        `/texts/${enc(threadId)}/replies`,
+        { body: { body }, signal },
+      )
       return data.message
     },
 
@@ -134,26 +165,49 @@ export function createCommsClient({
 
     /** Call scenarios are server-owned: the body is `{ scenarioId }` and nothing else. */
     startCall: (scenarioId: string, signal?: AbortSignal) =>
-      request<StartCallResponse>('POST', '/calls', { body: { scenarioId }, signal }),
+      request<StartCallResponse>('POST', '/calls', {
+        body: { scenarioId },
+        signal,
+      }),
 
     getCall: (callId: string, signal?: AbortSignal) =>
       request<CallRecord>('GET', `/calls/${enc(callId)}`, { signal }),
 
     acceptCall: (callId: string, signal?: AbortSignal) =>
-      request<AcceptCallResponse>('POST', `/calls/${enc(callId)}/accept`, { signal }),
+      request<AcceptCallResponse>('POST', `/calls/${enc(callId)}/accept`, {
+        signal,
+      }),
 
-    declineCall: (callId: string, reason: DeclineReason, signal?: AbortSignal) =>
-      request<CallRecord>('POST', `/calls/${enc(callId)}/decline`, { body: { reason }, signal }),
+    declineCall: (
+      callId: string,
+      reason: DeclineReason,
+      signal?: AbortSignal,
+    ) =>
+      request<CallRecord>('POST', `/calls/${enc(callId)}/decline`, {
+        body: { reason },
+        signal,
+      }),
 
     /** Ringing only: gives the call up (caption practice, leaving the page). The server closes it unscored and never saves it. */
     abandonCall: (callId: string, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/abandon`, { signal }),
 
     /** Binds the voice session's conversation id; a different id than the bound one is `409 conversation_mismatch`. */
-    callConnected: (callId: string, conversationId: string, signal?: AbortSignal) =>
-      request<CallRecord>('POST', `/calls/${enc(callId)}/connected`, { body: { conversationId }, signal }),
+    callConnected: (
+      callId: string,
+      conversationId: string,
+      signal?: AbortSignal,
+    ) =>
+      request<CallRecord>('POST', `/calls/${enc(callId)}/connected`, {
+        body: { conversationId },
+        signal,
+      }),
 
-    callEnded: (callId: string, conversationId?: string, signal?: AbortSignal) =>
+    callEnded: (
+      callId: string,
+      conversationId?: string,
+      signal?: AbortSignal,
+    ) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/ended`, {
         body: conversationId ? { conversationId } : {},
         signal,

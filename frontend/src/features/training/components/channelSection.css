@@ -7,9 +7,13 @@
   border-radius: 20px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  box-shadow: 0 4px 20px #4836260a, 0 1px 3px #48362606;
+  box-shadow:
+    0 4px 20px #4836260a,
+    0 1px 3px #48362606;
   scroll-margin-top: 20px;
-  transition: border-color var(--motion-quick) ease, box-shadow var(--motion-quick) ease;
+  transition:
+    border-color var(--motion-quick) ease,
+    box-shadow var(--motion-quick) ease;
 }
 
 @media (max-width: 600px) {
@@ -28,7 +32,8 @@
   gap: 16px;
   flex-wrap: wrap;
   padding-bottom: 18px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-border) 60%, transparent);
 }
 
 .channel-identity {
@@ -55,7 +60,11 @@
 
 /* Channel Theme Highlights */
 .channel-call .channel-icon-wrap {
-  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 12%,
+    var(--color-surface)
+  );
   color: var(--color-primary-strong);
   border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
@@ -67,27 +76,37 @@
 }
 
 .channel-email .channel-icon-wrap {
-  background: color-mix(in srgb, #2B577A 12%, var(--color-surface));
-  color: #2B577A;
-  border: 1px solid color-mix(in srgb, #2B577A 28%, transparent);
+  background: color-mix(in srgb, #2b577a 12%, var(--color-surface));
+  color: #2b577a;
+  border: 1px solid color-mix(in srgb, #2b577a 28%, transparent);
 }
 
 .channel-email .channel-badge {
-  background: color-mix(in srgb, #2B577A 8%, var(--color-surface));
-  color: #2B577A;
-  border: 1px solid color-mix(in srgb, #2B577A 24%, transparent);
+  background: color-mix(in srgb, #2b577a 8%, var(--color-surface));
+  color: #2b577a;
+  border: 1px solid color-mix(in srgb, #2b577a 24%, transparent);
 }
 
 .channel-sms .channel-icon-wrap {
-  background: color-mix(in srgb, var(--color-success-strong) 12%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-success-strong) 12%,
+    var(--color-surface)
+  );
   color: var(--color-success-strong);
-  border: 1px solid color-mix(in srgb, var(--color-success-strong) 30%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-success-strong) 30%, transparent);
 }
 
 .channel-sms .channel-badge {
-  background: color-mix(in srgb, var(--color-success-strong) 8%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-success-strong) 8%,
+    var(--color-surface)
+  );
   color: var(--color-success-strong);
-  border: 1px solid color-mix(in srgb, var(--color-success-strong) 24%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-success-strong) 24%, transparent);
 }
 
 .channel-headings {
@@ -148,7 +167,8 @@
     width: 100%;
     margin-top: 4px;
     padding-top: 10px;
-    border-top: 1px dashed color-mix(in srgb, var(--color-border) 40%, transparent);
+    border-top: 1px dashed
+      color-mix(in srgb, var(--color-border) 40%, transparent);
   }
 }
 
@@ -196,7 +216,11 @@
   margin-top: 18px;
   padding: 14px 16px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--color-background) 50%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-background) 50%,
+    var(--color-surface)
+  );
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   display: flex;
   align-items: center;
@@ -238,12 +262,14 @@
     align-items: stretch;
     gap: 12px;
   }
+
   .channel-action-buttons {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
     margin-left: 0;
   }
+
   .channel-action-buttons .train-primary,
   .channel-action-buttons .train-ghost {
     width: 100%;
@@ -300,12 +326,12 @@
   transition: all 140ms ease;
 }
 
-.channel-filter-btn:hover:not([aria-pressed="true"]) {
+.channel-filter-btn:hover:not([aria-pressed='true']) {
   border-color: var(--color-control);
   color: var(--color-foreground);
 }
 
-.channel-filter-btn[aria-pressed="true"] {
+.channel-filter-btn[aria-pressed='true'] {
   background: var(--color-foreground);
   color: var(--color-surface);
   border-color: var(--color-foreground);
@@ -335,8 +361,15 @@
   padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
-  background: color-mix(in srgb, var(--color-background) 30%, var(--color-surface));
-  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  background: color-mix(
+    in srgb,
+    var(--color-background) 30%,
+    var(--color-surface)
+  );
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 @media (hover: hover) {
@@ -350,7 +383,9 @@
 .channel-card-item.is-upnext {
   background: var(--color-surface);
   border-color: var(--color-primary);
-  box-shadow: 0 4px 16px #c56b4e14, 0 1px 3px #48362608;
+  box-shadow:
+    0 4px 16px #c56b4e14,
+    0 1px 3px #48362608;
 }
 
 .channel-card-item:has(.channel-card-link:focus-visible) {
@@ -405,7 +440,7 @@
 }
 
 .channel-card-link::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   border-radius: 12px;
@@ -448,7 +483,11 @@
 }
 
 .diff-easy {
-  background: color-mix(in srgb, var(--color-success) 20%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-success) 20%,
+    var(--color-surface)
+  );
   color: var(--color-success-strong);
 }
 
@@ -475,7 +514,11 @@
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
-  background: color-mix(in srgb, var(--color-success-strong) 14%, var(--color-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-success-strong) 14%,
+    var(--color-surface)
+  );
   color: var(--color-success-strong);
 }
 
@@ -509,7 +552,9 @@
 
 .channel-card-arrow {
   color: var(--color-muted);
-  transition: transform 140ms ease, color 140ms ease;
+  transition:
+    transform 140ms ease,
+    color 140ms ease;
 }
 
 @media (hover: hover) {

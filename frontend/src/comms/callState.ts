@@ -3,7 +3,15 @@ import type { CallRecord } from './types'
 // Pure state for one simulated call: ring → connect → talk → analyze → result.
 // No React; safe to load in Node.
 
-export type CallPhase = 'idle' | 'starting' | 'ringing' | 'connecting' | 'in_call' | 'analyzing' | 'completed' | 'error'
+export type CallPhase =
+  | 'idle'
+  | 'starting'
+  | 'ringing'
+  | 'connecting'
+  | 'in_call'
+  | 'analyzing'
+  | 'completed'
+  | 'error'
 
 export interface CallCaption {
   role: 'agent' | 'user'
@@ -42,7 +50,9 @@ export const INITIAL_CALL_STATE: CallState = {
 }
 
 export function callReducer(state: CallState, action: CallAction): CallState {
-  if (action.type === 'start') return { ...INITIAL_CALL_STATE, phase: 'starting' }
+  if (action.type === 'start') {
+    return { ...INITIAL_CALL_STATE, phase: 'starting' }
+  }
   if (action.type === 'reset') return INITIAL_CALL_STATE
   if (action.type === 'ringing') {
     return {
@@ -68,16 +78,27 @@ export function callReducer(state: CallState, action: CallAction): CallState {
     case 'hung_up':
       return { ...state, phase: 'analyzing' }
     case 'record':
-      return { ...state, record: action.record, phase: action.record.status === 'completed' ? 'completed' : state.phase }
+      return {
+        ...state,
+        record: action.record,
+        phase: action.record.status === 'completed' ? 'completed' : state.phase,
+      }
     case 'failed':
-      return { ...state, error: action.error, phase: action.phase ?? state.phase }
+      return {
+        ...state,
+        error: action.error,
+        phase: action.phase ?? state.phase,
+      }
     default:
       return state
   }
 }
 
 /** Why the microphone can't be used before even asking: getUserMedia needs a secure context (HTTPS or localhost). */
-export function microphoneBlocker(env: { secureContext: boolean; getUserMedia: boolean }) {
+export function microphoneBlocker(env: {
+  secureContext: boolean
+  getUserMedia: boolean
+}) {
   if (!env.secureContext) return 'insecure_context'
   if (!env.getUserMedia) return 'microphone_unavailable'
   return null
@@ -85,8 +106,12 @@ export function microphoneBlocker(env: { secureContext: boolean; getUserMedia: b
 
 /** Maps a getUserMedia rejection to an error code: a refusal, or no usable microphone. */
 export function microphoneErrorCode(error: unknown) {
-  const name = error instanceof Error || error instanceof DOMException ? error.name : ''
-  return name === 'NotFoundError' || name === 'NotReadableError' || name === 'OverconstrainedError' || name === 'AbortError'
+  const name =
+    error instanceof Error || error instanceof DOMException ? error.name : ''
+  return name === 'NotFoundError' ||
+    name === 'NotReadableError' ||
+    name === 'OverconstrainedError' ||
+    name === 'AbortError'
     ? 'microphone_unavailable'
     : 'microphone_denied'
 }
@@ -95,14 +120,18 @@ export function microphoneErrorCode(error: unknown) {
  * Hook stages in which the server-side call is still ringing: dropping the call there (caption practice, leaving the
  * page, a new call) must abandon it, or comms would later sweep it into a result nobody earned.
  */
-export const ringsOnServer = (stage: string) => stage === 'ringing' || stage === 'answering'
+export const ringsOnServer = (stage: string) =>
+  stage === 'ringing' || stage === 'answering'
 
 /**
  * Giving up on a call that hasn't connected (Cancel, the connect timeout): what the server must be told.
  * `abandon` while the accept may not have landed yet (the call can still ring there), `end` once the server has the
  * call in_call but the voice session never connected (it completes unscored as `error`). Null once connected or over.
  */
-export function connectDrop(stage: string, connected: boolean): 'abandon' | 'end' | null {
+export function connectDrop(
+  stage: string,
+  connected: boolean,
+): 'abandon' | 'end' | null {
   if (stage === 'answering') return 'abandon'
   if (stage === 'in_call' && !connected) return 'end'
   return null

@@ -34,12 +34,17 @@ const EVENTS = ['message', 'typing', 'ended'] as const
 
 /** Live view of one simulated text thread over SSE; `threadId` null means no thread. */
 export function useTextThread(threadId: string | null): TextThreadHandle {
-  const [state, dispatch] = useReducer(threadReducer, threadId, initialThreadState)
+  const [state, dispatch] = useReducer(
+    threadReducer,
+    threadId,
+    initialThreadState,
+  )
   const [generation, setGeneration] = useState(0)
   const latestThreadId = useRef(threadId)
 
   // The reducer only switches threads on an action for the new one, so derive a fresh view until then.
-  const view = state.threadId === threadId ? state : initialThreadState(threadId)
+  const view =
+    state.threadId === threadId ? state : initialThreadState(threadId)
 
   useEffect(() => {
     latestThreadId.current = threadId
@@ -54,7 +59,8 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
     let timer: ReturnType<typeof setTimeout> | undefined
     let failures = 0
 
-    const fail = (error: string) => dispatch({ type: 'error', threadId: id, error, fatal: true })
+    const fail = (error: string) =>
+      dispatch({ type: 'error', threadId: id, error, fatal: true })
 
     async function connect() {
       let url: string
@@ -88,7 +94,11 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
         // CONNECTING: the browser retries by itself and replays from Last-Event-ID (deduped by the reducer).
         // CLOSED: the server answered with an error (401 expired token in the URL, 404, ...).
         if (es.readyState === EventSource.CONNECTING) {
-          dispatch({ type: 'connection', threadId: id, connection: 'reconnecting' })
+          dispatch({
+            type: 'connection',
+            threadId: id,
+            connection: 'reconnecting',
+          })
         } else if (es.readyState === EventSource.CLOSED) {
           es.close()
           recover()
@@ -113,8 +123,12 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
           if (thread.status === 'active') void connect()
         } catch (error) {
           if (disposed || isAbortError(error)) return
-          if (error instanceof CommsError && (error.status === 404 || error.status === 401)) fail(error.code)
-          else recover()
+          if (
+            error instanceof CommsError &&
+            (error.status === 404 || error.status === 401)
+          ) {
+            fail(error.code)
+          } else recover()
         }
       }, delay)
     }
@@ -133,22 +147,30 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
     if (action.threadId === latestThreadId.current) dispatch(action)
   }, [])
 
-  const send = useCallback(async (body: string) => {
-    if (!threadId || !body.trim()) return null
-    const id = threadId
-    dispatchCurrent({ type: 'send', threadId: id, phase: 'start' })
-    try {
-      // No optimistic copy: the server stores a redacted version. The SSE echo is deduped by id.
-      const message = await comms.reply(id, body)
-      dispatchCurrent({ type: 'message', threadId: id, message })
-      return message
-    } catch (error) {
-      dispatchCurrent({ type: 'error', threadId: id, error: describeError(error), fatal: false })
-      return null
-    } finally {
-      dispatchCurrent({ type: 'send', threadId: id, phase: 'done' })
-    }
-  }, [threadId, dispatchCurrent])
+  const send = useCallback(
+    async (body: string) => {
+      if (!threadId || !body.trim()) return null
+      const id = threadId
+      dispatchCurrent({ type: 'send', threadId: id, phase: 'start' })
+      try {
+        // No optimistic copy: the server stores a redacted version. The SSE echo is deduped by id.
+        const message = await comms.reply(id, body)
+        dispatchCurrent({ type: 'message', threadId: id, message })
+        return message
+      } catch (error) {
+        dispatchCurrent({
+          type: 'error',
+          threadId: id,
+          error: describeError(error),
+          fatal: false,
+        })
+        return null
+      } finally {
+        dispatchCurrent({ type: 'send', threadId: id, phase: 'done' })
+      }
+    },
+    [threadId, dispatchCurrent],
+  )
 
   const report = useCallback(async () => {
     if (!threadId) return false
@@ -158,14 +180,23 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
       dispatchCurrent({ type: 'snapshot', threadId: id, thread })
       return true
     } catch (error) {
-      dispatchCurrent({ type: 'error', threadId: id, error: describeError(error), fatal: false })
+      dispatchCurrent({
+        type: 'error',
+        threadId: id,
+        error: describeError(error),
+        fatal: false,
+      })
       return false
     }
   }, [threadId, dispatchCurrent])
 
   const reconnect = useCallback(() => {
     if (!threadId) return
-    dispatchCurrent({ type: 'connection', threadId, connection: 'reconnecting' })
+    dispatchCurrent({
+      type: 'connection',
+      threadId,
+      connection: 'reconnecting',
+    })
     setGeneration((g) => g + 1)
   }, [threadId, dispatchCurrent])
 

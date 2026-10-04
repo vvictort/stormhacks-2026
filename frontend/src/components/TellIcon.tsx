@@ -1,7 +1,10 @@
 import type { SVGProps } from 'react'
 
 /** Tell, the mascot, shrunk to an icon: body, tail, eyes glancing aside and the beacon. Drop-in for a lucide icon. */
-export function TellIcon({ size = 24, ...props }: SVGProps<SVGSVGElement> & { size?: number }) {
+export function TellIcon({
+  size = 24,
+  ...props
+}: SVGProps<SVGSVGElement> & { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...props}>
       <g style={{ fill: 'var(--color-primary)' }}>
@@ -16,7 +19,12 @@ export function TellIcon({ size = 24, ...props }: SVGProps<SVGSVGElement> & { si
         <circle cx="9.5" cy="11.8" r="1.25" />
         <circle cx="14.9" cy="11.8" r="1.25" />
       </g>
-      <circle cx="20.3" cy="4" r="2.1" style={{ fill: 'var(--color-accent)' }} />
+      <circle
+        cx="20.3"
+        cy="4"
+        r="2.1"
+        style={{ fill: 'var(--color-accent)' }}
+      />
     </svg>
   )
 }

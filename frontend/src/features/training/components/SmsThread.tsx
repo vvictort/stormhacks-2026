@@ -2,7 +2,14 @@ import { Globe, LockKeyhole } from 'lucide-react'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { spring } from '../../../lib/motion'
-import { markFor, markText, siteOf, type Indicator, type SmsMessage, type SmsScenario } from '../scenarios'
+import {
+  markFor,
+  markText,
+  siteOf,
+  type Indicator,
+  type SmsMessage,
+  type SmsScenario,
+} from '../scenarios'
 
 import { FlaggableText } from './FlaggableText.tsx'
 
@@ -21,21 +28,38 @@ function useArrivals(total: number, instant: boolean) {
   useEffect(() => {
     if (instant) return
     // First message after a short beat; later ones after the sender "types" for a moment.
-    const timers = Array.from({ length: total }, (_, i) => window.setTimeout(() => setArrived(i + 1), 1050 + i * 1350))
+    const timers = Array.from({ length: total }, (_, i) =>
+      window.setTimeout(() => setArrived(i + 1), 1050 + i * 1350),
+    )
     return () => timers.forEach(window.clearTimeout)
   }, [total, instant])
   return instant ? total : arrived
 }
 
-export function MessageThread({ scenario, revealed, onInspect, flaggedPhrases, onToggleFlag }: ThreadProps) {
+export function MessageThread({
+  scenario,
+  revealed,
+  onInspect,
+  flaggedPhrases,
+  onToggleFlag,
+}: ThreadProps) {
   const indicators = revealed ? scenario.indicators : []
-  const clueLabel = scenario.correctAction === 'report' ? 'red flag' : 'good sign'
+  const clueLabel =
+    scenario.correctAction === 'report' ? 'red flag' : 'good sign'
   const reduce = useReducedMotion()
-  const arrived = useArrivals(scenario.messages.length, Boolean(reduce) || revealed)
+  const arrived = useArrivals(
+    scenario.messages.length,
+    Boolean(reduce) || revealed,
+  )
   const typing = arrived < scenario.messages.length
 
   return (
-    <div className="sms-thread" role="region" aria-label="Conversation" tabIndex={0}>
+    <div
+      className="sms-thread"
+      role="region"
+      aria-label="Conversation"
+      tabIndex={0}
+    >
       <p className="sms-day">Today {scenario.receivedAt}</p>
       {/* Polite live region: screen readers hear each message arrive, as on a real phone. */}
       <ol className="sms-list" aria-live="polite">
@@ -52,10 +76,19 @@ export function MessageThread({ scenario, revealed, onInspect, flaggedPhrases, o
             />
           ))}
           {typing && (
-            <m.li key="typing" className="sms-typing" aria-hidden="true" layout
-              initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.12 } }}
-              transition={spring}>
-              <span /><span /><span />
+            <m.li
+              key="typing"
+              className="sms-typing"
+              aria-hidden="true"
+              layout
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.12 } }}
+              transition={spring}
+            >
+              <span />
+              <span />
+              <span />
             </m.li>
           )}
         </AnimatePresence>
@@ -73,10 +106,23 @@ interface BubbleProps {
   onToggleFlag?: (phrase: string) => void
 }
 
-export function MessageBubble({ message, indicators, clueLabel, onInspect, flaggedPhrases, onToggleFlag }: BubbleProps) {
+export function MessageBubble({
+  message,
+  indicators,
+  clueLabel,
+  onInspect,
+  flaggedPhrases,
+  onToggleFlag,
+}: BubbleProps) {
   return (
     // Grows out of the typing indicator's corner.
-    <m.li className="sms-bubble" layout initial={{ opacity: 0, scale: 0.7, y: 6 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={spring}>
+    <m.li
+      className="sms-bubble"
+      layout
+      initial={{ opacity: 0, scale: 0.7, y: 6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={spring}
+    >
       <p>
         <FlaggableText
           text={message.text}
@@ -87,20 +133,56 @@ export function MessageBubble({ message, indicators, clueLabel, onInspect, flagg
           onToggleFlag={onToggleFlag}
         />
       </p>
-      {message.link && <LinkPreview url={message.link} mark={markFor(message.link, indicators)} clueLabel={clueLabel} onInspect={onInspect} />}
+      {message.link && (
+        <LinkPreview
+          url={message.link}
+          mark={markFor(message.link, indicators)}
+          clueLabel={clueLabel}
+          onInspect={onInspect}
+        />
+      )}
     </m.li>
   )
 }
 
 /** Text with any quoted indicators wrapped in numbered clues. */
-export function Marked({ text, indicators, clueLabel }: { text: string; indicators: Indicator[]; clueLabel: string }) {
-  return markText(text, indicators).map((segment, i) => segment.mark
-    ? <Clue key={i} n={segment.mark} indicator={indicators[segment.mark - 1]} label={clueLabel}>{segment.text}</Clue>
-    : segment.text)
+export function Marked({
+  text,
+  indicators,
+  clueLabel,
+}: {
+  text: string
+  indicators: Indicator[]
+  clueLabel: string
+}) {
+  return markText(text, indicators).map((segment, i) =>
+    segment.mark ? (
+      <Clue
+        key={i}
+        n={segment.mark}
+        indicator={indicators[segment.mark - 1]}
+        label={clueLabel}
+      >
+        {segment.text}
+      </Clue>
+    ) : (
+      segment.text
+    ),
+  )
 }
 
 /** A marked clue: hover or focus previews what it means, a click pins it open. */
-function Clue({ n, indicator, label, children }: { n: number; indicator: Indicator; label: string; children: string }) {
+function Clue({
+  n,
+  indicator,
+  label,
+  children,
+}: {
+  n: number
+  indicator: Indicator
+  label: string
+  children: string
+}) {
   const [open, setOpen] = useState<'peek' | 'pinned' | null>(null)
   const anchor = useRef<HTMLElement>(null)
   const tip = useRef<HTMLSpanElement>(null)
@@ -135,15 +217,49 @@ function Clue({ n, indicator, label, children }: { n: number; indicator: Indicat
   const [first = '', ...rest] = Array.from(children)
   return (
     // Not a <button>: buttons can't wrap mid-text, and long marks must.
-    <mark ref={anchor} className="clue" role="button" tabIndex={0} aria-expanded={Boolean(open)} aria-describedby={id}
-      onMouseEnter={() => setOpen((o) => o ?? 'peek')} onMouseLeave={() => setOpen((o) => (o === 'peek' ? null : o))}
-      onFocus={() => setOpen((o) => o ?? 'peek')} onBlur={() => setOpen(null)} onClick={toggle}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle() } }}>
-      <span className="clue-head"><span className="clue-num" aria-hidden="true">{n}</span>{first}</span>
+    <mark
+      ref={anchor}
+      className="clue"
+      role="button"
+      tabIndex={0}
+      aria-expanded={Boolean(open)}
+      aria-describedby={id}
+      onMouseEnter={() => setOpen((o) => o ?? 'peek')}
+      onMouseLeave={() => setOpen((o) => (o === 'peek' ? null : o))}
+      onFocus={() => setOpen((o) => o ?? 'peek')}
+      onBlur={() => setOpen(null)}
+      onClick={toggle}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          toggle()
+        }
+      }}
+    >
+      <span className="clue-head">
+        <span className="clue-num" aria-hidden="true">
+          {n}
+        </span>
+        {first}
+      </span>
       {rest.join('')}
-      <span className="sr-only"> ({label} {n})</span>
-      <span ref={tip} id={id} popover="manual" role="tooltip" className="clue-tip">
-        <strong><span className="clue-num" aria-hidden="true">{n}</span>{indicator.title}</strong>
+      <span className="sr-only">
+        {' '}
+        ({label} {n})
+      </span>
+      <span
+        ref={tip}
+        id={id}
+        popover="manual"
+        role="tooltip"
+        className="clue-tip"
+      >
+        <strong>
+          <span className="clue-num" aria-hidden="true">
+            {n}
+          </span>
+          {indicator.title}
+        </strong>
         {indicator.detail}
       </span>
     </mark>
@@ -151,7 +267,17 @@ function Clue({ n, indicator, label, children }: { n: number; indicator: Indicat
 }
 
 /** A link you can inspect but never follow: it is a button, not an anchor. */
-export function LinkPreview({ url, mark, clueLabel, onInspect }: { url: string; mark?: number; clueLabel: string; onInspect: ThreadProps['onInspect'] }) {
+export function LinkPreview({
+  url,
+  mark,
+  clueLabel,
+  onInspect,
+}: {
+  url: string
+  mark?: number
+  clueLabel: string
+  onInspect: ThreadProps['onInspect']
+}) {
   const [open, setOpen] = useState(false)
   const panel = useId()
 
@@ -167,16 +293,39 @@ export function LinkPreview({ url, mark, clueLabel, onInspect }: { url: string; 
           setOpen(!open)
         }}
       >
-        {mark && <span className="clue-num" aria-hidden="true">{mark}</span>}
+        {mark && (
+          <span className="clue-num" aria-hidden="true">
+            {mark}
+          </span>
+        )}
         {url}
-        <span className="sr-only">{mark ? ` (${clueLabel} ${mark})` : ''}, inspect link</span>
+        <span className="sr-only">
+          {mark ? ` (${clueLabel} ${mark})` : ''}, inspect link
+        </span>
       </button>
       {/* Springs open like a link preview sheet; inert while closed so it can't take focus. */}
-      <m.div id={panel} className="sms-inspect-wrap" initial={false} inert={!open} aria-hidden={!open}
-        animate={open ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }} transition={open ? spring : { duration: 0.18, ease: 'easeOut' }}>
+      <m.div
+        id={panel}
+        className="sms-inspect-wrap"
+        initial={false}
+        inert={!open}
+        aria-hidden={!open}
+        animate={
+          open ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }
+        }
+        transition={open ? spring : { duration: 0.18, ease: 'easeOut' }}
+      >
         <div className="sms-inspect">
-          <p className="sms-inspect-note"><LockKeyhole size={13} aria-hidden="true" /> Practice link. It won't open.</p>
-          <p className="sms-inspect-site"><Globe size={15} aria-hidden="true" /> <span>Website: <strong>{siteOf(url)}</strong></span></p>
+          <p className="sms-inspect-note">
+            <LockKeyhole size={13} aria-hidden="true" /> Practice link. It won't
+            open.
+          </p>
+          <p className="sms-inspect-site">
+            <Globe size={15} aria-hidden="true" />{' '}
+            <span>
+              Website: <strong>{siteOf(url)}</strong>
+            </span>
+          </p>
           <p className="sms-inspect-url">{url}</p>
         </div>
       </m.div>

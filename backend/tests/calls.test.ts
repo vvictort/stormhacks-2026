@@ -417,8 +417,9 @@ test("an analysed call is saved as a training attempt with a redacted transcript
   assert.ok(body.signals.includes("shared_code"));
   assert.equal(body.durationSecs, 42);
   const text = JSON.stringify(body);
-  for (const secret of ["123456", "654321", "me@example.com"])
+  for (const secret of ["123456", "654321", "me@example.com"]) {
     assert.ok(!text.includes(secret), secret);
+  }
   assert.match(body.transcript[1].message, /\[NUMBER:6 digits\].*\[EMAIL\]/);
 
   const record = (await app.api("GET", `/calls/${callId}`)).body as CallRecord;

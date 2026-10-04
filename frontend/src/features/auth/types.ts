@@ -11,4 +11,9 @@ export interface UserProfile {
   createdAt: string
   updatedAt: string
 }
-export interface ProfileInput { name: string; phone: string; profession: string | null; interests: string[] }
+export interface ProfileInput {
+  name: string
+  phone: string
+  profession: string | null
+  interests: string[]
+}

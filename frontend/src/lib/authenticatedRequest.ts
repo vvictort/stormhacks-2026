@@ -9,11 +9,21 @@ interface Session {
 }
 
 /** Keep every request and its response attached to the session that started it. */
-export function createAuthenticatedApi(session: Session, signOut: () => Promise<void>, request: typeof fetch = fetch) {
-  return async function api<T>(path: string, init: RequestInit = {}, expectedUid?: string): Promise<T> {
+export function createAuthenticatedApi(
+  session: Session,
+  signOut: () => Promise<void>,
+  request: typeof fetch = fetch,
+) {
+  return async function api<T>(
+    path: string,
+    init: RequestInit = {},
+    expectedUid?: string,
+  ): Promise<T> {
     await session.authStateReady()
     const user = session.currentUser
-    if (!user || (expectedUid !== undefined && user.uid !== expectedUid)) throw new Error('Session changed')
+    if (!user || (expectedUid !== undefined && user.uid !== expectedUid)) {
+      throw new Error('Session changed')
+    }
 
     function requireSameSession() {
       init.signal?.throwIfAborted()
@@ -28,8 +38,12 @@ export function createAuthenticatedApi(session: Session, signOut: () => Promise<
     requireSameSession()
 
     if (response.status === 401) await signOut()
-    if (!response.ok) throw new Error(`${init.method ?? 'GET'} /api${path} failed with ${response.status}`)
-    const result = await response.json() as T
+    if (!response.ok) {
+      throw new Error(
+        `${init.method ?? 'GET'} /api${path} failed with ${response.status}`,
+      )
+    }
+    const result = (await response.json()) as T
     requireSameSession()
     return result
   }

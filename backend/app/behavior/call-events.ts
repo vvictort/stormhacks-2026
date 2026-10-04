@@ -50,8 +50,9 @@ export class CallBehaviorSink implements EventSink {
     if (
       event.channel !== "call" ||
       !(MAPPED[event.type] || COMPLETES[event.type])
-    )
+    ) {
       return;
+    }
     try {
       const call = await this.store.getCall(event.simulationId);
       if (!call) return;
@@ -80,8 +81,9 @@ export class CallBehaviorSink implements EventSink {
       const raw = COMPLETES[event.type]?.(event);
       if (raw) {
         const { outcome } = toTraining(raw, call.scenario.difficulty);
-        if (outcome && outcome !== "error")
+        if (outcome && outcome !== "error") {
           rows.push({ ...base, type: "scenario_completed", outcome });
+        }
       }
       await this.behavior.record(rows);
     } catch (err) {

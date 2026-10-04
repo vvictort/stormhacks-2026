@@ -39,8 +39,9 @@ export class StubProvider implements ScenarioProvider {
   }: TextTurnInput): Promise<TextTurnResult> {
     const signals: Signal[] = [...new Set<Signal>([...preSignals, "engaged"])];
 
-    if (preSignals.includes("stop"))
+    if (preSignals.includes("stop")) {
       return { reply: null, signals, done: true };
+    }
     if (
       preSignals.includes("shared_code") ||
       preSignals.includes("shared_payment_info")
@@ -63,8 +64,9 @@ export class StubProvider implements ScenarioProvider {
     const turn =
       messages.filter((m) => m.from === "scammer" && !m.followUp).length - 1;
     let reply = ESCALATION[Math.min(turn, ESCALATION.length - 1)]!;
-    if (scenario.linkDisplayUrl && turn === ESCALATION.length - 1)
+    if (scenario.linkDisplayUrl && turn === ESCALATION.length - 1) {
       reply += " Or resolve it here: {{link}}";
+    }
     return { reply, signals, done: false };
   }
 

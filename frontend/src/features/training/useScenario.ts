@@ -12,9 +12,15 @@ export type ScenarioState =
 
 /** Generated scenarios live on the backend, owner-only; the GET returns the frontend `Scenario` shape. */
 function generatedPath(id: string) {
-  if (id.startsWith('gen-email-')) return `/training/email-scenarios/${encodeURIComponent(id)}`
-  if (id.startsWith('gen-sms-')) return `/training/sms-scenarios/${encodeURIComponent(id)}`
-  if (id.startsWith('gen-call-')) return `/training/call-scenarios/${encodeURIComponent(id)}`
+  if (id.startsWith('gen-email-')) {
+    return `/training/email-scenarios/${encodeURIComponent(id)}`
+  }
+  if (id.startsWith('gen-sms-')) {
+    return `/training/sms-scenarios/${encodeURIComponent(id)}`
+  }
+  if (id.startsWith('gen-call-')) {
+    return `/training/call-scenarios/${encodeURIComponent(id)}`
+  }
   return null
 }
 
@@ -25,7 +31,11 @@ export function useScenario(id: string | undefined): ScenarioState {
   const cached = getAdventure(uid).mission?.generated
   const local = getScenario(id) ?? (cached?.id === id ? cached : undefined)
   const path = !local && id ? generatedPath(id) : null
-  const [fetched, setFetched] = useState<{ id: string; uid?: string; scenario: Scenario | null }>()
+  const [fetched, setFetched] = useState<{
+    id: string
+    uid?: string
+    scenario: Scenario | null
+  }>()
 
   useEffect(() => {
     if (!path || !id) return
@@ -45,12 +55,18 @@ export function useScenario(id: string | undefined): ScenarioState {
           setFetched({ id, uid, scenario })
         }
       })
-      .catch(() => { if (!controller.signal.aborted) setFetched({ id, uid, scenario: null }) })
+      .catch(() => {
+        if (!controller.signal.aborted) setFetched({ id, uid, scenario: null })
+      })
     return () => controller.abort()
   }, [id, path, uid])
 
   if (local) return { status: 'ready', scenario: local }
   if (!path) return { status: 'missing' }
-  if (!fetched || fetched.id !== id || fetched.uid !== uid) return { status: 'loading' }
-  return fetched.scenario ? { status: 'ready', scenario: fetched.scenario } : { status: 'missing' }
+  if (!fetched || fetched.id !== id || fetched.uid !== uid) {
+    return { status: 'loading' }
+  }
+  return fetched.scenario
+    ? { status: 'ready', scenario: fetched.scenario }
+    : { status: 'missing' }
 }

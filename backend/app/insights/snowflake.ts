@@ -210,8 +210,9 @@ export class Snowflake {
       },
     );
     // 202 means still running: too slow for us, so the caller falls back.
-    if (res.status !== 200)
+    if (res.status !== 200) {
       throw new Error(`Snowflake SQL API returned ${res.status}`);
+    }
     const { resultSetMetaData, data } = resultSchema.parse(await res.json());
     const names = resultSetMetaData.rowType.map((c) => c.name.toUpperCase());
     return data.map((row) =>
@@ -263,8 +264,9 @@ export class Snowflake {
         }),
     ]);
     const result = z.array(rowSchema).parse(ranking);
-    if (result.length !== summary.areas.length)
+    if (result.length !== summary.areas.length) {
       throw new Error("Snowflake analysis is missing areas");
+    }
     return {
       ranked: result.map((r) => ({
         dimension: r.DIMENSION,

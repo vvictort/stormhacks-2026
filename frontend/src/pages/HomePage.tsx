@@ -1,4 +1,14 @@
-import { ArrowRight, Check, History, Info, Mail, MessageSquareText, Phone, RotateCcw, X } from 'lucide-react'
+import {
+  ArrowRight,
+  Check,
+  History,
+  Info,
+  Mail,
+  MessageSquareText,
+  Phone,
+  RotateCcw,
+  X,
+} from 'lucide-react'
 import { m } from 'motion/react'
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -14,7 +24,13 @@ import { MissionCard } from '../features/training/components/MissionCard'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { nextForYou } from '../features/training/adaptive'
-import { channelStats, currentLevel, summarize, timeline, type Progress } from '../features/training/progress'
+import {
+  channelStats,
+  currentLevel,
+  summarize,
+  timeline,
+  type Progress,
+} from '../features/training/progress'
 import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
@@ -32,7 +48,8 @@ export function HomePage() {
   const { profile } = useProfile()
   const { progress, callSync, adaptive } = useProgress(user?.uid)
   const [params, setParams] = useSearchParams()
-  const tab: Tab = tabs.find((t) => t.id === params.get('tab'))?.id ?? 'practice'
+  const tab: Tab =
+    tabs.find((t) => t.id === params.get('tab'))?.id ?? 'practice'
   const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
 
   const all = timeline(progress)
@@ -42,14 +59,25 @@ export function HomePage() {
   const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
   const name = firstName ? `, ${firstName}` : ''
 
-  const heading = all.length === 0 && !adaptive?.attempts.length ? `Welcome${name}. Let's find your blind spots.` : `Ready when you are${name}.`
-  const flagsSeen = [...new Set(scenarios
-    .filter((scenario) => progress[scenario.id] && isScam(scenario))
-    .flatMap((scenario) => scenario.indicators.map((indicator) => indicator.title)))]
+  const heading =
+    all.length === 0 && !adaptive?.attempts.length
+      ? `Welcome${name}. Let's find your blind spots.`
+      : `Ready when you are${name}.`
+  const flagsSeen = [
+    ...new Set(
+      scenarios
+        .filter((scenario) => progress[scenario.id] && isScam(scenario))
+        .flatMap((scenario) =>
+          scenario.indicators.map((indicator) => indicator.title),
+        ),
+    ),
+  ]
 
   const stats = channelStats(progress)
 
-  useEffect(() => { document.title = 'Home · Tellio' }, [])
+  useEffect(() => {
+    document.title = 'Home · Tellio'
+  }, [])
 
   // Tabs live in the URL (Back and reload keep them); filters are dropped when you leave History.
   function show(id: Tab) {
@@ -61,7 +89,10 @@ export function HomePage() {
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
     if (!step) return
     event.preventDefault()
-    const id = tabs[(tabs.findIndex((t) => t.id === tab) + step + tabs.length) % tabs.length].id
+    const id =
+      tabs[
+        (tabs.findIndex((t) => t.id === tab) + step + tabs.length) % tabs.length
+      ].id
     show(id)
     tabRefs.current[id]?.focus()
   }
@@ -70,13 +101,25 @@ export function HomePage() {
     <div className="train-shell">
       <TrainingHeader />
       <main className="home-main">
-        <RevealText as="h1" className="home-title" text={heading} highlight={firstName} />
+        <RevealText
+          as="h1"
+          className="home-title"
+          text={heading}
+          highlight={firstName}
+        />
 
-        <div className="home-tabs segmented" role="tablist" aria-label="Home sections" onKeyDown={onTabKey}>
+        <div
+          className="home-tabs segmented"
+          role="tablist"
+          aria-label="Home sections"
+          onKeyDown={onTabKey}
+        >
           {tabs.map((t) => (
             <button
               key={t.id}
-              ref={(node) => { tabRefs.current[t.id] = node }}
+              ref={(node) => {
+                tabRefs.current[t.id] = node
+              }}
               type="button"
               role="tab"
               id={`tab-${t.id}`}
@@ -87,49 +130,93 @@ export function HomePage() {
             >
               {t.label}
               {/* layout="x": the bar is sticky, so a scroll jump must not make it fly vertically. */}
-              {tab === t.id && <m.span className="seg-thumb" layoutId="home-tab" layout="x" transition={spring} />}
+              {tab === t.id && (
+                <m.span
+                  className="seg-thumb"
+                  layoutId="home-tab"
+                  layout="x"
+                  transition={spring}
+                />
+              )}
             </button>
           ))}
         </div>
 
-        <div className="home-panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} key={tab}>
+        <div
+          className="home-panel"
+          role="tabpanel"
+          id={`panel-${tab}`}
+          aria-labelledby={`tab-${tab}`}
+          key={tab}
+        >
           {tab === 'practice' && (
             <>
               {profileWarning && (
                 <div className="train-notice" role="status">
                   <Info size={18} aria-hidden="true" />
                   <p>{profileWarning}</p>
-                  <button type="button" className="train-notice-dismiss" onClick={dismissProfileWarning} aria-label="Dismiss this message">
+                  <button
+                    type="button"
+                    className="train-notice-dismiss"
+                    onClick={dismissProfileWarning}
+                    aria-label="Dismiss this message"
+                  >
                     <X size={18} aria-hidden="true" />
                   </button>
                 </div>
               )}
 
               {/* Gamification Mission Card */}
-              <MissionCard key={user?.uid} uid={user?.uid} progress={progress} adaptive={adaptive} difficulty={currentLevel(progress)} loading={callSync === 'loading'} />
+              <MissionCard
+                key={user?.uid}
+                uid={user?.uid}
+                progress={progress}
+                adaptive={adaptive}
+                difficulty={currentLevel(progress)}
+                loading={callSync === 'loading'}
+              />
 
               {/* Quick jump navigation pills across all 3 channels */}
-              <nav className="home-channel-jump" aria-label="Jump to channel section">
+              <nav
+                className="home-channel-jump"
+                aria-label="Jump to channel section"
+              >
                 <a href="#section-call" className="channel-jump-pill">
                   <Phone size={15} aria-hidden="true" />
                   <span>Calls</span>
-                  <span className="jump-count">{stats.call.attempts ? `${stats.call.attempts} runs` : 'Ready'}</span>
+                  <span className="jump-count">
+                    {stats.call.attempts
+                      ? `${stats.call.attempts} runs`
+                      : 'Ready'}
+                  </span>
                 </a>
                 <a href="#section-email" className="channel-jump-pill">
                   <Mail size={15} aria-hidden="true" />
                   <span>Emails</span>
-                  <span className="jump-count">{stats.email.attempts ? `${stats.email.attempts} runs` : 'Ready'}</span>
+                  <span className="jump-count">
+                    {stats.email.attempts
+                      ? `${stats.email.attempts} runs`
+                      : 'Ready'}
+                  </span>
                 </a>
                 <a href="#section-sms" className="channel-jump-pill">
                   <MessageSquareText size={15} aria-hidden="true" />
                   <span>Messaging</span>
-                  <span className="jump-count">{stats.sms.attempts ? `${stats.sms.attempts} runs` : 'Ready'}</span>
+                  <span className="jump-count">
+                    {stats.sms.attempts
+                      ? `${stats.sms.attempts} runs`
+                      : 'Ready'}
+                  </span>
                 </a>
               </nav>
 
               {/* Adaptive recommendation banner if Tellio has user insights */}
               {adaptiveFocus && (
-                <div className="home-adaptive-banner" role="region" aria-label="Adaptive focus recommendation">
+                <div
+                  className="home-adaptive-banner"
+                  role="region"
+                  aria-label="Adaptive focus recommendation"
+                >
                   <div className="home-adaptive-badge">
                     <TellIcon size={16} aria-hidden="true" />
                     <span>Tellio's Focus</span>
@@ -137,7 +224,8 @@ export function HomePage() {
                   <div className="home-adaptive-content">
                     <p className="home-adaptive-title">{adaptiveFocus.title}</p>
                     <p className="home-adaptive-reason">
-                      {adaptiveFocus.reason} · Difficulty: <strong>{adaptiveFocus.difficulty}</strong>
+                      {adaptiveFocus.reason} · Difficulty:{' '}
+                      <strong>{adaptiveFocus.difficulty}</strong>
                     </p>
                   </div>
                 </div>
@@ -185,19 +273,41 @@ export function HomePage() {
               <ResultsSummary
                 progress={progress}
                 saved={callSync !== 'unavailable'}
-                onMissed={() => setParams({ tab: 'history', status: 'missed' }, { replace: true })}
+                onMissed={() =>
+                  setParams(
+                    { tab: 'history', status: 'missed' },
+                    { replace: true },
+                  )
+                }
               />
               <InstinctsCard uid={user?.uid} />
               <ScamProfileCard uid={user?.uid} />
               {flagsSeen.length > 0 && (
                 <details className="home-more">
-                  <summary>Red flags you've met<span>{flagsSeen.length}</span></summary>
-                  <ul className="home-flags">{flagsSeen.map((flag) => <li key={flag}>{flag}</li>)}</ul>
+                  <summary>
+                    Red flags you've met<span>{flagsSeen.length}</span>
+                  </summary>
+                  <ul className="home-flags">
+                    {flagsSeen.map((flag) => (
+                      <li key={flag}>{flag}</li>
+                    ))}
+                  </ul>
                 </details>
               )}
-              <section className="profile-summary" aria-label="Your saved profile">
-                <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
-                <TransitionLink className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
+              <section
+                className="profile-summary"
+                aria-label="Your saved profile"
+              >
+                <div>
+                  <strong>{profile?.name}</strong>
+                  <span>
+                    {profile?.email} · {profile?.phone}
+                  </span>
+                </div>
+                <TransitionLink className="text-link" to="/onboarding">
+                  Edit profile
+                  <ArrowRight size={14} aria-hidden="true" />
+                </TransitionLink>
               </section>
             </>
           )}
@@ -213,10 +323,17 @@ const channelRows = [
   { key: 'call', label: 'Calls', Icon: Phone },
   { key: 'other', label: 'Older scenarios', Icon: History },
 ] as const
-const percent = (part: number, whole: number) => whole ? Math.round((part / whole) * 100) : 0
+const percent = (part: number, whole: number) =>
+  whole ? Math.round((part / whole) * 100) : 0
 
 /** Progress' numbers, all from this user's attempts: one headline rate with its counts, then per channel and lately. */
-function ResultsSummary({ progress, saved }: { progress: Progress; saved: boolean }) {
+function ResultsSummary({
+  progress,
+  saved,
+}: {
+  progress: Progress
+  saved: boolean
+}) {
   const all = timeline(progress)
   const right = all.filter((attempt) => attempt.correct).length
   const recent = all.slice(-8)
@@ -228,48 +345,101 @@ function ResultsSummary({ progress, saved }: { progress: Progress; saved: boolea
     return (
       <section className="home-stats" aria-label="Your results">
         <p>Nothing yet. Finish a scenario and your results show up here.</p>
-        <Link className="text-link" to="/home">Start practising<ArrowRight size={14} aria-hidden="true" /></Link>
+        <Link className="text-link" to="/home">
+          Start practising
+          <ArrowRight size={14} aria-hidden="true" />
+        </Link>
       </section>
     )
   }
 
   return (
     <section className="home-stats" aria-label="Your results">
-      <p className="home-rate"><strong><CountUp value={percent(right, all.length)} />%</strong> right calls</p>
+      <p className="home-rate">
+        <strong>
+          <CountUp value={percent(right, all.length)} />%
+        </strong>{' '}
+        right calls
+      </p>
       <p className="home-rate-sub">
-        <span>{right} of {all.length} attempts</span>
-        <span>{done} of {total} scenarios tried</span>
-        {missed ? <Link className="text-link" to="/home?tab=library&status=missed">{missed} to revisit<ArrowRight size={13} aria-hidden="true" /></Link> : <span>Nothing to revisit</span>}
+        <span>
+          {right} of {all.length} attempts
+        </span>
+        <span>
+          {done} of {total} scenarios tried
+        </span>
+        {missed ? (
+          <Link className="text-link" to="/home?tab=library&status=missed">
+            {missed} to revisit
+            <ArrowRight size={13} aria-hidden="true" />
+          </Link>
+        ) : (
+          <span>Nothing to revisit</span>
+        )}
       </p>
 
-      <div className="home-stat-head"><h2>By channel</h2></div>
+      <div className="home-stat-head">
+        <h2>By channel</h2>
+      </div>
       <ul className="home-channels">
-        {channelRows.filter((row) => row.key !== 'other' || channels.other.attempts).map(({ key, label, Icon }) => {
-          const { attempts, right: ok } = channels[key]
-          const rate = percent(ok, attempts)
-          return (
-            <li key={key}>
-              <span className="home-channel-name"><Icon size={15} aria-hidden="true" />{label}</span>
-              <span className="home-meter" aria-hidden="true"><span style={{ width: `${rate}%` }} /></span>
-              <span className="home-channel-value">{attempts ? <><strong>{rate}%</strong> {ok} of {attempts}</> : 'Not tried yet'}</span>
-            </li>
-          )
-        })}
+        {channelRows
+          .filter((row) => row.key !== 'other' || channels.other.attempts)
+          .map(({ key, label, Icon }) => {
+            const { attempts, right: ok } = channels[key]
+            const rate = percent(ok, attempts)
+            return (
+              <li key={key}>
+                <span className="home-channel-name">
+                  <Icon size={15} aria-hidden="true" />
+                  {label}
+                </span>
+                <span className="home-meter" aria-hidden="true">
+                  <span style={{ width: `${rate}%` }} />
+                </span>
+                <span className="home-channel-value">
+                  {attempts ? (
+                    <>
+                      <strong>{rate}%</strong> {ok} of {attempts}
+                    </>
+                  ) : (
+                    'Not tried yet'
+                  )}
+                </span>
+              </li>
+            )
+          })}
       </ul>
 
       <div className="home-stat-head">
-        <h2>Last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h2>
+        <h2>
+          Last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}
+        </h2>
         <span>{recent.filter((attempt) => attempt.correct).length} right</span>
       </div>
       <ol className="home-recent" aria-label="Oldest first">
         {recent.map((attempt) => (
-          <li key={`${attempt.id}-${attempt.at}`} className={attempt.correct ? 'is-right' : 'is-missed'}>
-            {attempt.correct ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />}
-            <span className="sr-only">{getScenario(attempt.id)?.title ?? 'A scenario made for you'}: {attempt.correct ? 'right call' : 'missed'}</span>
+          <li
+            key={`${attempt.id}-${attempt.at}`}
+            className={attempt.correct ? 'is-right' : 'is-missed'}
+          >
+            {attempt.correct ? (
+              <Check size={12} strokeWidth={3} aria-hidden="true" />
+            ) : (
+              <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />
+            )}
+            <span className="sr-only">
+              {getScenario(attempt.id)?.title ?? 'A scenario made for you'}:{' '}
+              {attempt.correct ? 'right call' : 'missed'}
+            </span>
           </li>
         ))}
       </ol>
-      <p className="home-saved">Oldest to newest · {saved ? 'Saved to your account' : "Couldn't reach your account, so this is this browser's results"}</p>
+      <p className="home-saved">
+        Oldest to newest ·{' '}
+        {saved
+          ? 'Saved to your account'
+          : "Couldn't reach your account, so this is this browser's results"}
+      </p>
     </section>
   )
 }

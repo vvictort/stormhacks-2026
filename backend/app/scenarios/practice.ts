@@ -80,10 +80,11 @@ function receivedAt(id: string) {
 
 function row(library: ScamLibrary, id: string, category: ScamCategory) {
   const example = library.examples.find((e) => e.id === id);
-  if (!example || example.kind !== "scam" || example.category !== category)
+  if (!example || example.kind !== "scam" || example.category !== category) {
     throw new Error(
       `practice: library row ${id} is missing or no longer a ${category} scam; pick another`,
     );
+  }
   return example;
 }
 
@@ -104,10 +105,11 @@ export function practiceEmails(library: ScamLibrary) {
         receivedAt: receivedAt(id),
         generated: { source: "fallback", reason: EMAIL_CREDIT },
       });
-    if (!draft || !("scenario" in draft))
+    if (!draft || !("scenario" in draft)) {
       throw new Error(
         `practice: ${rowId} no longer builds a clean email${draft ? `: ${draft.problems[0]}` : ""}`,
       );
+    }
     return { ...draft.scenario, id };
   });
 }
@@ -116,8 +118,9 @@ export function practiceCalls(library: ScamLibrary) {
   return CALLS.map(([category, difficulty, rowId]) => {
     const example = row(library, rowId, category);
     const steps = patternSteps(example);
-    if (!steps)
+    if (!steps) {
       throw new Error(`practice: ${rowId} no longer makes a call pattern`);
+    }
     const stored = patternCall(
       `lib-${rowId}`,
       category,
@@ -225,21 +228,23 @@ export const PracticeText = z
     const hidden = hiddenIndicators(
       rendered(scenario.messages, scenario.indicators),
     );
-    if (hidden.length)
+    if (hidden.length) {
       ctx.addIssue({
         code: "custom",
         path: ["indicators"],
         message: `not highlightable: ${hidden.join(" | ")}`,
       });
+    }
     if (
       new Set(scenario.indicators.map((i) => i.title)).size !==
       scenario.indicators.length
-    )
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["indicators"],
         message: "duplicate titles",
       });
+    }
     if (
       [
         scenario.sender,
@@ -433,10 +438,11 @@ export function checkText(
   },
 ): { value: PracticeText } | { problems: string[] } {
   const json = parseModelJson(raw);
-  if (json === undefined)
+  if (json === undefined) {
     return { problems: ["The answer was not valid JSON."] };
+  }
   const parsed = ModelText.safeParse(json);
-  if (!parsed.success)
+  if (!parsed.success) {
     return {
       problems: parsed.error.issues
         .slice(0, 8)
@@ -444,6 +450,7 @@ export function checkText(
           (issue) => `${issue.path.join(".") || "answer"}: ${issue.message}`,
         ),
     };
+  }
   const sms = parsed.data;
   const messages = sms.messages.map((m) =>
     m.link ? { text: m.text, link: m.link } : { text: m.text },
@@ -464,14 +471,16 @@ export function checkText(
     if (
       !visible.some((kept) => kept.title === flag.title) &&
       !hiddenIndicators({ ...shown, indicators: candidate }).length
-    )
+    ) {
       visible.push(candidate[candidate.length - 1]);
+    }
   }
   const problems: string[] = [];
-  if (visible.length < 3)
+  if (visible.length < 3) {
     problems.push(
       "At least 3 redFlags quotes must be copied exactly from a message text or be a whole link URL, and must not overlap.",
     );
+  }
   const scenario = PracticeText.safeParse({
     id: meta.id,
     type: "sms",
@@ -494,12 +503,13 @@ export function checkText(
       grounding: { exampleCount: meta.exampleCount, source: "scam-library" },
     },
   });
-  if (!scenario.success)
+  if (!scenario.success) {
     problems.push(
       ...scenario.error.issues
         .slice(0, 8)
         .map((issue) => `${issue.path.join(".")}: ${issue.message}`),
     );
+  }
   return problems.length || !scenario.success
     ? { problems }
     : { value: scenario.data };

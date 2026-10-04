@@ -1,36 +1,85 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-.onboarding-step { font-size: 10px; letter-spacing: 1.2px; margin: -10px 0 22px; }
-.onboarding-signout { display: flex; gap: 7px; margin: 22px auto 0; font-size: 12px; }
-.profile-error { width: min(440px, calc(100% - 40px)); margin: 25vh auto; text-align: center; }
-.profile-error > .text-link { margin-top: 20px; }
-.profile-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: var(--space-section, 48px); padding-top: 16px; border-top: 1px solid var(--color-border); font-size: 14px; }
-.home-more + .profile-summary { margin-top: 0; }
-.profile-summary span { display: block; color: var(--color-muted-strong); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
-.profile-summary .text-link { flex-shrink: 0; min-height: 44px; }
-@media(max-width: 540px) { .profile-summary { align-items: flex-start; flex-direction: column; } }
+.onboarding-step {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  margin: -10px 0 22px;
+}
+
+.onboarding-signout {
+  display: flex;
+  gap: 7px;
+  margin: 22px auto 0;
+  font-size: 12px;
+}
+
+.profile-error {
+  width: min(440px, calc(100% - 40px));
+  margin: 25vh auto;
+  text-align: center;
+}
+
+.profile-error > .text-link {
+  margin-top: 20px;
+}
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: var(--space-section, 48px);
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.home-more + .profile-summary {
+  margin-top: 0;
+}
+
+.profile-summary span {
+  display: block;
+  color: var(--color-muted-strong);
+  font-size: 13px;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.profile-summary .text-link {
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+@media (max-width: 540px) {
+  .profile-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
 
 @theme {
-  --color-background: #F7F3EA;
-  --color-surface: #FFFDF8;
+  --color-background: #f7f3ea;
+  --color-surface: #fffdf8;
   --color-foreground: #252525;
-  --color-muted: #8A7560;
-  --color-primary: #C56B4E;
-  --color-success: #91A38A;
-  --color-danger: #C85555;
-  --color-accent: #C8A15A;
-  --color-border: #DED6C9;
+  --color-muted: #8a7560;
+  --color-primary: #c56b4e;
+  --color-success: #91a38a;
+  --color-danger: #c85555;
+  --color-accent: #c8a15a;
+  --color-border: #ded6c9;
   /* Control edges need 3:1 against surface and background (WCAG 1.4.11); --color-border is for dividers only. */
-  --color-control: #9A8A76;
+  --color-control: #9a8a76;
   /* Deeper companion shades give small text and controls accessible contrast. */
-  --color-muted-strong: #75634F;
-  --color-primary-strong: #A34F36;
-  --color-primary-deep: #8E432E;
-  --color-success-strong: #52674B;
-  --color-danger-strong: #AC3838;
+  --color-muted-strong: #75634f;
+  --color-primary-strong: #a34f36;
+  --color-primary-deep: #8e432e;
+  --color-success-strong: #52674b;
+  --color-danger-strong: #ac3838;
   --color-accent-strong: #725822;
-  --font-sans: "Inter", "Segoe UI", Arial, sans-serif;
-  --font-editorial: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: 'Inter', 'Segoe UI', Arial, sans-serif;
+  --font-editorial:
+    'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
 }
 
 :root {
@@ -50,239 +99,1195 @@
   --motion-scale: 1;
   /* Phone-app feel: a gentle spring (damping .78, ~2% overshoot, settles in 485ms) for releases
      and arrivals, and the iOS sheet curve for screen pushes. */
-  --spring: linear(0, 0.046, 0.154, 0.29, 0.431, 0.563, 0.679, 0.776, 0.852, 0.91, 0.953, 0.982, 1.001, 1.012, 1.018, 1.02, 1.019, 1.017, 1.015, 1.012, 1.009, 1.007, 1.005, 1.003, 1);
+  --spring: linear(
+    0,
+    0.046,
+    0.154,
+    0.29,
+    0.431,
+    0.563,
+    0.679,
+    0.776,
+    0.852,
+    0.91,
+    0.953,
+    0.982,
+    1.001,
+    1.012,
+    1.018,
+    1.02,
+    1.019,
+    1.017,
+    1.015,
+    1.012,
+    1.009,
+    1.007,
+    1.005,
+    1.003,
+    1
+  );
   --spring-duration: 485ms;
   /* Tell's own squash spring (stiffness 190, damping 13 in Mascot.tsx) as an easing: one visible wobble. */
-  --bubbly: linear(0, 0.053, 0.186, 0.364, 0.557, 0.74, 0.899, 1.024, 1.112, 1.164, 1.185, 1.182, 1.161, 1.13, 1.095, 1.06, 1.028, 1.003, 0.984, 0.972, 0.966, 0.965, 0.968, 0.974, 0.98, 0.987, 0.993, 0.998, 1.002, 1.005, 1.006, 1.006, 1);
+  --bubbly: linear(
+    0,
+    0.053,
+    0.186,
+    0.364,
+    0.557,
+    0.74,
+    0.899,
+    1.024,
+    1.112,
+    1.164,
+    1.185,
+    1.182,
+    1.161,
+    1.13,
+    1.095,
+    1.06,
+    1.028,
+    1.003,
+    0.984,
+    0.972,
+    0.966,
+    0.965,
+    0.968,
+    0.974,
+    0.98,
+    0.987,
+    0.993,
+    0.998,
+    1.002,
+    1.005,
+    1.006,
+    1.006,
+    1
+  );
   --bubbly-duration: 800ms;
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Scrolling stays fully live (wheel, touch, keys); only the bar is hidden, here and in every inner scroller. */
-html { scroll-behavior: smooth; }
-* { scrollbar-width: none; }
-::-webkit-scrollbar { display: none; }
-body { margin: 0; min-width: 320px; }
-button, input { font: inherit; }
-button, a, input { -webkit-tap-highlight-color: transparent; }
-button, a { touch-action: manipulation; }
-button { cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: .6; }
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* The control doing the work stays at full strength; only the others dim. */
-button[aria-busy="true"]:disabled { opacity: 1; }
-[aria-busy="true"] button:disabled, button[aria-busy="true"] { cursor: progress; }
-a { text-decoration: none; }
-button, a, input { transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint); }
-:focus-visible { outline: 2px solid var(--color-primary-strong); outline-offset: 4px; border-radius: 4px; }
-h1:focus, #auth-content:focus { outline: none; }
-::selection { background: color-mix(in srgb, var(--color-primary) 19%, transparent); }
+button[aria-busy='true']:disabled {
+  opacity: 1;
+}
+
+[aria-busy='true'] button:disabled,
+button[aria-busy='true'] {
+  cursor: progress;
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+a,
+input {
+  transition:
+    background-color var(--motion-quick) var(--ease-out-quint),
+    border-color var(--motion-quick) var(--ease-out-quint),
+    color var(--motion-quick) var(--ease-out-quint),
+    opacity var(--motion-quick) var(--ease-out-quint);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+h1:focus,
+#auth-content:focus {
+  outline: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 19%, transparent);
+}
 
 /* Auth is an app screen, not a page: the same bar as the signed-in app, then one quiet column.
    Tell sits beside the heading on phones and moves out into the margin once there is room. */
-.auth-shell { min-height: 100svh; display: flex; flex-direction: column; }
-.auth-bar { width: min(1180px, calc(100% - 64px)); margin-inline: auto; min-height: 88px; display: flex; align-items: center; }
-.brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-editorial); font-size: 32px; font-weight: 600; line-height: 1; letter-spacing: -1.2px; }
+.auth-shell {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-bar {
+  width: min(1180px, calc(100% - 64px));
+  margin-inline: auto;
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-editorial);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -1.2px;
+}
+
 /* Auto margins centre the column but collapse to zero when it overflows, so short screens scroll instead of clipping. */
-.auth-stage { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 20px; }
-.auth-card { width: min(380px, 100%); margin-block: auto; padding-bottom: 4vh; }
-.card-heading { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
-.card-heading h1 { font-family: var(--font-editorial); font-size: 40px; line-height: 1.1; font-weight: 400; letter-spacing: -0.03em; margin: 0 0 8px; text-wrap: balance; }
-.card-description { font-size: 15px; line-height: 1.55; text-wrap: pretty; }
-.auth-mascot { flex-shrink: 0; margin: -6px -4px -6px 0; }
-.auth-mascot .mascot { width: 68px; height: 68px; }
-.auth-note { display: none; }
-.auth-trust { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 20px 0 24px; font-size: 12px; text-align: center; }
-.auth-trust svg { flex-shrink: 0; }
-.auth-fields { display: grid; gap: 8px; padding: 0; margin: 0; border: 0; min-width: 0; }
-.form-field { min-width: 0; }
-.phone-fields { display: grid; grid-template-columns: 5.5rem 1fr; gap: 8px; }
-.field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-.form-field label { font-size: 13px; font-weight: 500; line-height: 1.5; }
-.input-wrap { position: relative; }
-.auth-input { display: block; width: 100%; min-height: 44px; padding: 9px 12px; border-width: 1px; border-radius: 8px; color: var(--color-foreground); caret-color: var(--color-primary-strong); font-size: 15px; line-height: 1.6; outline-offset: 2px; }
-.auth-input::placeholder { color: var(--color-muted-strong); opacity: 1; }
-.auth-input:hover:not(:disabled, [aria-invalid="true"]) { border-color: var(--color-muted-strong); }
-.auth-input:focus { border-color: var(--color-primary-strong); outline: 2px solid color-mix(in srgb, var(--color-primary) 15%, transparent); outline-offset: 1px; }
-.auth-input[aria-invalid="true"] { border-color: var(--color-danger); }
-.auth-input[aria-invalid="true"]:focus { outline-color: color-mix(in srgb, var(--color-danger) 18%, transparent); }
-.auth-input:disabled { background: var(--color-background); color: var(--color-muted); }
-.auth-input.has-action { padding-right: 46px; }
-.password-toggle { position: absolute; display: grid; place-items: center; top: 2px; right: 2px; width: 42px; height: calc(100% - 4px); border-radius: 6px; }
-.password-toggle:hover { color: var(--color-primary-strong); background: var(--color-background); }
-.password-toggle svg, .dialog-close svg { transition: scale 120ms var(--ease-out-quint); }
-.password-toggle:active:not(:disabled) svg, .dialog-close:active svg { scale: .88; }
+.auth-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.auth-card {
+  width: min(380px, 100%);
+  margin-block: auto;
+  padding-bottom: 4vh;
+}
+
+.card-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.card-heading h1 {
+  font-family: var(--font-editorial);
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+  text-wrap: balance;
+}
+
+.card-description {
+  font-size: 15px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.auth-mascot {
+  flex-shrink: 0;
+  margin: -6px -4px -6px 0;
+}
+
+.auth-mascot .mascot {
+  width: 68px;
+  height: 68px;
+}
+
+.auth-note {
+  display: none;
+}
+
+.auth-trust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 20px 0 24px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.auth-trust svg {
+  flex-shrink: 0;
+}
+
+.auth-fields {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.form-field {
+  min-width: 0;
+}
+
+.phone-fields {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 8px;
+}
+
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.form-field label {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.auth-input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border-width: 1px;
+  border-radius: 8px;
+  color: var(--color-foreground);
+  caret-color: var(--color-primary-strong);
+  font-size: 15px;
+  line-height: 1.6;
+  outline-offset: 2px;
+}
+
+.auth-input::placeholder {
+  color: var(--color-muted-strong);
+  opacity: 1;
+}
+
+.auth-input:hover:not(:disabled, [aria-invalid='true']) {
+  border-color: var(--color-muted-strong);
+}
+
+.auth-input:focus {
+  border-color: var(--color-primary-strong);
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 15%, transparent);
+  outline-offset: 1px;
+}
+
+.auth-input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.auth-input[aria-invalid='true']:focus {
+  outline-color: color-mix(in srgb, var(--color-danger) 18%, transparent);
+}
+
+.auth-input:disabled {
+  background: var(--color-background);
+  color: var(--color-muted);
+}
+
+.auth-input.has-action {
+  padding-right: 46px;
+}
+
+.password-toggle {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  top: 2px;
+  right: 2px;
+  width: 42px;
+  height: calc(100% - 4px);
+  border-radius: 6px;
+}
+
+.password-toggle:hover {
+  color: var(--color-primary-strong);
+  background: var(--color-background);
+}
+
+.password-toggle svg,
+.dialog-close svg {
+  transition: scale 120ms var(--ease-out-quint);
+}
+
+.password-toggle:active:not(:disabled) svg,
+.dialog-close:active svg {
+  scale: 0.88;
+}
+
 /* One reserved line under every field; hint and error stack in the same cell and crossfade. */
-.field-message { display: grid; min-height: 1.5em; margin-top: 3px; font-size: 13px; line-height: 1.5; text-wrap: pretty; }
-.field-message > * { grid-area: 1 / 1; }
-.field-hint { transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s; }
-.field-hint[data-hidden] { opacity: 0; visibility: hidden; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s var(--motion-quick); }
-.field-error { color: var(--color-danger-strong); --rise: -4px; animation: rise-in 220ms var(--ease-out-quint) backwards; }
-.text-link { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--color-primary-strong); font-size: inherit; font-weight: 600; text-decoration: underline 1px transparent; text-underline-offset: 4px; transition: color var(--motion-quick) var(--ease-out-quint), text-decoration-color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint); }
-.text-link:hover:not(:disabled, [aria-disabled="true"]) { text-decoration-color: currentColor; }
-.text-link:active:not(:disabled, [aria-disabled="true"]) { color: var(--color-primary-deep); }
-.text-link[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
-.text-link > svg, .primary-button > svg { transition: translate 200ms var(--ease-out-quint); }
-.text-link:hover:not([aria-disabled="true"]) > svg, .primary-button:hover:not(:disabled) > svg:not(.spinner) { translate: calc(2px * var(--motion-scale)) 0; }
+.field-message {
+  display: grid;
+  min-height: 1.5em;
+  margin-top: 3px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.field-message > * {
+  grid-area: 1 / 1;
+}
+
+.field-hint {
+  transition:
+    opacity var(--motion-quick) var(--ease-out-quint),
+    visibility 0s;
+}
+
+.field-hint[data-hidden] {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--motion-quick) var(--ease-out-quint),
+    visibility 0s var(--motion-quick);
+}
+
+.field-error {
+  color: var(--color-danger-strong);
+  --rise: -4px;
+  animation: rise-in 220ms var(--ease-out-quint) backwards;
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--color-primary-strong);
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline 1px transparent;
+  text-underline-offset: 4px;
+  transition:
+    color var(--motion-quick) var(--ease-out-quint),
+    text-decoration-color var(--motion-quick) var(--ease-out-quint),
+    opacity var(--motion-quick) var(--ease-out-quint);
+}
+
+.text-link:hover:not(:disabled, [aria-disabled='true']) {
+  text-decoration-color: currentColor;
+}
+
+.text-link:active:not(:disabled, [aria-disabled='true']) {
+  color: var(--color-primary-deep);
+}
+
+.text-link[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.text-link > svg,
+.primary-button > svg {
+  transition: translate 200ms var(--ease-out-quint);
+}
+
+.text-link:hover:not([aria-disabled='true']) > svg,
+.primary-button:hover:not(:disabled) > svg:not(.spinner) {
+  translate: calc(2px * var(--motion-scale)) 0;
+}
+
 /* 44px tap target without growing the 18px label row. */
-.field-label-action { min-height: 44px; margin-block: -13px; font-size: 13px; font-weight: 500; }
-.primary-button, .social-button { transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint), translate 120ms var(--ease-out-quint); min-height: 44px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; line-height: 1.5; border-radius: 8px; }
-.primary-button { color: var(--color-surface); background-color: var(--color-primary-strong); margin-top: 6px; box-shadow: 0 1px 2px #6b2f1d26; }
-.primary-button:hover:not(:disabled) { background-color: var(--color-primary-deep); }
-.primary-button > svg:last-child:not(.spinner) { margin-left: 3px; }
-.social-button { border-width: 1px; background: var(--color-surface); }
-.social-button:hover:not(:disabled) { background: var(--color-background); border-color: var(--color-muted-strong); }
+.field-label-action {
+  min-height: 44px;
+  margin-block: -13px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.primary-button,
+.social-button {
+  transition:
+    background-color var(--motion-quick) var(--ease-out-quint),
+    border-color var(--motion-quick) var(--ease-out-quint),
+    opacity var(--motion-quick) var(--ease-out-quint),
+    translate 120ms var(--ease-out-quint);
+  min-height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: 8px;
+}
+
+.primary-button {
+  color: var(--color-surface);
+  background-color: var(--color-primary-strong);
+  margin-top: 6px;
+  box-shadow: 0 1px 2px #6b2f1d26;
+}
+
+.primary-button:hover:not(:disabled) {
+  background-color: var(--color-primary-deep);
+}
+
+.primary-button > svg:last-child:not(.spinner) {
+  margin-left: 3px;
+}
+
+.social-button {
+  border-width: 1px;
+  background: var(--color-surface);
+}
+
+.social-button:hover:not(:disabled) {
+  background: var(--color-background);
+  border-color: var(--color-muted-strong);
+}
+
 /* Press: a 1px settle, the same on every full-width button. */
-.primary-button:active:not(:disabled) { background-color: var(--color-primary-deep); }
-.social-button:active:not(:disabled) { background: color-mix(in srgb, var(--color-border) 45%, var(--color-background)); }
+.primary-button:active:not(:disabled) {
+  background-color: var(--color-primary-deep);
+}
+
+.social-button:active:not(:disabled) {
+  background: color-mix(
+    in srgb,
+    var(--color-border) 45%,
+    var(--color-background)
+  );
+}
+
 /* Signup steps share the fieldset rhythm; a new step rises in. */
-.form-step, .form-step-static { display: grid; gap: 8px; min-width: 0; }
-.form-step { --rise: 8px; animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
-.card-email { color: var(--color-foreground); font-weight: 600; overflow-wrap: anywhere; }
-.inline-link { display: inline; font-size: inherit; }
-.password-checklist { display: grid; gap: 4px; margin: -2px 0 8px; padding: 0; list-style: none; font-size: 13px; line-height: 1.5; }
-.password-checklist li { display: flex; align-items: center; gap: 8px; color: var(--color-muted-strong); transition: color var(--motion-quick) var(--ease-out-quint); }
-.password-checklist svg { flex-shrink: 0; animation: settle-in 200ms var(--ease-out-quint); }
-.password-checklist [data-state="met"] { color: var(--color-success-strong); }
-.password-checklist [data-state="unmet"] { color: var(--color-danger-strong); }
+.form-step,
+.form-step-static {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form-step {
+  --rise: 8px;
+  animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards;
+}
+
+.card-email {
+  color: var(--color-foreground);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.inline-link {
+  display: inline;
+  font-size: inherit;
+}
+
+.password-checklist {
+  display: grid;
+  gap: 4px;
+  margin: -2px 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.password-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-muted-strong);
+  transition: color var(--motion-quick) var(--ease-out-quint);
+}
+
+.password-checklist svg {
+  flex-shrink: 0;
+  animation: settle-in 200ms var(--ease-out-quint);
+}
+
+.password-checklist [data-state='met'] {
+  color: var(--color-success-strong);
+}
+
+.password-checklist [data-state='unmet'] {
+  color: var(--color-danger-strong);
+}
+
 /* The divider's row doubles as the form-level error slot; a long message grows it rather than overflowing. */
-.form-feedback { display: grid; align-items: center; min-height: 56px; padding-block: 6px; }
-.form-feedback > * { grid-area: 1 / 1; }
-.auth-divider { display: flex; align-items: center; gap: 14px; font-size: 12px; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s; }
+.form-feedback {
+  display: grid;
+  align-items: center;
+  min-height: 56px;
+  padding-block: 6px;
+}
+
+.form-feedback > * {
+  grid-area: 1 / 1;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  transition:
+    opacity var(--motion-quick) var(--ease-out-quint),
+    visibility 0s;
+}
+
 /* Fades out faster than the error rises in, so the "or" never ghosts through the message. */
-.auth-divider[data-hidden] { opacity: 0; visibility: hidden; transition: opacity 90ms ease-out, visibility 0s 90ms; }
-.form-alert p { display: flex; align-items: flex-start; gap: 8px; color: var(--color-danger-strong); font-size: 13px; line-height: 1.5; text-wrap: pretty; --rise: -4px; animation: rise-in 220ms var(--ease-out-quint) backwards; }
-.form-alert svg { flex-shrink: 0; margin-top: 2px; }
-.auth-divider > span { flex: 1; height: 1px; background: var(--color-border); }
-.auth-switch { margin-top: 18px; font-size: 13px; text-align: center; line-height: 2; }
-.auth-switch a { min-height: 44px; margin-block: -10px; }
-.auth-notice { animation: rise-in 220ms var(--ease-out-quint) backwards; --rise: -4px; display: flex; align-items: flex-start; gap: 9px; padding: 12px; border: 1px solid; border-radius: 9px; font-size: 13px; line-height: 1.6; margin-top: 17px; overflow-wrap: anywhere; }
-.auth-notice > svg { flex-shrink: 0; margin-top: 2px; }
-.notice-error { color: var(--color-danger-strong); border-color: color-mix(in srgb, var(--color-danger) 25%, transparent); background: color-mix(in srgb, var(--color-danger) 3%, transparent); }
-.notice-success { color: var(--color-success-strong); border-color: color-mix(in srgb, var(--color-success) 40%, transparent); background: color-mix(in srgb, var(--color-success) 7%, transparent); }
-.notice-info { color: var(--color-accent-strong); border-color: color-mix(in srgb, var(--color-accent) 40%, transparent); background: color-mix(in srgb, var(--color-accent) 7%, transparent); }
-.signed-in-icon { animation: settle-in var(--motion-enter) var(--ease-out-quint) 120ms backwards; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; margin-bottom: 20px; }
-.signed-in-message { font-size: 14px; line-height: 1.8; }
-.signed-in-email { margin: 16px 0 24px; font-size: 13px; overflow-wrap: anywhere; }
-.signed-in-email + .auth-notice { margin-bottom: 20px; }
-.auth-notice + .social-button { margin-top: 20px; }
-.session-loading { display: flex; justify-content: center; padding: 50px 0; animation: fade-in 200ms var(--ease-out-quint) 350ms backwards; }
-.skip-link { position: fixed; top: -80px; left: 20px; z-index: 50; background: var(--color-surface); color: var(--color-primary-strong); padding: 12px 20px; border: 1px solid var(--color-border); border-radius: 8px; }
-.skip-link:focus { top: 16px; }
-.reset-dialog { position: fixed; inset: 0; margin: auto; width: min(444px, calc(100% - 32px)); max-height: calc(100svh - 32px); overflow-y: auto; padding: 34px; border-width: 1px; border-radius: 12px; box-shadow: 0 8px 24px #2525250f; }
-.reset-dialog::backdrop { background: color-mix(in srgb, var(--color-foreground) 22%, transparent); }
-.reset-dialog h2 { font-family: var(--font-editorial); font-size: 31px; line-height: 1.2; letter-spacing: -.8px; margin: 0 0 12px; padding-right: 36px; }
-.dialog-close { position: absolute; right: 8px; top: 8px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; }
-.dialog-close:hover { background: var(--color-background); }
-.reset-form, .reset-result { margin-top: 24px; }
-.spinner { animation: spin 900ms linear infinite, fade-in var(--motion-quick) var(--ease-out-quint); }
+.auth-divider[data-hidden] {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 90ms ease-out,
+    visibility 0s 90ms;
+}
+
+.form-alert p {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--color-danger-strong);
+  font-size: 13px;
+  line-height: 1.5;
+  text-wrap: pretty;
+  --rise: -4px;
+  animation: rise-in 220ms var(--ease-out-quint) backwards;
+}
+
+.form-alert svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.auth-divider > span {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.auth-switch {
+  margin-top: 18px;
+  font-size: 13px;
+  text-align: center;
+  line-height: 2;
+}
+
+.auth-switch a {
+  min-height: 44px;
+  margin-block: -10px;
+}
+
+.auth-notice {
+  animation: rise-in 220ms var(--ease-out-quint) backwards;
+  --rise: -4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 17px;
+  overflow-wrap: anywhere;
+}
+
+.auth-notice > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notice-error {
+  color: var(--color-danger-strong);
+  border-color: color-mix(in srgb, var(--color-danger) 25%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 3%, transparent);
+}
+
+.notice-success {
+  color: var(--color-success-strong);
+  border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+  background: color-mix(in srgb, var(--color-success) 7%, transparent);
+}
+
+.notice-info {
+  color: var(--color-accent-strong);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+}
+
+.signed-in-icon {
+  animation: settle-in var(--motion-enter) var(--ease-out-quint) 120ms backwards;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.signed-in-message {
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.signed-in-email {
+  margin: 16px 0 24px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.signed-in-email + .auth-notice {
+  margin-bottom: 20px;
+}
+
+.auth-notice + .social-button {
+  margin-top: 20px;
+}
+
+.session-loading {
+  display: flex;
+  justify-content: center;
+  padding: 50px 0;
+  animation: fade-in 200ms var(--ease-out-quint) 350ms backwards;
+}
+
+.skip-link {
+  position: fixed;
+  top: -80px;
+  left: 20px;
+  z-index: 50;
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  padding: 12px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.skip-link:focus {
+  top: 16px;
+}
+
+.reset-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(444px, calc(100% - 32px));
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+  padding: 34px;
+  border-width: 1px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px #2525250f;
+}
+
+.reset-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-foreground) 22%, transparent);
+}
+
+.reset-dialog h2 {
+  font-family: var(--font-editorial);
+  font-size: 31px;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+  margin: 0 0 12px;
+  padding-right: 36px;
+}
+
+.dialog-close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+
+.dialog-close:hover {
+  background: var(--color-background);
+}
+
+.reset-form,
+.reset-result {
+  margin-top: 24px;
+}
+
+.spinner {
+  animation:
+    spin 900ms linear infinite,
+    fade-in var(--motion-quick) var(--ease-out-quint);
+}
 
 /* Arrival: the column rises in, Tell settles a beat later, then the note's arrow draws itself.
    The card re-runs this whenever it remounts, which gives /login and /signup a soft hand-off. */
-.auth-card { animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
-.auth-mascot { animation: settle-in 420ms var(--ease-out-quint) 160ms backwards; }
-.auth-note { animation: fade-in 300ms var(--ease-out-quint) 520ms backwards; }
-.auth-note path { stroke-dasharray: 64; animation: draw 520ms var(--ease-out-quint) 600ms backwards; }
-/* Session checks usually finish in a blink; only show the loader card if it doesn't. */
-.auth-card:has(.session-loading) { animation: fade-in 200ms var(--ease-out-quint) 350ms backwards; }
-.reset-dialog[open] { --rise: 6px; animation: rise-in 240ms var(--ease-out-quint); }
-.reset-dialog[open]::backdrop { animation: fade-in 200ms var(--ease-out-quint); }
-/* ---------- Touch feel: press in fast, spring back out ---------- */
-:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .path-stop, .sms-link, .segmented button, .path-chips button) {
-  --press: .97; --release: var(--spring); --release-duration: var(--spring-duration);
-  transition-property: background-color, border-color, color, opacity, box-shadow, scale;
-  transition-duration: var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--release-duration);
-  transition-timing-function: var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--release);
+.auth-card {
+  animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards;
 }
-.path-stop { --press: .985; }
+
+.auth-mascot {
+  animation: settle-in 420ms var(--ease-out-quint) 160ms backwards;
+}
+
+.auth-note {
+  animation: fade-in 300ms var(--ease-out-quint) 520ms backwards;
+}
+
+.auth-note path {
+  stroke-dasharray: 64;
+  animation: draw 520ms var(--ease-out-quint) 600ms backwards;
+}
+
+/* Session checks usually finish in a blink; only show the loader card if it doesn't. */
+.auth-card:has(.session-loading) {
+  animation: fade-in 200ms var(--ease-out-quint) 350ms backwards;
+}
+
+.reset-dialog[open] {
+  --rise: 6px;
+  animation: rise-in 240ms var(--ease-out-quint);
+}
+
+.reset-dialog[open]::backdrop {
+  animation: fade-in 200ms var(--ease-out-quint);
+}
+
+/* ---------- Touch feel: press in fast, spring back out ---------- */
+:is(
+  .primary-button,
+  .social-button,
+  .train-primary,
+  .train-ghost,
+  .phone-actions button,
+  .path-stop,
+  .sms-link,
+  .segmented button,
+  .path-chips button
+) {
+  --press: 0.97;
+  --release: var(--spring);
+  --release-duration: var(--spring-duration);
+  transition-property:
+    background-color, border-color, color, opacity, box-shadow, scale;
+  transition-duration:
+    var(--motion-quick), var(--motion-quick), var(--motion-quick),
+    var(--motion-quick), var(--motion-quick), var(--release-duration);
+  transition-timing-function:
+    var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint),
+    var(--ease-out-quint), var(--ease-out-quint), var(--release);
+}
+
+.path-stop {
+  --press: 0.985;
+}
+
 /* Tabs and filters are bubbly like Tell: a deeper squish, let go on the mascot's spring. */
-:is(.segmented, .path-chips) button { --press: .9; --release: var(--bubbly); --release-duration: var(--bubbly-duration); }
-:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .sms-link, .segmented button, .path-chips button):active:not(:disabled),
-.path-stop:active { scale: calc(1 - (1 - var(--press)) * var(--motion-scale)); transition-duration: 90ms; transition-timing-function: ease-out; }
+:is(.segmented, .path-chips) button {
+  --press: 0.9;
+  --release: var(--bubbly);
+  --release-duration: var(--bubbly-duration);
+}
+
+:is(
+    .primary-button,
+    .social-button,
+    .train-primary,
+    .train-ghost,
+    .phone-actions button,
+    .sms-link,
+    .segmented button,
+    .path-chips button
+  ):active:not(:disabled),
+.path-stop:active {
+  scale: calc(1 - (1 - var(--press)) * var(--motion-scale));
+  transition-duration: 90ms;
+  transition-timing-function: ease-out;
+}
 
 /* ---------- Text that arrives word by word ---------- */
-.reveal-word, .reveal-line { display: inline-block; animation: word-in 560ms var(--ease-out-quint) backwards; animation-delay: calc(var(--reveal-delay, 0ms) + var(--w, 0) * 42ms); }
-@keyframes word-in { from { opacity: 0; translate: 0 calc(.32em * var(--motion-scale)); filter: blur(calc(6px * var(--motion-scale))); } }
+.reveal-word,
+.reveal-line {
+  display: inline-block;
+  animation: word-in 560ms var(--ease-out-quint) backwards;
+  animation-delay: calc(var(--reveal-delay, 0ms) + var(--w, 0) * 42ms);
+}
+
+@keyframes word-in {
+  from {
+    opacity: 0;
+    translate: 0 calc(0.32em * var(--motion-scale));
+    filter: blur(calc(6px * var(--motion-scale)));
+  }
+}
 
 /* ---------- Screen transitions (View Transitions; see lib/viewTransition.ts) ---------- */
 /* The nav bar stays put, like an app's, including across login -> home. */
-:is(.train-header, .auth-bar) { view-transition-name: app-header; }
-.auth-card { view-transition-name: auth-card; }
-:is(.form-step, .form-step-static) { view-transition-name: form-step; }
-::view-transition-group(*) { animation-duration: 420ms; animation-timing-function: var(--ease-ios); }
+:is(.train-header, .auth-bar) {
+  view-transition-name: app-header;
+}
+
+.auth-card {
+  view-transition-name: auth-card;
+}
+
+:is(.form-step, .form-step-static) {
+  view-transition-name: form-step;
+}
+
+::view-transition-group(*) {
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-ios);
+}
+
 /* Push: the new screen slides over from the right while the old one drifts left and dims. Pop reverses it.
    Full width on phones; a shorter glide on wide screens so the whole desktop doesn't sweep. */
-:root { --push: 36px; }
-@media (max-width: 760px) { :root { --push: 100%; } }
-[data-nav="forward"]::view-transition-new(root) { animation: 420ms var(--ease-ios) both push-in; }
-[data-nav="forward"]::view-transition-old(root) { animation: 420ms var(--ease-ios) both push-under; }
-[data-nav="back"]::view-transition-old(root) { animation: 360ms var(--ease-ios) both pop-out; z-index: 2; }
-[data-nav="back"]::view-transition-new(root) { animation: 360ms var(--ease-ios) both pop-under; }
-@keyframes push-in { from { translate: var(--push) 0; opacity: .4; box-shadow: -18px 0 40px #2525251a; } }
-@keyframes push-under { to { translate: calc(var(--push) * -.3) 0; opacity: .55; } }
-@keyframes pop-out { to { translate: var(--push) 0; opacity: .4; } }
-@keyframes pop-under { from { translate: calc(var(--push) * -.3) 0; opacity: .55; } }
+:root {
+  --push: 36px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --push: 100%;
+  }
+}
+
+[data-nav='forward']::view-transition-new(root) {
+  animation: 420ms var(--ease-ios) both push-in;
+}
+
+[data-nav='forward']::view-transition-old(root) {
+  animation: 420ms var(--ease-ios) both push-under;
+}
+
+[data-nav='back']::view-transition-old(root) {
+  animation: 360ms var(--ease-ios) both pop-out;
+  z-index: 2;
+}
+
+[data-nav='back']::view-transition-new(root) {
+  animation: 360ms var(--ease-ios) both pop-under;
+}
+
+@keyframes push-in {
+  from {
+    translate: var(--push) 0;
+    opacity: 0.4;
+    box-shadow: -18px 0 40px #2525251a;
+  }
+}
+
+@keyframes push-under {
+  to {
+    translate: calc(var(--push) * -0.3) 0;
+    opacity: 0.55;
+  }
+}
+
+@keyframes pop-out {
+  to {
+    translate: var(--push) 0;
+    opacity: 0.4;
+  }
+}
+
+@keyframes pop-under {
+  from {
+    translate: calc(var(--push) * -0.3) 0;
+    opacity: 0.55;
+  }
+}
+
 /* Login <-> signup: only the card morphs (size and content); the page around it holds still. */
-[data-nav="swap"]::view-transition-old(root), [data-nav="swap"]::view-transition-new(root) { animation: none; }
+[data-nav='swap']::view-transition-old(root),
+[data-nav='swap']::view-transition-new(root) {
+  animation: none;
+}
+
 /* Fade-through, not crossfade: old card content leaves before the new arrives, so they never overlap. */
-[data-nav="swap"]::view-transition-old(auth-card) { animation: 200ms ease-out both vt-fade-out; }
-[data-nav="swap"]::view-transition-new(auth-card) { animation: 340ms var(--ease-out-quint) 150ms both vt-fade-in; }
-@keyframes vt-fade-out { to { opacity: 0; } }
-@keyframes vt-fade-in { from { opacity: 0; } }
+[data-nav='swap']::view-transition-old(auth-card) {
+  animation: 200ms ease-out both vt-fade-out;
+}
+
+[data-nav='swap']::view-transition-new(auth-card) {
+  animation: 340ms var(--ease-out-quint) 150ms both vt-fade-in;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 /* Signup steps: fields push sideways inside the card. */
-[data-nav^="step"]::view-transition-old(form-step), [data-nav^="step"]::view-transition-new(form-step) { height: 100%; overflow: clip; }
+[data-nav^='step']::view-transition-old(form-step),
+[data-nav^='step']::view-transition-new(form-step) {
+  height: 100%;
+  overflow: clip;
+}
+
 /* Only the fields move; the rest of the card (description, button label) switches at once while its height morphs. */
-[data-nav^="step"]::view-transition-old(auth-card), [data-nav^="step"]::view-transition-old(root) { display: none; }
-[data-nav^="step"]::view-transition-new(auth-card), [data-nav^="step"]::view-transition-new(root) { animation: none; }
-[data-nav="step-forward"]::view-transition-new(form-step) { animation: 380ms var(--ease-ios) 100ms both step-in; }
-[data-nav="step-forward"]::view-transition-old(form-step) { animation: 220ms ease-in both step-out; }
-[data-nav="step-back"]::view-transition-new(form-step) { animation: 380ms var(--ease-ios) 100ms both step-in-back; }
-[data-nav="step-back"]::view-transition-old(form-step) { animation: 220ms ease-in both step-out-back; }
-@keyframes step-in { from { translate: 48px 0; opacity: 0; } }
-@keyframes step-out { to { translate: -48px 0; opacity: 0; } }
-@keyframes step-in-back { from { translate: -48px 0; opacity: 0; } }
-@keyframes step-out-back { to { translate: 48px 0; opacity: 0; } }
+[data-nav^='step']::view-transition-old(auth-card),
+[data-nav^='step']::view-transition-old(root) {
+  display: none;
+}
+
+[data-nav^='step']::view-transition-new(auth-card),
+[data-nav^='step']::view-transition-new(root) {
+  animation: none;
+}
+
+[data-nav='step-forward']::view-transition-new(form-step) {
+  animation: 380ms var(--ease-ios) 100ms both step-in;
+}
+
+[data-nav='step-forward']::view-transition-old(form-step) {
+  animation: 220ms ease-in both step-out;
+}
+
+[data-nav='step-back']::view-transition-new(form-step) {
+  animation: 380ms var(--ease-ios) 100ms both step-in-back;
+}
+
+[data-nav='step-back']::view-transition-old(form-step) {
+  animation: 220ms ease-in both step-out-back;
+}
+
+@keyframes step-in {
+  from {
+    translate: 48px 0;
+    opacity: 0;
+  }
+}
+
+@keyframes step-out {
+  to {
+    translate: -48px 0;
+    opacity: 0;
+  }
+}
+
+@keyframes step-in-back {
+  from {
+    translate: -48px 0;
+    opacity: 0;
+  }
+}
+
+@keyframes step-out-back {
+  to {
+    translate: 48px 0;
+    opacity: 0;
+  }
+}
+
 /* The view transition already animates these, so their own entrances finish instantly underneath it.
    Not `animation: none`: lifting that when the transition ends restarts the entrance from opacity 0 (a flash). */
-[data-nav] :is(.auth-card, .form-step) { animation-duration: 0s; animation-delay: 0s; }
+[data-nav] :is(.auth-card, .form-step) {
+  animation-duration: 0s;
+  animation-delay: 0s;
+}
 
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes fade-in { from { opacity: 0; } }
-@keyframes rise-in { from { opacity: 0; translate: 0 calc(var(--rise, 8px) * var(--motion-scale)); } }
-@keyframes settle-in { from { opacity: 0; scale: calc(1 - .12 * var(--motion-scale)); } }
-@keyframes pulse { to { opacity: .35; } }
-@keyframes draw { from { stroke-dashoffset: 64; } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 calc(var(--rise, 8px) * var(--motion-scale));
+  }
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    scale: calc(1 - 0.12 * var(--motion-scale));
+  }
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.35;
+  }
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 64;
+  }
+}
 
 /* Wide screens: Tell steps out of the column into the right margin, with a hand-drawn note under it. */
 @media (min-width: 900px) {
-  .card-heading { display: block; margin-bottom: 30px; }
-  .auth-mascot { position: absolute; left: calc(100% + 40px); top: -22px; margin: 0; }
-  .auth-mascot .mascot { width: 128px; height: 128px; }
-  .auth-note { display: flex; align-items: flex-start; gap: 2px; position: absolute; top: calc(100% - 4px); left: 22px; margin: 0; white-space: nowrap; font-family: var(--font-editorial); font-size: 17px; font-style: italic; color: var(--color-primary-strong); rotate: -3deg; }
-  .auth-note svg { flex-shrink: 0; margin-top: -16px; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .card-heading {
+    display: block;
+    margin-bottom: 30px;
+  }
+
+  .auth-mascot {
+    position: absolute;
+    left: calc(100% + 40px);
+    top: -22px;
+    margin: 0;
+  }
+
+  .auth-mascot .mascot {
+    width: 128px;
+    height: 128px;
+  }
+
+  .auth-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 2px;
+    position: absolute;
+    top: calc(100% - 4px);
+    left: 22px;
+    margin: 0;
+    white-space: nowrap;
+    font-family: var(--font-editorial);
+    font-size: 17px;
+    font-style: italic;
+    color: var(--color-primary-strong);
+    rotate: -3deg;
+  }
+
+  .auth-note svg {
+    flex-shrink: 0;
+    margin-top: -16px;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 }
+
 /* Phones: a native sign-in screen. A slimmer bar, tighter rhythm, nothing decorative but Tell.
    The column still centres, biased upward, so tall phones lose the dead band and short ones sit near the top. */
 @media (max-width: 540px) {
-  .auth-bar { width: calc(100% - 40px); min-height: 64px; }
-  .brand { font-size: 28px; }
-  .auth-card { padding-bottom: 6svh; }
-  .card-heading { margin-bottom: 20px; }
-  .card-heading h1 { font-size: 32px; margin-bottom: 4px; }
-  .card-description { font-size: 14px; }
-  .auth-mascot .mascot { width: 60px; height: 60px; }
-  .auth-input { font-size: 16px; }
-  .form-feedback { min-height: 48px; }
-  .auth-switch { margin-top: 12px; }
-  .auth-trust { padding: 12px 0 16px; }
-  .reset-dialog { padding: 30px 24px; }
-  .reset-dialog h2 { font-size: 27px; }
+  .auth-bar {
+    width: calc(100% - 40px);
+    min-height: 64px;
+  }
+
+  .brand {
+    font-size: 28px;
+  }
+
+  .auth-card {
+    padding-bottom: 6svh;
+  }
+
+  .card-heading {
+    margin-bottom: 20px;
+  }
+
+  .card-heading h1 {
+    font-size: 32px;
+    margin-bottom: 4px;
+  }
+
+  .card-description {
+    font-size: 14px;
+  }
+
+  .auth-mascot .mascot {
+    width: 60px;
+    height: 60px;
+  }
+
+  .auth-input {
+    font-size: 16px;
+  }
+
+  .form-feedback {
+    min-height: 48px;
+  }
+
+  .auth-switch {
+    margin-top: 12px;
+  }
+
+  .auth-trust {
+    padding: 12px 0 16px;
+  }
+
+  .reset-dialog {
+    padding: 30px 24px;
+  }
+
+  .reset-dialog h2 {
+    font-size: 27px;
+  }
 }
+
 /* Reduced motion keeps every state change visible but removes travel:
    arrivals become plain fades, presses and nudges stay put, the loader pulses
    instead of spinning, and the mascot stops wobbling. */
 @media (prefers-reduced-motion: reduce) {
-  :root { --motion-scale: 0; }
-  html { scroll-behavior: auto; }
-  .spinner { animation: pulse 700ms ease-in-out infinite alternate; }
-  .auth-note path { animation: none; }
+  :root {
+    --motion-scale: 0;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .spinner {
+    animation: pulse 700ms ease-in-out infinite alternate;
+  }
+
+  .auth-note path {
+    animation: none;
+  }
 }
