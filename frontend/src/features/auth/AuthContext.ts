@@ -9,8 +9,10 @@ export interface AuthContextValue {
   pending: AuthOperation | null
   error: string | null
   passwordError: string | null
+  /** Set when signup created the account but couldn't save the name. Survives the redirect to /home; cleared on sign-out. */
   profileWarning: string | null
   clearError: () => void
+  dismissProfileWarning: () => void
   login: (email: string, password: string) => Promise<boolean>
   register: (email: string, password: string, name: string) => Promise<boolean>
   google: () => Promise<boolean>

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, LoaderCircle, X } from 'lucide-react'
-import { useAuth } from '../../auth/AuthContext'
-import { validateEmail } from '../../auth/validation'
+import { useAuth } from '../AuthContext'
+import { validateEmail } from '../validation'
 import { AuthField } from './AuthField'
 import { AuthNotice } from './AuthNotice'
+import { useRestoreFocus } from './useRestoreFocus'
 
 export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: string; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
@@ -11,6 +12,7 @@ export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: s
   const [emailError, setEmailError] = useState<string>()
   const [sent, setSent] = useState(false)
   const { recoverPassword, pending, error, clearError } = useAuth()
+  const rememberFocus = useRestoreFocus(Boolean(pending))
 
   useEffect(() => {
     const element = dialog.current
@@ -36,15 +38,15 @@ export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: s
       document.getElementById('reset-email')?.focus()
       return
     }
+    rememberFocus()
     if (await recoverPassword(email.trim())) setSent(true)
   }
 
   return (
     <dialog ref={dialog} className="reset-dialog border-border bg-surface" aria-labelledby="reset-heading" aria-describedby="reset-description" onCancel={onClose}>
       <button className="dialog-close text-muted-strong" type="button" onClick={onClose} aria-label="Close password reset"><X size={20} aria-hidden="true" /></button>
-      <p className="eyebrow text-muted-strong">LET’S GET YOU BACK IN</p>
       <h2 id="reset-heading">Forgot your password?</h2>
-      <p id="reset-description" className="card-description text-muted-strong">It happens. Enter your email and we’ll help you take the next step.</p>
+      <p id="reset-description" className="card-description text-muted-strong">Enter your email and we’ll send you a link to choose a new one.</p>
       {sent ? (
         <div className="reset-result">
           <AuthNotice tone="success">If an account uses this email, you’ll receive a password reset link. Check your inbox and spam folder.</AuthNotice>
@@ -58,7 +60,7 @@ export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: s
             clearError()
           }} />
           {error && <AuthNotice>{error}</AuthNotice>}
-          <button type="submit" className="primary-button bg-primary" disabled={Boolean(pending)}>
+          <button type="submit" className="primary-button bg-primary" disabled={Boolean(pending)} aria-busy={pending === 'reset'}>
             {pending === 'reset' ? <><LoaderCircle size={18} className="spinner" aria-hidden="true" /> Sending reset link…</> : <>Send reset link <ArrowRight size={18} aria-hidden="true" /></>}
           </button>
         </form>

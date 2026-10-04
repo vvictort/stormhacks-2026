@@ -1,15 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "esModuleInterop": true,
-    "verbatimModuleSyntax": true,
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
     "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "."
+
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["app/**/*.ts", "tests/**/*.ts"]
+  "include": ["app", "tests"]
 }

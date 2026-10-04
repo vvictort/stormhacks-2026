@@ -1,17 +1,15 @@
-import 'dotenv/config';
-import { z } from 'zod';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const schema=z.object({
-  HOST:z.string().default('127.0.0.1'),
-  PORT:z.coerce.number().int().min(1).max(65535).default(3001),
-  CORS_ORIGIN:z.url().default('http://localhost:5173'),
-  DATABASE_URL:z.url().refine((url) => url.startsWith('postgres:') || url.startsWith('postgresql:'), 'PostgreSQL URL required'),
-  PERSONALIZATION_URL:z.url().default('http://127.0.0.1:8000'),
-  PERSONALIZATION_SERVICE_KEY:z.string().min(16),
-  AUTH_MIDDLEWARE_MODULE:z.string().optional(),
-});
-export function loadConfig() {
-  const result=schema.safeParse(process.env);
-  if (!result.success) throw new Error(`Invalid configuration fields: ${result.error.issues.map((i) => i.path.join('.')).join(', ')}`);
-  return result.data;
+const envFile = fileURLToPath(new URL('../../.env', import.meta.url));
+if (existsSync(envFile)) process.loadEnvFile(envFile);
+
+const projectId = process.env.FIREBASE_PROJECT_ID;
+if (!projectId) {
+  throw new Error('Missing FIREBASE_PROJECT_ID. Copy backend/.env.example to backend/.env and fill it in.');
 }
+
+export const config = {
+  PORT: Number(process.env.PORT) || 3000,
+  FIREBASE_PROJECT_ID: projectId,
+};

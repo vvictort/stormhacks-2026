@@ -1,11 +1,21 @@
 import { Router } from 'express';
-import type { Repositories } from '../db/repositories.js';
-import { authSubject } from '../core/security.js';
-import { preferencesSchema } from '../schemas/user.js';
+import type { DecodedIdToken } from 'firebase-admin/auth';
+import { requireSelf } from '../core/security.ts';
 
-export function usersRouter(repo:Repositories) {
-  const router=Router();
-  router.get('/me',async (_req,res) => { res.json(await repo.requireUser(authSubject(res))); });
-  router.put('/me',async (req,res) => { res.json(await repo.saveUser(authSubject(res),preferencesSchema.parse(req.body))); });
-  return router;
-}
+const profile = (user: DecodedIdToken) => ({
+  uid: user.uid,
+  email: user.email ?? null,
+  emailVerified: user.email_verified ?? false,
+  name: (user.name as string | undefined) ?? null,
+  picture: user.picture ?? null,
+});
+
+export const users = Router();
+
+users.get('/me', (req, res) => {
+  res.json(profile(req.user!));
+});
+
+users.get('/:uid', requireSelf, (req, res) => {
+  res.json(profile(req.user!));
+});

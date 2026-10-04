@@ -1,13 +1,12 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 
 interface AuthCardProps {
-  eyebrow: string
   title: string
   description: string
   children: ReactNode
 }
 
-export function AuthCard({ eyebrow, title, description, children }: AuthCardProps) {
+export function AuthCard({ title, description, children }: AuthCardProps) {
   const heading = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -18,7 +17,6 @@ export function AuthCard({ eyebrow, title, description, children }: AuthCardProp
   return (
     <section className="auth-card border-border bg-surface" aria-labelledby="auth-heading">
       <div className="card-heading">
-        <p className="eyebrow text-muted-strong">{eyebrow}</p>
         <h1 id="auth-heading" ref={heading} tabIndex={-1}>{title}</h1>
         <p className="card-description text-muted-strong">{description}</p>
       </div>

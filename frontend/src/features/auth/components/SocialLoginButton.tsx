@@ -9,7 +9,7 @@ interface SocialLoginButtonProps {
 
 export function SocialLoginButton({ signup, pending, disabled, onClick }: SocialLoginButtonProps) {
   return (
-    <button type="button" className="social-button border-border" disabled={disabled} onClick={onClick} aria-busy={pending}>
+    <button type="button" className="social-button border-control" disabled={disabled} onClick={onClick} aria-busy={pending}>
       {pending ? <LoaderCircle className="spinner" size={19} aria-hidden="true" /> : (
         <svg width="19" height="19" viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.8-.4-4.1H24v7.8h11a9.4 9.4 0 0 1-4.1 6.2v5h6.6c3.9-3.6 6.1-8.8 6.1-14.9Z" />

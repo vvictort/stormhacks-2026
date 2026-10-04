@@ -10,8 +10,8 @@ import {
   validatePassword,
   type User,
 } from 'firebase/auth'
-import { auth } from './firebase'
-import { PasswordPolicyError } from './auth/errors'
+import { auth } from '../../lib/firebase'
+import { PasswordPolicyError } from './errors'
 
 export const signIn = (email: string, password: string) =>
   signInWithEmailAndPassword(auth, email, password)
@@ -65,6 +65,9 @@ export async function resetPassword(email: string) {
 }
 
 export const signOut = () => firebaseSignOut(auth)
+
+// The live session, which an operation's own credential can lag behind (e.g. a sign-out in another tab).
+export const currentUser = () => auth.currentUser
 
 export const observeAuthState = (
   onChange: (user: User | null) => void,

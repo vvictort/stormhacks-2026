@@ -21,11 +21,9 @@ export function SecurityIllustration() {
           <path d="m337 181 37 48" stroke="var(--color-primary)" strokeWidth="11" strokeLinecap="round" />
           <circle cx="309" cy="145" r="49" fill="var(--color-surface)" fillOpacity=".96" stroke="var(--color-foreground)" strokeWidth="2" />
           <circle cx="309" cy="145" r="41" stroke="var(--color-primary)" strokeWidth="1.5" />
-          <path d="m292 145 12 12 23-25" stroke="var(--color-success-strong)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          <path className="illustration-check" d="m292 145 12 12 23-25" stroke="var(--color-success-strong)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M280 134c2-7 6-12 12-15" stroke="var(--color-border)" strokeWidth="3" strokeLinecap="round" />
         </g>
-        <path d="M85 37c13-12 38-12 52-3m-6-9 7 10-12 2" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <text x="149" y="33" fill="var(--color-muted)" fontFamily="Georgia, serif" fontSize="15" fontStyle="italic">a closer look makes a difference</text>
       </svg>
     </div>
   )
