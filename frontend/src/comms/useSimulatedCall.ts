@@ -46,7 +46,7 @@ interface Session {
 
 const BUSY: Stage[] = ['starting', 'answering', 'in_call', 'analyzing']
 
-/** Drops a session whose call still rings on the server: comms closes it unscored (best effort, not tied to the session signal). */
+/** Drops a session whose call still rings on the server: it is closed unscored (best effort, not tied to the session signal). */
 function abandonRinging(s: Session | null) {
   if (!s?.callId || !ringsOnServer(s.stage)) return
   s.stage = 'done'

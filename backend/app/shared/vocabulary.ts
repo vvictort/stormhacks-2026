@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// The canonical words shared with comms and the frontend; see docs/call-integration.md.
+// The canonical words shared with the frontend and the database; see docs/call-integration.md.
 export const Channel = z.enum(['sms', 'email', 'call']);
 export const Difficulty = z.enum(['easy', 'medium', 'hard']);
 export const Outcome = z.enum(['resisted', 'compromised', 'declined', 'missed', 'error']);

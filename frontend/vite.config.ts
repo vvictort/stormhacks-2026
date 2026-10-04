@@ -4,12 +4,11 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Same-origin in dev, so no CORS: the main backend (backend/, port 3000) serves /api, and
-  // the comms service (backend/comms, port 3001 by default) serves /comms, including SSE.
+  // Same-origin in dev, so no CORS: the backend (backend/, port 3000) serves /api, including the
+  // /api/comms text and call routes and their SSE stream.
   server: {
     proxy: {
       "/api": "http://localhost:3000",
-      "/comms": { target: process.env.COMMS_URL ?? "http://localhost:3001" },
     },
   },
 });

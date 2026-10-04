@@ -12,7 +12,7 @@ import type {
   TextThread,
 } from './types'
 
-// Typed HTTP client for the comms service. Framework-free (no React, no Firebase)
+// Typed HTTP client for the API's /api/comms routes (simulated texts and calls). Framework-free (no React, no Firebase)
 // so it can be unit tested in Node with a fake fetch.
 
 export class CommsError extends Error {
@@ -30,7 +30,7 @@ export class CommsError extends Error {
 }
 
 export interface CommsClientOptions {
-  /** e.g. `/comms` (Vite proxy) or `http://localhost:3001/comms`. */
+  /** e.g. `/api/comms` (same origin; the Vite proxy in dev). */
   baseUrl: string
   /** Firebase ID token; `forceRefresh` is true when retrying after a 401. */
   getToken: (forceRefresh: boolean) => Promise<string>
@@ -48,8 +48,12 @@ const enc = encodeURIComponent
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 
+/** The API's error body is `{ error: { code, message, ...details } }`. */
+const errorBody = (data: unknown) => (isRecord(data) && isRecord(data.error) ? data.error : null)
+
 function errorCode(data: unknown, status: number) {
-  return isRecord(data) && typeof data.error === 'string' ? data.error : `http_${status}`
+  const code = errorBody(data)?.code
+  return typeof code === 'string' ? code : `http_${status}`
 }
 
 export function createCommsClient({
@@ -67,11 +71,12 @@ export function createCommsClient({
     const send = async (forceRefresh: boolean) => {
       const headers: Record<string, string> = {}
       if (auth) headers.authorization = `Bearer ${await getToken(forceRefresh)}`
-      if (body !== undefined) headers['content-type'] = 'application/json'
+      // The API takes writes only as JSON (with the browser's own Origin), so every POST carries a body.
+      if (method === 'POST') headers['content-type'] = 'application/json'
       return doFetch(base + path, {
         method,
         headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined,
         signal,
       })
     }
@@ -104,7 +109,7 @@ export function createCommsClient({
         return { threadId, resumed: false }
       } catch (error) {
         if (error instanceof CommsError && error.status === 409 && error.code === 'active_thread_exists') {
-          const threadId = isRecord(error.details) ? error.details.threadId : null
+          const threadId = errorBody(error.details)?.threadId
           if (typeof threadId === 'string' && threadId) return { threadId, resumed: true }
         }
         throw error
@@ -140,7 +145,7 @@ export function createCommsClient({
     declineCall: (callId: string, reason: DeclineReason, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/decline`, { body: { reason }, signal }),
 
-    /** Ringing only: gives the call up (caption practice, leaving the page). Comms closes it unscored and never posts it. */
+    /** Ringing only: gives the call up (caption practice, leaving the page). The server closes it unscored and never saves it. */
     abandonCall: (callId: string, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/abandon`, { signal }),
 

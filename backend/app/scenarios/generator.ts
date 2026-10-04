@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { GoogleGenAI } from '@google/genai';
 import type { ScamCategory } from '../training/progress.ts';
 import type { Difficulty } from '../shared/vocabulary.ts';
-import { CallScenario } from './call-scenario.ts';
+import { CallScenario } from '../shared/types.ts';
 
 export interface CallScenarioRequest {
   apiKey?: string;
@@ -82,7 +82,7 @@ export async function generateCallScenario(request: CallScenarioRequest): Promis
   const { profession, interests } = persona(request);
   const prompt = `
 You are a cybersecurity training scenario generator specializing in phone call scams (vishing / voice phishing).
-Generate a realistic phone call scam scenario in category "${category}" that fits the comms voice simulation engine.
+Generate a realistic phone call scam scenario in category "${category}" that fits the voice call simulation.
 
 TARGET DIFFICULTY LEVEL: ${difficulty} (1=beginner, 2=intermediate, 3=advanced)
 
