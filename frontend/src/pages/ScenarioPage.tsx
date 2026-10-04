@@ -1,4 +1,4 @@
-import { ArrowLeft, LoaderCircle, Mail, MessageSquareText, Phone } from 'lucide-react'
+import { ArrowLeft, AtSign, Eye, Link2, LoaderCircle, Mail, MessageSquareText, Phone } from 'lucide-react'
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { TransitionLink } from '../components/TransitionLink'
@@ -51,17 +51,18 @@ function ScenarioIntro({ scenario }: { scenario: Scenario }) {
 
   return (
     <div className="scenario-intro">
-      <TransitionLink direction="back" className="train-back" to="/home"><ArrowLeft size={16} aria-hidden="true" />All scenarios</TransitionLink>
+      <TransitionLink direction="back" className="train-back" to="/home" aria-label="Back to all scenarios"><ArrowLeft size={16} aria-hidden="true" />Back</TransitionLink>
       <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
       <p className="scenario-meta"><Icon size={15} aria-hidden="true" /> {label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
       {scenario.generated && (
-        <p className="scenario-generated">
-          <strong>Generated for your training profile.</strong> {scenario.generated.reason}
+        <div className="scenario-generated">
+          {/* The reason can carry a dataset licence credit, so it stays one tap away. */}
+          <details><summary>Made for you</summary><p>{scenario.generated.reason}</p></details>
           {/* Honest source line: only when Gemini really wrote it (the fallback is a built-in template). */}
           {credit && <span className="scenario-source">{credit}</span>}
-        </p>
+        </div>
       )}
-      <p className="scenario-situation"><strong>What you know:</strong> {scenario.situation}</p>
+      <p className="scenario-situation">{scenario.situation}</p>
     </div>
   )
 }
@@ -160,15 +161,11 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
           ? <Debrief scenario={scenario} choice={choice} inspected={inspected} next={recommend(progress, scenario.id)}
             learned={finished && learning.status !== 'off' && learning.status !== 'loading' ? <LearnedPanel learning={learning} attemptId={finished.attemptId} /> : undefined} />
           : (
-            <div className="scenario-howto">
-              <h2>Treat it like your own phone</h2>
-              <ol>
-                <li>Read the {email ? 'email' : 'message'} the way you would if it had just arrived.</li>
-                {email && <li>Tap the sender's name to see the address it really came from.</li>}
-                {hasLink(scenario) && <li>Tap the link to see where it goes. Practice links never open.</li>}
-                <li>Then choose <strong>Looks safe</strong> or <strong>Report &amp; block</strong>.</li>
-              </ol>
-            </div>
+            <ul className="scenario-howto" aria-label="Tips">
+              <li><Eye size={15} aria-hidden="true" />Read it like it's real</li>
+              {email && <li><AtSign size={15} aria-hidden="true" />Tap the sender to see the address</li>}
+              {hasLink(scenario) && <li><Link2 size={15} aria-hidden="true" />Tap links to preview. They never open</li>}
+            </ul>
           )}
       </div>
     </main>
