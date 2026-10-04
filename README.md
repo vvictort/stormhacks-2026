@@ -10,11 +10,11 @@
   - **Calls:** a live AI voice caller (ElevenLabs) you can answer, talk to and hang up on, with live captions.
 - **Debriefs that teach:** after each scenario you see what gave it away (urgency, unexpected fees, look-alike addresses, requests for codes) and what to check next time. Calls get their own debrief built from the redacted transcript.
 - **Adaptive practice:** an adaptive scam simulator that learns how you get fooled and trains against your weaknesses. Every text, email and call result is saved server-side; scenarios get harder as you make the right calls and ease off after misses, and Home's **Next for you** names the scam type Tellio will train next and why.
-  - **Gemini** writes the personalised scam emails and call scenarios, aimed at your current training focus.
+  - **Gemini** writes the personalised scam emails and call scenarios, aimed at your current training focus and grounded in 2–3 matching real-world examples from Tellio's scam library (picked by channel, category, tactics and difficulty; no embeddings). Those scenarios also say "Grounded in real-world scam patterns".
   - **TigerData** stores every behaviour event (opens, sender checks, link taps, decisions, call answers and declines) in a TimescaleDB hypertable and computes **Your scam instincts** (decision time, right calls, report rate, trend, and a small chart of recent decisions). The card names TigerData only when `behavior_events` really is a hypertable.
   - **Snowflake** interprets pseudonymous aggregates across trainees for **What Tellio has learned**: which tactic combinations fool you (e.g. authority with urgency) against other trainees, what you catch quickly, and where you rank. With `SNOWFLAKE_CORTEX_MODEL`, Cortex writes the summary and why the next focus was chosen. The focus itself stays a deterministic pick, and the card says "Interpreted by Snowflake Cortex", "Analysed in Snowflake" or "Built-in analysis" according to what actually ran.
   - **ElevenLabs** voices the live scam call; the call debrief credits it only when a call was answered with live voice.
-- **Works without the optional keys:** without ElevenLabs, calls fall back to a caption-only practice mode; without Gemini, built-in personalised scenarios are used; without Snowflake (or when it's slow or fails), the backend's own analysis is used ("Built-in analysis"). At startup the API prints one line each for Gemini, ElevenLabs, Snowflake and TigerData saying what's on.
+- **Works without the optional keys:** without ElevenLabs, calls fall back to a caption-only practice mode; without Gemini, built-in scenarios are built from the scam library (a real phishing email with invented names, or a real scam-call pattern); without Snowflake (or when it's slow or fails), the backend's own analysis is used ("Built-in analysis"). At startup the API prints one line each for Gemini, ElevenLabs, Snowflake and TigerData saying what's on.
 
 ## How it works
 
@@ -58,9 +58,10 @@ frontend/   React app: auth, onboarding, home, practice phone (texts, emails, ca
   src/comms/      client and hooks for simulated texts and calls (useSimulatedCall, useTextThread)
 backend/    Express API, one server
   app/            users · training · scenarios · behavior · insights · texts · calls · sim · http · db · shared
-  fixtures/       built-in text and call scenarios
+  fixtures/       built-in text and call scenarios; scam-library.json (the curated dataset library)
   scripts/        setup-agent.ts (creates the ElevenLabs voice agent), snowflake-setup.sql
-docs/       call-integration.md (calls, outcomes, auth) and mvp-contracts.md (the adaptive loop)
+data-pipeline/  offline Python that builds backend/fixtures/scam-library.json from Kaggle datasets (never runs in the app)
+docs/       dataset.md (sources, licences, counts), call-integration.md (calls, outcomes, auth) and mvp-contracts.md (the adaptive loop)
 PRODUCT.md  who Tellio is for and the product principles
 ```
 
@@ -119,7 +120,11 @@ Without these, calls still work in caption-only practice mode.
 
 ### 4. Optional: Gemini-written emails and calls
 
-Set `GEMINI_API_KEY` in `backend/.env`. Without it, generation uses built-in personalised scenarios; only Gemini-written ones show "Written by Gemini".
+Set `GEMINI_API_KEY` in `backend/.env`. Without it, generation builds scenarios from the scam library; only Gemini-written ones show "Written by Gemini".
+
+### 6. Optional: rebuild the scam library
+
+The library is committed, so this is only needed to change it. See [`data-pipeline/README.md`](data-pipeline/README.md): `python -m tellio_data download`, then `build`. The email and call datasets download anonymously. The SMS competition data needs Kaggle credentials and accepted competition rules, so the committed library has no SMS rows yet.
 
 ### 5. Optional: Snowflake vulnerability analysis
 
@@ -130,6 +135,7 @@ Run `backend/scripts/snowflake-setup.sql` once in Snowflake, create a programmat
 ```bash
 cd backend  && npm run typecheck && npm test
 cd frontend && npm run lint && npm test && npm run build
+cd data-pipeline && .venv/bin/python -m unittest
 ```
 
 Backend database tests run only when `TEST_DATABASE_URL` points at a dedicated database whose name ends in `_test`; otherwise they're skipped.
@@ -163,6 +169,7 @@ Only names are listed here; never commit real values. `.env` files are gitignore
 
 - [`PRODUCT.md`](PRODUCT.md): users, positioning and product principles
 - [`docs/call-integration.md`](docs/call-integration.md): the call contract (outcomes, scenario ids, auth, data handling)
+- [`docs/dataset.md`](docs/dataset.md): dataset sources, licences, what is committed and coverage
 - [`docs/mvp-contracts.md`](docs/mvp-contracts.md): the adaptive loop (behaviour events, metrics, insights, generated scenarios)
 - [`backend/README.md`](backend/README.md): API routes, structure and dependency rules, simulation state, ElevenLabs setup
 - [`frontend/README.md`](frontend/README.md): app flow, phone calls and the fallback mode, configuration

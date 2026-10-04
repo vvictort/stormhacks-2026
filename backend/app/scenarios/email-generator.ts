@@ -377,14 +377,18 @@ export function emailFromExample(example: LibraryExample, category: ScamCategory
   const subject = filledSubject && filledSubject.length >= 3 && filledSubject.length <= 120 && !mostlyCaps(filledSubject) ? filledSubject : `A message from ${sender.name}`;
   const domain = sender.address.split('@')[1];
   const titles = new Set<string>();
-  const cueFlags = example.cues.flatMap(({ tag, quote: raw }) => {
+  const cueFlags: { quote: string; title: string; reason: string }[] = [];
+  for (const { tag, quote: raw } of example.cues) {
     const copy = CUE_COPY[tag];
     const quote = fillPlaceholders(raw);
-    if (!copy || !quote || titles.has(copy.title) || ![subject, ...body].some((value) => value.includes(quote))) return [];
+    if (!copy || !quote || titles.has(copy.title)) continue;
+    const indicators = [...cueFlags, { quote }].map((flag) => ({ quote: flag.quote, title: '', detail: '' }));
+    // Missing from the cleaned text, or overlapping an earlier flag: the debrief couldn't highlight it.
+    if (hiddenIndicators({ subject, fromAddress: sender.address, body, indicators }).length) continue;
     titles.add(copy.title);
-    return [{ quote, title: copy.title, reason: copy.reason }];
-  });
-  if (cueFlags.length < 3) return null;
+    cueFlags.push({ quote, title: copy.title, reason: copy.reason });
+  }
+  if (cueFlags.length < 2) return null; // + the sender-domain flag = the 3 visible flags toScenario requires
   const named = CATEGORY_NAMES[category];
   return {
     title: `${named[0].toUpperCase()}${named.slice(1)} email from ${sender.name}`,

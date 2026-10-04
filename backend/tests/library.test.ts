@@ -264,6 +264,7 @@ test('grounding survives storage: GET returns it for generated emails and calls,
 test('blockedBrand catches the courier, not hyphenated words like pop-ups', () => {
   assert.ok(blockedBrand.test('Your UPS parcel is held'));
   assert.ok(!blockedBrand.test('Close the pop-ups and sign-ups, then follow-ups'));
+  assert.ok(blockedBrand.test('Tracking DHL7567351D is on hold'));
 });
 
 // ---------- Built-in scenarios from the real library (backend/fixtures/scam-library.json) ----------
