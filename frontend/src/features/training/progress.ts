@@ -104,6 +104,17 @@ export function summarize(progress: Progress, list: Scenario[] = scenarios) {
   return { total: list.length, done: done.length, correct: done.filter((scenario) => progress[scenario.id].correct).length }
 }
 
+/** Every attempt, repeats included, per channel. Ids outside the list (scenarios made for you) count as `made`. */
+export function channelStats(progress: Progress, list: Pick<Scenario, 'id' | 'type'>[] = scenarios) {
+  const stats = { sms: { attempts: 0, right: 0 }, email: { attempts: 0, right: 0 }, call: { attempts: 0, right: 0 }, made: { attempts: 0, right: 0 } }
+  for (const attempt of timeline(progress)) {
+    const bucket = stats[list.find((scenario) => scenario.id === attempt.id)?.type ?? 'made']
+    bucket.attempts++
+    if (attempt.correct) bucket.right++
+  }
+  return stats
+}
+
 /**
  * The scenario to practise next: closest to the current level first, untried before missed at each level,
  * ties in list order starting after `afterId`. Nothing once every scenario's latest call was right.

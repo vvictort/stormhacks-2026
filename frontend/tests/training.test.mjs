@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { hasLink, markFor, markText, scenarios, siteOf } from '../src/features/training/scenarios.ts'
-import { currentLevel, loadProgress, recommend, recordAttempt, saveProgress, summarize, timeline } from '../src/features/training/progress.ts'
+import { channelStats, currentLevel, loadProgress, recommend, recordAttempt, saveProgress, summarize, timeline } from '../src/features/training/progress.ts'
 
 test('every quoted indicator appears in its scenario text and ids are unique', () => {
   for (const scenario of scenarios.filter((item) => item.type !== 'call')) {
@@ -64,6 +64,12 @@ test('recommend starts easy and prefers untried after the current one, then miss
   assert.deepEqual(summarize(progress, list), { total: 5, done: 2, correct: 1 })
   progress = play(list.map((scenario) => [scenario.id, true]))
   assert.equal(recommend(progress, undefined, list), undefined)
+})
+
+test('channelStats counts every attempt per channel, made-for-you ids apart', () => {
+  const typed = [{ id: 't1', type: 'sms' }, { id: 'm1', type: 'email' }]
+  const stats = channelStats(play([['t1', false], ['t1', true], ['m1', true], ['gen-x', false]]), typed)
+  assert.deepEqual(stats, { sms: { attempts: 2, right: 1 }, email: { attempts: 1, right: 1 }, call: { attempts: 0, right: 0 }, made: { attempts: 1, right: 0 } })
 })
 
 test('the level steps up after two right calls and back down after a miss', () => {

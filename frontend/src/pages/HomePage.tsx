@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Info, RotateCcw, X } from 'lucide-react'
+import { ArrowRight, Check, Info, Mail, MessageSquareText, Phone, RotateCcw, Sparkles, X } from 'lucide-react'
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
@@ -10,7 +10,7 @@ import { ScamProfileCard } from '../features/insights/ScamProfileCard'
 import { NextForYou } from '../features/training/components/NextForYou'
 import { PathStop, PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
-import { currentLevel, recommend, timeline } from '../features/training/progress'
+import { channelStats, currentLevel, recommend, summarize, timeline, type Progress } from '../features/training/progress'
 import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
@@ -27,8 +27,6 @@ export function HomePage() {
   const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
   const next = recommend(progress)
   const all = timeline(progress)
-  const recent = all.slice(-8)
-  const right = all.filter((attempt) => attempt.correct).length
   const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
   const name = firstName ? `, ${firstName}` : ''
 
@@ -96,27 +94,7 @@ export function HomePage() {
 
           {tab === 'insights' && (
             <>
-              <section className="home-stats" aria-label="Your practice so far">
-                {all.length === 0
-                  ? <p>Nothing yet. Finish a scenario and your results show up here.</p>
-                  : (
-                    <>
-                      <dl className="home-stat-grid">
-                        <div><dt>Practised</dt><dd><CountUp value={all.length} /></dd></div>
-                        <div><dt>Right calls</dt><dd><CountUp value={right} /></dd></div>
-                      </dl>
-                      <ol className="home-recent" aria-label={`Last ${recent.length}, oldest first`}>
-                        {recent.map((attempt) => (
-                          <li key={`${attempt.id}-${attempt.at}`} className={attempt.correct ? 'is-right' : 'is-missed'}>
-                            {attempt.correct ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />}
-                            <span className="sr-only">{getScenario(attempt.id)?.title ?? 'A scenario made for you'}: {attempt.correct ? 'right call' : 'missed'}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </>
-                  )}
-                <p className="home-saved">{callSync === 'unavailable' ? "Couldn't reach your account. Showing this browser's results." : 'Saved to your account.'}</p>
-              </section>
+              <ResultsSummary progress={progress} saved={callSync !== 'unavailable'} onMissed={() => setParams({ tab: 'history', status: 'missed' }, { replace: true })} />
               <ScamProfileCard uid={user?.uid} />
               <InstinctsCard uid={user?.uid} />
               {flagsSeen.length > 0 && (
@@ -134,5 +112,68 @@ export function HomePage() {
         </div>
       </main>
     </div>
+  )
+}
+
+const channelRows = [
+  { key: 'sms', label: 'Texts', Icon: MessageSquareText },
+  { key: 'email', label: 'Emails', Icon: Mail },
+  { key: 'call', label: 'Calls', Icon: Phone },
+  { key: 'made', label: 'Made for you', Icon: Sparkles },
+] as const
+const percent = (part: number, whole: number) => whole ? Math.round((part / whole) * 100) : 0
+
+/** Insights' numbers, all from this user's attempts: overall rate, coverage, what to revisit, per channel and lately. */
+function ResultsSummary({ progress, saved, onMissed }: { progress: Progress; saved: boolean; onMissed: () => void }) {
+  const all = timeline(progress)
+  const right = all.filter((attempt) => attempt.correct).length
+  const recent = all.slice(-8)
+  const { total, done, correct } = summarize(progress)
+  const missed = done - correct
+  const channels = channelStats(progress)
+
+  if (all.length === 0) return <section className="home-stats"><p>Nothing yet. Finish a scenario and your results show up here.</p></section>
+
+  return (
+    <section className="home-stats" aria-labelledby="results-title">
+      <h2 id="results-title" className="sr-only">Your results</h2>
+      <dl className="home-stat-grid">
+        <div><dt>Right-call rate</dt><dd><CountUp value={percent(right, all.length)} />%</dd><dd className="home-stat-sub">{right} of {all.length} attempts</dd></div>
+        <div><dt>Scenarios tried</dt><dd><CountUp value={done} /></dd><dd className="home-stat-sub">of {total} in the library</dd></div>
+        <div className={missed ? 'is-missed' : undefined}>
+          <dt>To revisit</dt><dd><CountUp value={missed} /></dd>
+          <dd className="home-stat-sub">{missed ? <button type="button" className="text-link" onClick={onMissed}>Missed last time<ArrowRight size={13} aria-hidden="true" /></button> : 'Nothing missed'}</dd>
+        </div>
+      </dl>
+
+      <div className="home-stat-head"><h3>By channel</h3><span>Right-call rate</span></div>
+      <ul className="home-channels">
+        {channelRows.filter((row) => row.key !== 'made' || channels.made.attempts).map(({ key, label, Icon }) => {
+          const { attempts, right: ok } = channels[key]
+          const rate = percent(ok, attempts)
+          return (
+            <li key={key}>
+              <span className="home-channel-name"><Icon size={15} aria-hidden="true" />{label}</span>
+              <span className="home-meter" aria-hidden="true"><span style={{ width: `${rate}%` }} /></span>
+              <span className="home-channel-value">{attempts ? <><strong>{rate}%</strong> {ok} of {attempts}</> : 'Not tried yet'}</span>
+            </li>
+          )
+        })}
+      </ul>
+
+      <div className="home-stat-head">
+        <h3>Last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h3>
+        <span>{recent.filter((attempt) => attempt.correct).length} right</span>
+      </div>
+      <ol className="home-recent" aria-label="Oldest first">
+        {recent.map((attempt) => (
+          <li key={`${attempt.id}-${attempt.at}`} className={attempt.correct ? 'is-right' : 'is-missed'}>
+            {attempt.correct ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />}
+            <span className="sr-only">{getScenario(attempt.id)?.title ?? 'A scenario made for you'}: {attempt.correct ? 'right call' : 'missed'}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="home-saved">Oldest to newest · {saved ? 'Saved to your account' : "Couldn't reach your account, so this is this browser's results"}</p>
+    </section>
   )
 }

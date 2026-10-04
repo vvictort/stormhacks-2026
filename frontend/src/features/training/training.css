@@ -43,19 +43,34 @@
 .home-upnext .path-stops { margin-top: 2px; }
 
 .home-stats { margin-top: 20px; }
-.home-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
-.home-stat-grid div { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.home-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.home-stat-grid > div { display: flex; flex-direction: column; padding: 14px 16px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
 .home-stat-grid dt { font-size: 13px; color: var(--color-muted-strong); }
-.home-stat-grid dd { margin: 2px 0 0; font-family: var(--font-editorial); font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.home-stat-grid dd { margin: 4px 0 0; font-family: var(--font-editorial); font-size: 34px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.home-stat-grid .home-stat-sub { margin-top: auto; padding-top: 6px; font-family: var(--font-sans); font-size: 13px; line-height: 1.4; color: var(--color-muted-strong); }
+.home-stat-grid .is-missed dd:not(.home-stat-sub) { color: var(--color-accent-strong); }
+.home-stat-sub .text-link { min-height: 24px; font-size: 13px; }
+.home-stat-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 26px 0 10px; }
+.home-stat-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.home-stat-head span { font-size: 13px; color: var(--color-muted-strong); }
+.home-channels { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.home-channels li { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.5rem; align-items: center; gap: 14px; font-size: 14px; }
+.home-channel-name { display: inline-flex; align-items: center; gap: 8px; color: var(--color-foreground); }
+.home-channel-name svg { color: var(--color-muted-strong); }
+.home-meter { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--color-foreground) 8%, transparent); overflow: hidden; }
+.home-meter span { display: block; height: 100%; border-radius: inherit; background: var(--color-success-strong); transition: width 600ms var(--ease-out-quint); }
+.home-channel-value { text-align: right; color: var(--color-muted-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.home-channel-value strong { color: var(--color-foreground); font-weight: 600; }
 .home-stats > p { font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
-.home-stats .home-saved { margin-top: 10px; font-size: 12px; }
+.home-stats .home-saved { margin-top: 10px; font-size: 12px; color: var(--color-muted-strong); }
 
 .home-progress { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border); }
 .home-progress h2 { margin: 0 0 10px; font-family: var(--font-editorial); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
 .home-progress h3 { margin: 22px 0 10px; font-size: 14px; font-weight: 600; }
-.home-progress > p { text-wrap: pretty; max-width: 52ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.home-progress > p { text-wrap: pretty; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
 .home-progress > p strong { color: var(--color-foreground); font-weight: 600; }
 .home-progress > p + p { margin-top: 8px; }
+.home-progress > p.home-saved { margin-top: 14px; font-size: 13px; }
 .home-flags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .home-flags li { padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)); color: var(--color-primary-strong); font-size: 13px; line-height: 1.4; }
 .home-recent { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
@@ -223,7 +238,7 @@
 /* Scroll reveal (rise-in and --motion-scale from index.css): short blocks only, so
    "entry 100%" is reached as soon as each is fully on screen. Not on the phone or dialogs. */
 @supports (animation-timeline: view()) {
-  .home-progress, .debrief-next, .debrief-tip, .debrief-habit, .debrief-actions { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  .debrief-next, .debrief-tip, .debrief-habit, .debrief-actions { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
 }
 @keyframes clue-in { from { background-color: transparent; } }
 
@@ -243,6 +258,10 @@
   .home-title { font-size: 30px; }
   .segmented button { padding-inline: 8px; }
   .path-stop { gap: 12px; padding: 10px 8px; }
+  .home-stat-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .home-stat-grid > div:first-child { grid-column: 1 / -1; }
+  .home-channels li { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .home-meter { grid-column: 1 / -1; grid-row: 2; }
   .scenario-intro h1 { font-size: 30px; margin-top: 14px; }
   .scenario-situation { font-size: 14px; }
   .phone-wrap { margin-top: 20px; }

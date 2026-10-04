@@ -31,6 +31,8 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
         ? <p>Finish a couple of scenarios and Tellio will start timing your instincts.</p>
         : (
           <>
+            {/* What's compared comes first, so the then → now numbers read right. */}
+            <p className="instincts-note">{view.note}</p>
             <dl className="instincts-list">
               {view.rows.map((row) => (
                 <div key={row.label}>
@@ -44,7 +46,6 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
               {view.improved && <div><dt>Most improved</dt><dd><strong className="is-better">{view.improved}</strong></dd></div>}
             </dl>
             {chart && <MiniBars chart={chart} />}
-            <p className="instincts-note">{view.note}</p>
           </>
         )}
       <p className="instincts-source">{instinctsSource(state.metrics.storage)}</p>

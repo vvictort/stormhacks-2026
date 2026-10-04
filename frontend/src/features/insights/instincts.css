@@ -1,5 +1,5 @@
 /* "Your scam instincts" on Home: sits under .home-progress and borrows its heading and text styles. */
-.instincts-list { display: grid; gap: 10px; margin: 14px 0 0; max-width: 46ch; }
+.instincts-list { display: grid; gap: 10px; margin: 14px 0 0; }
 .instincts-list > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; padding-bottom: 10px; border-bottom: 1px dashed var(--color-border); }
 .instincts-list dt { font-size: 14px; color: var(--color-muted-strong); }
 .instincts-list dd { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 16px; font-variant-numeric: tabular-nums; }
@@ -7,7 +7,7 @@
 .instincts-list strong.is-better { color: var(--color-success-strong); }
 .instincts-then { color: var(--color-muted-strong); }
 .instincts-arrow { color: var(--color-control); }
-.home-instincts .instincts-note { margin-top: 12px; font-size: 13px; }
+.home-instincts .instincts-note { margin-top: -4px; font-size: 13px; }
 .home-instincts .instincts-source { margin-top: 6px; font-size: 13px; }
 .instincts-chart { display: grid; gap: 6px; margin: 14px 0 0; }
 .instincts-chart svg { display: block; max-width: 100%; }
