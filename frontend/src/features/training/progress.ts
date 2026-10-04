@@ -1,10 +1,10 @@
-import { scenarios, type Scenario } from './scenarios.ts'
+import { scenarios, type Difficulty, type Scenario } from './scenarios.ts'
 
 // ponytail: progress is mocked in localStorage per account; move to the backend once attempts are stored server-side.
 
 export interface Attempt { correct: boolean; at: number }
-/** Latest attempt per scenario id. */
-export type Progress = Record<string, Attempt>
+/** Per scenario id: the latest attempt, plus every attempt oldest first. Old saves have no `history`; their one attempt stands in. */
+export type Progress = Record<string, Attempt & { history?: Attempt[] }>
 
 const memory = new Map<string, Progress>()
 const keyFor = (uid: string | null | undefined) => `tellio.progress.${uid ?? 'guest'}`
@@ -34,7 +34,37 @@ export function saveProgress(uid: string | null | undefined, progress: Progress)
 }
 
 export function recordAttempt(progress: Progress, id: string, correct: boolean, at = Date.now()): Progress {
-  return { ...progress, [id]: { correct, at } }
+  const history = [...(progress[id] ? progress[id].history ?? [progress[id]] : []), { correct, at }]
+  return { ...progress, [id]: { correct, at, history } }
+}
+
+/** Every attempt across scenarios, oldest first. */
+export function timeline(progress: Progress) {
+  return Object.entries(progress)
+    .flatMap(([id, latest]) => (latest.history ?? [latest]).map(({ correct, at }) => ({ id, correct, at })))
+    .sort((a, b) => a.at - b.at)
+}
+
+export const levels: Difficulty[] = ['easy', 'medium', 'hard']
+
+/** Replays the history: two right calls at or above the level step up, a miss at or below it steps back. */
+// ponytail: heuristic stand-in for the planned Python personalization engine (backend/personalization/); swap in its pick once that service exists.
+export function currentLevel(progress: Progress, list: Scenario[] = scenarios): Difficulty {
+  let level = 0
+  let streak = 0
+  for (const attempt of timeline(progress)) {
+    const scenario = list.find((item) => item.id === attempt.id)
+    if (!scenario) continue
+    const difficulty = levels.indexOf(scenario.difficulty)
+    if (!attempt.correct && difficulty <= level) {
+      level = Math.max(0, level - 1)
+      streak = 0
+    } else if (attempt.correct && difficulty >= level && ++streak === 2) {
+      level = Math.min(levels.length - 1, level + 1)
+      streak = 0
+    }
+  }
+  return levels[level]
 }
 
 export function summarize(progress: Progress, list: Scenario[] = scenarios) {
@@ -42,9 +72,15 @@ export function summarize(progress: Progress, list: Scenario[] = scenarios) {
   return { total: list.length, done: done.length, correct: done.filter((scenario) => progress[scenario.id].correct).length }
 }
 
-/** The scenario to practise next: untried first, then ones answered wrong, starting after `afterId`. */
+/**
+ * The scenario to practise next: closest to the current level first, untried before missed at each level,
+ * ties in list order starting after `afterId`. Nothing once every scenario's latest call was right.
+ */
 export function recommend(progress: Progress, afterId?: string, list: Scenario[] = scenarios): Scenario | undefined {
+  const level = levels.indexOf(currentLevel(progress, list))
   const start = list.findIndex((scenario) => scenario.id === afterId) + 1
-  const order = [...list.slice(start), ...list.slice(0, start)].filter((scenario) => scenario.id !== afterId)
-  return order.find((scenario) => !progress[scenario.id]) ?? order.find((scenario) => !progress[scenario.id].correct)
+  const rank = (scenario: Scenario) => Math.abs(levels.indexOf(scenario.difficulty) - level) * 2 + (progress[scenario.id] ? 1 : 0)
+  return [...list.slice(start), ...list.slice(0, start)]
+    .filter((scenario) => scenario.id !== afterId && !progress[scenario.id]?.correct)
+    .sort((a, b) => rank(a) - rank(b))[0]
 }

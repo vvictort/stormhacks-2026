@@ -40,6 +40,13 @@
 .home-flags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .home-flags li { padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)); color: var(--color-primary-strong); font-size: 13px; line-height: 1.4; }
 .home-progress .home-saved { margin-top: 18px; font-size: 13px; }
+.home-progress > p + p { margin-top: 8px; }
+.home-level { text-transform: capitalize; }
+.home-recent { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.home-recent li { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--color-surface); }
+.home-recent .is-right { background: var(--color-success-strong); }
+.home-recent .is-missed { background: var(--color-accent-strong); }
+.home-progress .home-recent-note { margin-top: 8px; font-size: 13px; }
 
 /* The practice path: a vertical rail with one node per channel and a stop per scenario. */
 .path { padding: 24px 0 0; }

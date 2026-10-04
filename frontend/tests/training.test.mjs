@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { markFor, markText, scenarios, siteOf } from '../src/features/training/scenarios.ts'
-import { loadProgress, recommend, recordAttempt, saveProgress, summarize } from '../src/features/training/progress.ts'
+import { currentLevel, loadProgress, recommend, recordAttempt, saveProgress, summarize, timeline } from '../src/features/training/progress.ts'
 
 test('every quoted indicator appears in its scenario text and ids are unique', () => {
   for (const scenario of scenarios) {
@@ -24,17 +24,58 @@ test('markText splits text into plain and numbered pieces without losing charact
   assert.equal(markFor('nope', indicators), undefined)
 })
 
-test('recommend prefers untried scenarios after the current one, then missed ones, then nothing', () => {
-  const [a, b, c] = scenarios
-  assert.equal(recommend({})?.id, a.id)
-  assert.equal(recommend({}, a.id)?.id, b.id)
-  let progress = recordAttempt({}, b.id, true)
-  assert.equal(recommend(progress, a.id)?.id, c.id)
-  progress = recordAttempt(recordAttempt(progress, a.id, false), c.id, true)
-  assert.equal(recommend(progress, c.id)?.id, a.id)
-  assert.equal(recommend(progress, a.id), undefined)
-  assert.equal(recommend(recordAttempt(progress, a.id, true)), undefined)
-  assert.deepEqual(summarize(progress), { total: scenarios.length, done: 3, correct: 2 })
+const list = [
+  { id: 'e1', difficulty: 'easy' }, { id: 'e2', difficulty: 'easy' },
+  { id: 'm1', difficulty: 'medium' }, { id: 'm2', difficulty: 'medium' },
+  { id: 'h1', difficulty: 'hard' },
+]
+const play = (calls) => calls.reduce((progress, [id, correct], at) => recordAttempt(progress, id, correct, at), {})
+
+test('recommend starts easy and prefers untried after the current one, then missed, then nothing', () => {
+  assert.equal(recommend({}, undefined, list)?.id, 'e1')
+  assert.equal(recommend({}, 'e1', list)?.id, 'e2')
+  // One miss at easy: stay easy, and retry it before moving to medium.
+  let progress = play([['e1', false]])
+  assert.equal(currentLevel(progress, list), 'easy')
+  assert.equal(recommend(progress, 'e1', list)?.id, 'e2')
+  progress = play([['e1', false], ['e2', true]])
+  assert.equal(recommend(progress, 'e2', list)?.id, 'e1')
+  assert.deepEqual(summarize(progress, list), { total: 5, done: 2, correct: 1 })
+  progress = play(list.map((scenario) => [scenario.id, true]))
+  assert.equal(recommend(progress, undefined, list), undefined)
+})
+
+test('the level steps up after two right calls and back down after a miss', () => {
+  const twoEasy = play([['e1', true], ['e2', true]])
+  assert.equal(currentLevel(twoEasy, list), 'medium')
+  assert.equal(recommend(twoEasy, 'e2', list)?.id, 'm1')
+  const fourRight = play([['e1', true], ['e2', true], ['m1', true], ['m2', true]])
+  assert.equal(currentLevel(fourRight, list), 'hard')
+  assert.equal(recommend(fourRight, 'm2', list)?.id, 'h1')
+  // A miss on a medium drops back to easy; with easy all done, the missed medium comes back first.
+  const missed = play([['e1', true], ['e2', true], ['m1', false]])
+  assert.equal(currentLevel(missed, list), 'easy')
+  assert.equal(recommend(missed, 'm1', list)?.id, 'm2')
+  assert.equal(recommend(missed, 'm2', list)?.id, 'm1')
+  // A miss on a stretch scenario above the level doesn't count against you.
+  assert.equal(currentLevel(play([['h1', false]]), list), 'easy')
+  // Scenarios not in the list (another channel, removed) are ignored.
+  assert.equal(currentLevel(play([['gone', true], ['gone', true]]), list), 'easy')
+})
+
+test('history keeps every attempt and old saves without history still load', () => {
+  const old = { e1: { correct: false, at: 1 }, m1: { correct: true, at: 3 } }
+  const progress = recordAttempt(old, 'e1', true, 5)
+  assert.deepEqual(progress.e1, { correct: true, at: 5, history: [{ correct: false, at: 1 }, { correct: true, at: 5 }] })
+  assert.deepEqual(timeline(progress), [{ id: 'e1', correct: false, at: 1 }, { id: 'm1', correct: true, at: 3 }, { id: 'e1', correct: true, at: 5 }])
+  assert.deepEqual(summarize(progress, list), { total: 5, done: 2, correct: 2 })
+  assert.equal(currentLevel(old, list), 'easy')
+})
+
+test('the real scenarios cover every difficulty and both answers', () => {
+  for (const difficulty of ['easy', 'medium', 'hard']) assert.ok(scenarios.some((scenario) => scenario.difficulty === difficulty), difficulty)
+  assert.ok(scenarios.filter((scenario) => scenario.correctAction === 'safe').length >= 2)
+  assert.equal(recommend({})?.difficulty, 'easy')
 })
 
 test('progress falls back to memory when localStorage is unavailable', () => {

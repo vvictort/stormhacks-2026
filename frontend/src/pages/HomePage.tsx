@@ -1,11 +1,11 @@
-import { ArrowRight, Info, X } from 'lucide-react'
+import { ArrowRight, Check, Info, RotateCcw, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
-import { recommend, summarize } from '../features/training/progress'
-import { scenarios } from '../features/training/scenarios'
+import { currentLevel, recommend, summarize, timeline } from '../features/training/progress'
+import { getScenario, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 
 export function HomePage() {
@@ -13,6 +13,8 @@ export function HomePage() {
   const { progress } = useProgress(user?.uid)
   const { done, total, correct } = summarize(progress)
   const next = recommend(progress)
+  const level = currentLevel(progress)
+  const recent = timeline(progress).slice(-8)
   const target = next ?? scenarios[0]
   const firstName = user?.displayName?.trim().split(/\s+/)[0]
   const name = firstName ? `, ${firstName}` : ''
@@ -55,6 +57,17 @@ export function HomePage() {
               : (
                 <>
                   <p>You've tried <strong>{done} of {total}</strong> text scenarios and made the right call on <strong>{correct}</strong>.</p>
+                  <p>Practice level: <strong className="home-level">{level}</strong>. Two right calls move you up a level, and a miss eases things back.</p>
+                  <h3>Your last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h3>
+                  <ol className="home-recent">
+                    {recent.map((attempt) => (
+                      <li key={`${attempt.id}-${attempt.at}`} className={attempt.correct ? 'is-right' : 'is-missed'}>
+                        {attempt.correct ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />}
+                        <span className="sr-only">{getScenario(attempt.id)?.title ?? 'Scenario'}: {attempt.correct ? 'right call' : 'missed'}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="home-recent-note">Right call on {recent.filter((attempt) => attempt.correct).length} of {recent.length}, oldest first.</p>
                   {flagsSeen.length > 0 && (
                     <>
                       <h3>Red flags you've met</h3>
