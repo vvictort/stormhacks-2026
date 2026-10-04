@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { validateAuthForm, validateEmail } from '../src/auth/validation.ts'
-import { getAuthErrorMessage, PasswordPolicyError } from '../src/auth/errors.ts'
+import { validateAuthForm, validateEmail } from '../src/features/auth/validation.ts'
+import { getAuthErrorMessage, PasswordPolicyError } from '../src/features/auth/errors.ts'
 
 const valid = { name: 'Alex Taylor', email: 'alex@example.com', password: 'a long password', confirmPassword: 'a long password' }
 

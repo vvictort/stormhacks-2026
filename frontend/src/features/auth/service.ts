@@ -10,8 +10,8 @@ import {
   validatePassword,
   type User,
 } from 'firebase/auth'
-import { auth } from './firebase'
-import { PasswordPolicyError } from './auth/errors'
+import { auth } from '../../lib/firebase'
+import { PasswordPolicyError } from './errors'
 
 export const signIn = (email: string, password: string) =>
   signInWithEmailAndPassword(auth, email, password)

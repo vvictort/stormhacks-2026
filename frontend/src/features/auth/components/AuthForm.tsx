@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, Check, LoaderCircle, LogOut } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../auth/AuthContext'
-import { validateAuthForm, type AuthFieldName, type FieldErrors } from '../../auth/validation'
+import { useAuth } from '../AuthContext'
+import { validateAuthForm, type AuthFieldName, type FieldErrors } from '../validation'
 import { AuthCard } from './AuthCard'
 import { AuthField } from './AuthField'
 import { AuthNotice } from './AuthNotice'
@@ -49,7 +49,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
 
   if (initializing) {
     return (
-      <AuthCard eyebrow="A LITTLE MOMENT" title="Getting things ready" description="Checking your session…">
+      <AuthCard title="Getting things ready" description="Checking your session…">
         <div className="session-loading" role="status"><LoaderCircle className="spinner text-primary" size={26} aria-hidden="true" /><span className="sr-only">Loading your session</span></div>
       </AuthCard>
     )
@@ -59,13 +59,13 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   // pending until the whole operation settles, including any profile warning.
   if (user && (!pending || pending === 'signout')) {
     return (
-      <AuthCard eyebrow="ONE STEP CLOSER" title="You’re signed in" description={user.displayName ? `Welcome, ${user.displayName}. You’re in the right place.` : 'Welcome to Tellio. You’re in the right place.'}>
+      <AuthCard title="You’re signed in" description={user.displayName ? `Welcome, ${user.displayName}. You’re in the right place.` : 'Welcome to Tellio. You’re in the right place.'}>
         <div className="signed-in-icon bg-success/15 text-success-strong"><Check size={30} aria-hidden="true" /></div>
         <p className="signed-in-message text-muted-strong">Your training experience is coming soon. Your account is ready when you are.</p>
         <p className="signed-in-email">{user.email}</p>
         {profileWarning && <AuthNotice tone="info">{profileWarning}</AuthNotice>}
         {error && <AuthNotice>{error}</AuthNotice>}
-        <button type="button" className="social-button border-border" onClick={() => void logout()} disabled={Boolean(pending)} aria-busy={pending === 'signout'}>
+        <button type="button" className="social-button border-control" onClick={() => void logout()} disabled={Boolean(pending)} aria-busy={pending === 'signout'}>
           {pending === 'signout' ? <LoaderCircle size={18} className="spinner" aria-hidden="true" /> : <LogOut size={18} aria-hidden="true" />}
           {pending === 'signout' ? 'Signing out…' : 'Sign out'}
         </button>
@@ -77,7 +77,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const formPending = pending === mode
   return (
     <>
-      <AuthCard eyebrow={isSignup ? 'A WISER EVERYDAY STARTS HERE' : 'GOOD TO SEE YOU AGAIN'} title={isSignup ? 'Train before scammers try' : 'Welcome back'} description={isSignup ? 'Create an account to receive personalized scam simulations and track your progress.' : 'Continue building your scam awareness and stay one step ahead.'}>
+      <AuthCard title={isSignup ? 'Create your account' : 'Welcome back'} description={isSignup ? 'Get scam simulations matched to your level and see how you improve over time.' : 'Log in to pick up where you left off.'}>
         <form ref={form} className="auth-form" onSubmit={handleSubmit} noValidate aria-busy={disabled}>
           <fieldset disabled={disabled} className="auth-fields">
             <legend className="sr-only">{isSignup ? 'Create your account' : 'Log in to your account'}</legend>

@@ -29,7 +29,7 @@ The dependency-free unit tests use Node's built-in test runner and TypeScript st
 
 ## Authentication integration
 
-`src/firebase.ts` owns the existing Firebase app and Auth instance. `src/auth.ts` owns provider operations, and `src/auth/AuthProvider.tsx` exposes session state and pending/error states to the forms. The auth-state subscription is cleaned up on unmount; Firebase manages session persistence.
+`src/lib/firebase.ts` owns the existing Firebase app and Auth instance. `src/features/auth/service.ts` owns provider operations, and `src/features/auth/AuthProvider.tsx` exposes session state and pending/error states to the forms. The auth-state subscription is cleaned up on unmount; Firebase manages session persistence.
 
 Email/password registration checks Firebase's current password policy, creates the account, and saves the supplied name with `updateProfile`. The interface requires at least eight characters; a stricter Firebase policy is also enforced and explained inline. Login accepts existing passwords without imposing the new-account minimum. Password whitespace is preserved.
 
@@ -69,42 +69,19 @@ Browser checks cover:
 - Google success/cancelled/blocked states using a test double; the real OAuth popup remains a live smoke test.
 - Login and signup at 320, 390, 768, 1024, and 1440px, 200% zoom, and automated WCAG A/AA accessibility scans.
 
-## Change inventory
+## Project structure
 
-Removed:
+```
+src/
+  main.tsx, App.tsx, index.css   entry, routes, global styles and tokens
+  lib/firebase.ts                Firebase app, Auth instance, lazy Analytics
+  pages/                         one component per route
+  features/
+    auth/
+      service.ts                 Firebase Auth operations
+      AuthContext.ts, AuthProvider.tsx   session state for the UI
+      errors.ts, validation.ts   pure helpers (covered by tests/auth.test.mjs)
+      components/                auth layout, card, fields, dialogs
+```
 
-- `src/App.css`
-- `src/assets/hero.png`
-- `src/assets/react.svg`
-- `src/assets/vite.svg`
-- `public/icons.svg`
-
-Created:
-
-- `src/auth/AuthContext.ts`
-- `src/auth/AuthProvider.tsx`
-- `src/auth/errors.ts`
-- `src/auth/validation.ts`
-- `src/components/auth/AuthLayout.tsx`
-- `src/components/auth/AuthCard.tsx`
-- `src/components/auth/AuthField.tsx`
-- `src/components/auth/AuthForm.tsx`
-- `src/components/auth/AuthNotice.tsx`
-- `src/components/auth/PasswordInput.tsx`
-- `src/components/auth/ResetPasswordDialog.tsx`
-- `src/components/auth/SecurityIllustration.tsx`
-- `src/components/auth/SocialLoginButton.tsx`
-- `src/pages/LoginPage.tsx`
-- `src/pages/SignupPage.tsx`
-- `tests/auth.test.mjs`
-
-Modified:
-
-- `src/App.tsx`
-- `src/auth.ts`
-- `src/index.css`
-- `src/main.tsx`
-- `public/favicon.svg`
-- `index.html`
-- `package.json` (test command only)
-- `README.md`
+New product areas (for example the simulated phone) go in their own `features/<name>/` folder with the same shape.

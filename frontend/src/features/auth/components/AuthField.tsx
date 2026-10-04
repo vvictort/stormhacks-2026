@@ -18,14 +18,14 @@ export function AuthField({ id, label, error, hint, trailingAction, className = 
         <input
           {...inputProps}
           id={id}
-          className={`auth-input border-border bg-surface ${trailingAction ? 'has-action' : ''} ${className}`}
+          className={`auth-input border-control bg-surface ${trailingAction ? 'has-action' : ''} ${className}`}
           aria-invalid={error ? true : undefined}
           aria-describedby={description}
         />
         {trailingAction}
       </div>
       {hint && <p id={`${id}-hint`} className="field-hint text-muted-strong">{hint}</p>}
-      {error && <p id={`${id}-error`} className="field-error" role="alert">{error}</p>}
+      {error && <p id={`${id}-error`} className="field-error">{error}</p>}
     </div>
   )
 }

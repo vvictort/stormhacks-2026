@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { User } from 'firebase/auth'
-import * as authService from '../auth'
+import * as authService from './service'
 import { AuthContext, type AuthOperation } from './AuthContext'
 import { getAuthErrorMessage, PasswordPolicyError } from './errors'
 
