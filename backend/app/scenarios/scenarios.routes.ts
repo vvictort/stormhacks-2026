@@ -11,16 +11,16 @@ import { generateCallScenario, trainingCallScenario } from './generator.ts';
  * /api/training/call-scenarios. POST: a personalised call scenario, stored server-side. GET /:id: its teaching copy in
  * the frontend `CallScenario` shape, owner only. The prompt never leaves the server through these routes.
  */
-export function scenariosRouter({ users, attempts, scenarios }: Repositories, options: { geminiApiKey?: string }) {
+export function scenariosRouter({ users, attempts, scenarios, insights }: Repositories, options: { geminiApiKey?: string }) {
   const router = Router();
   router.post('/', async (req, res) => {
     if (!(await scenarios.claimGeneration(req.user!.uid, 5, 30))) {
       throw new AppError(429, 'RATE_LIMITED', 'You’ve generated a lot of scenarios. Please wait a moment and try again.');
     }
-    const [profile, history] = await Promise.all([users.ensureUser(req.user!), attempts.list(req.user!.uid, HISTORY_LIMIT)]);
+    const [profile, history, focus] = await Promise.all([users.ensureUser(req.user!), attempts.list(req.user!.uid, HISTORY_LIMIT), insights.latestFocus(req.user!.uid)]);
     const { vulnerability, difficulty } = summarizeAttempts(history);
     const { scenario, source } = await generateCallScenario({
-      apiKey: options.geminiApiKey, difficulty, weakCategories: vulnerability.weakCategories,
+      apiKey: options.geminiApiKey, difficulty, focus, weakCategories: vulnerability.weakCategories,
       name: profile.name, profession: profile.profession, interests: profile.interests,
     });
     await scenarios.save(req.user!.uid, scenario, source);

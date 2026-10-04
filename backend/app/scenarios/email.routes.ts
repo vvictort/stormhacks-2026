@@ -6,10 +6,10 @@ import { generateEmailScenario } from './email-generator.ts';
 import type { JsonModel } from './gemini.ts';
 
 /**
- * POST /api/training/email-scenarios → 201 { scenario }: a scam email written for this user from their saved profile and
- * history (the request body is ignored). GET /:id → the scenario, owner only.
+ * POST /api/training/email-scenarios → 201 { scenario }: a scam email written for this user from their saved profile, history
+ * and current training focus (the request body is ignored). GET /:id → the scenario, owner only.
  */
-export function emailScenariosRouter({ users, attempts, scenarios }: Repositories, options: { model?: JsonModel }) {
+export function emailScenariosRouter({ users, attempts, scenarios, insights }: Repositories, options: { model?: JsonModel }) {
   const router = Router();
   router.post('/', async (req, res) => {
     const uid = req.user!.uid;
@@ -17,10 +17,10 @@ export function emailScenariosRouter({ users, attempts, scenarios }: Repositorie
     if (!(await scenarios.claimGeneration(uid, 6, 40))) {
       throw new AppError(429, 'RATE_LIMITED', 'You’ve generated a lot of scenarios. Please wait a moment and try again.');
     }
-    const [profile, history] = await Promise.all([users.ensureUser(req.user!), attempts.list(uid, HISTORY_LIMIT)]);
+    const [profile, history, focus] = await Promise.all([users.ensureUser(req.user!), attempts.list(uid, HISTORY_LIMIT), insights.latestFocus(uid)]);
     const { vulnerability, difficulty } = summarizeAttempts(history);
     const { scenario, source } = await generateEmailScenario({
-      model: options.model, difficulty, profession: profile.profession, interests: profile.interests,
+      model: options.model, difficulty, focus, profession: profile.profession, interests: profile.interests,
       weakCategories: vulnerability.weakCategories, vulnerableTactics: vulnerability.vulnerableTactics,
     });
     await scenarios.saveMessage(uid, scenario, source);

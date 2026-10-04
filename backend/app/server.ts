@@ -54,7 +54,7 @@ export function createApp({ repos, services, origin, verifyToken, geminiApiKey, 
   app.use('/api/training/email-scenarios', auth, emailScenariosRouter(repos, { model: jsonModel }));
   const insights = new InsightsService(repos.insights, snowflake);
   app.get('/api/training/insights', auth, async (req, res) => { res.json(await insights.get(req.user!.uid)); });
-  app.use('/api/training', auth, trainingRouter(repos.attempts));
+  app.use('/api/training', auth, trainingRouter(repos));
   app.use('/api/training', auth, behaviorRouter(repos));
 
   // Simulated texts and calls. The scenario list and tracked links are public; the SSE stream alone takes ?access_token=.

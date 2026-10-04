@@ -66,8 +66,11 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
     if (cat.accuracy < 75) weak.add(category);
     else if (cat.accuracy >= 80) weak.delete(category);
 
-    const seen = index + 1;
-    const step = seen < 3 ? 0 : successes / seen >= 0.85 && compromised === 0 ? 1 : compromised >= 2 ? -1 : 0;
+    // Steps follow the last 5 results, so two old misses don't pin someone at easy forever.
+    const recent = scored.slice(Math.max(0, index - 4), index + 1);
+    const recentRight = recent.filter((a) => a.success).length;
+    const recentFell = recent.filter((a) => fellForScam(a.outcome)).length;
+    const step = index < 2 ? 0 : recentRight / recent.length >= 0.85 && recentFell === 0 ? 1 : recentFell >= 2 ? -1 : 0;
     difficulty = levels[Math.min(2, Math.max(0, levels.indexOf(difficulty) + step))];
   }
 
