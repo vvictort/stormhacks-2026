@@ -9,3 +9,12 @@
 .instincts-arrow { color: var(--color-control); }
 .home-instincts .instincts-note { margin-top: 12px; font-size: 13px; }
 .home-instincts .instincts-source { margin-top: 6px; font-size: 13px; }
+.instincts-chart { display: grid; gap: 6px; margin: 14px 0 0; }
+.instincts-chart svg { display: block; max-width: 100%; }
+.instincts-chart .is-good { fill: var(--color-success); }
+.instincts-chart .is-missed { fill: var(--color-danger); }
+.instincts-chart figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13px; color: var(--color-muted-strong); }
+.instincts-key { display: inline-flex; align-items: center; gap: 5px; }
+.instincts-key::before { content: ''; width: 8px; height: 8px; border-radius: 2px; }
+.instincts-key.is-good::before { background: var(--color-success); }
+.instincts-key.is-missed::before { background: var(--color-danger); }

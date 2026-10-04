@@ -5,6 +5,7 @@ import { TransitionLink } from '../../../components/TransitionLink'
 import { api } from '../../../lib/api'
 import { preloadPages } from '../../../lib/lazyPage'
 import { withViewTransition } from '../../../lib/viewTransition'
+import { insightSourceLabel } from '../../insights/scamProfile'
 import { learned, levelName, nextForYou, type Adaptive } from '../adaptive'
 import { requestPersonalisedCall } from '../call/requestCall'
 import { generateScenario } from '../generate'
@@ -79,8 +80,6 @@ export function NextForYou({ adaptive, localLevel, loading }: { adaptive: Adapti
   )
 }
 
-const sourceLine = { snowflake: 'Analysed in Snowflake', fallback: 'Built-in analysis' }
-
 /** After a debrief: what changed in Tellio's picture of this user, compared with before the run, and the next step. */
 export function LearnedPanel({ learning, attemptId }: { learning: Learning; attemptId: string }) {
   if (learning.status === 'loading' || learning.status === 'off') return null
@@ -100,7 +99,7 @@ export function LearnedPanel({ learning, attemptId }: { learning: Learning; atte
               {view.insight && (
                 <figure className="learned-insight">
                   <blockquote>{view.insight.pattern}</blockquote>
-                  <figcaption>{sourceLine[view.insight.source]}</figcaption>
+                  <figcaption>{insightSourceLabel(view.insight.source)}</figcaption>
                 </figure>
               )}
               <p className="learned-next">Next up: <strong>{view.next.title.replace(/, made for you$/, '')}</strong> · {levelName(view.next.difficulty)}</p>

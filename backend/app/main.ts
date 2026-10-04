@@ -6,6 +6,7 @@ import { loadConfig } from './config.ts';
 import { createDatabase } from './db/database.ts';
 import { pendingMigrations } from './db/migrate.ts';
 import { Snowflake, snowflakeConfig } from './insights/snowflake.ts';
+import { integrationLines, storageLine } from './integrations.ts';
 import { createRepositories } from './repositories.ts';
 import { ScenarioCatalog } from './scenarios/catalog.ts';
 import { createApp } from './server.ts';
@@ -43,10 +44,9 @@ const services = {
   }),
 };
 const snowflake = snowflakeConfig(config);
-const snowflakePartial = !snowflake && Object.entries(config).some(([key, value]) => key.startsWith('SNOWFLAKE_') && key !== 'SNOWFLAKE_SCHEMA' && value);
-console.info(snowflake ? 'Vulnerability analysis: Snowflake'
-  : snowflakePartial ? 'Vulnerability analysis: built-in (Snowflake needs all of SNOWFLAKE_ACCOUNT, SNOWFLAKE_PAT, SNOWFLAKE_WAREHOUSE, SNOWFLAKE_DATABASE, SNOWFLAKE_ID_SALT)'
-  : 'Vulnerability analysis: built-in (Snowflake not configured)');
+for (const line of integrationLines(config)) console.info(line);
+// Not awaited: an unreachable database shouldn't hold up the listen.
+repos.behavior.storage().then((storage) => console.info(storageLine(storage)), () => console.info(storageLine(null)));
 const app = createApp({ repos, services, origin: config.APP_ORIGIN, geminiApiKey: config.GEMINI_API_KEY, snowflake: snowflake && new Snowflake(snowflake) });
 const server = app.listen(config.PORT, config.HOST, () => console.info(`Tellio API: http://${config.HOST}:${config.PORT}/api`));
 server.on('error', async (error) => { console.error('API startup failed:', (error as NodeJS.ErrnoException).code); await db.end(); process.exitCode = 1; });

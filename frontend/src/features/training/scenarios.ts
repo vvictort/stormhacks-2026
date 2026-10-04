@@ -14,6 +14,8 @@ export interface GeneratedInfo {
   source: 'gemini' | 'fallback'
   /** Why this scenario, in plain words, e.g. "Matched to your work in software and a weak spot: account security". */
   reason: string
+  /** Present only when Gemini wrote the scenario using at least one scam-library example. */
+  grounding?: { exampleCount: number; source: 'scam-library' }
 }
 
 /** Something worth noticing. `quote` is the exact text it points at, so the debrief can mark it in the message. */
@@ -44,6 +46,7 @@ interface ScenarioCore {
   nextTime: string
   /** Built-in scenarios leave it out; the backend infers it from the id and title. */
   scamCategory?: ScamCategory
+  tactics?: Tactic[]
   generated?: GeneratedInfo
 }
 

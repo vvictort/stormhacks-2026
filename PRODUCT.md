@@ -24,15 +24,15 @@ The scams play out on a simulated phone built into the browser. Scam texts, phis
 
 - Everything runs in the web app. No real SMS, email or calls reach the user's own devices.
 - The simulated phone has three channels: SMS (messaging app), email (mail app) and voice calls (AI voice).
-- Planned backend services: Gemini picks and writes scenarios, ElevenLabs voices the calls, and a Python personalization engine chooses scenario and difficulty from the person's history (`backend/personalization/`). Twilio is in the scaffold, but the in-browser simulation makes real delivery unnecessary for the demo.
-- Firebase Auth handles accounts (email/password and Google). Sign-in, sign-up and password reset are built. After sign-in, the user currently sees only a "coming soon" confirmation.
+- Backend services: Gemini writes personalised emails and call scenarios, ElevenLabs voices the calls, TigerData records every behaviour event over time, and Snowflake interprets the results across trainees. The TypeScript API picks the next scenario and difficulty from the person's history. Nothing is delivered to real devices.
+- Firebase Auth handles accounts (email/password and Google). Sign-in, sign-up and password reset are built; after sign-in, onboarding leads to Home and the training path.
 
 ## Capabilities and Constraints
 
 - Confirmed: SMS, email and voice simulations on the in-browser phone; adaptive difficulty; progress tracking over time.
 - After each simulation: a short debrief shows the red flags in that scenario, then the person moves straight on to the next one. It's a quick reveal-and-continue, not a long lesson.
 - Scope: hackathon demo. A polished end-to-end demo flow matters more than production depth.
-- Stack in place: React 19, TypeScript, Vite, Tailwind CSS 4, React Router, Firebase, `motion`, `lucide-react`. The backend is a TypeScript API plus a Python personalization service, scaffolded but not yet implemented.
+- Stack in place: React 19, TypeScript, Vite, Tailwind CSS 4, React Router, Firebase, `motion`, `lucide-react`. The backend is a TypeScript (Express) API on Postgres/TigerData.
 - Vocabulary in the codebase: campaign, attempt, message, event, scenario, difficulty.
 
 ## Brand Commitments

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { categoryLabel, instinctsView, seconds } from '../src/features/insights/instincts.ts'
+import { categoryLabel, instinctsChart, instinctsSource, instinctsView, seconds } from '../src/features/insights/instincts.ts'
 import { createTracker, messageOutcome, runEvent } from '../src/features/insights/tracker.ts'
 import { scenarios } from '../src/features/training/scenarios.ts'
 
@@ -79,4 +79,33 @@ test('the instincts card shows then → now, the most improved category and an h
   assert.equal(fasterButWrong.rows[0].better, false, 'falling for it faster is not better')
   assert.equal(seconds(14_249), '14.2s')
   assert.equal(categoryLabel('account_security'), 'account security scams')
+})
+
+const metricsWith = (overrides = {}) => ({ attempts: 3, accuracy: 67, reportRate: null, avgDetectionMs: 8000, trend: null, categories: [], mostImproved: null, timeline: [], ...overrides })
+
+test('the mini chart shows recent decisions for a same-day history and right calls per day once there are days', () => {
+  const today = [{ day: '2026-10-04', attempts: 3, correct: 2, avgDetectionMs: 8000 }]
+  const recent = [{ at: 'a', correct: false, detectionMs: 12000 }, { at: 'b', correct: true, detectionMs: 6000 }, { at: 'c', correct: true, detectionMs: null }]
+  assert.deepEqual(instinctsChart(metricsWith({ timeline: today, recent })), {
+    title: 'Time to decide, last 3 scenarios', keys: ['right call', 'missed'],
+    bars: [
+      { height: 1, good: false, label: 'Scenario 1: missed, 12.0s' },
+      { height: 0.5, good: true, label: 'Scenario 2: right call, 6.0s' },
+      { height: 0, good: true, label: 'Scenario 3: right call' },
+    ],
+  })
+  assert.equal(instinctsChart(metricsWith({ timeline: today, recent: recent.slice(0, 1) })), null, 'one bar is not a chart')
+  assert.equal(instinctsChart(metricsWith({ timeline: today })), null, 'an older backend without recent')
+
+  const days = Array.from({ length: 16 }, (_, i) => ({ day: `2026-09-${String(i + 10).padStart(2, '0')}`, attempts: 4, correct: i % 2 ? 4 : 1, avgDetectionMs: null }))
+  const daily = instinctsChart(metricsWith({ timeline: days, recent }))
+  assert.equal(daily.title, 'Right calls per day, last 14 days')
+  assert.equal(daily.bars.length, 14)
+  assert.deepEqual(daily.bars[0], { height: 0.25, good: false, label: '2026-09-12: 1 of 4 right' })
+  assert.deepEqual(daily.bars[1], { height: 1, good: true, label: '2026-09-13: 4 of 4 right' })
+})
+
+test('the instincts card names TigerData only when the events are in a hypertable', () => {
+  assert.equal(instinctsSource('timescale'), 'Every tap and decision is timed and stored in TigerData.')
+  for (const storage of ['postgres', undefined]) assert.doesNotMatch(instinctsSource(storage), /TigerData/)
 })

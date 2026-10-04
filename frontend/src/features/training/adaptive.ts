@@ -1,4 +1,5 @@
 import type { Metrics } from '../insights/instincts.ts'
+import type { InsightSource } from '../insights/scamProfile.ts'
 import type { Difficulty, ScamCategory } from './scenarios.ts'
 
 // The server's adaptive state (GET /api/training/progress `difficulty` and `focus`, docs/mvp-contracts.md): exactly
@@ -16,7 +17,7 @@ export interface Adaptive {
 export interface Snapshot {
   adaptive: Adaptive | null
   metrics: Metrics | null
-  insight: { pattern: string; source: 'snowflake' | 'fallback' } | null
+  insight: { pattern: string; source: InsightSource } | null
 }
 
 const levels: Difficulty[] = ['easy', 'medium', 'hard']
@@ -128,4 +129,13 @@ export function learned(before: Snapshot, after: Snapshot, attemptId: string): L
   }
   const insight = after.insight && after.insight.pattern !== before.insight?.pattern ? after.insight : null
   return { lines: lines.slice(0, 4), insight, next: nextForYou(now, now.difficulty) }
+}
+
+/**
+ * The debrief's buttons: one clear next step. When the adaptive panel shows (it carries "Next scenario made for you"),
+ * the local "Next on your path" link hides; without the panel it is the next step.
+ */
+export function debriefActions({ hasNext, adaptive }: { hasNext: boolean; adaptive: boolean }) {
+  const pathNext = hasNext && !adaptive
+  return { pathNext, homePrimary: !pathNext && !adaptive }
 }

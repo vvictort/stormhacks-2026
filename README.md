@@ -5,16 +5,16 @@
 ## What it does
 
 - **Three channels on one practice phone**
-  - **Texts:** a scam SMS thread you can read and reply to, with a tracked fake link.
+  - **Texts:** a scam (or genuine) SMS to judge: tap the link to see where it really goes (it never opens), then report it or mark it safe.
   - **Emails:** a phishing email with sender details and links to inspect.
   - **Calls:** a live AI voice caller (ElevenLabs) you can answer, talk to and hang up on, with live captions.
 - **Debriefs that teach:** after each scenario you see what gave it away (urgency, unexpected fees, look-alike addresses, requests for codes) and what to check next time. Calls get their own debrief built from the redacted transcript.
 - **Adaptive practice:** an adaptive scam simulator that learns how you get fooled and trains against your weaknesses. Every text, email and call result is saved server-side; scenarios get harder as you make the right calls and ease off after misses, and Home's **Next for you** names the scam type Tellio will train next and why.
   - **Gemini** writes the personalised scam emails and call scenarios, aimed at your current training focus.
-  - **TigerData** stores every behaviour event (opens, sender checks, link taps, decisions, call answers and declines) in a hypertable and computes **Your scam instincts** (decision time, right calls, report rate, trend).
-  - **Snowflake** analyses pseudonymous per-category aggregates across trainees for **What Tellio has learned** (strongest skill, biggest weakness, what to practise next).
-  - **ElevenLabs** voices the live scam call.
-- **Works without the optional keys:** without ElevenLabs, calls fall back to a caption-only practice mode; without Gemini, built-in personalised scenarios are used; without Snowflake, the same analysis runs in the backend ("Built-in analysis").
+  - **TigerData** stores every behaviour event (opens, sender checks, link taps, decisions, call answers and declines) in a TimescaleDB hypertable and computes **Your scam instincts** (decision time, right calls, report rate, trend, and a small chart of recent decisions). The card names TigerData only when `behavior_events` really is a hypertable.
+  - **Snowflake** interprets pseudonymous aggregates across trainees for **What Tellio has learned**: which tactic combinations fool you (e.g. authority with urgency) against other trainees, what you catch quickly, and where you rank. With `SNOWFLAKE_CORTEX_MODEL`, Cortex writes the summary and why the next focus was chosen. The focus itself stays a deterministic pick, and the card says "Interpreted by Snowflake Cortex", "Analysed in Snowflake" or "Built-in analysis" according to what actually ran.
+  - **ElevenLabs** voices the live scam call; the call debrief credits it only when a call was answered with live voice.
+- **Works without the optional keys:** without ElevenLabs, calls fall back to a caption-only practice mode; without Gemini, built-in personalised scenarios are used; without Snowflake (or when it's slow or fails), the backend's own analysis is used ("Built-in analysis"). At startup the API prints one line each for Gemini, ElevenLabs, Snowflake and TigerData saying what's on.
 
 ## How it works
 
@@ -123,7 +123,7 @@ Set `GEMINI_API_KEY` in `backend/.env`. Without it, generation uses built-in per
 
 ### 5. Optional: Snowflake vulnerability analysis
 
-Run `backend/scripts/snowflake-setup.sql` once in Snowflake, create a programmatic access token for the service user, then set `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE` and `SNOWFLAKE_ID_SALT` (16+ characters, keep it stable) in `backend/.env` (optionally `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL`). The startup log says which analysis is in use, and Home's card says "Analysed in Snowflake" only when it was. Snowflake only receives an HMAC of the user id and per-category/per-tactic counts and rates.
+Run `backend/scripts/snowflake-setup.sql` once in Snowflake, create a programmatic access token for the service user, then set `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE` and `SNOWFLAKE_ID_SALT` (16+ characters, keep it stable) in `backend/.env` (optionally `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL`). The startup log says which analysis is in use, and Home's card credits Snowflake (or Cortex) only when it really produced the result. Snowflake only receives an HMAC of the user id and counts and rates per category, tactic, tactic pair and channel.
 
 ## Tests and checks
 

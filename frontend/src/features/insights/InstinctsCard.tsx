@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
-import { instinctsView, type Metrics } from './instincts'
+import { instinctsChart, instinctsSource, instinctsView, type Metrics } from './instincts'
 import { tracker } from './track'
 import './instincts.css'
 
@@ -22,6 +22,7 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
 
   if (state.uid !== uid || !state.metrics) return null
   const view = instinctsView(state.metrics)
+  const chart = instinctsChart(state.metrics)
 
   return (
     <section className="home-progress home-instincts" aria-labelledby="instincts-title">
@@ -42,10 +43,34 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
               ))}
               {view.improved && <div><dt>Most improved</dt><dd><strong className="is-better">{view.improved}</strong></dd></div>}
             </dl>
+            {chart && <MiniBars chart={chart} />}
             <p className="instincts-note">{view.note}</p>
           </>
         )}
-      <p className="instincts-source">Every tap and decision is timed and stored in TigerData.</p>
+      <p className="instincts-source">{instinctsSource(state.metrics.storage)}</p>
     </section>
+  )
+}
+
+const BAR = 10
+const GAP = 4
+const HEIGHT = 44
+
+/** A few inline SVG bars; each bar's label is its tooltip, and the whole series is the image's accessible name. */
+function MiniBars({ chart }: { chart: NonNullable<ReturnType<typeof instinctsChart>> }) {
+  return (
+    <figure className="instincts-chart">
+      <svg width={chart.bars.length * (BAR + GAP) - GAP} height={HEIGHT} role="img" aria-label={`${chart.title}. ${chart.bars.map((bar) => bar.label).join('; ')}`}>
+        {chart.bars.map((bar, i) => {
+          const height = Math.max(3, Math.round(bar.height * HEIGHT))
+          return <rect key={i} x={i * (BAR + GAP)} y={HEIGHT - height} width={BAR} height={height} rx={2} className={bar.good ? 'is-good' : 'is-missed'}><title>{bar.label}</title></rect>
+        })}
+      </svg>
+      <figcaption>
+        {chart.title}
+        <span className="instincts-key is-good">{chart.keys[0]}</span>
+        <span className="instincts-key is-missed">{chart.keys[1]}</span>
+      </figcaption>
+    </figure>
   )
 }

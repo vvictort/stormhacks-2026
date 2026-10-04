@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { learned, nextForYou, readAdaptive } from '../src/features/training/adaptive.ts'
+import { debriefActions, learned, nextForYou, readAdaptive } from '../src/features/training/adaptive.ts'
 
 const progress = (overrides = {}) => ({
   attempts: [], stats: { total: 0, successes: 0, compromised: 0 },
@@ -59,4 +59,11 @@ test('learned reports only real before/after changes', () => {
   assert.equal(learned(before, { ...after, adaptive: null }, 'run-1'), null)
   // A slower decision isn't reported as an improvement.
   assert.ok(!learned({ ...after, metrics: metrics({ avgDetectionMs: 5000, accuracy: 75 }) }, after, 'run-1').lines.some((line) => line.includes('time to decide')))
+})
+
+test('a debrief offers one next step: the adaptive one when its panel shows, the path otherwise', () => {
+  assert.deepEqual(debriefActions({ hasNext: true, adaptive: true }), { pathNext: false, homePrimary: false })
+  assert.deepEqual(debriefActions({ hasNext: true, adaptive: false }), { pathNext: true, homePrimary: false })
+  assert.deepEqual(debriefActions({ hasNext: false, adaptive: false }), { pathNext: false, homePrimary: true })
+  assert.deepEqual(debriefActions({ hasNext: false, adaptive: true }), { pathNext: false, homePrimary: false })
 })

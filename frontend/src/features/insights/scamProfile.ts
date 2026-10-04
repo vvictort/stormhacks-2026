@@ -1,5 +1,18 @@
 import type { ScamCategory } from '../training/scenarios.ts'
 
+/** Who wrote the analysis: Snowflake Cortex (text over Snowflake's results), Snowflake (computed there) or built in. */
+export type InsightSource = 'cortex' | 'snowflake' | 'fallback'
+
+/** Anything unknown counts as built in: fallback output is never labelled as Snowflake. */
+export const insightSource = (value: unknown): InsightSource => (value === 'cortex' || value === 'snowflake' ? value : 'fallback')
+
+const sourceLabels: Record<InsightSource, string> = {
+  cortex: 'Interpreted by Snowflake Cortex',
+  snowflake: 'Analysed in Snowflake',
+  fallback: 'Built-in analysis',
+}
+export const insightSourceLabel = (value: unknown) => sourceLabels[insightSource(value)]
+
 /** `GET /api/training/insights` (docs/mvp-contracts.md). */
 export interface Insights {
   strongestAreas: string[]
@@ -7,7 +20,7 @@ export interface Insights {
   behavioralPattern: string
   recommendation: string
   nextTrainingFocus: ScamCategory[]
-  source: 'snowflake' | 'fallback'
+  source: InsightSource
   generatedAt: string
   basedOn: { attempts: number }
 }
@@ -50,6 +63,6 @@ export function scamProfileView(data: unknown): ScamProfileView | null {
     insight: d.behavioralPattern,
     recommendation: d.recommendation,
     focus: d.nextTrainingFocus.map(categoryLabel),
-    sourceLine: `${d.source === 'snowflake' ? 'Analysed in Snowflake' : 'Built-in analysis'} · based on ${attempts} ${attempts === 1 ? 'attempt' : 'attempts'}`,
+    sourceLine: `${insightSourceLabel(d.source)} · based on ${attempts} ${attempts === 1 ? 'attempt' : 'attempts'}`,
   }
 }

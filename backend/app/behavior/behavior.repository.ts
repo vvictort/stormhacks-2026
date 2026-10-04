@@ -16,6 +16,9 @@ export interface BehaviorEvent {
   metadata: Record<string, unknown>;
 }
 
+/** Where behaviour events live: a TimescaleDB hypertable (TigerData) or a plain Postgres table. */
+export type Storage = 'timescale' | 'postgres';
+
 export interface Period { accuracy: number | null; avgDetectionMs: number | null }
 export interface CategoryMetrics extends Period { category: ScamCategory; attempts: number }
 export interface Metrics {
@@ -33,7 +36,12 @@ export interface Metrics {
   mostImproved: { category: ScamCategory; then: Period; now: Period } | null;
   /** Per UTC day, oldest first. */
   timeline: { day: string; attempts: number; correct: number; avgDetectionMs: number | null }[];
+  /** The latest RECENT completed attempts, oldest first: one bar each on Home, since a same-day history is one day. */
+  recent: { at: string; correct: boolean; detectionMs: number | null }[];
+  storage: Storage;
 }
+
+const RECENT = 12;
 
 // Completed, scored attempts, one per attempt id (a retried batch can repeat an event), each numbered overall and within
 // its category so the first and latest halves can be compared. Portable SQL: the same query runs on PGlite in tests.
@@ -80,7 +88,21 @@ export function mostImproved(categories: { category: ScamCategory; then: Period;
 
 export class BehaviorRepository {
   private readonly db: Database;
+  private storageKind?: Promise<Storage>;
   constructor(db: Database) { this.db = db; }
+
+  /** Whether behavior_events is a hypertable (migration 005 makes it one when timescaledb exists). Cached per process. */
+  storage(): Promise<Storage> {
+    this.storageKind ??= (async (): Promise<Storage> => {
+      const { rows: [ext] } = await this.db.query(`SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') AS found`);
+      if (!ext.found) return 'postgres';
+      // timescaledb_information only exists with the extension, so it's queried only after the check above.
+      const { rows: [hyper] } = await this.db.query(`SELECT EXISTS (SELECT 1 FROM timescaledb_information.hypertables
+        WHERE hypertable_name = 'behavior_events') AS found`);
+      return hyper.found ? 'timescale' : 'postgres';
+    })().catch((error) => { this.storageKind = undefined; throw error; });
+    return this.storageKind;
+  }
 
   /** One multi-row INSERT. */
   async record(events: BehaviorEvent[]) {
@@ -96,7 +118,7 @@ export class BehaviorRepository {
 
   // ponytail: recomputed per request over the user's whole history; add a continuous aggregate if histories get long.
   async metrics(uid: string): Promise<Metrics> {
-    const [{ rows: [overall] }, { rows: categoryRows }, { rows: days }] = await Promise.all([
+    const [{ rows: [overall] }, { rows: categoryRows }, { rows: days }, { rows: recent }, storage] = await Promise.all([
       this.db.query(`${SCORED} SELECT count(*)::int AS attempts, ${pct('correct')} AS accuracy, ${ms('detection_ms')} AS detection,
           ${pct("(outcome = 'reported_correct')::int", "outcome IN ('reported_correct', 'safe_incorrect')")} AS report_rate,
           ${halves('n', 'total')}
@@ -107,6 +129,9 @@ export class BehaviorRepository {
       this.db.query(`${SCORED} SELECT to_char(date_trunc('day', event_time AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day,
           count(*)::int AS attempts, sum(correct)::int AS correct, ${ms('detection_ms')} AS detection
         FROM scored GROUP BY 1 ORDER BY 1`, [uid]),
+      this.db.query(`${SCORED} SELECT event_time, correct, detection_ms FROM scored ORDER BY n DESC LIMIT ${RECENT}`, [uid]),
+      // Attribution only: an unreadable catalog is reported as plain Postgres rather than failing the metrics.
+      this.storage().catch((): Storage => 'postgres'),
     ]);
 
     const categories = categoryRows.map((r) => ({ category: r.category as ScamCategory, attempts: r.attempts, accuracy: r.accuracy, avgDetectionMs: r.detection, k: r.k as number, then: period(r, 'then'), now: period(r, 'now') }));
@@ -120,6 +145,8 @@ export class BehaviorRepository {
       categories: categories.map(({ category, attempts, accuracy, avgDetectionMs }) => ({ category, attempts, accuracy, avgDetectionMs })),
       mostImproved: improved && { category: improved.category, then: improved.then, now: improved.now },
       timeline: days.map((d) => ({ day: d.day, attempts: d.attempts, correct: d.correct, avgDetectionMs: d.detection })),
+      recent: recent.reverse().map((r) => ({ at: new Date(r.event_time).toISOString(), correct: r.correct === 1, detectionMs: r.detection_ms })),
+      storage,
     };
   }
 }

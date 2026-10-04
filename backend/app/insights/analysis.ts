@@ -34,11 +34,14 @@ export interface Stats {
 
 export type Dimension = 'category' | 'tactic';
 export interface AreaStats extends Stats { dimension: Dimension; area: string }
+/** Two tactics used together (`authority+urgency`, sorted) or a channel: only Snowflake interprets these. */
+export interface PatternStats extends Stats { dimension: 'pair' | 'channel'; area: string }
 
 /** The pseudonymous aggregate summary of a user's training: the only thing analysed (and sent to Snowflake). */
 export interface TrainingSummary {
   overall: Stats;
   areas: AreaStats[];
+  patterns: PatternStats[];
   byDifficulty: Record<Difficulty, { attempts: number; correct: number }>;
   /** Average decision time on the attempts the user got right and on the ones that fooled them. */
   responseMs: { correct: number | null; fellFor: number | null };
@@ -61,13 +64,22 @@ export interface RankedArea {
   cohortPercentile?: number;
 }
 
+/** What Snowflake reads into the behaviour beyond the ranking (snowflake.ts INTERPRET); the built-in analysis has none. */
+export interface Interpretation {
+  /** The tactic pair missed most often (2+ attempts), with other trainees' miss rate on it (a cohort of COHORT_MIN+ only). */
+  weakPair: { tactics: [Tactic, Tactic]; attempts: number; missed: number; cohortMissRate: number | null } | null;
+  /** A tactic or channel always caught, and decided faster than the user's own average. */
+  quickCatch: { dimension: 'tactic' | 'channel'; area: string } | null;
+}
+
 export interface Insights {
   strongestAreas: string[];
   weakAreas: string[];
   behavioralPattern: string;
   recommendation: string;
   nextTrainingFocus: ScamCategory[];
-  source: 'snowflake' | 'fallback';
+  /** Who wrote this: Cortex (text over Snowflake's results), Snowflake (computed there, text from here) or built in. */
+  source: 'cortex' | 'snowflake' | 'fallback';
   generatedAt: string;
   basedOn: { attempts: number };
 }
@@ -98,13 +110,19 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
   const ordered = [...rows].sort((a, b) => a.completedAt.localeCompare(b.completedAt));
   const groups = new Map<string, AttemptRow[]>();
   const add = (key: string, row: AttemptRow) => { groups.set(key, [...groups.get(key) ?? [], row]); };
+  const patterns = new Map<string, AttemptRow[]>();
+  const addPattern = (key: string, row: AttemptRow) => { patterns.set(key, [...patterns.get(key) ?? [], row]); };
   const pairs = new Map<string, number>();
   for (const row of ordered) {
     add(`category:${row.scamCategory ?? inferCategory({ id: row.scenarioId, title: row.scenarioTitle })}`, row);
+    addPattern(`channel:${row.channel}`, row);
     const tactics = [...new Set(row.tactics)].filter((t) => Tactic.safeParse(t).success).sort();
     for (const tactic of tactics) add(`tactic:${tactic}`, row);
-    if (!row.success) {
-      for (const [i, a] of tactics.entries()) for (const b of tactics.slice(i + 1)) pairs.set(`${a}+${b}`, (pairs.get(`${a}+${b}`) ?? 0) + 1);
+    for (const [i, a] of tactics.entries()) {
+      for (const b of tactics.slice(i + 1)) {
+        addPattern(`pair:${a}+${b}`, row);
+        if (!row.success) pairs.set(`${a}+${b}`, (pairs.get(`${a}+${b}`) ?? 0) + 1);
+      }
     }
   }
   const areas = [...groups].map(([key, list]) => {
@@ -119,6 +137,10 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
   return {
     overall: stats(ordered),
     areas,
+    patterns: [...patterns].map(([key, list]) => {
+      const [dimension, area] = key.split(':') as [PatternStats['dimension'], string];
+      return { dimension, area, ...stats(list) };
+    }),
     byDifficulty: { easy: level('easy'), medium: level('medium'), hard: level('hard') },
     responseMs: {
       correct: average(ordered.filter((r) => r.success).flatMap((r) => r.responseMs ?? [])),
@@ -163,18 +185,22 @@ const tips: Record<Tactic, string> = {
   fear: 'Threats of arrest or fines are pressure, not process. Hang up and check independently.',
 };
 
-export const areaLabel = (a: { dimension: Dimension; area: string }) =>
-  a.dimension === 'category' ? categoryLabels[a.area as ScamCategory] : tacticLabels[a.area as Tactic];
+const channelLabels: Record<Channel, string> = { sms: 'scam texts', email: 'scam emails', call: 'scam calls' };
+
+export const areaLabel = (a: { dimension: Dimension | 'channel'; area: string }) =>
+  a.dimension === 'category' ? categoryLabels[a.area as ScamCategory] : a.dimension === 'channel' ? channelLabels[a.area as Channel] : tacticLabels[a.area as Tactic];
+/** "authority combined with urgency" */
+export const pairLabel = ([a, b]: [Tactic, Tactic]) => `${tacticWords[a]} combined with ${tacticWords[b]}`;
 const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 const list = (items: string[]) => items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
 const pct = (n: number, d: number) => d ? n / d : 0;
 
 const WEAK = 0.4;
 const STRONG = 0.25;
-const COHORT_MIN = 5;
+export const COHORT_MIN = 5;
 
 /** The contract's analysis from ranked areas (Snowflake's or local), with backend-written text. */
-export function buildInsights(summary: TrainingSummary, ranked: RankedArea[], source: Insights['source'], now = new Date()): Insights {
+export function buildInsights(summary: TrainingSummary, ranked: RankedArea[], source: Insights['source'], now = new Date(), interp: Interpretation | null = null): Insights {
   const weak = ranked.filter((r) => r.weakness >= WEAK).sort((a, b) => b.weakness - a.weakness);
   const strong = ranked.filter((r) => r.weakness <= STRONG && r.accuracy >= 0.75).sort((a, b) => a.weakness - b.weakness || b.attempts - a.attempts);
   const { overall } = summary;
@@ -188,12 +214,15 @@ export function buildInsights(summary: TrainingSummary, ranked: RankedArea[], so
   const nextTrainingFocus = focus.length ? focus : weakest ? [weakest] : [];
 
   const pair = summary.missedPair;
-  const struggle = pair ? `you struggle when ${tacticWords[pair[0] as Tactic]} and ${tacticWords[pair[1] as Tactic]} are combined`
-    : weak[0] ? `you struggle with ${areaLabel(weak[0])}` : null;
+  const weakPair = interp?.weakPair;
+  const struggle = weakPair
+    ? `${pairLabel(weakPair.tactics)} still causes mistakes: ${weakPair.missed} of ${weakPair.attempts} times${weakPair.cohortMissRate === null ? '' : `, against ${Math.round(weakPair.cohortMissRate * 100)}% for other trainees`}`
+    : pair ? `you struggle when ${tacticWords[pair[0] as Tactic]} and ${tacticWords[pair[1] as Tactic]} are combined`
+      : weak[0] ? `you struggle with ${areaLabel(weak[0])}` : null;
+  const opening = interp?.quickCatch ? `You catch ${areaLabel(interp.quickCatch)} quickly`
+    : strong[0] ? `You consistently see through ${struggle ? areaLabel(strong[0]) : list(strong.slice(0, 2).map(areaLabel))}` : null;
   const sentences = [
-    strong[0] && struggle ? `You consistently see through ${areaLabel(strong[0])}, but ${struggle}.`
-      : strong[0] ? `You consistently see through ${list(strong.slice(0, 2).map(areaLabel))}.`
-        : struggle ? `${capital(struggle)}.` : 'Your results are mixed so far, with no clear weak spot yet.',
+    opening && struggle ? `${opening}, but ${struggle}.` : opening ? `${opening}.` : struggle ? `${capital(struggle)}.` : 'Your results are mixed so far, with no clear weak spot yet.',
   ];
   const behind = weak.find((r) => (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 0) >= 0.6);
   const ahead = strong.find((r) => (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 1) <= 0.3);

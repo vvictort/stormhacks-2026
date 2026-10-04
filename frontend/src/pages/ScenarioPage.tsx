@@ -5,6 +5,7 @@ import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { tracker } from '../features/insights/track'
 import { messageOutcome, runEvent, type Run, type TrackedEvent, type TrackedType } from '../features/insights/tracker'
+import { generatedCredit } from '../features/training/attribution'
 import { Debrief } from '../features/training/components/Debrief'
 import { LearnedPanel } from '../features/training/components/NextForYou'
 import { PhoneFrame } from '../features/training/components/PhoneFrame'
@@ -39,6 +40,7 @@ export function ScenarioPage() {
 function ScenarioIntro({ scenario }: { scenario: Scenario }) {
   const heading = useRef<HTMLHeadingElement>(null)
   const { Icon, label } = channelMeta[scenario.type]
+  const credit = generatedCredit(scenario.generated)
 
   useEffect(() => {
     document.title = `${scenario.title} · Tellio`
@@ -56,7 +58,7 @@ function ScenarioIntro({ scenario }: { scenario: Scenario }) {
         <p className="scenario-generated">
           <strong>Generated for your training profile.</strong> {scenario.generated.reason}
           {/* Honest source line: only when Gemini really wrote it (the fallback is a built-in template). */}
-          {scenario.generated.source === 'gemini' && <span className="scenario-source">Written by Gemini</span>}
+          {credit && <span className="scenario-source">{credit}</span>}
         </p>
       )}
       <p className="scenario-situation"><strong>What you know:</strong> {scenario.situation}</p>

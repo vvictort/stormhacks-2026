@@ -5,6 +5,7 @@ import { Mascot } from '../../../components/Mascot'
 import { RevealText } from '../../../components/RevealText'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { spring } from '../../../lib/motion'
+import { debriefActions } from '../adaptive'
 import { hasLink, type Action, type MessageScenario, type Scenario } from '../scenarios'
 
 interface DebriefProps {
@@ -19,6 +20,8 @@ interface DebriefProps {
 export function Debrief({ scenario, choice, inspected, next, learned }: DebriefProps) {
   const heading = useRef<HTMLElement>(null)
   const correct = choice === scenario.correctAction
+  // One next step: the adaptive panel's "Next scenario made for you" when it shows, the path's next otherwise.
+  const actions = debriefActions({ hasNext: Boolean(next), adaptive: Boolean(learned) })
   const isScam = scenario.correctAction === 'report'
   const title = correct
     ? (isScam ? 'Good catch.' : "Right call. This one's genuine.")
@@ -66,8 +69,8 @@ export function Debrief({ scenario, choice, inspected, next, learned }: DebriefP
       {learned}
 
       <div className="debrief-actions">
-        {next && <TransitionLink className={learned ? 'train-ghost' : 'train-primary'} to={`/train/${next.id}`}>{learned ? 'Next on your path' : 'Next scenario'}<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
-        <TransitionLink direction="back" className={next || learned ? 'train-ghost' : 'train-primary'} to="/home">Back to home</TransitionLink>
+        {actions.pathNext && next && <TransitionLink className="train-primary" to={`/train/${next.id}`}>Next scenario<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
+        <TransitionLink direction="back" className={actions.homePrimary ? 'train-primary' : 'train-ghost'} to="/home">Back to home</TransitionLink>
       </div>
     </m.section>
   )

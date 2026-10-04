@@ -45,10 +45,11 @@ export class InsightsService {
   private async viaSnowflake(uid: string, summary: TrainingSummary) {
     if (!this.snowflake) return null;
     try {
-      const ranked = await this.snowflake.analyse(uid, summary, AbortSignal.timeout(this.snowflake.timeoutMs));
-      const insights = buildInsights(summary, ranked, 'snowflake');
-      const text = await this.snowflake.cortexText(ranked, insights.nextTrainingFocus, AbortSignal.timeout(this.snowflake.timeoutMs));
-      return { ...insights, ...text };
+      const { ranked, interp } = await this.snowflake.analyse(uid, summary, AbortSignal.timeout(this.snowflake.timeoutMs));
+      // The focus is the same deterministic pick as the built-in analysis; Snowflake and Cortex only interpret around it.
+      const insights = buildInsights(summary, ranked, 'snowflake', new Date(), interp);
+      const text = await this.snowflake.cortexText(summary, ranked, interp, insights, AbortSignal.timeout(this.snowflake.cortexTimeoutMs));
+      return text ? { ...insights, ...text, source: 'cortex' as const } : insights;
     } catch (error) {
       // Status codes and parse errors only: nothing here carries the token.
       console.warn('[insights] Snowflake analysis failed; using the built-in analysis:', error instanceof Error ? `${error.name}: ${error.message.slice(0, 160)}` : 'unknown');

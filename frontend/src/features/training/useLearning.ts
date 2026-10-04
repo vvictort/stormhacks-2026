@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
 import type { Metrics } from '../insights/instincts'
+import { insightSource } from '../insights/scamProfile'
 import { readAdaptive, type Snapshot } from './adaptive'
+
+// Snowflake (a cold warehouse, then Cortex) can be slow: the debrief waits this long for the analysis, then shows
+// without it. The server finishes and caches it either way.
+const INSIGHTS_BUDGET_MS = 6000
 
 /** Progress (difficulty, focus), metrics (TigerData) and the analysis (Snowflake or built-in); any part can be null. */
 async function snapshot(uid: string, signal: AbortSignal): Promise<Snapshot> {
-  // The analysis first: it refreshes the cached focus that progress then reports.
-  const insights = await api<{ behavioralPattern?: unknown; source?: unknown; basedOn?: { attempts?: number } }>('/training/insights', { signal }, uid).catch(() => null)
-  const [progress, metrics] = await Promise.all([
+  // In parallel: progress reports the same deterministic focus whether or not the analysis has refreshed.
+  const [insights, progress, metrics] = await Promise.all([
+    api<{ behavioralPattern?: unknown; source?: unknown; basedOn?: { attempts?: number } }>('/training/insights', { signal: AbortSignal.any([signal, AbortSignal.timeout(INSIGHTS_BUDGET_MS)]) }, uid).catch(() => null),
     api<unknown>('/training/progress', { signal }, uid).catch(() => null),
     api<Metrics>('/training/metrics', { signal }, uid).catch(() => null),
   ])
@@ -16,7 +21,7 @@ async function snapshot(uid: string, signal: AbortSignal): Promise<Snapshot> {
     adaptive: readAdaptive(progress),
     metrics: metrics && typeof metrics.attempts === 'number' ? metrics : null,
     insight: insights && typeof insights.behavioralPattern === 'string' && insights.basedOn?.attempts
-      ? { pattern: insights.behavioralPattern, source: insights.source === 'snowflake' ? 'snowflake' : 'fallback' }
+      ? { pattern: insights.behavioralPattern, source: insightSource(insights.source) }
       : null,
   }
 }

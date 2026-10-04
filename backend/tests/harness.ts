@@ -91,6 +91,7 @@ export function fakeRepos() {
     behavior: {
       async record() {},
       async metrics(): Promise<never> { throw new Error('unused'); },
+      async storage() { return 'postgres' as const; },
     },
   } satisfies Repositories;
 }
