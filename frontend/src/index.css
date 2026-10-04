@@ -73,9 +73,10 @@ h1:focus, #auth-content:focus { outline: none; }
 .card-heading { margin-bottom: 28px; }
 .card-heading h1 { font-family: var(--font-editorial); font-size: 37px; line-height: 1.12; font-weight: 400; letter-spacing: -1.2px; margin: 0 0 10px; text-wrap: balance; }
 .card-description { font-size: 14px; line-height: 1.6; }
-.auth-fields { display: grid; gap: 2px; padding: 0; margin: 0; border: 0; min-width: 0; }
+.auth-fields { display: grid; gap: 12px; padding: 0; margin: 0; border: 0; min-width: 0; }
 .form-field { min-width: 0; }
-.form-field label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.form-field label { font-size: 12px; font-weight: 600; line-height: 1.5; }
 .input-wrap { position: relative; }
 .auth-input { display: block; width: 100%; min-height: 47px; padding: 11px 13px; border-width: 1px; border-radius: 9px; color: var(--color-foreground); font-size: 14px; line-height: 1.6; outline-offset: 2px; }
 .auth-input::placeholder { color: var(--color-muted-strong); opacity: 1; }
@@ -90,21 +91,21 @@ h1:focus, #auth-content:focus { outline: none; }
 .password-toggle svg, .dialog-close svg { transition: scale 120ms var(--ease-out-quint); }
 .password-toggle:active:not(:disabled) svg, .dialog-close:active svg { scale: .88; }
 /* One reserved line under every field; hint and error stack in the same cell and crossfade. */
-.field-message { display: grid; min-height: 1.5em; margin-top: 5px; font-size: 13px; line-height: 1.5; text-wrap: pretty; }
+.field-message { display: grid; min-height: 1.5em; margin-top: 4px; font-size: 13px; line-height: 1.5; text-wrap: pretty; }
 .field-message > * { grid-area: 1 / 1; }
 .field-hint { transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s; }
 .field-hint[data-hidden] { opacity: 0; visibility: hidden; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s var(--motion-quick); }
 .field-error { color: var(--color-danger-strong); --rise: -4px; animation: rise-in 220ms var(--ease-out-quint) backwards; }
-.forgot-row { display: flex; justify-content: flex-end; margin-top: 9px; margin-bottom: -2px; }
 .text-link { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--color-primary-strong); font-size: inherit; font-weight: 600; text-decoration: underline 1px transparent; text-underline-offset: 4px; transition: color var(--motion-quick) var(--ease-out-quint), text-decoration-color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint); }
 .text-link:hover:not(:disabled, [aria-disabled="true"]) { text-decoration-color: currentColor; }
 .text-link:active:not(:disabled, [aria-disabled="true"]) { color: var(--color-primary-deep); }
 .text-link[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
 .text-link > svg, .primary-button > svg { transition: translate 200ms var(--ease-out-quint); }
 .text-link:hover:not([aria-disabled="true"]) > svg, .primary-button:hover:not(:disabled) > svg:not(.spinner) { translate: calc(2px * var(--motion-scale)) 0; }
-.forgot-row .text-link { min-height: 44px; margin-block: -7px; font-size: 12px; }
+/* 44px tap target without growing the 18px label row. */
+.field-label-action { min-height: 44px; margin-block: -13px; font-size: 12px; }
 .primary-button, .social-button { transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint), translate 120ms var(--ease-out-quint); min-height: 47px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.5; border-radius: 9px; }
-.primary-button { color: var(--color-surface); background-color: var(--color-primary-strong); margin-top: 23px; }
+.primary-button { color: var(--color-surface); background-color: var(--color-primary-strong); margin-top: 18px; }
 .primary-button:hover:not(:disabled) { background-color: var(--color-primary-deep); }
 .primary-button > svg:last-child:not(.spinner) { margin-left: 3px; }
 .social-button { border-width: 1px; background: transparent; }
