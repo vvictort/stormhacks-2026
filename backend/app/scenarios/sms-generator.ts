@@ -485,7 +485,7 @@ export async function generateSmsScenario(
     receivedAt: "10:14 AM",
     messages: [
       {
-        text: "Courier Express: Your package #849201 is on hold due to missing address info. Confirm online immediately: https://courier-express-hold.example/update",
+        text: "Courier Express: Your package #849201 is on hold due to missing address info. Confirm online immediately.",
         link: "https://courier-express-hold.example/update",
       },
     ],

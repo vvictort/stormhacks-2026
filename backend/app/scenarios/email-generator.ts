@@ -907,7 +907,7 @@ const mostlyCaps = (value: string) => {
  * category's invented names, a cut-off ending is trimmed to the last full
  * sentence, sentences are grouped into paragraphs, and each cue becomes a red
  * flag with generic copy. Null when the excerpt can't make a clean email
- * (leftover brackets, shouting, too short or long, fewer than 3 findable cues).
+ * (leftover brackets, shouting, too short or long, fewer than 2 findable cues).
  * `toScenario` still checks the result like any model answer.
  */
 export function emailFromExample(

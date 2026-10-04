@@ -113,6 +113,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
     db = createDatabase(url!);
     repo = createRepositories(db);
     await migrate(db);
+    // Again: migrating an up-to-date database must change nothing.
     await migrate(db);
   });
   beforeEach(async () => {
