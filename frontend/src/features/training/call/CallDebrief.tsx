@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import { m } from 'motion/react'
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { Mascot } from '../../../components/Mascot'
 import { RevealText } from '../../../components/RevealText'
 import { TransitionLink } from '../../../components/TransitionLink'
@@ -9,7 +9,7 @@ import type { Scenario } from '../scenarios'
 import type { CallDebriefView, Moment } from './callModel'
 
 /** After a call: the result (from callOutcome, never decided here), the warning signs, and moments from the redacted transcript. */
-export function CallDebrief({ view, next, callerLabel }: { view: CallDebriefView; next?: Scenario; callerLabel: string }) {
+export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDebriefView; next?: Scenario; callerLabel: string; learned?: ReactNode }) {
   const heading = useRef<HTMLElement>(null)
   useEffect(() => heading.current?.focus(), [])
 
@@ -68,9 +68,11 @@ export function CallDebrief({ view, next, callerLabel }: { view: CallDebriefView
         <p>{view.recommendation}</p>
       </div>
 
+      {learned}
+
       <div className="debrief-actions">
-        {next && <TransitionLink className="train-primary" to={`/train/${next.id}`}>Next scenario<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
-        <TransitionLink direction="back" className={next ? 'train-ghost' : 'train-primary'} to="/home">Back to home</TransitionLink>
+        {next && <TransitionLink className={learned ? 'train-ghost' : 'train-primary'} to={`/train/${next.id}`}>{learned ? 'Next on your path' : 'Next scenario'}<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
+        <TransitionLink direction="back" className={next || learned ? 'train-ghost' : 'train-primary'} to="/home">Back to home</TransitionLink>
       </div>
     </m.section>
   )

@@ -63,8 +63,10 @@ ids from `scenarios.ts`, generated ones from a GET that returns the **frontend `
   Emails (`backend/app/scenarios/email-generator.ts`): checked against exactly what `EmailView` highlights, i.e.
   `fromAddress`, `replyTo`, `subject`, body paragraphs, `attachment` (via `markText`) and whole link URLs (`markFor`);
   `fromName` is not highlighted, so it never counts. Overlapping quotes count as hidden.
-- `generateEmailScenario({ ..., focus?: ScamCategory[] })`: the first valid `focus` category wins over weak categories
-  (feed it Snowflake's `nextTrainingFocus`); the email route does not read insights yet.
+- `generateEmailScenario({ ..., focus?: ScamCategory[] })`: the first valid `focus` category wins over weak categories.
+  Both the email and the call route pass `focus: await repos.insights.latestFocus(uid)` (Snowflake's `nextTrainingFocus`
+  when cached and current, else the built-in analysis), with `difficulty` from `summarizeAttempts` over the server
+  attempts (every channel).
 
 ## Behaviour events and metrics (Agent 2)
 
@@ -109,6 +111,22 @@ Code: `backend/app/behavior/` (routes, repository, call bridge), `frontend/src/f
   covers the newest attempt, else the built-in analysis of the current history; `[]` for a new user.
 - Snowflake only receives `HMAC(SNOWFLAKE_ID_SALT, uid)` and per-category/per-tactic counts and rates (setup:
   `backend/scripts/snowflake-setup.sql`).
+
+## The adaptive loop (Agent 5)
+
+- `GET /api/training/progress` also returns `difficulty` (`easy|medium|hard`) and `focus: ScamCategory[]`: exactly what
+  the next generated email or call will use (`summarizeAttempts(history).difficulty`, `repos.insights.latestFocus(uid)`).
+  Home's "Next for you" shows `focus[0]`, why (from `vulnerability.categoryAccuracy` / `vulnerableTactics`) and the
+  difficulty (`frontend/src/features/training/adaptive.ts`). Without the API it falls back to the local level.
+- Adaptive difficulty (`summarizeAttempts`): replayed per attempt; from the 3rd scored attempt, step up when the last 5
+  are ≥ 85% right with none fallen for, step down when 2 or more of the last 5 were fallen for.
+- Debriefs ("What Tellio learned from this", `useLearning`): a snapshot (insights, then progress + metrics) when the
+  run opens and again once the run's attempt id appears in `progress.attempts` (texts/emails after the tracker flush,
+  calls after the server saves the analysed call; polled every 1.5 s, 7 tries). Lines are only real before/after
+  differences (difficulty, focus, this category's accuracy, average decision time when faster, overall accuracy);
+  with none, it says what Tellio keeps practising. The panel hides when the "before" state couldn't be read; caption-only
+  practice calls (local only) show none.
+- Metrics `mostImproved`: a faster decision with equal accuracy counts only when that accuracy is above 0.
 
 ## UI copy
 

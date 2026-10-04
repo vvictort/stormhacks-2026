@@ -23,4 +23,4 @@ The contract between the frontend and the backend is `docs/call-integration.md`.
 
 ## Progress
 
-`useProgress` merges local SMS/email results (localStorage) with call attempts from `GET /api/training/progress` (`mergeProgress` in `progress.ts`). If the API is down, local results still work.
+`useProgress` merges local SMS/email results (localStorage) with call attempts from `GET /api/training/progress` (`mergeProgress` in `progress.ts`) and exposes its adaptive state (`difficulty`, `focus`; `adaptive.ts`). Texts and emails are also saved to the account through the behaviour events. If the API is down, local results still work.

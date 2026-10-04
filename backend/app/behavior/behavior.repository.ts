@@ -73,7 +73,8 @@ export function mostImproved(categories: { category: ScamCategory; then: Period;
   const faster = (c: (typeof categories)[number]) =>
     c.then.avgDetectionMs !== null && c.now.avgDetectionMs !== null ? c.then.avgDetectionMs - c.now.avgDetectionMs : 0;
   return categories
-    .filter((c) => gain(c) > 0 || (gain(c) === 0 && faster(c) > 0))
+    // Faster alone counts only when they still get some right: falling for it faster isn't improving.
+    .filter((c) => gain(c) > 0 || (gain(c) === 0 && faster(c) > 0 && (c.now.accuracy ?? 0) > 0))
     .sort((a, b) => gain(b) - gain(a) || faster(b) - faster(a))[0] ?? null;
 }
 

@@ -182,14 +182,14 @@ h1:focus, #auth-content:focus { outline: none; }
 .reset-dialog[open] { --rise: 6px; animation: rise-in 240ms var(--ease-out-quint); }
 .reset-dialog[open]::backdrop { animation: fade-in 200ms var(--ease-out-quint); }
 /* ---------- Touch feel: press in fast, spring back out ---------- */
-:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .path-stop, .sms-link, .home-cta a) {
+:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .path-stop, .sms-link) {
   --press: .97;
   transition-property: background-color, border-color, color, opacity, box-shadow, scale;
   transition-duration: var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--spring-duration);
   transition-timing-function: var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--spring);
 }
 .path-stop { --press: .985; }
-:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .sms-link, .home-cta a):active:not(:disabled),
+:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .sms-link):active:not(:disabled),
 .path-stop:active { scale: calc(1 - (1 - var(--press)) * var(--motion-scale)); transition-duration: 90ms; transition-timing-function: ease-out; }
 
 /* ---------- Text that arrives word by word ---------- */

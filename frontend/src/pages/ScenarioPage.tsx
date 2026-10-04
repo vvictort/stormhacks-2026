@@ -6,12 +6,14 @@ import { useAuth } from '../features/auth/AuthContext'
 import { tracker } from '../features/insights/track'
 import { messageOutcome, runEvent, type Run, type TrackedEvent, type TrackedType } from '../features/insights/tracker'
 import { Debrief } from '../features/training/components/Debrief'
+import { LearnedPanel } from '../features/training/components/NextForYou'
 import { PhoneFrame } from '../features/training/components/PhoneFrame'
 import { PhoneSimulator } from '../features/training/components/PhoneSimulator'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { recommend } from '../features/training/progress'
 import { hasLink, siteOf, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
+import { useLearning } from '../features/training/useLearning'
 import { useScenario } from '../features/training/useScenario'
 
 const difficultyLabel = { easy: 'Gentle start', medium: 'A little trickier', hard: 'Tricky' }
@@ -64,7 +66,7 @@ function CallRun({ scenario }: { scenario: CallScenario }) {
       <ScenarioIntro scenario={scenario} />
       <CallChunkBoundary>
         <Suspense fallback={<CallLoading />}>
-          <CallExperience scenario={scenario} progress={progress} record={record} />
+          <CallExperience uid={user?.uid} scenario={scenario} progress={progress} record={record} />
         </Suspense>
       </CallChunkBoundary>
     </main>
@@ -103,6 +105,9 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
   const email = scenario.type === 'email'
   // One run, one attempt id: every behaviour event of this run is timed from when it opened (features/insights).
   const run = useRef<Run | null>(null)
+  // Set once this run's result has been sent: the debrief then compares Tellio's picture of the user before and after.
+  const [finished, setFinished] = useState<{ attemptId: string; sent: boolean } | null>(null)
+  const learning = useLearning(user?.uid, finished?.sent ? finished.attemptId : null)
 
   useEffect(() => {
     // Strict mode re-runs effects; the run (and its start event) happens once.
@@ -124,7 +129,10 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
     track('scenario_completed', { outcome: messageOutcome(action, scenario.correctAction) })
     // The debrief shows as soon as there is a choice.
     track('debrief_viewed')
-    void tracker.flush()
+    const attemptId = run.current?.attemptId
+    if (!attemptId) return void tracker.flush()
+    setFinished({ attemptId, sent: false })
+    void tracker.flush().then(() => setFinished({ attemptId, sent: true }))
   }
 
   function inspect(target: 'link' | 'sender', url?: string) {
@@ -141,7 +149,8 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
 
       <div className="scenario-panel">
         {choice
-          ? <Debrief scenario={scenario} choice={choice} inspected={inspected} next={recommend(progress, scenario.id)} />
+          ? <Debrief scenario={scenario} choice={choice} inspected={inspected} next={recommend(progress, scenario.id)}
+            learned={finished && learning.status !== 'off' && learning.status !== 'loading' ? <LearnedPanel learning={learning} attemptId={finished.attemptId} /> : undefined} />
           : (
             <div className="scenario-howto">
               <h2>Treat it like your own phone</h2>

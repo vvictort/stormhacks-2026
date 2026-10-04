@@ -5,11 +5,11 @@ import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { InstinctsCard } from '../features/insights/InstinctsCard'
-import { GenerateEmailButton } from '../features/training/components/GenerateEmailButton'
 import { ScamProfileCard } from '../features/insights/ScamProfileCard'
+import { NextForYou } from '../features/training/components/NextForYou'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
-import { currentLevel, recommend, summarize, timeline } from '../features/training/progress'
+import { currentLevel, recommend, timeline } from '../features/training/progress'
 import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
@@ -17,19 +17,15 @@ import { useProfile } from '../features/profile/ProfileContext'
 export function HomePage() {
   const { user, profileWarning, dismissProfileWarning } = useAuth()
   const { profile } = useProfile()
-  const { progress, callSync } = useProgress(user?.uid)
-  const { done, total, correct } = summarize(progress)
+  const { progress, callSync, adaptive } = useProgress(user?.uid)
   const next = recommend(progress)
-  const level = currentLevel(progress)
-  const recent = timeline(progress).slice(-8)
-  const target = next ?? scenarios[0]
+  const all = timeline(progress)
+  const recent = all.slice(-8)
+  const right = all.filter((attempt) => attempt.correct).length
   const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
   const name = firstName ? `, ${firstName}` : ''
 
-  const heading = done === 0
-    ? `Welcome${name}. Let's start with a text.`
-    : next ? `Ready for another scenario${name}?` : `You've tried every scenario${name}.`
-  const cta = done === 0 ? 'Start your first scenario' : !next ? 'Practise again' : progress[next.id] ? 'Try it again' : 'Start next scenario'
+  const heading = all.length === 0 && !adaptive?.attempts.length ? `Welcome${name}. Let's find your blind spots.` : `Ready for your next scenario${name}?`
   const flagsSeen = [...new Set(scenarios
     .filter((scenario) => progress[scenario.id] && isScam(scenario))
     .flatMap((scenario) => scenario.indicators.map((indicator) => indicator.title)))]
@@ -42,12 +38,7 @@ export function HomePage() {
       <main className="home-main">
         <div className="home-intro">
           <RevealText as="h1" text={heading} />
-          <p className="home-lede">Tellio sends practice scam texts, emails and phone calls to a phone in your browser. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
-
-          <section className="profile-summary" aria-label="Your saved profile">
-            <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
-            <TransitionLink className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
-          </section>
+          <p className="home-lede">Tellio sends practice scam texts, emails and phone calls to a phone in your browser, and shapes each one around what caught you out before. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
 
           {profileWarning && (
             <div className="train-notice" role="status">
@@ -57,26 +48,23 @@ export function HomePage() {
             </div>
           )}
 
-          <div className="home-cta">
-            <TransitionLink className="train-primary" to={`/train/${target.id}`}>{cta}<ArrowRight size={17} aria-hidden="true" /></TransitionLink>
-            <p>{next ? 'Up next' : 'Starts with'}: <strong>{target.title}</strong></p>
-          </div>
-          <GenerateEmailButton />
+          <NextForYou adaptive={adaptive} localLevel={currentLevel(progress)} loading={callSync === 'loading'} />
+          <ScamProfileCard uid={user?.uid} />
+          <InstinctsCard uid={user?.uid} />
 
           <section className="home-progress" aria-labelledby="progress-title">
             <h2 id="progress-title">Your practice so far</h2>
-            {done === 0
+            {all.length === 0
               ? <p>Nothing yet. After each scenario, you'll see here what you caught and which red flags you've learned to spot.</p>
               : (
                 <>
-                  <p>You've tried <strong><CountUp value={done} /> of {total}</strong> scenarios and made the right call on <strong><CountUp value={correct} /></strong>.</p>
-                  <p>Practice level: <strong className="home-level">{level}</strong>. Two right calls move you up a level, and a miss eases things back.</p>
+                  <p>You've practised <strong><CountUp value={all.length} /></strong> {all.length === 1 ? 'time' : 'times'} and made the right call on <strong><CountUp value={right} /></strong>.</p>
                   <h3>Your last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h3>
                   <ol className="home-recent">
                     {recent.map((attempt) => (
                       <li key={`${attempt.id}-${attempt.at}`} className={attempt.correct ? 'is-right' : 'is-missed'}>
                         {attempt.correct ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />}
-                        <span className="sr-only">{getScenario(attempt.id)?.title ?? 'Scenario'}: {attempt.correct ? 'right call' : 'missed'}</span>
+                        <span className="sr-only">{getScenario(attempt.id)?.title ?? 'A scenario made for you'}: {attempt.correct ? 'right call' : 'missed'}</span>
                       </li>
                     ))}
                   </ol>
@@ -89,15 +77,15 @@ export function HomePage() {
                   )}
                 </>
               )}
-            <p className="home-saved">{callSync === 'synced'
-              ? 'Texts and emails are saved in this browser. Phone calls are saved to your account.'
-              : callSync === 'unavailable'
-                ? "Saved in this browser. We couldn't load your phone-call results just now."
-                : 'Saved in this browser for now.'}</p>
+            <p className="home-saved">{callSync === 'unavailable'
+              ? "We couldn't reach your account just now, so this shows what's saved in this browser."
+              : 'Your results are saved to your account.'}</p>
           </section>
 
-          <InstinctsCard uid={user?.uid} />
-          <ScamProfileCard uid={user?.uid} />
+          <section className="profile-summary" aria-label="Your saved profile">
+            <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
+            <TransitionLink className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
+          </section>
         </div>
 
         <PracticePath progress={progress} upNextId={next?.id} />

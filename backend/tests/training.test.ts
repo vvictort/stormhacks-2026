@@ -66,7 +66,7 @@ test('browsers only read their own attempts, with redacted transcript, signals a
 test('progress and the vulnerability profile update after each attempt', async () => {
   const { save, progress } = routes();
   const empty = (await progress().expect(200)).body;
-  assert.deepEqual(empty, { attempts: [], stats: { total: 0, successes: 0, compromised: 0 }, vulnerability: { weakCategories: [], vulnerableTactics: [], categoryAccuracy: {} } });
+  assert.deepEqual(empty, { attempts: [], stats: { total: 0, successes: 0, compromised: 0 }, vulnerability: { weakCategories: [], vulnerableTactics: [], categoryAccuracy: {} }, difficulty: 'easy', focus: [] });
   await save(attempt());
   await save(attempt({ attemptId: 'call_2', scenarioId: 'courier-customs-fee-1', scenarioTitle: 'Courier customs fee', tactics: ['urgency'], outcome: 'declined', success: true, signals: [], completedAt: '2026-10-03T11:00:00Z' }));
   await save(attempt({ attemptId: 'call_3', outcome: 'error', success: null, completedAt: '2026-10-03T12:00:00Z' }));

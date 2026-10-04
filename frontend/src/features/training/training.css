@@ -26,12 +26,6 @@
 .home-intro h1 { margin: 0 0 18px; font-family: var(--font-editorial); font-size: clamp(38px, 3.8vw, 50px); font-weight: 400; line-height: 1.1; letter-spacing: -0.035em; text-wrap: balance; }
 .home-intro h1:focus { outline: none; }
 .home-lede { max-width: 44ch; font-size: 16px; line-height: 1.65; color: var(--color-muted-strong); }
-.home-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 32px; }
-.home-cta p { font-size: 14px; color: var(--color-muted-strong); }
-.home-cta strong { color: var(--color-foreground); font-weight: 600; }
-.home-generate { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
-.home-generate .train-ghost:disabled { cursor: progress; }
-.home-generate-error { flex-basis: 100%; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--color-accent-strong); }
 .home-progress { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--color-border); }
 .home-progress h2 { margin: 0 0 10px; font-family: var(--font-editorial); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
 .home-progress h3 { margin: 22px 0 10px; font-size: 14px; font-weight: 600; }
@@ -41,7 +35,6 @@
 .home-flags li { padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)); color: var(--color-primary-strong); font-size: 13px; line-height: 1.4; }
 .home-progress .home-saved { margin-top: 18px; font-size: 13px; }
 .home-progress > p + p { margin-top: 8px; }
-.home-level { text-transform: capitalize; }
 .home-recent { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .home-recent li { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--color-surface); }
 .home-recent .is-right { background: var(--color-success-strong); }
@@ -221,8 +214,6 @@
   .train-header .train-ghost { padding-inline: 12px; }
   .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
   .home-intro h1 { font-size: 34px; }
-  .home-cta .train-primary { width: 100%; }
-  .home-generate .train-ghost { width: 100%; white-space: normal; }
   .path-channel { --path-indent: 50px; }
   .path-channel::before { left: 18px; }
   .path-node { width: 38px; height: 38px; }

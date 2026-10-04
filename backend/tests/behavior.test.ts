@@ -126,6 +126,7 @@ test('most improved needs a real gain: accuracy first, then speed', () => {
   assert.equal(mostImproved([c('banking', [100, 5000], [100, 6000]), c('shipping', [100, 4000], [50, 2000])]), null);
   assert.equal(mostImproved([c('banking', [0, 9000], [100, 9000]), c('shipping', [50, 9000], [100, 1000])])?.category, 'banking');
   assert.equal(mostImproved([c('banking', [100, 5000], [100, 4000]), c('shipping', [100, 9000], [100, 3000])])?.category, 'shipping');
+  assert.equal(mostImproved([c('banking', [0, 9000], [0, 900])]), null, 'falling for it faster is not an improvement');
 });
 
 // ---------- Calls: behaviour derived from the call lifecycle ----------

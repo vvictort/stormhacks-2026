@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import { m } from 'motion/react'
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { Mascot } from '../../../components/Mascot'
 import { RevealText } from '../../../components/RevealText'
 import { TransitionLink } from '../../../components/TransitionLink'
@@ -12,9 +12,11 @@ interface DebriefProps {
   choice: Action
   inspected: boolean
   next?: Scenario
+  /** "What Tellio learned from this", with the next scenario made for this user. */
+  learned?: ReactNode
 }
 
-export function Debrief({ scenario, choice, inspected, next }: DebriefProps) {
+export function Debrief({ scenario, choice, inspected, next, learned }: DebriefProps) {
   const heading = useRef<HTMLElement>(null)
   const correct = choice === scenario.correctAction
   const isScam = scenario.correctAction === 'report'
@@ -61,9 +63,11 @@ export function Debrief({ scenario, choice, inspected, next }: DebriefProps) {
         <p className="debrief-habit">You checked the link before deciding. That's a habit worth keeping.</p>
       )}
 
+      {learned}
+
       <div className="debrief-actions">
-        {next && <TransitionLink className="train-primary" to={`/train/${next.id}`}>Next scenario<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
-        <TransitionLink direction="back" className={next ? 'train-ghost' : 'train-primary'} to="/home">Back to home</TransitionLink>
+        {next && <TransitionLink className={learned ? 'train-ghost' : 'train-primary'} to={`/train/${next.id}`}>{learned ? 'Next on your path' : 'Next scenario'}<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
+        <TransitionLink direction="back" className={next || learned ? 'train-ghost' : 'train-primary'} to="/home">Back to home</TransitionLink>
       </div>
     </m.section>
   )

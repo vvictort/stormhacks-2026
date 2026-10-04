@@ -1,0 +1,32 @@
+/* "Next for you" on Home and "What Tellio learned from this" in the debriefs. */
+.next-for-you { margin-top: 32px; padding: 22px 22px 20px; border: 1px solid color-mix(in srgb, var(--color-primary) 32%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)); }
+.next-for-you h2 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--color-primary-strong); }
+.next-for-you .next-title { margin: 0 0 6px; font-family: var(--font-editorial); font-size: 24px; line-height: 1.25; letter-spacing: -0.02em; color: var(--color-foreground); text-wrap: balance; }
+.next-for-you p { max-width: 46ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); text-wrap: pretty; }
+.next-for-you .next-level { margin-top: 6px; font-size: 14px; }
+.next-for-you .next-level strong { color: var(--color-foreground); font-weight: 600; }
+.next-for-you .scam-profile-skeleton { margin: 6px 0 4px; }
+
+.made-for-you { margin-top: 18px; }
+.made-for-you-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.made-for-you button:disabled { cursor: progress; }
+.made-for-you-error { margin-top: 12px; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--color-accent-strong); }
+.made-for-you-error .text-link { display: inline-flex; align-items: center; gap: 4px; }
+
+.learned { margin-top: 26px; padding: 16px 18px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--color-primary) 32%, transparent); background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)); }
+.debrief .learned h3 { margin: 0 0 8px; }
+.learned p, .learned li { font-size: 14px; line-height: 1.55; }
+.learned-wait { display: flex; align-items: center; gap: 8px; color: var(--color-muted-strong); }
+.learned-list { display: grid; gap: 6px; margin: 0; padding-left: 18px; list-style: disc; }
+.learned-list li::marker { color: var(--color-primary); }
+.learned-insight { margin: 12px 0 0; }
+.learned-insight blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--color-primary); font-size: 14px; line-height: 1.55; }
+.learned-insight figcaption { margin-top: 4px; font-size: 12px; color: var(--color-muted-strong); }
+.learned-next { margin-top: 12px; color: var(--color-muted-strong); }
+.learned-next strong { color: var(--color-foreground); font-weight: 600; }
+.learned .made-for-you { margin-top: 14px; }
+
+@media (max-width: 560px) {
+  .next-for-you { padding: 18px 16px; }
+  .made-for-you-buttons > button { width: 100%; }
+}

@@ -128,14 +128,15 @@ flow. The call record (with its `training` field) stays available from `GET /api
 
 ## Browser-facing training routes (Firebase-authenticated)
 
-- `GET /api/training/progress` → `{ attempts: [{ id, channel, scenarioId, scenarioTitle, difficulty, outcome, success, completedAt }], stats: { total, successes, compromised }, vulnerability: { weakCategories, vulnerableTactics, categoryAccuracy } }`
+- `GET /api/training/progress` → `{ attempts: [{ id, channel, scenarioId, scenarioTitle, difficulty, scamCategory, outcome, success, completedAt }], stats: { total, successes, compromised }, vulnerability: { weakCategories, vulnerableTactics, categoryAccuracy }, difficulty, focus }`
+  (`difficulty`/`focus`: what the next generated scenario uses; see `docs/mvp-contracts.md`)
   (newest first, max 50 attempts).
 - `GET /api/training/attempts/:id` → one attempt including its redacted transcript, signals and summary (owner only, else 404).
   For a call, `:id` is the call id.
 - `POST /api/training/call-scenarios` → generates a scenario with Gemini (or a built-in fallback when no key),
   stores it, returns `{ scenarioId: "gen-call-…", title, callerLabel, difficulty, tactics, source: "gemini" | "fallback" }`
   (no prompt text). Rate-limited per uid (5/min and 30/day), `429 { error: { code: "RATE_LIMITED" } }`.
-  The category comes from (in order) a `focus` list given server-side (e.g. the insights' `nextTrainingFocus`), the
+  The category comes from (in order) the insights' focus (`repos.insights.latestFocus`, read server-side), the
   user's weak categories, then their profile; the browser sends `{}`.
 - `GET /api/training/call-scenarios/:id` → the frontend `CallScenario` (owner only, `404 scenario_not_found` otherwise):
   `{ id, type: "call", title, summary, situation, difficulty, callerLabel, callerNumber?, tactics, indicators: [{ title, detail }],

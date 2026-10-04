@@ -4,9 +4,11 @@ import { useSimulatedCall } from '../../../comms/useSimulatedCall'
 import { api } from '../../../lib/api'
 import { guardsNavigation, leaveDecision, setNavigationGuard, type LeaveTrigger } from '../../../lib/navigationGuard'
 import { readCallResult, isScored, type CallResult } from '../callOutcome'
+import { LearnedPanel } from '../components/NextForYou'
 import { PhoneFrame } from '../components/PhoneFrame'
 import { recommend, recordAttempt, type Progress } from '../progress'
 import type { CallScenario } from '../scenarios'
+import { useLearning } from '../useLearning'
 import { CallDebrief } from './CallDebrief'
 import { LiveCallScreen, PracticeCallScreen } from './CallPhone'
 import { buildCallDebrief, callScreen, debriefSource, practiceResult } from './callModel'
@@ -16,6 +18,7 @@ import './call.css'
 // ScenarioPage mounts it once per call run, keyed by scenario id, so the provider never remounts mid-call.
 
 interface Props {
+  uid: string | null | undefined
   scenario: CallScenario
   progress: Progress
   /** Saves a local (practice-mode) result. Live results are stored by the backend. */
@@ -28,7 +31,7 @@ export default function CallExperience(props: Props) {
 
 const clockTime = () => new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
-function CallStage({ scenario, progress, record }: Props) {
+function CallStage({ uid, scenario, progress, record }: Props) {
   const call = useSimulatedCall()
   const [practice, setPractice] = useState<{ result: CallResult | null } | null>(null)
   const [asking, setAsking] = useState<{ trigger: LeaveTrigger; resolve: (leave: boolean) => void } | null>(null)
@@ -99,6 +102,9 @@ function CallStage({ scenario, progress, record }: Props) {
   const liveResult = !practice && completed ? debriefSource(attemptReady ? attempt.data : null, call.record).result : null
   // A live result may not be on the server yet; count it for the recommendation so "Next" moves on.
   const next = recommend(isScored(liveResult) ? recordAttempt(progress, scenario.id, liveResult.success) : progress, scenario.id)
+  // Scored live calls are saved server-side once analysed; the debrief then shows what changed (practice stays local).
+  const savedId = !practice && isScored(liveResult) ? call.callId : null
+  const learning = useLearning(uid, savedId)
 
   return (
     <>
@@ -118,7 +124,8 @@ function CallStage({ scenario, progress, record }: Props) {
 
       <div className="scenario-panel">
         {debrief
-          ? <CallDebrief key={practice ? 'practice' : call.callId} view={debrief} next={next} callerLabel={practice ? scenario.callerLabel : callerLabel} />
+          ? <CallDebrief key={practice ? 'practice' : call.callId} view={debrief} next={next} callerLabel={practice ? scenario.callerLabel : callerLabel}
+            learned={savedId && learning.status !== 'off' && learning.status !== 'loading' ? <LearnedPanel learning={learning} attemptId={savedId} /> : undefined} />
           : <CallHowTo practice={Boolean(practice)} />}
       </div>
 
