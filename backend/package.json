@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test:email": "tsx test_email.ts"
+    "test:email": "tsx test_email.ts",
+    "test:call": "tsx test_call.ts",
+    "test:report": "tsx test_comms_report.ts"
   },
   "dependencies": {
     "@google/genai": "^2.3.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
