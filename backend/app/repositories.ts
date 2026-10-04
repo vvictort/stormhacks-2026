@@ -1,9 +1,9 @@
-import { BehaviorRepository } from './behavior/behavior.repository.ts';
-import type { Database } from './db/database.ts';
-import { InsightsRepository } from './insights/insights.repository.ts';
-import { ScenariosRepository } from './scenarios/scenarios.repository.ts';
-import { AttemptsRepository } from './training/attempts.repository.ts';
-import { UsersRepository } from './users/users.repository.ts';
+import { BehaviorRepository } from "./behavior/behavior.repository.ts";
+import type { Database } from "./db/database.ts";
+import { InsightsRepository } from "./insights/insights.repository.ts";
+import { ScenariosRepository } from "./scenarios/scenarios.repository.ts";
+import { AttemptsRepository } from "./training/attempts.repository.ts";
+import { UsersRepository } from "./users/users.repository.ts";
 
 export interface Repositories {
   users: Pick<UsersRepository, keyof UsersRepository>;

@@ -11,4 +11,5 @@ Rules that take priority over the scenario below:
 - If the person seems genuinely distressed, drop the scenario, tell them this was a training simulation, and end the call.
 - Keep each turn short and natural, like a real phone call.`;
 
-export const withPreamble = (scenarioPrompt: string) => `${SAFETY_PREAMBLE}\n\n## Scenario\n${scenarioPrompt}`;
+export const withPreamble = (scenarioPrompt: string) =>
+  `${SAFETY_PREAMBLE}\n\n## Scenario\n${scenarioPrompt}`;

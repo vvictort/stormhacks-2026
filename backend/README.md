@@ -57,21 +57,21 @@ Text threads, calls and their tracked links live in Postgres (`sim_text_threads`
 
 All are read from `backend/.env` by `app/config.ts` and passed into the modules that need them; an empty `KEY=` counts as unset.
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | required | TigerData/Postgres connection |
-| `FIREBASE_PROJECT_ID` | required | Firebase project whose ID tokens are accepted (match `VITE_FIREBASE_PROJECT_ID`) |
-| `HOST`, `PORT` | `127.0.0.1`, `3000` | Listen address |
-| `APP_ORIGIN` | `http://localhost:5173` | Frontend origin: required on browser writes, and where tracked links redirect (`/caught?sim=`) |
-| `NODE_ENV` | `development` | `production` requires an HTTPS `APP_ORIGIN` |
-| `GEMINI_API_KEY` | unset | Unset or failing Gemini uses built-in emails and call scenarios (`source: "fallback"`) |
-| `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`, `SNOWFLAKE_ID_SALT` | unset | All five turn on the Snowflake analysis (setup: `scripts/snowflake-setup.sql`); otherwise, or on any Snowflake error/timeout, the built-in analysis (`source: "fallback"`). The salt (16+ characters) keys `HMAC(uid)`, the only id Snowflake sees |
-| `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL` | `PUBLIC`, unset, unset | Schema, session role, optional Cortex model that words the analysis |
-| `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID` | unset | Voice calls; see above |
-| `ELEVENLABS_DEFAULT_VOICE_ID` | unset | Agent default voice (setup:agent) |
-| `ELEVENLABS_LLM` | `gemini-2.5-flash` | LLM the agent runs on (setup:agent) |
-| `CALL_MAX_SECONDS` | `180` | Hard cap on a call; a call never reported as ended is analysed after this plus a minute |
-| `TEXT_FOLLOWUP_SEC`, `TEXT_IDLE_END_SEC` | `120`, `600` | Text threads: nudge after this much silence, end after this much inactivity |
+| Variable                                                                                               | Default                 | Purpose                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                                                         | required                | TigerData/Postgres connection                                                                                                                                                                                                                      |
+| `FIREBASE_PROJECT_ID`                                                                                  | required                | Firebase project whose ID tokens are accepted (match `VITE_FIREBASE_PROJECT_ID`)                                                                                                                                                                   |
+| `HOST`, `PORT`                                                                                         | `127.0.0.1`, `3000`     | Listen address                                                                                                                                                                                                                                     |
+| `APP_ORIGIN`                                                                                           | `http://localhost:5173` | Frontend origin: required on browser writes, and where tracked links redirect (`/caught?sim=`)                                                                                                                                                     |
+| `NODE_ENV`                                                                                             | `development`           | `production` requires an HTTPS `APP_ORIGIN`                                                                                                                                                                                                        |
+| `GEMINI_API_KEY`                                                                                       | unset                   | Unset or failing Gemini uses built-in emails and call scenarios (`source: "fallback"`)                                                                                                                                                             |
+| `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`, `SNOWFLAKE_ID_SALT` | unset                   | All five turn on the Snowflake analysis (setup: `scripts/snowflake-setup.sql`); otherwise, or on any Snowflake error/timeout, the built-in analysis (`source: "fallback"`). The salt (16+ characters) keys `HMAC(uid)`, the only id Snowflake sees |
+| `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL`                                         | `PUBLIC`, unset, unset  | Schema, session role, optional Cortex model that words the analysis                                                                                                                                                                                |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`                                                            | unset                   | Voice calls; see above                                                                                                                                                                                                                             |
+| `ELEVENLABS_DEFAULT_VOICE_ID`                                                                          | unset                   | Agent default voice (setup:agent)                                                                                                                                                                                                                  |
+| `ELEVENLABS_LLM`                                                                                       | `gemini-2.5-flash`      | LLM the agent runs on (setup:agent)                                                                                                                                                                                                                |
+| `CALL_MAX_SECONDS`                                                                                     | `180`                   | Hard cap on a call; a call never reported as ended is analysed after this plus a minute                                                                                                                                                            |
+| `TEXT_FOLLOWUP_SEC`, `TEXT_IDLE_END_SEC`                                                               | `120`, `600`            | Text threads: nudge after this much silence, end after this much inactivity                                                                                                                                                                        |
 
 ## Structure
 
@@ -119,20 +119,20 @@ Browser writes (every non-GET under `/api`) require the configured `Origin` and 
 
 ## API
 
-| Method | Path | Behavior |
-| --- | --- | --- |
-| GET | `/api/health` | Process liveness |
-| GET | `/api/users/me` | Persist/update Firebase identity details and return the caller's profile |
-| PUT | `/api/users/me` | Save personal details and complete onboarding |
-| GET | `/api/training/progress` | `{ attempts, stats, vulnerability, difficulty, focus }`: newest 50 attempts plus stats over the whole history; `difficulty`/`focus` are what the next generated scenario uses |
-| POST | `/api/training/events` | `{ events: [...] }` (1–50 text/email behaviour events, validated; uid from the token) → `202 { accepted }`; a `scenario_completed` also saves the attempt. See `docs/mvp-contracts.md` |
-| GET | `/api/training/metrics` | The caller's behaviour metrics from TigerData (accuracy, report rate, decision time, trend, per category, timeline) |
-| GET | `/api/training/insights` | The caller's vulnerability analysis (`strongestAreas`, `weakAreas`, `behavioralPattern`, `recommendation`, `nextTrainingFocus`, `source: "snowflake" \| "fallback"`), cached per user until a new attempt |
-| POST | `/api/training/email-scenarios` | Generate and store a personalised scam email (Gemini, else built-in); `201 { scenario }` in the frontend `Scenario` shape. Send `{}`. Shares the per-user generation budget (6/min, 40/day here) |
-| GET | `/api/training/email-scenarios/:id` | That generated email; owner only, else `404` |
-| GET | `/api/training/attempts/:id` | One attempt with signals, summary and redacted transcript; 404 unless it is the caller's |
-| POST | `/api/training/call-scenarios` | Generate and store a scenario (Gemini, else a built-in one per scam category); `201 { scenarioId: "gen-call-…", title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, counted in Postgres so the limit holds across processes and restarts, else `429 RATE_LIMITED` |
-| GET | `/api/training/call-scenarios/:id` | The generated call as the frontend `CallScenario` (teaching copy, `scamCategory`, `generated: { source, reason }`), never the prompt; owner only, else `404 scenario_not_found` |
+| Method | Path                                | Behavior                                                                                                                                                                                                                                                                                                |
+| ------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/health`                       | Process liveness                                                                                                                                                                                                                                                                                        |
+| GET    | `/api/users/me`                     | Persist/update Firebase identity details and return the caller's profile                                                                                                                                                                                                                                |
+| PUT    | `/api/users/me`                     | Save personal details and complete onboarding                                                                                                                                                                                                                                                           |
+| GET    | `/api/training/progress`            | `{ attempts, stats, vulnerability, difficulty, focus }`: newest 50 attempts plus stats over the whole history; `difficulty`/`focus` are what the next generated scenario uses                                                                                                                           |
+| POST   | `/api/training/events`              | `{ events: [...] }` (1–50 text/email behaviour events, validated; uid from the token) → `202 { accepted }`; a `scenario_completed` also saves the attempt. See `docs/mvp-contracts.md`                                                                                                                  |
+| GET    | `/api/training/metrics`             | The caller's behaviour metrics from TigerData (accuracy, report rate, decision time, trend, per category, timeline)                                                                                                                                                                                     |
+| GET    | `/api/training/insights`            | The caller's vulnerability analysis (`strongestAreas`, `weakAreas`, `behavioralPattern`, `recommendation`, `nextTrainingFocus`, `source: "snowflake" \| "fallback"`), cached per user until a new attempt                                                                                               |
+| POST   | `/api/training/email-scenarios`     | Generate and store a personalised scam email (Gemini, else built-in); `201 { scenario }` in the frontend `Scenario` shape. Send `{}`. Shares the per-user generation budget (6/min, 40/day here)                                                                                                        |
+| GET    | `/api/training/email-scenarios/:id` | That generated email; owner only, else `404`                                                                                                                                                                                                                                                            |
+| GET    | `/api/training/attempts/:id`        | One attempt with signals, summary and redacted transcript; 404 unless it is the caller's                                                                                                                                                                                                                |
+| POST   | `/api/training/call-scenarios`      | Generate and store a scenario (Gemini, else a built-in one per scam category); `201 { scenarioId: "gen-call-…", title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, counted in Postgres so the limit holds across processes and restarts, else `429 RATE_LIMITED` |
+| GET    | `/api/training/call-scenarios/:id`  | The generated call as the frontend `CallScenario` (teaching copy, `scamCategory`, `generated: { source, reason }`), never the prompt; owner only, else `404 scenario_not_found`                                                                                                                         |
 
 Progress `stats` are `{ total, successes, compromised }` over scored attempts (`error` attempts are listed but not counted). `vulnerability` is `{ weakCategories, vulnerableTactics, categoryAccuracy }`: categories are inferred from the scenario id/title, a category turns weak below 75% accuracy and recovers at 80%, and tactics are ranked by how often they appeared in compromised attempts. The same replay sets the difficulty used for generated scenarios.
 
@@ -155,25 +155,25 @@ Name and international phone number are required. Phone formatting is normalized
 
 Use the wiring in **`frontend/src/comms/`** rather than calling these routes by hand:
 
-| Module | Gives you |
-| --- | --- |
-| `api.ts` | `comms`: a typed client for every route below (base `/api/comms`, override with `VITE_COMMS_BASE_URL`). It attaches the Firebase token, sends JSON on every POST, and retries once with a fresh token on 401. |
-| `useScenarios(channel?)` | Sample scenarios for a picker. |
-| `useTextThread(threadId)` | A live text thread: messages, typing indicator, outcome, `send`, `report`, `reconnect`. |
-| `useSimulatedCall()` | The call lifecycle (`start`, `accept`, `decline`, `hangUp`, `cancel` while connecting), live captions and the analysed result. It must render inside `<ConversationProvider>` from `@elevenlabs/react`. |
+| Module                    | Gives you                                                                                                                                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api.ts`                  | `comms`: a typed client for every route below (base `/api/comms`, override with `VITE_COMMS_BASE_URL`). It attaches the Firebase token, sends JSON on every POST, and retries once with a fresh token on 401. |
+| `useScenarios(channel?)`  | Sample scenarios for a picker.                                                                                                                                                                                |
+| `useTextThread(threadId)` | A live text thread: messages, typing indicator, outcome, `send`, `report`, `reconnect`.                                                                                                                       |
+| `useSimulatedCall()`      | The call lifecycle (`start`, `accept`, `decline`, `hangUp`, `cancel` while connecting), live captions and the analysed result. It must render inside `<ConversationProvider>` from `@elevenlabs/react`.       |
 
 Simulation ids are unguessable, so they're safe to put in results URLs.
 
 #### Texts
 
-| Method & path | Body | Returns |
-| --- | --- | --- |
-| `GET /api/comms/scenarios?channel=text\|call` | – | `{ scenarios: [{ id, channel, title, tactics, difficulty, label }] }`. No auth, and no prompt text. |
-| `POST /api/comms/texts` | `{ scenarioId }`, or `{}` for a random sample | `201 { threadId, streamUrl, thread }`. `409 active_thread_exists` (with `error.threadId`) if the user already has an active thread; `404 scenario_not_found` for an unknown id; `400` for any other key (e.g. `scenario`). |
-| `GET /api/comms/texts/:id/stream?access_token=` | – | SSE stream (see below) |
-| `POST /api/comms/texts/:id/replies` | `{ body }` | `202 { message }` (redacted copy of the user's message), or `409 thread_ended` |
-| `POST /api/comms/texts/:id/report` | `{}` | Thread, ended with outcome `reported` (wire this to a "Report / block" button) |
-| `GET /api/comms/texts/:id` | – | Full `TextThread` for results pages |
+| Method & path                                   | Body                                          | Returns                                                                                                                                                                                                                    |
+| ----------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/comms/scenarios?channel=text\|call`   | –                                             | `{ scenarios: [{ id, channel, title, tactics, difficulty, label }] }`. No auth, and no prompt text.                                                                                                                        |
+| `POST /api/comms/texts`                         | `{ scenarioId }`, or `{}` for a random sample | `201 { threadId, streamUrl, thread }`. `409 active_thread_exists` (with `error.threadId`) if the user already has an active thread; `404 scenario_not_found` for an unknown id; `400` for any other key (e.g. `scenario`). |
+| `GET /api/comms/texts/:id/stream?access_token=` | –                                             | SSE stream (see below)                                                                                                                                                                                                     |
+| `POST /api/comms/texts/:id/replies`             | `{ body }`                                    | `202 { message }` (redacted copy of the user's message), or `409 thread_ended`                                                                                                                                             |
+| `POST /api/comms/texts/:id/report`              | `{}`                                          | Thread, ended with outcome `reported` (wire this to a "Report / block" button)                                                                                                                                             |
+| `GET /api/comms/texts/:id`                      | –                                             | Full `TextThread` for results pages                                                                                                                                                                                        |
 
 SSE events (`Content-Type: text/event-stream`, no compression, a `: ping` comment every 25 s):
 
@@ -185,27 +185,27 @@ SSE events (`Content-Type: text/event-stream`, no compression, a `: ping` commen
 
 #### Calls
 
-| Method & path | Body | Returns |
-| --- | --- | --- |
-| `POST /api/comms/calls` | `{ scenarioId }`, or `{}` for a random sample | `201 { callId, callerLabel, call }`. Start ringing. `404 scenario_not_found` for an unknown id (or another user's `gen-` id), `400` for any other key (e.g. `scenario`). |
-| `POST /api/comms/calls/:id/accept` | `{}` | `{ conversationToken, conversationId, overrides }`. `503 elevenlabs_not_configured` without ElevenLabs keys, `502 elevenlabs_error` if ElevenLabs fails. |
-| `POST /api/comms/calls/:id/abandon` | `{}` | Call record, completed as an unscored `error` (`error: 'abandoned'`) and **not** saved. Send it when you drop a call that is still ringing (switching to caption practice, leaving the page). `409 not_ringing` otherwise. |
-| `POST /api/comms/calls/:id/connected` | `{ conversationId }` | Call record. Send from `onConnect`. `409 conversation_mismatch` if a different id is already bound, `409 not_in_call` before accept. |
-| `POST /api/comms/calls/:id/decline` | `{ reason: 'declined' \| 'missed' }` | Call record. Send `missed` when your ring timeout expires. |
-| `POST /api/comms/calls/:id/ended` | `{ conversationId? }` | `202`. Analysis runs in the background. `409 conversation_mismatch` if the id differs from the bound one (the call stays `in_call`). |
-| `GET /api/comms/calls/:id` | – | Call record. Poll every ~2 s while `status === 'analyzing'`. |
+| Method & path                         | Body                                          | Returns                                                                                                                                                                                                                    |
+| ------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/comms/calls`               | `{ scenarioId }`, or `{}` for a random sample | `201 { callId, callerLabel, call }`. Start ringing. `404 scenario_not_found` for an unknown id (or another user's `gen-` id), `400` for any other key (e.g. `scenario`).                                                   |
+| `POST /api/comms/calls/:id/accept`    | `{}`                                          | `{ conversationToken, conversationId, overrides }`. `503 elevenlabs_not_configured` without ElevenLabs keys, `502 elevenlabs_error` if ElevenLabs fails.                                                                   |
+| `POST /api/comms/calls/:id/abandon`   | `{}`                                          | Call record, completed as an unscored `error` (`error: 'abandoned'`) and **not** saved. Send it when you drop a call that is still ringing (switching to caption practice, leaving the page). `409 not_ringing` otherwise. |
+| `POST /api/comms/calls/:id/connected` | `{ conversationId }`                          | Call record. Send from `onConnect`. `409 conversation_mismatch` if a different id is already bound, `409 not_in_call` before accept.                                                                                       |
+| `POST /api/comms/calls/:id/decline`   | `{ reason: 'declined' \| 'missed' }`          | Call record. Send `missed` when your ring timeout expires.                                                                                                                                                                 |
+| `POST /api/comms/calls/:id/ended`     | `{ conversationId? }`                         | `202`. Analysis runs in the background. `409 conversation_mismatch` if the id differs from the bound one (the call stays `in_call`).                                                                                       |
+| `GET /api/comms/calls/:id`            | –                                             | Call record. Poll every ~2 s while `status === 'analyzing'`.                                                                                                                                                               |
 
 `status` moves through `ringing` → `in_call` → `analyzing` → `completed`, or straight from `ringing` to `completed` if declined, missed or abandoned. A call still ringing after 2 minutes (tab closed, or stuck on a voice/mic error) is abandoned by the sweeper, not missed: only your ring timer reports a real miss. `outcome` and `training` are set once the status is `completed`. The sweepers run every 15 s and once at startup, so analyses interrupted by a restart resume.
 
 **Scenarios are server-owned.** Fixed ones (`fixtures/scenarios/call-*.json`):
 
-| id | difficulty | theme |
-| --- | --- | --- |
-| `bank-fraud-dept-otp-1` | 2 / medium | Bank fraud department asks for a verification code |
-| `cra-tax-arrears-1` | 2 / medium | CRA impersonator demands payment for tax arrears |
-| `courier-customs-fee-1` | 1 / easy | Courier asks for a small customs fee by card |
-| `tech-support-remote-1` | 2 / medium | Tech support wants remote access |
-| `exec-vendor-payment-1` | 3 / hard | Executive asks for an urgent payment to a new vendor account |
+| id                      | difficulty | theme                                                        |
+| ----------------------- | ---------- | ------------------------------------------------------------ |
+| `bank-fraud-dept-otp-1` | 2 / medium | Bank fraud department asks for a verification code           |
+| `cra-tax-arrears-1`     | 2 / medium | CRA impersonator demands payment for tax arrears             |
+| `courier-customs-fee-1` | 1 / easy   | Courier asks for a small customs fee by card                 |
+| `tech-support-remote-1` | 2 / medium | Tech support wants remote access                             |
+| `exec-vendor-payment-1` | 3 / hard   | Executive asks for an urgent payment to a new vendor account |
 
 `gen-call-…` ids (older `gen-…` ones too) come from `POST /api/training/call-scenarios`; `ScenarioCatalog` resolves them from `generated_call_scenarios` for the verified uid only, so another user's id is a 404.
 
@@ -213,13 +213,13 @@ SSE events (`Content-Type: text/event-stream`, no compression, a `: ping` commen
 
 **Training result.** Every completed call (declined, missed, analysed or error) carries `training: { outcome, success, difficulty }`, the canonical result from the table in [`docs/call-integration.md`](../docs/call-integration.md) (`app/calls/outcome.ts`). Use it as-is; never derive success from `outcome`.
 
-| raw `outcome` | `training.outcome` | `training.success` |
-| --- | --- | --- |
-| `compromised` | `compromised` | `false` |
-| `resisted`, `reported` | `resisted` | `true` |
-| `declined` | `declined` | `true` |
-| `ignored`, `missed` | `missed` | `true` |
-| `error` | `error` | `null` (not scored) |
+| raw `outcome`          | `training.outcome` | `training.success`  |
+| ---------------------- | ------------------ | ------------------- |
+| `compromised`          | `compromised`      | `false`             |
+| `resisted`, `reported` | `resisted`         | `true`              |
+| `declined`             | `declined`         | `true`              |
+| `ignored`, `missed`    | `missed`           | `true`              |
+| `error`                | `error`            | `null` (not scored) |
 
 `difficulty` is `easy` / `medium` / `hard` for 1 / 2 / 3.
 
@@ -241,6 +241,7 @@ If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two 
   - `followUp(...)` → a nudge, or `null`
 
   The `StubProvider` is used until yours is ready; swap it in `app/main.ts`. User messages arrive **already redacted** (`[NUMBER:6 digits]`, `[EMAIL]`). `preSignals` are rule-based hints. The signals you return are authoritative and decide the thread's outcome.
+
 - **Calls:** the scenario's `systemPrompt` and `firstMessage` override the ElevenLabs agent per call. `app/calls/preamble.ts` is prepended to every prompt.
 - **Scoring:** texts only set a preliminary `outcome`. Use the events below, including the full redacted transcript in `call.analyzed`, for real scoring and feedback.
 
@@ -252,20 +253,20 @@ If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two 
 { id, type, at, userId, simulationId, channel: 'text' | 'call', scenarioId, tactics, data }
 ```
 
-| type | `data` |
-| --- | --- |
-| `text.thread_started` | `senderLabel, difficulty` |
-| `text.message_sent` / `text.follow_up_sent` | `messageId, body, hasLink, turn` |
-| `text.reply_received` | `messageId, body` (redacted), `latencyMs` (since last scammer message), `preSignals` |
-| `text.reply_classified` | `messageIds, preSignals, signals, done` |
-| `link.clicked` | `timeToClickMs, afterEnd` |
-| `text.reported` | – |
-| `text.thread_ended` | `outcome, reason, signals, scammerTurns, userReplies, durationMs` |
-| `call.ringing` | `callerLabel, difficulty` |
-| `call.accepted` / `call.declined` / `call.missed` / `call.abandoned` | `ringMs` |
-| `call.ended` | `conversationId` |
-| `call.analyzed` | `outcome, signals, resisted, durationSecs, terminationReason, dataCollection, summary, transcript` |
-| `call.failed` | `error` |
+| type                                                                 | `data`                                                                                             |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `text.thread_started`                                                | `senderLabel, difficulty`                                                                          |
+| `text.message_sent` / `text.follow_up_sent`                          | `messageId, body, hasLink, turn`                                                                   |
+| `text.reply_received`                                                | `messageId, body` (redacted), `latencyMs` (since last scammer message), `preSignals`               |
+| `text.reply_classified`                                              | `messageIds, preSignals, signals, done`                                                            |
+| `link.clicked`                                                       | `timeToClickMs, afterEnd`                                                                          |
+| `text.reported`                                                      | –                                                                                                  |
+| `text.thread_ended`                                                  | `outcome, reason, signals, scammerTurns, userReplies, durationMs`                                  |
+| `call.ringing`                                                       | `callerLabel, difficulty`                                                                          |
+| `call.accepted` / `call.declined` / `call.missed` / `call.abandoned` | `ringMs`                                                                                           |
+| `call.ended`                                                         | `conversationId`                                                                                   |
+| `call.analyzed`                                                      | `outcome, signals, resisted, durationSecs, terminationReason, dataCollection, summary, transcript` |
+| `call.failed`                                                        | `error`                                                                                            |
 
 **Signals:** `clicked_link`, `shared_code`, `shared_personal_info`, `shared_payment_info`, `agreed_to_action` (these five count as compromised), plus `engaged`, `challenged`, `asked_to_verify`, `reported`, `stop`.
 

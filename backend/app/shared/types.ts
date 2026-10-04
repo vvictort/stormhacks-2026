@@ -1,34 +1,46 @@
-import { z } from 'zod';
-import { ScamCategory, Tactic, type Difficulty, type Outcome } from './vocabulary.ts';
+import { z } from "zod";
+import {
+  ScamCategory,
+  Tactic,
+  type Difficulty,
+  type Outcome,
+} from "./vocabulary.ts";
 
 // Simulation (text and call) shapes. Canonical words live in vocabulary.ts.
 
 /** Observed user behaviours. Rule-based hints from the texts service, authoritative ones from the provider / ElevenLabs analysis. */
 export type Signal =
-  | 'clicked_link'
-  | 'shared_code'
-  | 'shared_personal_info'
-  | 'shared_payment_info'
-  | 'agreed_to_action'
-  | 'engaged'
-  | 'challenged'
-  | 'asked_to_verify'
-  | 'reported'
-  | 'stop';
+  | "clicked_link"
+  | "shared_code"
+  | "shared_personal_info"
+  | "shared_payment_info"
+  | "agreed_to_action"
+  | "engaged"
+  | "challenged"
+  | "asked_to_verify"
+  | "reported"
+  | "stop";
 
 /** Signals that mean the user fell for the scam. */
 export const COMPROMISING_SIGNALS: readonly Signal[] = [
-  'clicked_link',
-  'shared_code',
-  'shared_personal_info',
-  'shared_payment_info',
-  'agreed_to_action',
+  "clicked_link",
+  "shared_code",
+  "shared_personal_info",
+  "shared_payment_info",
+  "agreed_to_action",
 ];
 
 /** A simulation's raw outcome; calls map it to the canonical `Outcome` (calls/outcome.ts). */
-export type SimOutcome = 'compromised' | 'resisted' | 'reported' | 'ignored' | 'declined' | 'missed' | 'error';
+export type SimOutcome =
+  | "compromised"
+  | "resisted"
+  | "reported"
+  | "ignored"
+  | "declined"
+  | "missed"
+  | "error";
 
-export type SimChannel = 'text' | 'call';
+export type SimChannel = "text" | "call";
 
 const scenarioBase = {
   id: z.string().min(1),
@@ -51,9 +63,9 @@ export const TextScenario = z
     /** Max scammer replies after the opening message before the thread ends. */
     maxTurns: z.number().int().min(1).max(20),
   })
-  .refine((s) => !s.openingMessage.includes('{{link}}') || s.linkDisplayUrl, {
-    message: 'linkDisplayUrl is required when openingMessage contains {{link}}',
-    path: ['linkDisplayUrl'],
+  .refine((s) => !s.openingMessage.includes("{{link}}") || s.linkDisplayUrl, {
+    message: "linkDisplayUrl is required when openingMessage contains {{link}}",
+    path: ["linkDisplayUrl"],
   });
 export type TextScenario = z.infer<typeof TextScenario>;
 
@@ -70,7 +82,11 @@ export const CallScenario = z.object({
 });
 export type CallScenario = z.infer<typeof CallScenario>;
 
-export const difficultyName: Record<CallScenario['difficulty'], Difficulty> = { 1: 'easy', 2: 'medium', 3: 'hard' };
+export const difficultyName: Record<CallScenario["difficulty"], Difficulty> = {
+  1: "easy",
+  2: "medium",
+  3: "hard",
+};
 
 export interface TextLink {
   text: string;
@@ -79,7 +95,7 @@ export interface TextLink {
 
 export interface TextMessage {
   id: string;
-  from: 'scammer' | 'user';
+  from: "scammer" | "user";
   /** User messages are redacted before they are stored. */
   body: string;
   at: string;
@@ -92,13 +108,14 @@ export interface TextMessage {
   followUp?: boolean;
 }
 
-export type ThreadEndReason = 'provider_done' | 'max_turns' | 'reported' | 'link_clicked' | 'idle';
+export type ThreadEndReason =
+  "provider_done" | "max_turns" | "reported" | "link_clicked" | "idle";
 
 export interface TextThread {
   id: string;
   userId: string;
   scenario: TextScenario;
-  status: 'active' | 'ended';
+  status: "active" | "ended";
   outcome?: SimOutcome;
   endReason?: ThreadEndReason;
   messages: TextMessage[];
@@ -115,10 +132,10 @@ export interface TextThread {
   endedAt?: string;
 }
 
-export type CallStatus = 'ringing' | 'in_call' | 'analyzing' | 'completed';
+export type CallStatus = "ringing" | "in_call" | "analyzing" | "completed";
 
 export interface CallTranscriptTurn {
-  role: 'agent' | 'user';
+  role: "agent" | "user";
   /** Redacted. */
   message: string;
   timeInCallSecs: number;
@@ -159,22 +176,22 @@ export interface CallRecord {
 }
 
 export type SimEventType =
-  | 'text.thread_started'
-  | 'text.message_sent'
-  | 'text.reply_received'
-  | 'text.reply_classified'
-  | 'text.follow_up_sent'
-  | 'text.reported'
-  | 'text.thread_ended'
-  | 'link.clicked'
-  | 'call.ringing'
-  | 'call.accepted'
-  | 'call.declined'
-  | 'call.missed'
-  | 'call.abandoned'
-  | 'call.ended'
-  | 'call.analyzed'
-  | 'call.failed';
+  | "text.thread_started"
+  | "text.message_sent"
+  | "text.reply_received"
+  | "text.reply_classified"
+  | "text.follow_up_sent"
+  | "text.reported"
+  | "text.thread_ended"
+  | "link.clicked"
+  | "call.ringing"
+  | "call.accepted"
+  | "call.declined"
+  | "call.missed"
+  | "call.abandoned"
+  | "call.ended"
+  | "call.analyzed"
+  | "call.failed";
 
 export interface SimEvent {
   id: string;

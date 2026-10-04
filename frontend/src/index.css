@@ -218,8 +218,8 @@ h1:focus, #auth-content:focus { outline: none; }
 /* Login <-> signup: only the card morphs (size and content); the page around it holds still. */
 [data-nav="swap"]::view-transition-old(root), [data-nav="swap"]::view-transition-new(root) { animation: none; }
 /* Fade-through, not crossfade: old card content leaves before the new arrives, so they never overlap. */
-[data-nav="swap"]::view-transition-old(auth-card) { animation: 130ms ease-out both vt-fade-out; }
-[data-nav="swap"]::view-transition-new(auth-card) { animation: 260ms var(--ease-out-quint) 90ms both vt-fade-in; }
+[data-nav="swap"]::view-transition-old(auth-card) { animation: 200ms ease-out both vt-fade-out; }
+[data-nav="swap"]::view-transition-new(auth-card) { animation: 340ms var(--ease-out-quint) 150ms both vt-fade-in; }
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-fade-in { from { opacity: 0; } }
 /* Signup steps: fields push sideways inside the card. */
@@ -227,16 +227,17 @@ h1:focus, #auth-content:focus { outline: none; }
 /* Only the fields move; the rest of the card (description, button label) switches at once while its height morphs. */
 [data-nav^="step"]::view-transition-old(auth-card), [data-nav^="step"]::view-transition-old(root) { display: none; }
 [data-nav^="step"]::view-transition-new(auth-card), [data-nav^="step"]::view-transition-new(root) { animation: none; }
-[data-nav="step-forward"]::view-transition-new(form-step) { animation: 320ms var(--ease-ios) 70ms both step-in; }
-[data-nav="step-forward"]::view-transition-old(form-step) { animation: 160ms ease-in both step-out; }
-[data-nav="step-back"]::view-transition-new(form-step) { animation: 320ms var(--ease-ios) 70ms both step-in-back; }
-[data-nav="step-back"]::view-transition-old(form-step) { animation: 160ms ease-in both step-out-back; }
+[data-nav="step-forward"]::view-transition-new(form-step) { animation: 380ms var(--ease-ios) 100ms both step-in; }
+[data-nav="step-forward"]::view-transition-old(form-step) { animation: 220ms ease-in both step-out; }
+[data-nav="step-back"]::view-transition-new(form-step) { animation: 380ms var(--ease-ios) 100ms both step-in-back; }
+[data-nav="step-back"]::view-transition-old(form-step) { animation: 220ms ease-in both step-out-back; }
 @keyframes step-in { from { translate: 48px 0; opacity: 0; } }
 @keyframes step-out { to { translate: -48px 0; opacity: 0; } }
 @keyframes step-in-back { from { translate: -48px 0; opacity: 0; } }
 @keyframes step-out-back { to { translate: 48px 0; opacity: 0; } }
-/* The view transition already animates these; don't play their own entrances on top. */
-[data-nav] :is(.auth-card, .form-step) { animation: none; }
+/* The view transition already animates these, so their own entrances finish instantly underneath it.
+   Not `animation: none`: lifting that when the transition ends restarts the entrance from opacity 0 (a flash). */
+[data-nav] :is(.auth-card, .form-step) { animation-duration: 0s; animation-delay: 0s; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fade-in { from { opacity: 0; } }
