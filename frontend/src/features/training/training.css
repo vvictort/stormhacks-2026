@@ -50,7 +50,7 @@
 .home-stat-grid .home-stat-sub { margin-top: auto; padding-top: 6px; font-family: var(--font-sans); font-size: 13px; line-height: 1.4; color: var(--color-muted-strong); }
 .home-stat-grid .is-missed dd:not(.home-stat-sub) { color: var(--color-accent-strong); }
 .home-stat-sub .text-link { min-height: 24px; font-size: 13px; }
-.home-stat-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 26px 0 10px; }
+.home-stat-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin: 26px 0 10px; }
 .home-stat-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
 .home-stat-head span { font-size: 13px; color: var(--color-muted-strong); }
 .home-channels { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
