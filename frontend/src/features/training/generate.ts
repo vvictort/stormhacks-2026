@@ -1,3 +1,4 @@
+import { saveCachedScenarioMeta } from './scenarioCache.ts'
 import type { EmailScenario, SmsScenario } from './scenarios.ts'
 
 /** The authenticated client from `lib/api.ts` (passed in, so this stays testable in Node). */
@@ -14,6 +15,13 @@ export async function generateScenario(api: Api, channel: 'email' | 'sms' = 'ema
   try {
     const { scenario } = await api<{ scenario: EmailScenario | SmsScenario }>(`/training/${channel}-scenarios`, { method: 'POST', body: '{}' })
     if (!scenario?.id?.startsWith(`gen-${channel}-`)) throw new Error('Unexpected response')
+    saveCachedScenarioMeta({
+      id: scenario.id,
+      title: scenario.title,
+      summary: scenario.summary,
+      type: scenario.type,
+      difficulty: scenario.difficulty,
+    })
     return scenario
   } catch (error) {
     // lib/authenticatedRequest reports the status at the end of the message.

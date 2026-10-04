@@ -116,3 +116,31 @@ test('siteOf shows the domain a look-alike link really belongs to', () => {
   assert.equal(siteOf('https://canadapost.ca-redelivery.info/update'), 'ca-redelivery.info')
   assert.equal(siteOf('not a url'), 'not a url')
 })
+
+test('timeline keeps track of completed generated scenarios alongside library ones', () => {
+  let progress = {}
+  progress = recordAttempt(progress, 'lib-sms-shipping', true, 100)
+  progress = recordAttempt(progress, 'gen-email-12345', false, 200)
+  progress = recordAttempt(progress, 'gen-sms-67890', true, 300)
+  progress = recordAttempt(progress, 'gen-call-99999', false, 400)
+
+  const attempts = timeline(progress)
+  assert.equal(attempts.length, 4)
+  assert.deepEqual(attempts.map((a) => a.id), ['lib-sms-shipping', 'gen-email-12345', 'gen-sms-67890', 'gen-call-99999'])
+
+  // Newest first sorting for history view
+  const newestFirst = [...attempts].sort((a, b) => b.at - a.at)
+  assert.equal(newestFirst[0].id, 'gen-call-99999')
+  assert.equal(newestFirst[0].correct, false)
+  assert.equal(newestFirst[1].id, 'gen-sms-67890')
+  assert.equal(newestFirst[1].correct, true)
+
+  // Channel identification
+  const smsAttempts = newestFirst.filter((a) => a.id.startsWith('gen-sms-') || a.id.includes('sms'))
+  assert.equal(smsAttempts.length, 2)
+  const emailAttempts = newestFirst.filter((a) => a.id.startsWith('gen-email-') || a.id.includes('email'))
+  assert.equal(emailAttempts.length, 1)
+  const callAttempts = newestFirst.filter((a) => a.id.startsWith('gen-call-') || a.id.includes('call'))
+  assert.equal(callAttempts.length, 1)
+})
+

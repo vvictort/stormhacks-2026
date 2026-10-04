@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../lib/api'
+import { saveCachedScenarioMeta } from './scenarioCache'
 import { getScenario, type Scenario } from './scenarios'
 
 export type ScenarioState =
@@ -25,7 +26,20 @@ export function useScenario(id: string | undefined): ScenarioState {
     if (!path || !id) return
     const controller = new AbortController()
     api<Scenario>(path, { signal: controller.signal })
-      .then((scenario) => { if (!controller.signal.aborted) setFetched({ id, scenario }) })
+      .then((scenario) => {
+        if (!controller.signal.aborted) {
+          if (scenario) {
+            saveCachedScenarioMeta({
+              id: scenario.id,
+              title: scenario.title,
+              summary: scenario.summary,
+              type: scenario.type,
+              difficulty: scenario.difficulty,
+            })
+          }
+          setFetched({ id, scenario })
+        }
+      })
       .catch(() => { if (!controller.signal.aborted) setFetched({ id, scenario: null }) })
     return () => controller.abort()
   }, [id, path])
