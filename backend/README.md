@@ -149,7 +149,7 @@ Use the wiring in **`frontend/src/comms/`** rather than calling these routes by 
 | `api.ts` | `comms`: a typed client for every route below (base `/api/comms`, override with `VITE_COMMS_BASE_URL`). It attaches the Firebase token, sends JSON on every POST, and retries once with a fresh token on 401. |
 | `useScenarios(channel?)` | Sample scenarios for a picker. |
 | `useTextThread(threadId)` | A live text thread: messages, typing indicator, outcome, `send`, `report`, `reconnect`. |
-| `useSimulatedCall()` | The call lifecycle (`start`, `accept`, `decline`, `hangUp`), live captions and the analysed result. It must render inside `<ConversationProvider>` from `@elevenlabs/react`. |
+| `useSimulatedCall()` | The call lifecycle (`start`, `accept`, `decline`, `hangUp`, `cancel` while connecting), live captions and the analysed result. It must render inside `<ConversationProvider>` from `@elevenlabs/react`. |
 
 Simulation ids are unguessable, so they're safe to put in results URLs.
 

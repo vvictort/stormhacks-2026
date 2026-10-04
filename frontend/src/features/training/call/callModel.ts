@@ -8,7 +8,7 @@ import type { CallScenario } from '../scenarios.ts'
 export type CallScreen =
   | 'idle' | 'starting' | 'ringing' | 'connecting' | 'active' | 'analyzing'
   | 'ended' | 'declined' | 'missed'
-  | 'mic_denied' | 'mic_unavailable' | 'insecure' | 'comms_unavailable' | 'voice_unavailable' | 'failed'
+  | 'mic_denied' | 'mic_unavailable' | 'insecure' | 'comms_unavailable' | 'voice_unavailable' | 'not_connected' | 'failed'
 
 // The API unreachable or broken: fetch failed, a 5xx without a JSON body (a dev proxy with the API down answers 500),
 // or the API's own 503 SERVICE_UNAVAILABLE (e.g. the database is down while looking up a generated scenario).
@@ -31,6 +31,8 @@ export function callScreen({ phase, callId, error, result }: { phase: CallPhase;
       return 'ringing'
     case 'error':
       if (error?.startsWith('elevenlabs_')) return 'voice_unavailable'
+      // The user cancelled a call stuck connecting, or it timed out (useSimulatedCall).
+      if (error === 'connect_cancelled' || error === 'connect_timeout') return 'not_connected'
       if (!callId && error && COMMS_DOWN.test(error)) return 'comms_unavailable'
       return 'failed'
   }
@@ -38,7 +40,7 @@ export function callScreen({ phase, callId, error, result }: { phase: CallPhase;
 
 /** Live voice can't happen (or just failed): offer the caption-only practice mode instead. */
 export const offersPractice = (screen: CallScreen) =>
-  ['mic_denied', 'mic_unavailable', 'insecure', 'comms_unavailable', 'voice_unavailable', 'failed'].includes(screen)
+  ['mic_denied', 'mic_unavailable', 'insecure', 'comms_unavailable', 'voice_unavailable', 'not_connected', 'failed'].includes(screen)
 
 /** A practice-mode choice, scored with the same contract table as a live call. */
 export function practiceResult(action: 'hang_up' | 'comply' | 'decline'): CallResult {

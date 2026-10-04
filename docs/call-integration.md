@@ -146,5 +146,9 @@ The simulated text and call routes are listed in [`backend/README.md`](../backen
 - When ElevenLabs isn't configured (`503 elevenlabs_not_configured`) or the API is unreachable, the call scenario stays
   usable through a clearly labelled caption-only practice mode; those local demo results are stored in localStorage only.
   Switching to practice from a ringing call, or leaving the page while it rings, abandons the call first.
+- A call that never connects (no `onConnect` and no error) shows **Cancel** on the connecting screen, and gives up by
+  itself 20 s after the microphone check. Either one abandons the call if the accept hasn't landed (an
+  `409 not_ringing` falls back to `/ended`), or sends `/ended` without a connected conversation so the server
+  completes it unscored as `error`; then the failure screen offers caption-only practice.
 - Frontend call metadata (`frontend/src/features/training/callScenarios.ts`: title, caller label, difficulty, tactics)
   matches the fixture with the same id; `frontend/tests/call.test.mjs` fails on drift.

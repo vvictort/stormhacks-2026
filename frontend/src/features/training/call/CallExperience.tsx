@@ -110,7 +110,7 @@ function CallStage({ scenario, progress, record }: Props) {
               <LiveCallScreen scenario={scenario} screen={screen} callerLabel={callerLabel} captions={call.captions}
                 agentSpeaking={call.agentSpeaking} durationSecs={call.record?.durationSecs}
                 onStart={() => void call.start(scenario.id)} onAccept={() => void call.accept()} onDecline={() => void call.decline()}
-                onHangUp={call.hangUp} onRetry={() => void (call.phase === 'ringing' ? call.accept() : call.start(scenario.id))}
+                onHangUp={call.hangUp} onCancel={call.cancel} onRetry={() => void (call.phase === 'ringing' ? call.accept() : call.start(scenario.id))}
                 onPractice={startPractice} />
             )}
         </PhoneFrame>

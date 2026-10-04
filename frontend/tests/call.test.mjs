@@ -112,6 +112,8 @@ test('callScreen maps each hook state to a phone screen', () => {
   assert.equal(screen('error', 'scenario_not_found', { callId: null }), 'failed')
   assert.equal(screen('error', 'network_error'), 'failed', 'a network error after the call began is not "comms unavailable"')
   assert.equal(screen('error', 'conversation_mismatch'), 'failed')
+  assert.equal(screen('error', 'connect_cancelled'), 'not_connected')
+  assert.equal(screen('error', 'connect_timeout'), 'not_connected')
   assert.equal(screen('completed', null, { result: { outcome: 'declined', success: true } }), 'declined')
   assert.equal(screen('completed', null, { result: { outcome: 'missed', success: true } }), 'missed')
   assert.equal(screen('completed', null, { result: { outcome: 'resisted', success: true } }), 'ended')
@@ -119,7 +121,7 @@ test('callScreen maps each hook state to a phone screen', () => {
 })
 
 test('caption-only practice is offered only when live voice is unavailable or failed', () => {
-  for (const s of ['comms_unavailable', 'voice_unavailable', 'mic_denied', 'mic_unavailable', 'insecure', 'failed']) assert.equal(offersPractice(s), true, s)
+  for (const s of ['comms_unavailable', 'voice_unavailable', 'mic_denied', 'mic_unavailable', 'insecure', 'not_connected', 'failed']) assert.equal(offersPractice(s), true, s)
   for (const s of ['idle', 'starting', 'ringing', 'connecting', 'active', 'analyzing', 'ended', 'declined', 'missed']) assert.equal(offersPractice(s), false, s)
 })
 
