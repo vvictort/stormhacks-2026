@@ -9,7 +9,6 @@ import {
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { TransitionLink } from '../../../components/TransitionLink'
-import { spring } from '../../../lib/motion'
 import type { Progress } from '../progress'
 import { timeline } from '../progress'
 import { getCachedScenarioMeta } from '../scenarioCache'

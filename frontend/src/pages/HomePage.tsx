@@ -273,12 +273,6 @@ export function HomePage() {
               <ResultsSummary
                 progress={progress}
                 saved={callSync !== 'unavailable'}
-                onMissed={() =>
-                  setParams(
-                    { tab: 'history', status: 'missed' },
-                    { replace: true },
-                  )
-                }
               />
               <InstinctsCard uid={user?.uid} />
               <ScamProfileCard uid={user?.uid} />
@@ -369,7 +363,7 @@ function ResultsSummary({
           {done} of {total} scenarios tried
         </span>
         {missed ? (
-          <Link className="text-link" to="/home?tab=library&status=missed">
+          <Link className="text-link" to="/home?tab=history&status=missed">
             {missed} to revisit
             <ArrowRight size={13} aria-hidden="true" />
           </Link>
