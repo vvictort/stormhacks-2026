@@ -1,0 +1,35 @@
+{
+  "name": "scam-training-data-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "tsx watch app/main.ts",
+    "build": "tsc",
+    "start": "node dist/app/main.js",
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx app/db/migrate.ts",
+    "seed": "tsx app/db/seed.ts",
+    "demo": "tsx app/db/demo.ts",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "~6.0.2"
+  }
+}

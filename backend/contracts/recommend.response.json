@@ -1,0 +1,11 @@
+{
+  "patternId": "928c32b3-e0c6-5de6-9b7e-8b17360dbf96",
+  "channel": "call",
+  "difficulty": "beginner",
+  "targetedTactics": [
+    "suspicious_links"
+  ],
+  "explanation": "Explore a less-tested tactic",
+  "engineVersion": "rules-v1",
+  "randomSeed": 42
+}
