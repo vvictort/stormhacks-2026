@@ -12,7 +12,10 @@ import { withPreamble } from './preamble.ts';
 /** Give up waiting for ElevenLabs' post-call analysis after this long. */
 const ANALYSIS_TIMEOUT_MS = 90_000;
 const POLL_DELAYS_MS = [2000, 3000, 5000, 5000, 10_000];
-/** A call still ringing after this long (tab closed) is marked missed. */
+/**
+ * A call still ringing after this long was given up by the browser (tab closed, or stuck on a voice/mic error), not
+ * missed: the browser's own ring timer reports real misses. It is abandoned, so it never becomes a scored attempt.
+ */
 const RING_ABANDON_MS = 2 * 60_000;
 /** An accepted call never reported as ended (tab closed) is analyzed after max duration + this grace. */
 const IN_CALL_GRACE_MS = 60_000;
@@ -110,6 +113,23 @@ export class CallService {
     return call;
   }
 
+  /**
+   * The browser gave up on a ringing call (switched to caption practice after a voice or microphone failure, or left
+   * the page). It completes as an unscored `error` and is not posted to the backend: nothing was practised.
+   */
+  async abandon(callId: string): Promise<CallRecord | 'not_found' | 'wrong_state'> {
+    if (!(await this.store.getCall(callId))) return 'not_found';
+    const { call, result: abandoned } = await this.store.updateCall(callId, (c) => {
+      if (c.status !== 'ringing') return false;
+      completeAs(c, 'error');
+      c.error = 'abandoned';
+      return true;
+    });
+    if (!abandoned) return 'wrong_state';
+    await this.events.emit(callEvent('call.abandoned', call, { ringMs: Date.now() - Date.parse(call.createdAt) }));
+    return call;
+  }
+
   /** The browser's voice session connected: bind its conversation id if the token didn't provide one. */
   async connected(callId: string, conversationId: string): Promise<CallRecord | 'not_found' | 'wrong_state' | 'conversation_mismatch'> {
     if (!(await this.store.getCall(callId))) return 'not_found';
@@ -144,7 +164,7 @@ export class CallService {
   async sweep() {
     const now = Date.now();
     for (const c of await this.store.listCallsByStatus('ringing')) {
-      if (now - Date.parse(c.createdAt) >= RING_ABANDON_MS) await this.decline(c.id, 'missed');
+      if (now - Date.parse(c.createdAt) >= RING_ABANDON_MS) await this.abandon(c.id);
     }
     for (const c of await this.store.listCallsByStatus('in_call')) {
       if (now - Date.parse(c.acceptedAt!) >= config.CALL_MAX_SECONDS * 1000 + IN_CALL_GRACE_MS) await this.ended(c.id);

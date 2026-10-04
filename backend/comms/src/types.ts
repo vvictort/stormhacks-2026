@@ -173,6 +173,7 @@ export type CommsEventType =
   | 'call.accepted'
   | 'call.declined'
   | 'call.missed'
+  | 'call.abandoned'
   | 'call.ended'
   | 'call.analyzed'
   | 'call.failed';

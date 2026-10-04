@@ -17,7 +17,7 @@ interface CallDeps {
   getUserId: GetUserId;
 }
 
-/** /comms/calls: simulated scam calls (ringing, accept, decline, connected, ended). */
+/** /comms/calls: simulated scam calls (ringing, accept, decline, abandon, connected, ended). */
 export function callsRouter({ calls, samples, backend, getUserId }: CallDeps) {
   const router = Router();
 
@@ -64,6 +64,18 @@ export function callsRouter({ calls, samples, backend, getUserId }: CallDeps) {
     }
     const { reason } = Decline.parse(req.body ?? {});
     const result = await calls.decline(req.params.id, reason);
+    if (result === 'not_found') res.status(404).json({ error: 'not_found' });
+    else if (result === 'wrong_state') res.status(409).json({ error: 'not_ringing' });
+    else res.json(result);
+  });
+
+  // Ringing only: the browser gave up on the call (caption practice, left the page). Unscored and never posted.
+  router.post('/:id/abandon', async (req, res) => {
+    if (!(await ownCall(req, req.params.id))) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
+    const result = await calls.abandon(req.params.id);
     if (result === 'not_found') res.status(404).json({ error: 'not_found' });
     else if (result === 'wrong_state') res.status(409).json({ error: 'not_ringing' });
     else res.json(result);
