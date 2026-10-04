@@ -1,21 +1,22 @@
 {
   "compilerOptions": {
-    "target": "es2023",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "lib": ["ES2023"],
     "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-
-    "module": "nodenext",
+    "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-
-    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["app", "tests"]
+  "include": ["app", "personalization", "tests", "*.ts"],
+  "exclude": ["comms", "node_modules"]
 }

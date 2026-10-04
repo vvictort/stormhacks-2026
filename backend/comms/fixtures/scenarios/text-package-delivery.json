@@ -1,0 +1,14 @@
+{
+  "userId": "dev-user",
+  "scenario": {
+    "id": "pkg-redelivery-fee-1",
+    "title": "Missed parcel redelivery fee",
+    "tactics": ["urgency", "suspicious_link"],
+    "difficulty": 1,
+    "senderLabel": "+1 (236) 555-0142",
+    "openingMessage": "PostNorth: Your parcel CA4471-X could not be delivered due to an unpaid $1.99 redelivery fee. Pay within 24h to avoid return to sender: {{link}}",
+    "linkDisplayUrl": "postnorth-redelivery.info/pay",
+    "persona": "Automated courier notice. If the user replies, a 'support agent' insists the fee is mandatory, adds urgency, and keeps pushing the payment link.",
+    "maxTurns": 4
+  }
+}
