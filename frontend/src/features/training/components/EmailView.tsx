@@ -7,7 +7,7 @@ interface EmailViewProps {
   scenario: EmailScenario
   /** After a decision, indicators are marked and sender details open. */
   revealed: boolean
-  onInspect: () => void
+  onInspect: (target: 'link' | 'sender', url?: string) => void
 }
 
 export function EmailView({ scenario, revealed, onInspect }: EmailViewProps) {
@@ -21,7 +21,7 @@ export function EmailView({ scenario, revealed, onInspect }: EmailViewProps) {
       <div className="email-view" role="region" aria-label="Email" tabIndex={0}>
         <h2 className="email-subject"><span className="sr-only">Email: </span>{mark(scenario.subject)}</h2>
         {/* Remount on reveal so the details open to show any marked address. */}
-        <SenderDetails key={String(revealed)} scenario={scenario} defaultOpen={revealed} mark={mark} />
+        <SenderDetails key={String(revealed)} scenario={scenario} defaultOpen={revealed} mark={mark} onOpen={() => onInspect('sender')} />
         <div className="email-body">
           {scenario.body.map((paragraph, i) => <p key={i}>{mark(paragraph)}</p>)}
         </div>
@@ -42,10 +42,11 @@ interface SenderProps {
   scenario: EmailScenario
   defaultOpen: boolean
   mark: (text: string) => ReactNode
+  onOpen: () => void
 }
 
 /** Like a real mail app: the name shows first, tap it to see the address it really came from. */
-function SenderDetails({ scenario, defaultOpen, mark }: SenderProps) {
+function SenderDetails({ scenario, defaultOpen, mark, onOpen }: SenderProps) {
   const [open, setOpen] = useState(defaultOpen)
   const panel = useId()
 
@@ -54,7 +55,7 @@ function SenderDetails({ scenario, defaultOpen, mark }: SenderProps) {
       <div className="email-from">
         <span className="phone-avatar" aria-hidden="true">{scenario.fromName[0]}</span>
         <div>
-          <button type="button" className="email-sender" aria-expanded={open} aria-controls={panel} onClick={() => setOpen(!open)}>
+          <button type="button" className="email-sender" aria-expanded={open} aria-controls={panel} onClick={() => { if (!open) onOpen(); setOpen(!open) }}>
             <span className="sr-only">From </span>{scenario.fromName}
             <ChevronDown size={16} aria-hidden="true" />
             <span className="sr-only">, show sender details</span>

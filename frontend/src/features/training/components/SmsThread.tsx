@@ -8,7 +8,7 @@ interface ThreadProps {
   scenario: SmsScenario
   /** After a decision, indicators are marked in the text. */
   revealed: boolean
-  onInspect: () => void
+  onInspect: (target: 'link' | 'sender', url?: string) => void
 }
 
 /** How many messages have "arrived". Each one is preceded by a typing indicator, like a real phone. */
@@ -56,7 +56,7 @@ interface BubbleProps {
   message: SmsMessage
   indicators: Indicator[]
   clueLabel: string
-  onInspect: () => void
+  onInspect: ThreadProps['onInspect']
 }
 
 export function MessageBubble({ message, indicators, clueLabel, onInspect }: BubbleProps) {
@@ -90,7 +90,7 @@ function Clue({ n, label, children }: { n: number; label: string; children: stri
 }
 
 /** A link you can inspect but never follow: it is a button, not an anchor. */
-export function LinkPreview({ url, mark, clueLabel, onInspect }: { url: string; mark?: number; clueLabel: string; onInspect: () => void }) {
+export function LinkPreview({ url, mark, clueLabel, onInspect }: { url: string; mark?: number; clueLabel: string; onInspect: ThreadProps['onInspect'] }) {
   const [open, setOpen] = useState(false)
   const panel = useId()
 
@@ -102,7 +102,7 @@ export function LinkPreview({ url, mark, clueLabel, onInspect }: { url: string; 
         aria-expanded={open}
         aria-controls={panel}
         onClick={() => {
-          if (!open) onInspect()
+          if (!open) onInspect('link', url)
           setOpen(!open)
         }}
       >
