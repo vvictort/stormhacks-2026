@@ -12,6 +12,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   const headers = new Headers(init.headers)
   headers.set('Authorization', `Bearer ${await user.getIdToken()}`)
+  if (init.body) headers.set('Content-Type', 'application/json')
   const response = await fetch(`/api${path}`, { ...init, headers })
 
   if (response.status === 401) await signOut(auth)
