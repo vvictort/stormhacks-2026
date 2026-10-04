@@ -1,9 +1,10 @@
 import type { Progress } from './progress.ts'
-import { scenarios, type Difficulty, type EmailScenario, type MessageScenario, type Scenario } from './scenarios.ts'
+import { isScored, type CallResult } from './callOutcome.ts'
+import { scenarios, type Channel, type Difficulty, type EmailScenario, type Scenario } from './scenarios.ts'
 
 export const badges = [
   { id: 'first-steps', name: 'First Steps', condition: 'Complete all three scenarios in a mission.' },
-  { id: 'good-catch', name: 'Good Catch', condition: 'Correctly report a scam text or email.' },
+  { id: 'good-catch', name: 'Good Catch', condition: 'Report a scam message or resist a scam call.' },
   { id: 'comeback', name: 'Comeback', condition: 'Get a scenario right after missing it on your last try.' },
 ] as const
 export type BadgeId = typeof badges[number]['id']
@@ -27,20 +28,21 @@ export const missionComplete = (mission: Mission) => mission.completed.length ==
 export const missionNext = (mission: Mission) => mission.scenarioIds.find(id => !mission.completed.includes(id))
 export const missionUrl = (mission: Mission, scenarioId = missionNext(mission)) => `/train/${encodeURIComponent(scenarioId!)}?mission=${encodeURIComponent(mission.id)}`
 
-/** Choose two scams and a genuine message at the nearest available difficulty; keep the order varied. */
+/** One of each channel, with one genuine message, near the learner's difficulty and in varied order. */
 export function createMission(progress: Progress, difficulty: Difficulty, id: string, list: Scenario[] = scenarios): Mission {
   const levels = ['easy', 'medium', 'hard']
-  const pick = (type: 'email' | 'sms' | null, action: 'report' | 'safe') => {
-    const candidates = list.filter((s): s is MessageScenario => s.type !== 'call' && (!type || s.type === type) && s.correctAction === action)
+  const pick = (type: Channel, action?: 'report' | 'safe') => {
+    const candidates = list.filter(s => s.type === type && (s.type === 'call' || s.correctAction === action))
     candidates.sort((a, b) => {
-      const rank = (s: MessageScenario) => Math.abs(levels.indexOf(s.difficulty) - levels.indexOf(difficulty)) * 3 + (progress[s.id]?.correct ? 2 : progress[s.id] ? 1 : 0)
+      const rank = (s: Scenario) => Math.abs(levels.indexOf(s.difficulty) - levels.indexOf(difficulty)) * 3 + (progress[s.id]?.correct ? 2 : progress[s.id] ? 1 : 0)
       return rank(a) - rank(b)
     })
     if (!candidates.length) throw new Error('Practice scenarios are unavailable.')
     return candidates[0].id
   }
-  const ids = [pick('email', 'report'), pick('sms', 'report'), pick(null, 'safe')]
   const rotation = [...id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 3
+  const genuineEmail = rotation === 1
+  const ids = [pick('email', genuineEmail ? 'safe' : 'report'), pick('sms', genuineEmail ? 'report' : 'safe'), pick('call')]
   return { id, scenarioIds: [...ids.slice(rotation), ...ids.slice(0, rotation)], completed: [], ready: false }
 }
 
@@ -49,11 +51,15 @@ export function prepareMission(state: Adventure, missionId: string, generated?: 
   const mission = state.mission
   if (!mission || mission.id !== missionId || mission.ready) return state
   const scenarioIds = [...mission.scenarioIds]
+  let selectedEmail: EmailScenario | undefined
   if (generated) {
     const index = scenarioIds.findIndex(id => scenarios.some(s => s.id === id && s.type === 'email' && s.correctAction === 'report'))
-    if (index >= 0) scenarioIds[index] = generated.id
+    if (index >= 0) {
+      scenarioIds[index] = generated.id
+      selectedEmail = generated
+    }
   }
-  return { ...state, mission: { ...mission, scenarioIds, ready: true, ...(generated ? { generated } : {}) } }
+  return { ...state, mission: { ...mission, scenarioIds, ready: true, ...(selectedEmail ? { generated: selectedEmail } : {}) } }
 }
 
 export interface AdventureResult {
@@ -83,6 +89,12 @@ export function completeAdventure(state: Adventure, result: AdventureResult): Ad
   return { ...state, mission, completedMissions, earned, tipSeen: true, processed: [...state.processed, result.attemptId].slice(-128) }
 }
 
+/** Errors never consume a step. Resisting earns Good Catch; declining/ringing out still completes the call. */
+export function completeCallAdventure(state: Adventure, result: Omit<AdventureResult, 'correct' | 'scam'> & { result: CallResult | null }): Adventure {
+  if (!isScored(result.result)) return state
+  return completeAdventure(state, { ...result, correct: result.result.success, scam: result.result.outcome === 'resisted' })
+}
+
 export function readAdventure(raw: string | null): Adventure | null {
   try {
     if (!raw) return null
@@ -98,7 +110,7 @@ export function readAdventure(raw: string | null): Adventure | null {
         const fields = ['title', 'summary', 'situation', 'fromName', 'fromAddress', 'subject', 'receivedAt', 'explanation', 'nextTime']
         if (g.type !== 'email' || typeof g.id !== 'string' || !g.id.startsWith('gen-email-') || g.correctAction !== 'report' || !['easy', 'medium', 'hard'].includes(g.difficulty) || !strings(g.body) || !g.body.length || fields.some(key => typeof g[key] !== 'string') || !Array.isArray(g.indicators) || g.indicators.some((i: { title?: unknown; detail?: unknown; quote?: unknown } | null) => !i || typeof i.title !== 'string' || typeof i.detail !== 'string' || (i.quote !== undefined && typeof i.quote !== 'string')) || (g.links !== undefined && !strings(g.links))) return null
       }
-      if (m.scenarioIds.some((id: string) => id !== m.generated?.id && !scenarios.some(s => s.id === id && s.type !== 'call'))) return null
+      if (m.scenarioIds.some((id: string) => id !== m.generated?.id && !scenarios.some(s => s.id === id))) return null
     }
     return s as Adventure
   } catch { return null }

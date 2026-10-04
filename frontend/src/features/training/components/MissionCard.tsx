@@ -10,7 +10,7 @@ import { updateAdventure, useAdventure } from '../adventureStore'
 import { generateScenario } from '../generate'
 import { badges, createMission, missionComplete, missionNext, missionUrl, prepareMission, type BadgeId, type Mission } from '../missions'
 import type { Progress } from '../progress'
-import { type Difficulty } from '../scenarios'
+import { getScenario, type Difficulty } from '../scenarios'
 import './missions.css'
 
 export function MissionProgress({ mission, currentId }: { mission?: Mission | null; currentId?: string }) {
@@ -82,6 +82,7 @@ export function MissionCard({ uid, progress, adaptive, difficulty, loading }: { 
   const mission = state.mission
   const complete = mission && missionComplete(mission)
   const next = nextForYou(adaptive, difficulty)
+  const includesCalls = !mission || mission.scenarioIds.some(id => getScenario(id)?.type === 'call')
 
   function open(m: Mission) {
     withViewTransition('forward', () => navigate(missionUrl(m)))
@@ -95,6 +96,16 @@ export function MissionCard({ uid, progress, adaptive, difficulty, loading }: { 
     }
     if (selected.ready) return open(selected)
     const missionId = selected.id
+    // A mission with a genuine library email is already complete as a selection; keep that genuine message.
+    const hasScamEmail = selected.scenarioIds.some(id => {
+      const scenario = getScenario(id)
+      return scenario?.type === 'email' && scenario.correctAction === 'report'
+    })
+    if (!hasScamEmail) {
+      const prepared = updateAdventure(uid, previous => prepareMission(previous, missionId))
+      if (prepared.mission?.id === missionId) open(prepared.mission)
+      return
+    }
     const controller = new AbortController()
     request.current = controller
     setPending(true)
@@ -119,18 +130,18 @@ export function MissionCard({ uid, progress, adaptive, difficulty, loading }: { 
   return <>
     <section className={`mission-card${complete ? ' is-complete' : ''}`} aria-labelledby="mission-title">
       <div className="mission-card-heading">
-        <div><p className="mission-eyebrow">Three messages. A few careful decisions.</p>
+        <div><p className="mission-eyebrow">Three scenarios. A few careful decisions.</p>
           <h2 id="mission-title">{complete ? 'Mission accomplished.' : mission?.completed.length ? 'Pick up where you left off.' : 'Your next mission'}</h2></div>
         <div className={`mission-mascot${complete ? ' is-celebrating' : ' is-waving'}`}><Mascot mood={complete ? 'happy' : 'curious'} /></div>
       </div>
-      <p className="mission-objective">{complete ? 'You made time to practise. That’s how good habits stick.' : 'Read the message, check the details, then decide what you’d do.'}</p>
+      <p className="mission-objective">{complete ? 'You made time to practise. That’s how good habits stick.' : includesCalls ? 'Read a text, investigate an email, and handle a caller. Make the call on what you’d do.' : 'Read the message, check the details, then decide what you’d do.'}</p>
       <MissionProgress mission={mission} />
       <div className="mission-focus"><span>{loading ? 'Finding your next focus…' : next.title.replace(/, made for you$/, '')}</span><span>{levelName(next.difficulty)} practice</span></div>
       <div className="mission-start">
         <button type="button" className="train-primary" disabled={pending || !uid} aria-busy={pending} onClick={() => void start()}>
           {pending ? <><LoaderCircle size={17} className="spinner" aria-hidden="true" />Preparing your mission…</> : <>{failure ? 'Retry' : complete ? 'Start another mission' : mission ? 'Continue mission' : 'Start mission'}<ArrowRight size={17} aria-hidden="true" /></>}
         </button>
-        <span>Texts &amp; emails</span>
+        <span>{includesCalls ? 'Text, email & call' : 'Texts & emails'}</span>
       </div>
       <p className="mission-loading" role="status">{pending ? 'Writing a personal email. Your three selected scenarios are saved.' : ''}</p>
       {failure && <p className="mission-error" role="alert">{failure}</p>}

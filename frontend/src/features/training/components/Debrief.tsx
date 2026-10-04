@@ -60,7 +60,7 @@ export function Debrief({ scenario, choice, confidence, flagScore, inspectedLink
     </div>}
     {habits.length > 0 && <div className="debrief-habits"><h3>Checks you made</h3><ul>{habits.map(habit => <li key={habit} className="debrief-habit">{habit}</li>)}</ul></div>}
     <NewBadges ids={earnedNow} />
-    {complete && <p className="debrief-mission-complete" role="status"><strong>Mission accomplished.</strong>Three messages investigated. Ready for your next adventure?</p>}
+    {complete && <p className="debrief-mission-complete" role="status"><strong>Mission accomplished.</strong>Three scenarios completed. Ready for your next adventure?</p>}
     <p className="debrief-tip"><strong>For next time</strong>{scenario.nextTime}</p>
 
     <div className="debrief-actions">

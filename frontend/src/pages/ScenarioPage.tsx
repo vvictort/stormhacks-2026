@@ -75,9 +75,14 @@ function ScenarioIntro({ scenario, embedded = false }: { scenario: Scenario; emb
 function CallRun({ scenario }: { scenario: CallScenario }) {
   const { user } = useAuth()
   const { progress, record } = useProgress(user?.uid)
+  const adventure = useAdventure(user?.uid)
+  const [params] = useSearchParams()
+  const mission = adventure.mission?.id === params.get('mission') ? adventure.mission : null
   return (
     <main className="scenario-main">
-      <ScenarioIntro scenario={scenario} />
+      <div className="scenario-intro"><ScenarioIntro scenario={scenario} embedded />
+        {mission && <div className="mission-run"><p>{missionComplete(mission) ? 'Mission complete. Every decision counts.' : 'Your three-scenario mission'}</p><MissionProgress mission={mission} currentId={scenario.id} /></div>}
+      </div>
       <CallChunkBoundary>
         <Suspense fallback={<CallLoading />}>
           <CallExperience uid={user?.uid} scenario={scenario} progress={progress} record={record} />
@@ -197,7 +202,7 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
     <main className="scenario-main">
       <div className="scenario-intro">
         <ScenarioIntro scenario={scenario} embedded />
-        {mission && <div className="mission-run"><p>{missionComplete(mission) ? 'Mission complete. Every decision counts.' : 'Your three-message mission'}</p><MissionProgress mission={mission} currentId={scenario.id} /></div>}
+        {mission && <div className="mission-run"><p>{missionComplete(mission) ? 'Mission complete. Every decision counts.' : 'Your three-scenario mission'}</p><MissionProgress mission={mission} currentId={scenario.id} /></div>}
         {!choice && !adventure.tipSeen && <aside className="practice-tip" aria-label="How to practise"><p><strong>A quick tip</strong>Tap suspicious phrases, inspect the sender or link, then decide. Your selections are checked after you answer.</p><button type="button" className="text-link" onClick={() => updateAdventure(user?.uid, state => ({ ...state, tipSeen: true }))}>Got it</button></aside>}
       </div>
 

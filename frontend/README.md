@@ -29,9 +29,11 @@ The profile provider clears displayed data when account identities differ and ig
 
 ## Missions and badges
 
-Missions select three texts/emails near the learner's current difficulty. The selection is saved before a personal email is generated; preparation can be retried, or the learner can keep the selected library email. Wrong decisions still complete a step. Mission routes use `/train/:scenarioId?mission=<id>`, so standalone practice does not advance a mission. Calls stay standalone.
+New missions select three scenarios near the learner's current difficulty: one email, one text, and one scam call, in varied order. The genuine message varies between email and text. Existing text/email missions keep their selected scenarios and progress. The selection is saved before a personal scam email is generated; preparation can be retried, or the learner can keep the selected library email. Missions with a genuine email open directly using that library scenario. Wrong decisions still complete a step. Mission routes use `/train/:scenarioId?mission=<id>`, so standalone practice does not advance a mission.
 
-First Steps rewards a completed mission, Good Catch a correctly reported scam message, and Comeback a correct answer after the same scenario was missed on the last attempt. Each badge is awarded once. The debrief leads with the result, phrase checks, useful habits, a practical takeaway, and Continue mission; explanations remain expandable.
+Scored live and caption-only calls both complete their mission step once, including compromised results. Declined and missed calls follow the existing success contract; errors do not consume a step and offer retry/captions. Live results are awarded after the debrief resolves the saved attempt or call record. First Steps rewards a completed mission, Good Catch a correctly reported scam message or resisted call, and Comeback a correct answer after the same scenario was missed on the last attempt. Each badge is awarded once. Mission debriefs show Continue mission or See your mission rewards.
+
+Home's standalone practice picker offers one-click text practice and generated emails/calls with loading announcements and library fallbacks. Pending generation is cancelled on unmount/account switching.
 
 Mission selection, completed steps, the active generated email, badge timestamps, and the dismissed practice tip are stored per account under `tellio.adventure.v1.<uid>` in this browser. Blocked storage falls back to memory. These rewards do not sync across devices; the UI labels this explicitly. Existing backend attempts and analytics continue unchanged.
 
