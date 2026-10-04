@@ -28,7 +28,7 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
     // Part of Insights' numbers, right after the results: a sub-block, not a card of its own.
     <section className="home-instincts" aria-labelledby="instincts-title">
       {/* What's compared sits by the heading, so the then → now numbers read right. */}
-      <div className="home-stat-head"><h3 id="instincts-title">Speed and trend</h3>{view && <span>{view.note}</span>}</div>
+      <div className="home-stat-head"><h2 id="instincts-title">Speed and trend</h2>{view && <span>{view.note}</span>}</div>
       {!view
         ? <p>Finish a couple of scenarios and Tellio will start timing your instincts.</p>
         : (

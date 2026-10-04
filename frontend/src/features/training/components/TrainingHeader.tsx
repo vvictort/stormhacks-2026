@@ -1,11 +1,12 @@
 import { LoaderCircle, LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Brand } from '../../../components/Brand'
 import { useAuth } from '../../auth/AuthContext'
 import { confirmNavigation } from '../../../lib/navigationGuard'
 import '../training.css'
 
-export function TrainingHeader() {
+/** `children`: Home's nav. Scenario pages leave it out, so nothing competes with the practice phone. */
+export function TrainingHeader({ children }: { children?: ReactNode }) {
   const { logout, pending, error } = useAuth()
   const [failed, setFailed] = useState(false)
   const signingOut = pending === 'signout'
@@ -20,6 +21,7 @@ export function TrainingHeader() {
   return (
     <header className="train-header">
       <Brand to="/home" />
+      {children}
       <div className="train-header-actions">
         {failed && error && <p className="train-header-error" role="alert">{error}</p>}
         <button type="button" className="train-ghost" onClick={() => void signOut()} disabled={Boolean(pending)} aria-busy={signingOut} title="Sign out">

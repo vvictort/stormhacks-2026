@@ -4,9 +4,10 @@
 .onboarding-signout { display: flex; gap: 7px; margin: 22px auto 0; font-size: 12px; }
 .profile-error { width: min(440px, calc(100% - 40px)); margin: 25vh auto; text-align: center; }
 .profile-error > .text-link { margin-top: 20px; }
-.profile-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--color-border); background: var(--color-surface); padding: 18px; border-radius: 12px; margin: 24px 0; font-size: 12px; }
-.profile-summary span { display: block; color: var(--color-muted-strong); font-size: 11px; margin-top: 7px; overflow-wrap: anywhere; }
-.profile-summary .text-link { flex-shrink: 0; }
+.profile-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: var(--space-section, 48px); padding-top: 16px; border-top: 1px solid var(--color-border); font-size: 14px; }
+.home-more + .profile-summary { margin-top: 0; }
+.profile-summary span { display: block; color: var(--color-muted-strong); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
+.profile-summary .text-link { flex-shrink: 0; min-height: 44px; }
 @media(max-width: 540px) { .profile-summary { align-items: flex-start; flex-direction: column; } }
 
 @theme {

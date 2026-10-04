@@ -1,6 +1,7 @@
 import { ArrowRight, LoaderCircle, Phone } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Mascot } from '../../../components/Mascot'
 import { TellIcon } from '../../../components/TellIcon'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { api } from '../../../lib/api'
@@ -45,8 +46,8 @@ export function MadeForYouActions({ difficulty, label, withCall = false }: { dif
           {pending === 'email' ? <><LoaderCircle size={17} className="spinner" aria-hidden="true" />Writing your email…</> : <>{label}<ArrowRight size={17} aria-hidden="true" /></>}
         </button>
         {withCall && (
-          <button type="button" className="train-ghost" onClick={() => void start('call')} disabled={pending !== null} aria-busy={pending === 'call'}>
-            {pending === 'call' ? <LoaderCircle size={17} className="spinner" aria-hidden="true" /> : <Phone size={16} aria-hidden="true" />}
+          <button type="button" className="text-link made-for-you-call" onClick={() => void start('call')} disabled={pending !== null} aria-busy={pending === 'call'}>
+            {pending === 'call' ? <LoaderCircle size={16} className="spinner" aria-hidden="true" /> : <Phone size={15} aria-hidden="true" />}
             {pending === 'call' ? 'Setting up your call…' : 'Take a call made for you'}
           </button>
         )}
@@ -65,18 +66,18 @@ export function MadeForYouActions({ difficulty, label, withCall = false }: { dif
 export function NextForYou({ adaptive, localLevel, loading }: { adaptive: Adaptive | null; localLevel: Difficulty; loading: boolean }) {
   const next = nextForYou(adaptive, localLevel)
   return (
-    <section className="next-for-you" aria-labelledby="next-title" aria-busy={loading}>
-      <h2 id="next-title"><TellIcon size={18} aria-hidden="true" />Next for you</h2>
+    <section className="next-for-you" aria-label="Next for you" aria-busy={loading}>
+      <Mascot className="next-mascot" mood="curious" />
       {loading
         ? <div className="scam-profile-skeleton" aria-hidden="true"><span /><span /><span /></div>
         : (
           <>
-            <p className="next-title">{next.title}</p>
+            <h2 className="next-title">{next.title}</h2>
             <p>{next.reason}</p>
             <p className="next-level">Difficulty: <strong>{levelName(next.difficulty)}</strong></p>
           </>
         )}
-      <MadeForYouActions difficulty={next.difficulty} label="Start it" withCall />
+      <MadeForYouActions difficulty={next.difficulty} label="Start practice" withCall />
     </section>
   )
 }

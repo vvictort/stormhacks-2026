@@ -21,37 +21,43 @@
 .train-notice-dismiss { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; margin: -11px -10px -11px 0; border-radius: 8px; color: inherit; }
 .train-notice-dismiss:hover { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
 
-/* ---------- Home: one column, three tabs (Practice, History, Insights) ---------- */
-.home-main { width: min(680px, calc(100% - 48px)); margin: 24px auto 72px; }
-.home-title { margin: 8px 0 22px; font-family: var(--font-editorial); font-size: clamp(32px, 3.4vw, 42px); font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
-.home-title:focus { outline: none; }
+/* ---------- Home: one column. Practice leads; Scenarios and Progress are quiet links in the header ----------
+   Rhythm: 8px inside a group, 24px between groups, 48px between sections. */
+.home-main { --space-group: 24px; --space-section: 48px; width: min(680px, calc(100% - 48px)); margin: clamp(24px, 6vh, 64px) auto 96px; }
+.home-title { margin: 0; font-family: var(--font-editorial); font-size: clamp(32px, 3.4vw, 42px); font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
+.home-status { margin-top: 8px; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
 
-/* Segmented control: the home tabs and History's channel filter. */
-.segmented { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); }
-.segmented button { flex: 1; min-height: 40px; padding: 0 12px; border-radius: 9px; color: var(--color-muted-strong); font-size: 14px; font-weight: 600; white-space: nowrap; }
-.segmented button:hover:not([aria-selected="true"], [aria-pressed="true"]) { color: var(--color-foreground); }
-.segmented [aria-selected="true"], .segmented [aria-pressed="true"] { background: var(--color-surface); color: var(--color-foreground); box-shadow: 0 1px 3px #4836261f; }
-.home-tabs { position: sticky; top: 8px; z-index: 2; }
-.home-panel { padding-top: 8px; --rise: 6px; animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
-.home-panel > .next-for-you { margin-top: 20px; }
-.home-panel > .train-notice { margin-top: 20px; }
+/* The current view is the dark one with the underline; the others wait in the muted tone. */
+.home-nav { display: flex; gap: 4px; margin-left: auto; }
+.home-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--color-muted-strong); text-decoration: underline 2px transparent; text-underline-offset: 8px; }
+.home-nav a:hover { color: var(--color-foreground); }
+.home-nav a[aria-current="page"] { color: var(--color-foreground); text-decoration-color: var(--color-primary); }
+
+.home-panel { --rise: 6px; animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
+.home-panel > .train-notice { margin-top: var(--space-group); }
 
 .home-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.home-section-head h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--color-muted-strong); }
+.home-section-head h2 { margin: 0; font-size: 14px; font-weight: 600; color: var(--color-muted-strong); }
 .home-section-head .text-link { min-height: 44px; font-size: 14px; }
-.home-upnext { margin-top: 24px; }
-.home-upnext .path-stops { margin-top: 2px; }
+.home-pick { margin-top: var(--space-section); }
+.home-pick .path-stops { margin-top: 0; }
 
-.home-stats { margin-top: 20px; }
-.home-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; }
-.home-stat-grid > div { display: flex; flex-direction: column; padding: 14px 16px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
-.home-stat-grid dt { font-size: 13px; color: var(--color-muted-strong); }
-.home-stat-grid dd { margin: 4px 0 0; font-family: var(--font-editorial); font-size: 34px; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.home-stat-grid .home-stat-sub { margin-top: auto; padding-top: 6px; font-family: var(--font-sans); font-size: 13px; line-height: 1.4; color: var(--color-muted-strong); }
-.home-stat-grid .is-missed dd:not(.home-stat-sub) { color: var(--color-accent-strong); }
-.home-stat-sub .text-link { min-height: 24px; font-size: 13px; }
-.home-stat-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin: 26px 0 10px; }
-.home-stat-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+/* Segmented control: Scenarios' channel filter. */
+.segmented { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); }
+.segmented button { flex: 1; min-height: 40px; padding: 0 14px; border-radius: 9px; color: var(--color-muted-strong); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.segmented button:hover:not([aria-pressed="true"]) { color: var(--color-foreground); }
+.segmented [aria-pressed="true"] { background: var(--color-surface); color: var(--color-foreground); box-shadow: 0 1px 3px #4836261f; }
+
+/* Progress: one headline rate with its counts in a sentence, then the breakdowns. No boxes. */
+.home-stats { margin-top: var(--space-group); }
+.home-stats > p { font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.home-stats > p + .text-link { min-height: 44px; font-size: 15px; }
+.home-stats .home-rate { display: flex; align-items: baseline; gap: 10px; }
+.home-rate strong { font-family: var(--font-editorial); font-size: 40px; font-weight: 400; line-height: 1; letter-spacing: -0.03em; color: var(--color-foreground); font-variant-numeric: tabular-nums; }
+.home-stats .home-rate-sub { display: flex; flex-wrap: wrap; gap: 2px 20px; margin-top: 8px; font-size: 14px; }
+.home-rate-sub .text-link { font-size: inherit; }
+.home-stat-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin: 32px 0 12px; }
+.home-stat-head h2 { margin: 0; font-size: 14px; font-weight: 600; }
 .home-stat-head span { font-size: 13px; color: var(--color-muted-strong); }
 .home-channels { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .home-channels li { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 7.5rem; align-items: center; gap: 14px; font-size: 14px; }
@@ -61,51 +67,51 @@
 .home-meter span { display: block; height: 100%; border-radius: inherit; background: var(--color-success-strong); transition: width 600ms var(--ease-out-quint); }
 .home-channel-value { text-align: right; color: var(--color-muted-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .home-channel-value strong { color: var(--color-foreground); font-weight: 600; }
-.home-stats > p { font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
-.home-stats .home-saved { margin-top: 10px; font-size: 12px; color: var(--color-muted-strong); }
-
-.home-progress { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border); }
-.home-progress h2 { margin: 0 0 10px; font-family: var(--font-editorial); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
-.home-progress h3 { margin: 22px 0 10px; font-size: 14px; font-weight: 600; }
-.home-progress > p { text-wrap: pretty; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
-.home-progress > p strong { color: var(--color-foreground); font-weight: 600; }
-.home-progress > p + p { margin-top: 8px; }
-.home-progress > p.home-saved { margin-top: 14px; font-size: 13px; }
-.home-flags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.home-flags li { padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)); color: var(--color-primary-strong); font-size: 13px; line-height: 1.4; }
+.home-stats .home-saved { margin-top: 12px; font-size: 12px; }
 .home-recent { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .home-recent li { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--color-surface); }
 .home-recent .is-right { background: var(--color-success-strong); }
 .home-recent .is-missed { background: var(--color-accent-strong); }
 
-/* History: filters, then a flat list of scenario rows (also the Practice tab's "On your path" row). */
-.path { padding-top: 20px; }
-.path-filters { display: grid; gap: 14px; }
-.path-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.path-chips button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-muted-strong); font-size: 13px; font-weight: 500; }
-.path-chips button[aria-pressed="true"] { border-color: var(--color-foreground); background: var(--color-foreground); color: var(--color-surface); }
+/* Neutral tags: a list to glance at, so it carries no accent colour. */
+.home-flags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.home-flags li { padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); font-size: 13px; line-height: 1.4; }
+/* Closed by default: there if you want it, out of the way if you don't. */
+.home-more { margin-top: var(--space-section); border-top: 1px solid var(--color-border); }
+.home-more summary { display: flex; align-items: center; min-height: 52px; cursor: pointer; list-style: none; font-size: 14px; font-weight: 600; }
+.home-more summary::-webkit-details-marker { display: none; }
+.home-more summary span { margin-left: 8px; font-weight: 400; color: var(--color-muted-strong); font-variant-numeric: tabular-nums; }
+.home-more .home-flags { padding-bottom: 20px; }
+
+/* Scenarios: one row of filters, then a flat list of scenario rows (also Practice's library pick). */
+.path { margin-top: var(--space-group); }
+.path-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.path-filters .segmented button { flex: none; }
+/* Pulled out by the chips' own padding, so their labels meet the column's edges. */
+.path-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-inline: -12px; }
+.path-chips button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; color: var(--color-muted-strong); font-size: 13px; font-weight: 500; }
+.path-chips button:hover { color: var(--color-foreground); }
+.path-chips button[aria-pressed="true"] { background: color-mix(in srgb, var(--color-foreground) 8%, transparent); color: var(--color-foreground); }
 .path-chip-count { font-size: 12px; font-variant-numeric: tabular-nums; opacity: .7; }
+@media (pointer: coarse) { .segmented button, .path-chips button { min-height: 44px; } }
 .path-empty { margin-top: 24px; font-size: 15px; color: var(--color-muted-strong); }
 .path-more { width: 100%; margin-top: 12px; }
-.path-stops { display: grid; gap: 2px; margin: 8px 0 0; padding: 0; list-style: none; }
-.path-stop { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; transition: background-color 160ms ease, border-color 160ms ease; }
-/* Hover cards only where hover exists: on touch a stuck card would look like a second "Up next". */
-@media (hover: hover) { .path-stop:hover { background: var(--color-surface); border-color: var(--color-border); } }
-.path-stop.is-upnext { background: var(--color-surface); border-color: var(--color-border); box-shadow: 0 6px 20px #4836260d, 0 1px 3px #48362608; }
+/* Rows hang into the gutter by their own padding, so their text lines up with the column and the hover fill sits behind it. */
+.path-stops { display: grid; gap: 2px; margin: 12px -14px 0; padding: 0; list-style: none; }
+.path-stop { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 12px; transition: background-color 160ms ease; }
+/* Hover fill only where hover exists: on touch it would stick after the tap. */
+@media (hover: hover) { .path-stop:hover { background: var(--color-surface); } }
 .path-stop:has(.path-stop-link:focus-visible) { outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
 .path-dot { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); color: var(--color-muted-strong); }
 .is-right .path-dot { background: var(--color-success-strong); color: var(--color-surface); }
 .is-missed .path-dot { background: var(--color-accent-strong); color: var(--color-surface); }
-.is-upnext .path-dot { background: var(--color-primary-strong); color: var(--color-surface); }
 .path-stop-body { min-width: 0; }
 .path-stop-link { font-size: 15px; font-weight: 600; color: var(--color-foreground); }
 .path-stop-link::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
 .path-stop-link:focus-visible { outline: none; }
 .path-stop-body p { margin-top: 2px; overflow: hidden; font-size: 13px; line-height: 1.45; color: var(--color-muted-strong); text-overflow: ellipsis; white-space: nowrap; }
+/* The dot carries the result's colour; the label stays quiet. */
 .path-status { font-size: 12px; font-weight: 500; color: var(--color-muted-strong); white-space: nowrap; }
-.is-right .path-status { color: var(--color-success-strong); }
-.is-missed .path-status { color: var(--color-accent-strong); }
-.is-upnext .path-status { color: var(--color-primary-strong); }
 
 /* ---------- Scenario ---------- */
 .scenario-main { width: min(1100px, calc(100% - 64px)); margin: 8px auto 64px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); grid-template-rows: auto 1fr; grid-template-areas: "intro phone" "panel phone"; column-gap: clamp(48px, 7vw, 104px); align-items: start; }
@@ -225,8 +231,8 @@
 .debrief-clues summary { display: flex; align-items: center; gap: 12px; min-height: 48px; cursor: pointer; list-style: none; }
 .debrief-clues summary::-webkit-details-marker { display: none; }
 .debrief-clues summary .clue-num { margin: 0; }
-.debrief-clues summary::after { content: ""; flex-shrink: 0; width: 7px; height: 7px; margin: 0 6px 0 auto; border-right: 1.5px solid var(--color-muted-strong); border-bottom: 1.5px solid var(--color-muted-strong); rotate: 45deg; translate: 0 -2px; transition: rotate var(--motion-quick) var(--ease-out-quint), translate var(--motion-quick) var(--ease-out-quint); }
-.debrief-clues details[open] summary::after { rotate: 225deg; translate: 0 2px; }
+.debrief-clues summary::after, .home-more summary::after { content: ""; flex-shrink: 0; width: 7px; height: 7px; margin: 0 6px 0 auto; border-right: 1.5px solid var(--color-muted-strong); border-bottom: 1.5px solid var(--color-muted-strong); rotate: 45deg; translate: 0 -2px; transition: rotate var(--motion-quick) var(--ease-out-quint), translate var(--motion-quick) var(--ease-out-quint); }
+.debrief-clues details[open] summary::after, .home-more[open] summary::after { rotate: 225deg; translate: 0 2px; }
 .debrief-clues details p { margin: -6px 0 0; padding: 0 0 12px 34px; font-size: 13.5px; --rise: -4px; animation: rise-in var(--motion-enter) var(--ease-out-quint); }
 .debrief-next { margin-top: 26px; padding: 14px 16px; border-radius: 10px; background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent); }
 .debrief-next h3 { margin: 0 0 4px; }
@@ -259,12 +265,15 @@
   .train-header { width: calc(100% - 32px); min-height: 72px; }
   .train-header .brand { font-size: 28px; }
   .train-header .train-ghost { padding-inline: 10px; }
+  .train-header:has(.home-nav) { flex-wrap: wrap; row-gap: 0; min-height: 0; padding-top: 14px; }
+  .home-nav { order: 1; flex-basis: 100%; margin: 0 -12px; }
   .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
+  .home-main { --space-section: 40px; margin-top: 24px; }
   .home-title { font-size: 30px; }
-  .segmented button { padding-inline: 8px; }
+  .path-filters .segmented { flex: 1 1 100%; }
+  .path-filters .segmented button { flex: 1; padding-inline: 8px; }
+  .path-stops { margin-inline: -8px; }
   .path-stop { gap: 12px; padding: 10px 8px; }
-  .home-stat-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .home-stat-grid > div:first-child { grid-column: 1 / -1; }
   .home-channels li { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
   .home-meter { grid-column: 1 / -1; grid-row: 2; }
   .scenario-intro h1 { font-size: 30px; margin-top: 14px; }

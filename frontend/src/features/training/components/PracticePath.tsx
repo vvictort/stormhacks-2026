@@ -7,7 +7,7 @@ import { scenarios, type Scenario } from '../scenarios'
 
 const channelIcon = { sms: MessageSquareText, email: Mail, call: Phone }
 const channelTabs = [{ id: 'all', label: 'All' }, { id: 'sms', label: 'Texts' }, { id: 'email', label: 'Emails' }, { id: 'call', label: 'Calls' }] as const
-const statusTabs = [{ id: 'all', label: 'All' }, { id: 'todo', label: 'To try' }, { id: 'missed', label: 'Missed' }, { id: 'right', label: 'Right' }] as const
+const statusTabs = [{ id: 'todo', label: 'To try' }, { id: 'missed', label: 'Missed' }, { id: 'right', label: 'Right' }] as const
 const statusText = { right: 'Right call', missed: 'Missed', todo: 'Not tried' }
 // ponytail: client-side paging over the whole list; page from the server when the library outgrows one JSON.
 const PAGE = 12
@@ -34,7 +34,7 @@ export function PracticePath({ progress }: { progress: Progress }) {
   }
 
   const inChannel = channel === 'all' ? scenarios : scenarios.filter((scenario) => scenario.type === channel)
-  const count = (id: string) => id === 'all' ? inChannel.length : inChannel.filter((scenario) => stateOf(scenario, progress) === id).length
+  const count = (id: string) => inChannel.filter((scenario) => stateOf(scenario, progress) === id).length
   const list = status === 'all' ? inChannel : inChannel.filter((scenario) => stateOf(scenario, progress) === status)
 
   return (
@@ -45,9 +45,10 @@ export function PracticePath({ progress }: { progress: Progress }) {
             <button key={tab.id} type="button" aria-pressed={channel === tab.id} onClick={() => pick('channel', tab.id)}>{tab.label}</button>
           ))}
         </div>
+        {/* Toggles: pressing the active result again shows every result. */}
         <div className="path-chips" role="group" aria-label="Result">
           {statusTabs.map((tab) => (
-            <button key={tab.id} type="button" aria-pressed={status === tab.id} onClick={() => pick('status', tab.id)}>
+            <button key={tab.id} type="button" aria-pressed={status === tab.id} onClick={() => pick('status', status === tab.id ? 'all' : tab.id)}>
               {tab.label} <span className="path-chip-count">{count(tab.id)}</span>
             </button>
           ))}
@@ -68,11 +69,11 @@ export function PracticePath({ progress }: { progress: Progress }) {
   )
 }
 
-export function PathStop({ scenario, progress, upNext = false }: { scenario: Scenario; progress: Progress; upNext?: boolean }) {
+export function PathStop({ scenario, progress }: { scenario: Scenario; progress: Progress }) {
   const Icon = channelIcon[scenario.type]
   const state = stateOf(scenario, progress)
   return (
-    <li className={`path-stop is-${state}${upNext ? ' is-upnext' : ''}`}>
+    <li className={`path-stop is-${state}`}>
       <span className="path-dot" aria-hidden="true">
         {state === 'right' ? <Check size={12} strokeWidth={3} /> : state === 'missed' ? <RotateCcw size={11} strokeWidth={3} /> : <Icon size={15} />}
       </span>
@@ -81,7 +82,7 @@ export function PathStop({ scenario, progress, upNext = false }: { scenario: Sce
         <TransitionLink className="path-stop-link" to={`/train/${scenario.id}`} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</TransitionLink>
         <p>{scenario.summary}</p>
       </div>
-      <span className="path-status">{upNext ? 'Up next' : statusText[state]}</span>
+      <span className="path-status">{statusText[state]}</span>
     </li>
   )
 }
