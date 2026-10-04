@@ -2,7 +2,7 @@
   "userId": "dev-user",
   "scenario": {
     "id": "exec-vendor-payment-1",
-    "title": "Executive asks for an urgent payment to a new vendor account",
+    "title": "The boss's urgent payment",
     "tactics": ["authority", "urgency", "info_request"],
     "difficulty": 3,
     "callerLabel": "Elena Marsh",

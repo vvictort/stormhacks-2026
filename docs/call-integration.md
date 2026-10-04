@@ -135,3 +135,5 @@ else `404`.
 - When ElevenLabs isn't configured (`503 elevenlabs_not_configured`) or comms is unreachable, the call scenario stays
   usable through a clearly labelled caption-only practice mode; those local demo results are stored in localStorage only.
   Switching to practice from a ringing call, or leaving the page while it rings, abandons the comms call first.
+- Frontend call metadata (`frontend/src/features/training/callScenarios.ts`: title, caller label, difficulty, tactics)
+  matches the comms fixture with the same id; `frontend/tests/call.test.mjs` fails on drift.

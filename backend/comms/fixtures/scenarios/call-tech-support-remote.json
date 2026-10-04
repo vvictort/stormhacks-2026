@@ -2,7 +2,7 @@
   "userId": "dev-user",
   "scenario": {
     "id": "tech-support-remote-1",
-    "title": "Tech support caller wants remote access to your computer",
+    "title": "Tech support on the line",
     "tactics": ["authority", "fear", "urgency", "otp_request"],
     "difficulty": 2,
     "callerLabel": "+1 (604) 555-0187",

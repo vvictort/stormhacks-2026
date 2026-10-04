@@ -2,7 +2,7 @@
   "userId": "dev-user",
   "scenario": {
     "id": "bank-fraud-dept-otp-1",
-    "title": "Fake fraud department asks for verification code",
+    "title": "Your bank's \"fraud team\"",
     "tactics": ["authority", "urgency", "fear", "otp_request"],
     "difficulty": 2,
     "callerLabel": "Maple Trust Bank",

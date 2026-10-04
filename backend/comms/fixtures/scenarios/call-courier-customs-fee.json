@@ -2,7 +2,7 @@
   "userId": "dev-user",
   "scenario": {
     "id": "courier-customs-fee-1",
-    "title": "Courier asks for a small customs fee by card",
+    "title": "Customs fee on a parcel",
     "tactics": ["urgency", "info_request"],
     "difficulty": 1,
     "callerLabel": "SwiftLane Express",

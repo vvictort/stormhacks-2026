@@ -2,7 +2,7 @@
   "userId": "dev-user",
   "scenario": {
     "id": "cra-tax-arrears-1",
-    "title": "CRA impersonator demands payment for tax arrears",
+    "title": "Taxes owed to the CRA",
     "tactics": ["authority", "fear", "urgency", "info_request"],
     "difficulty": 2,
     "callerLabel": "+1 (613) 555-0148",

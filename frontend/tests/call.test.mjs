@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readdirSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 import { channelReady, channels, getScenario, hasLink, isScam, scenarios } from '../src/features/training/scenarios.ts'
 import { OUTCOME_TABLE, isScored, normalizeCommsOutcome, readCallResult } from '../src/features/training/callOutcome.ts'
@@ -21,6 +22,25 @@ test('the call channel is ready with exactly the five contract scenarios and dif
   assert.equal(channelReady('call'), true)
   assert.ok(channels.every((channel) => channel.ready))
   assert.deepEqual(Object.fromEntries(calls.map((scenario) => [scenario.id, scenario.difficulty])), CONTRACT_IDS)
+})
+
+// The live caller is the comms fixture with the same id; the page around it must describe the same call.
+const fixtureDir = new URL('../../backend/comms/fixtures/scenarios/', import.meta.url)
+const fixtures = readdirSync(fixtureDir)
+  .filter((file) => file.startsWith('call-') && file.endsWith('.json'))
+  .map((file) => JSON.parse(readFileSync(new URL(file, fixtureDir), 'utf8')).scenario)
+
+test('call metadata matches the comms fixtures: ids, titles, caller labels, numbers, difficulty, tactics', () => {
+  assert.deepEqual(calls.map((scenario) => scenario.id).sort(), fixtures.map((fixture) => fixture.id).sort())
+  for (const fixture of fixtures) {
+    const scenario = getScenario(fixture.id)
+    assert.equal(scenario.title, fixture.title, `${fixture.id}: title`)
+    assert.equal(scenario.callerLabel, fixture.callerLabel, `${fixture.id}: caller label`)
+    assert.equal(scenario.difficulty, { 1: 'easy', 2: 'medium', 3: 'hard' }[fixture.difficulty], `${fixture.id}: difficulty`)
+    assert.deepEqual([...scenario.tactics].sort(), [...fixture.tactics].sort(), `${fixture.id}: tactics`)
+    // A caller that shows up as a number gets no second, different number on the ringing screen.
+    if (/^\+?[\d\s().-]+$/.test(fixture.callerLabel)) assert.equal(scenario.callerNumber, undefined, `${fixture.id}: number`)
+  }
 })
 
 test('call scenarios carry teaching metadata only and work with shared helpers', () => {
