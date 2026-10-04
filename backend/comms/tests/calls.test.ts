@@ -82,15 +82,15 @@ test('generated scenarios resolve through the backend for the verified uid', asy
     systemPrompt: 'Be a scammer.',
     firstMessage: 'Hello.',
   };
-  const seen: { url: string; token: string | null }[] = [];
+  const seen: { url: string; token: string | null; redirect?: RequestInit['redirect'] }[] = [];
   mockOutbound((url, init) => {
-    seen.push({ url, token: new Headers(init.headers).get('x-internal-token') });
+    seen.push({ url, token: new Headers(init.headers).get('x-internal-token'), redirect: init.redirect });
     return url.includes('/gen-1?') ? json(generated) : json({ error: 'not_found' }, 404);
   });
   const res = await app.api('POST', '/calls', { token: 'valid:alice', body: { scenarioId: 'gen-1' } });
   assert.equal(res.status, 201);
   assert.equal(res.body.call.scenario.id, 'gen-1');
-  assert.deepEqual(seen[0], { url: `${BACKEND_URL}/api/internal/call-scenarios/gen-1?uid=alice`, token: INTERNAL_TOKEN });
+  assert.deepEqual(seen[0], { url: `${BACKEND_URL}/api/internal/call-scenarios/gen-1?uid=alice`, token: INTERNAL_TOKEN, redirect: 'error' });
   assert.equal((await app.api('POST', '/calls', { body: { scenarioId: 'gen-other' } })).status, 404);
 });
 

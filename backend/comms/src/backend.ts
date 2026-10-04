@@ -52,6 +52,8 @@ export function backendClient(baseUrl: string | undefined, token: string | undef
     fetch(`${baseUrl!.replace(/\/$/, '')}${path}`, {
       ...init,
       headers: { 'x-internal-token': token!, ...init.headers },
+      // fetch only strips Authorization on a cross-origin redirect, so a redirect could carry the secret elsewhere.
+      redirect: 'error',
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
 
