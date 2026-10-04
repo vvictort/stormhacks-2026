@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Tactic } from '../../comms/src/types.ts';
+import { Channel, Difficulty, Outcome, Tactic } from '../shared/vocabulary.ts';
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
@@ -7,12 +7,12 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 export const attemptSchema = z.object({
   attemptId: text(128),
   firebaseUid: text(128),
-  channel: z.enum(['sms', 'email', 'call']),
+  channel: Channel,
   scenarioId: text(128),
   scenarioTitle: text(200),
-  difficulty: z.enum(['easy', 'medium', 'hard']),
+  difficulty: Difficulty,
   tactics: z.array(Tactic).max(10),
-  outcome: z.enum(['resisted', 'compromised', 'declined', 'missed', 'error']),
+  outcome: Outcome,
   success: z.boolean().nullable(),
   signals: z.array(text(40)).max(20),
   startedAt: z.iso.datetime({ offset: true }).nullable().default(null),

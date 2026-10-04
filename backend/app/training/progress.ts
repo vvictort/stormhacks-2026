@@ -1,4 +1,5 @@
-export type Difficulty = 'easy' | 'medium' | 'hard';
+import type { Difficulty } from '../shared/vocabulary.ts';
+
 export type ScamCategory = 'banking' | 'government' | 'shipping' | 'account_security' | 'workplace' | 'promotional';
 
 export interface ScoredAttempt {
@@ -30,6 +31,9 @@ export function inferCategory(scenario: { id: string; title: string }): ScamCate
   const text = `${scenario.id} ${scenario.title}`.toLowerCase();
   return categoryRules.find(([, pattern]) => pattern.test(text))?.[0] ?? 'account_security';
 }
+
+// ponytail: stats are recomputed from the newest 1000 attempts per request; aggregate in SQL if users ever exceed that.
+export const HISTORY_LIMIT = 1000;
 
 const levels: Difficulty[] = ['easy', 'medium', 'hard'];
 

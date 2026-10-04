@@ -2,16 +2,16 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import supertest from 'supertest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import type { CallScenario } from '../comms/src/types.ts';
+import type { CallScenario } from '../app/scenarios/call-scenario.ts';
 import { createDatabase, type Database } from '../app/db/database.ts';
 import { migrate } from '../app/db/migrate.ts';
-import { Repositories } from '../app/db/repositories.ts';
+import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
-import { rateLimitPerUser } from '../app/core/rate-limit.ts';
-import { cleanProfileText } from '../app/integrations/gemini.ts';
-import { inferCategory, summarizeAttempts, type ScoredAttempt } from '../app/models/training.ts';
-import type { AttemptInput } from '../app/schemas/training.ts';
-import type { User } from '../app/schemas/user.ts';
+import { rateLimitPerUser } from '../app/http/rate-limit.ts';
+import { cleanProfileText } from '../app/scenarios/generator.ts';
+import { inferCategory, summarizeAttempts, type ScoredAttempt } from '../app/training/progress.ts';
+import type { AttemptInput } from '../app/training/attempts.schema.ts';
+import type { User } from '../app/users/users.schema.ts';
 
 const origin = 'http://localhost:5173';
 const internalToken = 'test-internal-token-0123456789abcdef';
@@ -35,33 +35,38 @@ function fakeRepo() {
   const scenarios = new Map<string, { uid: string; scenario: CallScenario }>();
   const summary = (a: AttemptInput) => ({ id: a.attemptId, channel: a.channel, scenarioId: a.scenarioId, scenarioTitle: a.scenarioTitle, difficulty: a.difficulty, outcome: a.outcome, success: a.success, tactics: a.tactics, completedAt: new Date(a.completedAt).toISOString() });
   return {
-    db: undefined as never,
-    async ensureUser(token: DecodedIdToken) {
-      return { id: token.uid, uid: token.uid, email: token.email!, emailVerified: true, name: null, phone: null, profession: 'accountant', interests: [], onboardingComplete: false, createdAt: '', updatedAt: '' } satisfies User;
+    users: {
+      async ensureUser(token: DecodedIdToken) {
+        return { id: token.uid, uid: token.uid, email: token.email!, emailVerified: true, name: null, phone: null, profession: 'accountant', interests: [], onboardingComplete: false, createdAt: '', updatedAt: '' } satisfies User;
+      },
+      async updateProfile(): Promise<User> { throw new Error('unused'); },
     },
-    async updateProfile(): Promise<User> { throw new Error('unused'); },
-    async insertAttempt(a: AttemptInput) {
-      if (attempts.has(a.attemptId)) return false;
-      attempts.set(a.attemptId, a);
-      return true;
+    attempts: {
+      async insert(a: AttemptInput) {
+        if (attempts.has(a.attemptId)) return false;
+        attempts.set(a.attemptId, a);
+        return true;
+      },
+      async list(uid: string, limit: number) {
+        return [...attempts.values()].filter((a) => a.firebaseUid === uid).map(summary).sort((a, b) => b.completedAt.localeCompare(a.completedAt)).slice(0, limit);
+      },
+      async get(uid: string, id: string) {
+        const a = attempts.get(id);
+        return a && a.firebaseUid === uid ? { ...summary(a), signals: a.signals, startedAt: a.startedAt, durationSecs: a.durationSecs, summary: a.summary, transcript: a.transcript } : null;
+      },
     },
-    async listAttempts(uid: string, limit: number) {
-      return [...attempts.values()].filter((a) => a.firebaseUid === uid).map(summary).sort((a, b) => b.completedAt.localeCompare(a.completedAt)).slice(0, limit);
-    },
-    async getAttempt(uid: string, id: string) {
-      const a = attempts.get(id);
-      return a && a.firebaseUid === uid ? { ...summary(a), signals: a.signals, startedAt: a.startedAt, durationSecs: a.durationSecs, summary: a.summary, transcript: a.transcript } : null;
-    },
-    async saveScenario(uid: string, scenario: CallScenario) { scenarios.set(scenario.id, { uid, scenario }); },
-    async getScenario(uid: string, id: string) {
-      const stored = scenarios.get(id);
-      return stored?.uid === uid ? stored.scenario : null;
+    scenarios: {
+      async save(uid: string, scenario: CallScenario) { scenarios.set(scenario.id, { uid, scenario }); },
+      async get(uid: string, id: string) {
+        const stored = scenarios.get(id);
+        return stored?.uid === uid ? stored.scenario : null;
+      },
     },
   } satisfies Repositories;
 }
 
-function routes(repo: Repositories = fakeRepo()) {
-  const app = createApp(repo, { origin, verifyToken, internalToken });
+function routes(repos: Repositories = fakeRepo()) {
+  const app = createApp({ repos, origin, verifyToken, internalToken });
   return {
     app,
     postAttempt: (body: object, secret = internalToken) => supertest(app).post('/api/internal/training-attempts').set('X-Internal-Token', secret).send(body),
@@ -73,7 +78,7 @@ function routes(repo: Repositories = fakeRepo()) {
 }
 
 test('internal routes are 404 for every request when INTERNAL_API_TOKEN is unset', async () => {
-  const app = createApp(fakeRepo(), { origin, verifyToken });
+  const app = createApp({ repos: fakeRepo(), origin, verifyToken });
   await supertest(app).post('/api/internal/training-attempts').set('X-Internal-Token', internalToken).send(attempt()).expect(404);
   await supertest(app).get('/api/internal/call-scenarios/gen-x?uid=alex').expect(404);
 });
@@ -192,7 +197,7 @@ describe('Postgres training persistence', { skip: !url }, () => {
   before(async () => {
     assert.match(new URL(url!).pathname, /_test$/, 'Use a dedicated test database.');
     db = createDatabase(url!);
-    repo = new Repositories(db);
+    repo = createRepositories(db);
     await migrate(db);
   });
   beforeEach(async () => { await db.query('TRUNCATE training_attempts, generated_call_scenarios'); });
@@ -236,7 +241,7 @@ describe('Postgres training persistence', { skip: !url }, () => {
   });
 
   test('database constraints reject non-canonical values', async () => {
-    const insert = (overrides: Partial<AttemptInput>) => repo.insertAttempt({ ...(attempt() as AttemptInput), ...overrides });
+    const insert = (overrides: Partial<AttemptInput>) => repo.attempts.insert({ ...(attempt() as AttemptInput), ...overrides });
     await assert.rejects(insert({ attemptId: 'bad_1', outcome: 'reported' as never }));
     await assert.rejects(insert({ attemptId: 'bad_2', channel: 'fax' as never }));
     await assert.rejects(db.query("INSERT INTO generated_call_scenarios(id,firebase_uid,scenario,source) VALUES('call-1','alex','{}','fallback')"));

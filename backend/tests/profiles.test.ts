@@ -2,10 +2,10 @@ import { after, before, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import supertest from 'supertest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { profileSchema } from '../app/schemas/user.ts';
+import { profileSchema } from '../app/users/users.schema.ts';
 import { createDatabase, type Database } from '../app/db/database.ts';
 import { migrate } from '../app/db/migrate.ts';
-import { Repositories } from '../app/db/repositories.ts';
+import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
 
 const origin = 'http://localhost:5173';
@@ -19,14 +19,14 @@ test('profile validation normalizes phone and rejects empty fields, credentials 
   for (const input of [{name:'',phone:'+16045551234'},{name:'Alex',phone:'6045551234'},{name:'Alex',phone:'+16045551234',uid:'sam'},{name:'Alex',phone:'+16045551234',password:'private'},{name:'Alex',phone:'+16045551234',email:'sam@example.test'}]) assert.equal(profileSchema.safeParse(input).success,false);
 });
 test('Firebase rejection is 401 but database/provider failures remain retryable without leaking details', async () => {
-  const repo = new Repositories({query:async()=>{throw new Error('DATABASE_PASSWORD_PRIVATE');}} as unknown as Database);
-  const app = createApp(repo,{origin,verifyToken});
+  const repo = createRepositories({query:async()=>{throw new Error('DATABASE_PASSWORD_PRIVATE');}} as unknown as Database);
+  const app = createApp({repos:repo,origin,verifyToken});
   await supertest(app).get('/api/users/me').expect(401);
   const invalid = await supertest(app).get('/api/users/me').set('Authorization','Bearer invalid').expect(401);
   assert.equal(invalid.body.error.code,'INVALID_TOKEN');
   const offline = await supertest(app).get('/api/users/me').set('Authorization','Bearer alex').expect(503);
   assert.equal(JSON.stringify(offline.body).includes('PRIVATE'),false);
-  const provider = createApp(repo,{origin,verifyToken:async()=>{throw Object.assign(new Error('Provider unavailable'),{code:'auth/internal-error'});}});
+  const provider = createApp({repos:repo,origin,verifyToken:async()=>{throw Object.assign(new Error('Provider unavailable'),{code:'auth/internal-error'});}});
   await supertest(provider).get('/api/users/me').set('Authorization','Bearer alex').expect(503);
 });
 
@@ -38,10 +38,10 @@ describe('TigerData-compatible profile persistence', {skip:!url}, () => {
   const profile = {name:'Alex Taylor',phone:'+1 (604) 555-1234',profession:'student',interests:['gaming','travel']};
   before(async()=>{
     assert.match(new URL(url!).pathname,/_test$/,'Use a dedicated test database.');
-    db=createDatabase(url!);repo=new Repositories(db);
+    db=createDatabase(url!);repo=createRepositories(db);
     await migrate(db);await migrate(db);
   });
-  beforeEach(async()=>{await db.query('TRUNCATE user_profiles');app=createApp(repo,{origin,verifyToken});});
+  beforeEach(async()=>{await db.query('TRUNCATE user_profiles');app=createApp({repos:repo,origin,verifyToken});});
   after(async()=>{await db?.end();});
   const get = (token='alex') => supertest(app).get('/api/users/me').set('Authorization',`Bearer ${token}`);
   const put = (body: object,token='alex') => supertest(app).put('/api/users/me').set('Origin',origin).set('Authorization',`Bearer ${token}`).send(body);
@@ -59,7 +59,7 @@ describe('TigerData-compatible profile persistence', {skip:!url}, () => {
     assert.equal(first.body.onboardingComplete,true);
     assert.equal(first.body.phone,'+16045551234');
     const repeated=await put({...profile,name:'My saved name'}).expect(200);
-    const recreated=createApp(new Repositories(db),{origin,verifyToken});
+    const recreated=createApp({repos:createRepositories(db),origin,verifyToken});
     const restored=await supertest(recreated).get('/api/users/me').set('Authorization','Bearer alex').expect(200);
     assert.equal(restored.body.id,first.body.id);
     assert.equal(restored.body.name,'My saved name');
@@ -95,7 +95,7 @@ describe('TigerData-compatible profile persistence', {skip:!url}, () => {
   });
   test('account email changes follow Firebase without overwriting personal preferences',async()=>{
     const saved=await put(profile).expect(200);
-    const updated=await repo.ensureUser({...identity('alex'),email:'updated@example.test',email_verified:false,name:'Provider name'});
+    const updated=await repo.users.ensureUser({...identity('alex'),email:'updated@example.test',email_verified:false,name:'Provider name'});
     assert.equal(updated.id,saved.body.id);
     assert.equal(updated.email,'updated@example.test');
     assert.equal(updated.emailVerified,false);

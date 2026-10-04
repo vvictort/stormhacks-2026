@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { GoogleGenAI } from '@google/genai';
-import { CallScenario } from '../../comms/src/types.ts';
-import type { Difficulty, ScamCategory } from '../models/training.ts';
+import type { ScamCategory } from '../training/progress.ts';
+import type { Difficulty } from '../shared/vocabulary.ts';
+import { CallScenario } from './call-scenario.ts';
 
 export interface CallScenarioRequest {
   apiKey?: string;
