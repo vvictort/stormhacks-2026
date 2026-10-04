@@ -28,7 +28,7 @@ The API listens on `127.0.0.1:3000`. `APP_ORIGIN` must match the frontend origin
 
 TigerData TLS keeps certificate and hostname verification enabled. For a custom service CA, place the certificate bundle outside tracked source and add its absolute path as `sslrootcert` in `DATABASE_URL`. Local `.certs/` and `.env` are ignored. See [TigerData's strict SSL procedure](https://www.tigerdata.com/docs/use-timescale/latest/security/strict-ssl/). Database passwords containing special characters must be URL-encoded.
 
-Migrations in `app/db/migrations` are transactional, serialized, and recorded in `schema_migrations`; `npm run migrate` applies any that are new. `001` creates `user_profiles`; `002` creates `training_attempts` (id = call id, so saving the same call twice is a no-op; canonical channel/difficulty/outcome enforced by CHECKs; `metadata` holds only the redacted summary and transcript) and `generated_call_scenarios` (`gen-…` ids, the `CallScenario` JSON, `source` = `gemini` or `fallback`); `003` creates the simulation tables `sim_text_threads`, `sim_calls` and `sim_events` (see **Simulation state**). Migration commands are repeatable and do not drop existing tables. Run migrations explicitly before serving traffic; API startup does not modify the schema.
+Migrations in `app/db/migrations` are transactional, serialized, and recorded in `schema_migrations`; `npm run migrate` applies any that are new. `001` creates `user_profiles`; `002` creates `training_attempts` (id = call id, so saving the same call twice is a no-op; canonical channel/difficulty/outcome enforced by CHECKs; `metadata` holds only the redacted summary and transcript) and `generated_call_scenarios` (`gen-…` ids, the `CallScenario` JSON, `source` = `gemini` or `fallback`); `003` creates the simulation tables `sim_text_threads`, `sim_calls` and `sim_events` (see **Simulation state**); `004` creates `scenario_generation_requests`, the log behind the scenario generation rate limit. Migration commands are repeatable and do not drop existing tables. Run migrations explicitly before serving traffic; API startup does not modify the schema.
 
 ### ElevenLabs (voice calls)
 
@@ -82,7 +82,7 @@ app/
   config.ts             env schema (zod)
   repositories.ts       builds every feature's repository from one pool
   shared/               vocabulary.ts (canonical channel, difficulty, outcome, tactic), types.ts (scenario, text thread and call shapes), redact.ts, ids.ts
-  http/                 errors, Firebase auth (with the SSE query-token option), app-origin guard, rate limit
+  http/                 errors, Firebase auth (with the SSE query-token option), app-origin guard
   db/                   pool, migrate, migrations/*.sql
   users/                onboarding profile: routes, repository, schema
   training/             attempts and progress: routes, repository, schema, progress (pure)
@@ -121,7 +121,7 @@ Browser writes (every non-GET under `/api`) require the configured `Origin` and 
 | PUT | `/api/users/me` | Save personal details and complete onboarding |
 | GET | `/api/training/progress` | `{ attempts, stats, vulnerability }`: newest 50 attempts plus stats over the whole history |
 | GET | `/api/training/attempts/:id` | One attempt with signals, summary and redacted transcript; 404 unless it is the caller's |
-| POST | `/api/training/call-scenarios` | Generate and store a scenario; `201 { scenarioId, title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, else `429 RATE_LIMITED` |
+| POST | `/api/training/call-scenarios` | Generate and store a scenario; `201 { scenarioId, title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, counted in Postgres so the limit holds across processes and restarts, else `429 RATE_LIMITED` |
 
 Progress `stats` are `{ total, successes, compromised }` over scored attempts (`error` attempts are listed but not counted). `vulnerability` is `{ weakCategories, vulnerableTactics, categoryAccuracy }`: categories are inferred from the scenario id/title, a category turns weak below 75% accuracy and recovers at 80%, and tactics are ranked by how often they appeared in compromised attempts. The same replay sets the difficulty used for generated scenarios.
 
@@ -273,4 +273,4 @@ Unit and route tests run without a database, against in-memory repositories, an 
 TEST_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/tellio_test' npm test
 ```
 
-The suites truncate only `user_profiles`, `training_attempts`, `generated_call_scenarios` and the `sim_*` tables in that test database, and test files run serially. Test Firebase verifiers are injected directly into the test app (`tests/harness.ts`); production has no mock-auth mode. Tests cover token verification (forged, unsigned, expired), the SSE query token, the Origin/JSON guard, unknown and client-supplied scenarios, `gen-` owner scope, conversation binding, abandon and the sweeper, the simulation store contract (in memory and in Postgres: atomic updates, one active thread per user, sweeper queries, link lookups), the canonical outcome table, redaction and clipping of saved attempts, the no-ElevenLabs fallback, idempotent saves, owner-only reads, progress/vulnerability updates, scenario fallback and rate limits, plus profile isolation, idempotent onboarding, identity synchronization, invalid input, persistence across reconstructed servers, safe failures and origin enforcement.
+The suites truncate only `user_profiles`, `training_attempts`, `generated_call_scenarios`, `scenario_generation_requests` and the `sim_*` tables in that test database, and test files run serially. Test Firebase verifiers are injected directly into the test app (`tests/harness.ts`); production has no mock-auth mode. Tests cover token verification (forged, unsigned, expired), the SSE query token, the Origin/JSON guard, unknown and client-supplied scenarios, `gen-` owner scope, conversation binding, abandon and the sweeper, the simulation store contract (in memory and in Postgres: atomic updates, one active thread per user, sweeper queries, link lookups), the canonical outcome table, redaction and clipping of saved attempts, the no-ElevenLabs fallback, idempotent saves, owner-only reads, progress/vulnerability updates, scenario fallback and rate limits, plus profile isolation, idempotent onboarding, identity synchronization, invalid input, persistence across reconstructed servers, safe failures and origin enforcement.

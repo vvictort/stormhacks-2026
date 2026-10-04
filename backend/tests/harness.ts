@@ -38,6 +38,7 @@ export const json = (body: unknown, status = 200) =>
 export function fakeRepos() {
   const attempts = new Map<string, AttemptInput>();
   const scenarios = new Map<string, { uid: string; scenario: CallScenario }>();
+  const generations: { uid: string; at: number }[] = [];
   const summary = (a: AttemptInput) => ({ id: a.attemptId, channel: a.channel, scenarioId: a.scenarioId, scenarioTitle: a.scenarioTitle, difficulty: a.difficulty, outcome: a.outcome, success: a.success, tactics: a.tactics, completedAt: new Date(a.completedAt).toISOString() });
   return {
     users: {
@@ -65,6 +66,13 @@ export function fakeRepos() {
       async get(uid: string, id: string) {
         const stored = scenarios.get(id);
         return stored?.uid === uid ? stored.scenario : null;
+      },
+      async claimGeneration(uid: string, perMinute: number, perDay: number) {
+        const now = Date.now();
+        const mine = generations.filter((g) => g.uid === uid && now - g.at < 86_400_000);
+        if (mine.length >= perDay || mine.filter((g) => now - g.at < 60_000).length >= perMinute) return false;
+        generations.push({ uid, at: now });
+        return true;
       },
     },
   } satisfies Repositories;
