@@ -4,6 +4,7 @@ import { useAuth } from '../AuthContext'
 import { validateEmail } from '../validation'
 import { AuthField } from './AuthField'
 import { AuthNotice } from './AuthNotice'
+import { useRestoreFocus } from './useRestoreFocus'
 
 export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: string; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
@@ -11,6 +12,7 @@ export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: s
   const [emailError, setEmailError] = useState<string>()
   const [sent, setSent] = useState(false)
   const { recoverPassword, pending, error, clearError } = useAuth()
+  const rememberFocus = useRestoreFocus(Boolean(pending))
 
   useEffect(() => {
     const element = dialog.current
@@ -36,6 +38,7 @@ export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: s
       document.getElementById('reset-email')?.focus()
       return
     }
+    rememberFocus()
     if (await recoverPassword(email.trim())) setSent(true)
   }
 
@@ -57,7 +60,7 @@ export function ResetPasswordDialog({ initialEmail, onClose }: { initialEmail: s
             clearError()
           }} />
           {error && <AuthNotice>{error}</AuthNotice>}
-          <button type="submit" className="primary-button bg-primary" disabled={Boolean(pending)}>
+          <button type="submit" className="primary-button bg-primary" disabled={Boolean(pending)} aria-busy={pending === 'reset'}>
             {pending === 'reset' ? <><LoaderCircle size={18} className="spinner" aria-hidden="true" /> Sending reset link…</> : <>Send reset link <ArrowRight size={18} aria-hidden="true" /></>}
           </button>
         </form>

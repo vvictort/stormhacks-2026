@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, Check, LoaderCircle, LogOut } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { validateAuthForm, type AuthFieldName, type FieldErrors } from '../validation'
 import { AuthCard } from './AuthCard'
@@ -9,6 +9,7 @@ import { AuthNotice } from './AuthNotice'
 import { PasswordInput } from './PasswordInput'
 import { ResetPasswordDialog } from './ResetPasswordDialog'
 import { SocialLoginButton } from './SocialLoginButton'
+import { useRestoreFocus } from './useRestoreFocus'
 
 export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const isSignup = mode === 'signup'
@@ -17,12 +18,15 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [resetOpen, setResetOpen] = useState(false)
   const form = useRef<HTMLFormElement>(null)
+  const location = useLocation()
 
   useEffect(() => { clearError() }, [clearError, mode])
 
   useEffect(() => {
     if (passwordError) document.getElementById('auth-password')?.focus()
   }, [passwordError])
+
+  const rememberFocus = useRestoreFocus(Boolean(pending))
 
   function change(field: AuthFieldName, value: string) {
     setValues((current) => ({ ...current, [field]: value }))
@@ -41,6 +45,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
       form.current?.querySelector<HTMLInputElement>(`[name="${firstInvalidField}"]`)?.focus()
       return
     }
+    rememberFocus()
     const succeeded = isSignup
       ? await register(values.email.trim(), values.password, values.name.trim())
       : await login(values.email.trim(), values.password)
@@ -88,17 +93,18 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           </fieldset>
           {!isSignup && <div className="forgot-row"><button type="button" className="text-link" disabled={disabled} onClick={() => { clearError(); setResetOpen(true) }}>Forgot password?</button></div>}
           {error && !resetOpen && <AuthNotice>{error}</AuthNotice>}
-          <button type="submit" className="primary-button bg-primary" disabled={disabled}>
+          <button type="submit" className="primary-button bg-primary" disabled={disabled} aria-busy={formPending}>
             {formPending ? <><LoaderCircle size={18} className="spinner" aria-hidden="true" />{isSignup ? 'Creating your account…' : 'Logging in…'}</> : <>{isSignup ? 'Create account' : 'Log in'}<ArrowRight size={18} aria-hidden="true" /></>}
           </button>
         </form>
         <div className="auth-divider text-muted-strong"><span />or<span /></div>
         <SocialLoginButton signup={isSignup} pending={pending === 'google'} disabled={disabled} onClick={async () => {
+          rememberFocus()
           if (await google()) setValues({ name: '', email: '', password: '', confirmPassword: '' })
         }} />
         <p className="auth-switch text-muted-strong">
           {isSignup ? 'Already have an account?' : 'New to Tellio?'}{' '}
-          <Link className="text-link" to={isSignup ? '/login' : '/signup'} onClick={(event) => { if (pending) event.preventDefault() }} aria-disabled={disabled || undefined} tabIndex={disabled ? -1 : undefined}>{isSignup ? 'Log in' : 'Create an account'}<ArrowRight size={14} aria-hidden="true" /></Link>
+          <Link className="text-link" to={isSignup ? '/login' : '/signup'} state={location.state} onClick={(event) => { if (pending) event.preventDefault() }} aria-disabled={disabled || undefined} tabIndex={disabled ? -1 : undefined}>{isSignup ? 'Log in' : 'Create an account'}<ArrowRight size={14} aria-hidden="true" /></Link>
         </p>
       </AuthCard>
       {resetOpen && <ResetPasswordDialog initialEmail={values.email} onClose={() => { setResetOpen(false); clearError() }} />}
