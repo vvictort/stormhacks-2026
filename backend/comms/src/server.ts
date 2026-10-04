@@ -5,6 +5,7 @@ import { DATA_DIR, config } from './config.ts';
 import { JsonlEventSink } from './events.ts';
 import { StubProvider } from './provider.ts';
 import { createRouter, errorHandler } from './router.ts';
+import { SampleCatalog } from './samples.ts';
 import { JsonFileStore } from './store.ts';
 import { TextService } from './texts/service.ts';
 
@@ -14,15 +15,16 @@ const store = new JsonFileStore(DATA_DIR);
 const events = new JsonlEventSink(DATA_DIR);
 const texts = new TextService(store, events, new StubProvider());
 const calls = new CallService(store, events);
+const samples = new SampleCatalog();
 
 const app = express();
 app.use(cors({ origin: config.FRONTEND_BASE_URL }));
 app.use(express.json({ limit: '100kb' }));
-app.use('/comms', createRouter({ texts, calls }));
+app.use('/comms', createRouter({ texts, calls, samples }));
 app.use(errorHandler);
 
 app.listen(config.COMMS_PORT, () => {
-  console.log(`[comms] listening on http://localhost:${config.COMMS_PORT}/comms`);
+  console.log(`[comms] listening on http://localhost:${config.COMMS_PORT}/comms (${samples.list().length} sample scenarios)`);
 });
 
 const sweep = () => {
