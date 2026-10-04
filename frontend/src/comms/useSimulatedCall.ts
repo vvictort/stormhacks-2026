@@ -1,10 +1,10 @@
 import { useConversation } from '@elevenlabs/react'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { comms } from './api'
-import { callReducer, INITIAL_CALL_STATE, type CallCaption, type CallPhase } from './callState'
+import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, type CallCaption, type CallPhase } from './callState'
 import { CommsError, describeError, isAbortError } from './client'
 import { pollUntilCompleted } from './poll'
-import type { CallRecord, CallScenario, DeclineReason, Outcome, ScenarioPick } from './types'
+import type { CallRecord, DeclineReason, Outcome } from './types'
 
 export interface SimulatedCallHandle {
   phase: CallPhase
@@ -17,8 +17,8 @@ export interface SimulatedCallHandle {
   captions: CallCaption[]
   agentSpeaking: boolean
   error: string | null
-  start: (pick?: ScenarioPick<CallScenario>) => Promise<void>
-  /** Ringing only. */
+  start: (scenarioId: string) => Promise<void>
+  /** Ringing only. Checks the microphone first; a refusal leaves the call ringing with an error and the ring timer paused. */
   accept: () => Promise<void>
   /** Ringing only. */
   decline: () => Promise<void>
@@ -26,6 +26,8 @@ export interface SimulatedCallHandle {
   hangUp: () => void
   /** Not while connecting or in a call. */
   reset: () => void
+  /** Leaving the page mid-call: ends the voice session and resolves once the server has been told (best effort). */
+  leave: () => Promise<void>
 }
 
 // Where this browser is with the server-side call; guards the actions without reading render state.
@@ -91,9 +93,18 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     onConnect: ({ conversationId }) => {
       const s = session.current
       if (!s?.callId || s.stage !== 'in_call') return
+      const { callId } = s
       s.connected = true
       if (conversationId) s.conversationId = conversationId
-      dispatch({ type: 'connected', callId: s.callId })
+      dispatch({ type: 'connected', callId })
+      if (!conversationId) return
+      // Binds the id if the token response had none. Other failures are fine: /ended carries the id too.
+      comms.callConnected(callId, conversationId, s.signal).catch((error: unknown) => {
+        if (!(error instanceof CommsError && error.code === 'conversation_mismatch') || s.stage !== 'in_call') return
+        s.stage = 'done'
+        endSession()
+        dispatch({ type: 'failed', callId, error: error.code, phase: 'error' })
+      })
     },
     onDisconnect: () => {
       const s = session.current
@@ -131,7 +142,7 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     }
   }, [endSession])
 
-  const start = useCallback(async (pick?: ScenarioPick<CallScenario>) => {
+  const start = useCallback(async (scenarioId: string) => {
     const prev = session.current
     if (prev && BUSY.includes(prev.stage)) return
     prev?.abort.abort()
@@ -147,7 +158,7 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     session.current = s
     dispatch({ type: 'start' })
     try {
-      const { callId, callerLabel, call } = await comms.startCall(pick, s.signal)
+      const { callId, callerLabel, call } = await comms.startCall(scenarioId, s.signal)
       if (session.current !== s) return
       s.callId = callId
       s.stage = 'ringing'
@@ -167,13 +178,15 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     dispatch({ type: 'connecting', callId })
 
     // Ask for the mic before accepting: a refusal leaves the call ringing on the server.
+    const blocker = microphoneBlocker({ secureContext: window.isSecureContext, getUserMedia: Boolean(navigator.mediaDevices?.getUserMedia) })
     try {
+      if (blocker) throw new Error(blocker)
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       stream.getTracks().forEach((track) => track.stop())
-    } catch {
+    } catch (error) {
       if (session.current !== s || s.signal.aborted) return
       s.stage = 'ringing'
-      dispatch({ type: 'failed', callId, error: 'microphone_denied', phase: 'ringing' })
+      dispatch({ type: 'failed', callId, error: blocker ?? microphoneErrorCode(error), phase: 'ringing' })
       return
     }
     if (session.current !== s || s.signal.aborted) return
@@ -208,11 +221,13 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
 
   const decline = useCallback(() => declineAs('declined'), [declineAs])
 
+  // Paused while an error (microphone, voice service) is on screen, so the user isn't auto-missed while reading it.
+  const ringPaused = Boolean(state.error)
   useEffect(() => {
-    if (state.phase !== 'ringing' || ringTimeoutMs <= 0) return
+    if (state.phase !== 'ringing' || ringPaused || ringTimeoutMs <= 0) return
     const timer = setTimeout(() => void declineAs('missed'), ringTimeoutMs)
     return () => clearTimeout(timer)
-  }, [state.phase, state.callId, ringTimeoutMs, declineAs])
+  }, [state.phase, state.callId, ringPaused, ringTimeoutMs, declineAs])
 
   const hangUp = useCallback(() => {
     const s = session.current
@@ -230,6 +245,17 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     dispatch({ type: 'reset' })
   }, [])
 
+  const leave = useCallback(async () => {
+    const s = session.current
+    if (!s) return
+    s.abort.abort()
+    if (!s.callId || s.stage !== 'in_call') return
+    s.stage = 'done'
+    endSession()
+    // Not tied to the aborted signal: this must reach the server before the page (or the session) goes away.
+    await comms.callEnded(s.callId, s.conversationId ?? undefined).catch(() => {})
+  }, [endSession])
+
   return {
     phase: state.phase,
     callId: state.callId,
@@ -244,5 +270,6 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     decline,
     hangUp,
     reset,
+    leave,
   }
 }
