@@ -15,13 +15,8 @@
       "channel": "email",
       "kind": "scam",
       "category": "workplace",
-      "tactics": [
-        "authority",
-        "urgency"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["authority", "urgency"],
+      "signals": ["synthetic"],
       "cues": [
         {
           "tag": "deadline",
@@ -48,12 +43,8 @@
       "channel": "email",
       "kind": "scam",
       "category": "workplace",
-      "tactics": [
-        "urgency"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["urgency"],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "hard",
       "text": "SYNTHETIC PATTERN: a polite note from 'payroll' asking to confirm direct deposit details before the next run.",
@@ -70,12 +61,8 @@
       "channel": "email",
       "kind": "scam",
       "category": "workplace",
-      "tactics": [
-        "reward"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["reward"],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "easy",
       "text": "SYNTHETIC: Staff appreciation gift card waiting, claim with your ID number.",
@@ -92,13 +79,8 @@
       "channel": "email",
       "kind": "scam",
       "category": "workplace",
-      "tactics": [
-        "authority",
-        "urgency"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["authority", "urgency"],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "medium",
       "text": "SYNTHETIC: Your PayPal business account is limited until you confirm.",
@@ -116,9 +98,7 @@
       "kind": "legitimate",
       "category": "workplace",
       "tactics": [],
-      "signals": [
-        "synthetic"
-      ],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "medium",
       "text": "SYNTHETIC: The team lunch moved to Thursday at noon.",
@@ -135,13 +115,8 @@
       "channel": "email",
       "kind": "scam",
       "category": null,
-      "tactics": [
-        "authority",
-        "urgency"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["authority", "urgency"],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "medium",
       "text": "SYNTHETIC: Generic account notice with no clear category.",
@@ -158,12 +133,8 @@
       "channel": "email",
       "kind": "scam",
       "category": "banking",
-      "tactics": [
-        "fear"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["fear"],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "easy",
       "text": "SYNTHETIC: Unusual card activity. Reply with your card number to unlock it.\u0007 Use `this` code.",
@@ -180,13 +151,8 @@
       "channel": "call",
       "kind": "scam",
       "category": "banking",
-      "tactics": [
-        "authority",
-        "otp_request"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["authority", "otp_request"],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "medium",
       "text": "SYNTHETIC CALL: Caller claims to be card security and asks the victim to read back the code just texted.",
@@ -203,13 +169,8 @@
       "channel": "sms",
       "kind": "scam",
       "category": "shipping",
-      "tactics": [
-        "urgency",
-        "suspicious_link"
-      ],
-      "signals": [
-        "synthetic"
-      ],
+      "tactics": ["urgency", "suspicious_link"],
+      "signals": ["synthetic"],
       "cues": [],
       "difficulty": "easy",
       "text": "SYNTHETIC: Parcel held, pay the small fee within 24h at the link.",

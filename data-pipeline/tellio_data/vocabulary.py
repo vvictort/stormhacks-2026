@@ -16,7 +16,7 @@ SIGNALS = ('suspicious_domain', 'payment_request', 'credential_request', 'verifi
 def parse(source: str) -> dict[str, tuple[str, ...]]:
     enums = {}
     for name, body in re.findall(r'export const (\w+) = z\.enum\(\[(.*?)\]\)', source, re.S):
-        enums[name] = tuple(re.findall(r"'([a-z_]+)'", body))
+        enums[name] = tuple(re.findall(r'''["']([a-z_]+)["']''', body))  # either quote style (Prettier uses double)
     missing = [n for n in NEEDED if not enums.get(n)]
     if missing:
         raise ValueError(f'vocabulary.ts no longer declares z.enum([...]) for: {", ".join(missing)}')

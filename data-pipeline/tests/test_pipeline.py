@@ -40,6 +40,12 @@ class Vocabulary(unittest.TestCase):
         self.assertEqual(set(v['Channel']), {'sms', 'email', 'call'})
         self.assertFalse(set(SIGNALS) & set(v['Tactic']), 'signals must not duplicate tactics')
 
+    def test_parses_either_quote_style_across_lines(self):
+        src = 'export const Channel = z.enum([\n  "sms",\n  "email",\n]);\n' + "export const Tactic = z.enum(['urgency', 'fear']);\n"
+        src += 'export const ScamCategory = z.enum(["banking"]);\nexport const Difficulty = z.enum(["easy"]);\n'
+        self.assertEqual(parse(src)['Channel'], ('sms', 'email'))
+        self.assertEqual(parse(src)['Tactic'], ('urgency', 'fear'))
+
     def test_fails_loudly_if_enum_shape_changes(self):
         src = VOCAB_TS.read_text().replace("export const Tactic = z.enum(", "export const Tactic = z.union(")
         with self.assertRaises(ValueError):

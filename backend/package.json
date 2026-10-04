@@ -10,7 +10,9 @@
     "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
     "migrate": "node --import tsx app/db/migrate.ts",
     "setup:agent": "node --import tsx scripts/setup-agent.ts",
-    "build:practice": "node --import tsx scripts/build-practice.ts"
+    "build:practice": "node --import tsx scripts/build-practice.ts",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "dependencies": {
     "@google/genai": "^2.3.0",
@@ -25,6 +27,7 @@
     "@types/node": "^24.19.1",
     "@types/pg": "^8.15.0",
     "@types/supertest": "^6.0.3",
+    "prettier": "3.9.9",
     "supertest": "^7.1.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.2"

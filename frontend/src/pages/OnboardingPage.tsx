@@ -6,13 +6,13 @@ import { useProfile } from '../features/profile/ProfileContext'
 import { AuthCard } from '../features/auth/components/AuthCard'
 import { AuthField } from '../features/auth/components/AuthField'
 import { AuthNotice } from '../features/auth/components/AuthNotice'
-import { validateOnboarding, type OnboardingValues } from '../features/profile/validation'
+import { splitPhone, toE164, validateOnboarding, type OnboardingValues } from '../features/profile/validation'
 
 export function OnboardingPage() {
   const { user, logout, pending, error: authError } = useAuth()
   const { profile, save } = useProfile()
   const navigate = useNavigate()
-  const [values, setValues] = useState<OnboardingValues>({ name: profile?.name || user?.displayName || '', phone: profile?.phone || '', profession: profile?.profession || '', interests: profile?.interests.join(', ') || '' })
+  const [values, setValues] = useState<OnboardingValues>({ name: profile?.name || user?.displayName || '', ...splitPhone(profile?.phone), profession: profile?.profession || '', interests: profile?.interests.join(', ') || '' })
   const [errors, setErrors] = useState<Partial<Record<keyof OnboardingValues, string>>>({})
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -29,7 +29,7 @@ export function OnboardingPage() {
     setSaving(true)
     setError(null)
     try {
-      await save({ name: values.name.trim(), phone: values.phone, profession: values.profession.trim() || null, interests: values.interests.split(',').map((part) => part.trim()).filter(Boolean) })
+      await save({ name: values.name.trim(), phone: toE164(values.countryCode, values.phone)!, profession: values.profession.trim() || null, interests: values.interests.split(',').map((part) => part.trim()).filter(Boolean) })
       navigate('/home', { replace: true })
     } catch { setError('We couldn’t save your profile. Your entries are still here—please try again.') }
     finally { busy.current = false; setSaving(false) }
@@ -41,7 +41,10 @@ export function OnboardingPage() {
       <fieldset className="auth-fields" disabled={disabled}><legend className="sr-only">Personal profile</legend>
         <AuthField id="profile-name" name="name" label="Your name" autoComplete="name" maxLength={100} value={values.name} required error={errors.name} onChange={(event) => change('name', event.target.value)} />
         <AuthField id="profile-email" label="Account email" type="email" value={profile?.email || user?.email || ''} readOnly hint="Managed by your login account." />
-        <AuthField id="profile-phone" name="phone" label="Phone number" type="tel" autoComplete="tel" maxLength={40} placeholder="+1 604 555 1234" value={values.phone} required hint="Include the country code. Practice messages stay in the app." error={errors.phone} onChange={(event) => change('phone', event.target.value)} />
+        <div className="phone-fields">
+          <AuthField id="profile-country-code" name="countryCode" label="Code" type="tel" autoComplete="tel-country-code" maxLength={4} placeholder="+1" value={values.countryCode} required error={errors.countryCode} onChange={(event) => change('countryCode', event.target.value)} />
+          <AuthField id="profile-phone" name="phone" label="Phone number" type="tel" autoComplete="tel-national" maxLength={40} placeholder="604 555 1234" value={values.phone} required hint="Any format works. Practice messages stay in the app." error={errors.phone} onChange={(event) => change('phone', event.target.value)} />
+        </div>
         <AuthField id="profile-profession" name="profession" label="Profession (optional)" maxLength={200} placeholder="Student, designer, nurse…" value={values.profession} error={errors.profession} onChange={(event) => change('profession', event.target.value)} />
         <AuthField id="profile-interests" name="interests" label="Interests (optional)" placeholder="Gaming, shopping, travel" hint="Separate interests with commas." value={values.interests} error={errors.interests} onChange={(event) => change('interests', event.target.value)} />
       </fieldset>
