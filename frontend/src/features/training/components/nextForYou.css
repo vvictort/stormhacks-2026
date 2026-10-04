@@ -1,5 +1,5 @@
 /* "Next for you" on Home and "What Tellio learned from this" in the debriefs. */
-.next-for-you { margin-top: 32px; padding: 22px 22px 20px; border: 1px solid color-mix(in srgb, var(--color-primary) 32%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)); }
+.next-for-you { margin-top: 32px; padding: 22px 22px 20px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
 .next-for-you h2 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--color-primary-strong); }
 .next-for-you .next-title { margin: 0 0 6px; font-family: var(--font-editorial); font-size: 24px; line-height: 1.25; letter-spacing: -0.02em; color: var(--color-foreground); text-wrap: balance; }
 .next-for-you p { max-width: 46ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); text-wrap: pretty; }
@@ -13,7 +13,7 @@
 .made-for-you-error { margin-top: 12px; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--color-accent-strong); }
 .made-for-you-error .text-link { display: inline-flex; align-items: center; gap: 4px; }
 
-.learned { margin-top: 24px; padding: 14px 16px 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--color-primary) 32%, transparent); background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)); }
+.learned { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--color-border); }
 .debrief .learned h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; letter-spacing: .02em; color: var(--color-primary-strong); }
 .learned p, .learned li { font-size: 14px; line-height: 1.5; }
 .learned-wait { display: flex; align-items: center; gap: 8px; color: var(--color-muted-strong); }

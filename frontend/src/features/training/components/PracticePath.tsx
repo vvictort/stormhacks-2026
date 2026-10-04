@@ -1,11 +1,10 @@
-import { Check, Mail, MessageSquareText, Phone, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { TransitionLink } from '../../../components/TransitionLink'
 import type { Progress } from '../progress'
 import { scenarios, type Scenario } from '../scenarios'
 
-const channelIcon = { sms: MessageSquareText, email: Mail, call: Phone }
+const channelLabel = { sms: 'Text message', email: 'Email', call: 'Phone call' }
 const channelTabs = [{ id: 'all', label: 'All' }, { id: 'sms', label: 'Texts' }, { id: 'email', label: 'Emails' }, { id: 'call', label: 'Calls' }] as const
 const statusTabs = [{ id: 'all', label: 'All' }, { id: 'todo', label: 'To try' }, { id: 'missed', label: 'Missed' }, { id: 'right', label: 'Right' }] as const
 const statusText = { right: 'Right call', missed: 'Missed', todo: 'Not tried' }
@@ -69,13 +68,10 @@ export function PracticePath({ progress }: { progress: Progress }) {
 }
 
 export function PathStop({ scenario, progress, upNext = false }: { scenario: Scenario; progress: Progress; upNext?: boolean }) {
-  const Icon = channelIcon[scenario.type]
   const state = stateOf(scenario, progress)
   return (
     <li className={`path-stop is-${state}${upNext ? ' is-upnext' : ''}`}>
-      <span className="path-dot" aria-hidden="true">
-        {state === 'right' ? <Check size={12} strokeWidth={3} /> : state === 'missed' ? <RotateCcw size={11} strokeWidth={3} /> : <Icon size={15} />}
-      </span>
+      <span className="path-channel">{channelLabel[scenario.type]}</span>
       <div className="path-stop-body">
         {/* Shares a transition name with the scenario heading, so the title morphs into the page. */}
         <TransitionLink className="path-stop-link" to={`/train/${scenario.id}`} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</TransitionLink>

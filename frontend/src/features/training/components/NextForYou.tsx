@@ -1,7 +1,6 @@
-import { ArrowRight, LoaderCircle, Phone } from 'lucide-react'
+import { ArrowRight, LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TellIcon } from '../../../components/TellIcon'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { api } from '../../../lib/api'
 import { preloadPages } from '../../../lib/lazyPage'
@@ -46,8 +45,8 @@ export function MadeForYouActions({ difficulty, label, withCall = false }: { dif
         </button>
         {withCall && (
           <button type="button" className="train-ghost" onClick={() => void start('call')} disabled={pending !== null} aria-busy={pending === 'call'}>
-            {pending === 'call' ? <LoaderCircle size={17} className="spinner" aria-hidden="true" /> : <Phone size={16} aria-hidden="true" />}
-            {pending === 'call' ? 'Setting up your call…' : 'Take a call made for you'}
+            {pending === 'call' && <LoaderCircle size={17} className="spinner" aria-hidden="true" />}
+            {pending === 'call' ? 'Setting up your call…' : 'Practise a call'}
           </button>
         )}
       </div>
@@ -66,7 +65,7 @@ export function NextForYou({ adaptive, localLevel, loading }: { adaptive: Adapti
   const next = nextForYou(adaptive, localLevel)
   return (
     <section className="next-for-you" aria-labelledby="next-title" aria-busy={loading}>
-      <h2 id="next-title"><TellIcon size={18} aria-hidden="true" />Next for you</h2>
+      <h2 id="next-title">Next for you</h2>
       {loading
         ? <div className="scam-profile-skeleton" aria-hidden="true"><span /><span /><span /></div>
         : (
@@ -89,7 +88,7 @@ export function LearnedPanel({ learning, attemptId, withActions = true }: { lear
 
   return (
     <section className="learned" aria-labelledby="learned-title" aria-live="polite" aria-busy={learning.status === 'waiting'}>
-      <h3 id="learned-title"><TellIcon size={18} aria-hidden="true" />What Tellio learned</h3>
+      <h3 id="learned-title">What Tellio learned</h3>
       {learning.status === 'waiting'
         ? <p className="learned-wait"><LoaderCircle size={16} className="spinner" aria-hidden="true" />Updating your profile…</p>
         : !view

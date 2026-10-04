@@ -1,4 +1,4 @@
-import { ArrowLeft, AtSign, Eye, Flag, Link2, LoaderCircle, Mail, MessageSquareText, Phone } from 'lucide-react'
+import { ArrowLeft, LoaderCircle } from 'lucide-react'
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { TransitionLink } from '../components/TransitionLink'
@@ -22,7 +22,7 @@ import { useLearning } from '../features/training/useLearning'
 import { useScenario } from '../features/training/useScenario'
 
 const difficultyLabel = { easy: 'Gentle start', medium: 'A little trickier', hard: 'Tricky' }
-const channelMeta = { sms: { Icon: MessageSquareText, label: 'Text message' }, email: { Icon: Mail, label: 'Email' }, call: { Icon: Phone, label: 'Phone call' } }
+const channelLabel = { sms: 'Text message', email: 'Email', call: 'Phone call' }
 
 // The voice SDK (and LiveKit under it) is big: it loads only when a call scenario opens.
 const CallExperience = lazy(() => import('../features/training/call/CallExperience'))
@@ -44,7 +44,7 @@ export function ScenarioPage() {
 
 function ScenarioIntro({ scenario, embedded = false }: { scenario: Scenario; embedded?: boolean }) {
   const heading = useRef<HTMLHeadingElement>(null)
-  const { Icon, label } = channelMeta[scenario.type]
+  const label = channelLabel[scenario.type]
   const credit = generatedCredit(scenario.generated)
 
   useEffect(() => {
@@ -58,7 +58,7 @@ function ScenarioIntro({ scenario, embedded = false }: { scenario: Scenario; emb
     <div className={embedded ? undefined : "scenario-intro"}>
       <TransitionLink direction="back" className="train-back" to="/home" aria-label="Back to all scenarios"><ArrowLeft size={16} aria-hidden="true" />Back</TransitionLink>
       <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
-      <p className="scenario-meta"><Icon size={15} aria-hidden="true" /> {label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
+      <p className="scenario-meta">{label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
       {scenario.generated && (
         <div className="scenario-generated">
           {/* The reason can carry a dataset licence credit, so it stays one tap away. Practice-path scenarios (lib-…) weren't made for this user. */}
@@ -198,7 +198,7 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
       <div className="scenario-intro">
         <ScenarioIntro scenario={scenario} embedded />
         {mission && <div className="mission-run"><p>{missionComplete(mission) ? 'Mission complete. Every decision counts.' : 'Your three-message mission'}</p><MissionProgress mission={mission} currentId={scenario.id} /></div>}
-        {!choice && !adventure.tipSeen && <aside className="practice-tip" aria-label="How to practise"><Flag size={17} aria-hidden="true" /><p>Tap suspicious phrases, inspect the sender or link, then decide. Your selections are checked after you answer.</p><button type="button" className="text-link" onClick={() => updateAdventure(user?.uid, state => ({ ...state, tipSeen: true }))}>Got it</button></aside>}
+        {!choice && !adventure.tipSeen && <aside className="practice-tip" aria-label="How to practise"><p><strong>A quick tip</strong>Tap suspicious phrases, inspect the sender or link, then decide. Your selections are checked after you answer.</p><button type="button" className="text-link" onClick={() => updateAdventure(user?.uid, state => ({ ...state, tipSeen: true }))}>Got it</button></aside>}
       </div>
 
       <PhoneSimulator
@@ -229,9 +229,9 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
             />
           : (
             <ul className="scenario-howto" aria-label="Tips">
-              <li><Eye size={15} aria-hidden="true" />Read it like it's real</li>
-              {email && <li><AtSign size={15} aria-hidden="true" />Tap the sender to see the address</li>}
-              {hasLink(scenario) && <li><Link2 size={15} aria-hidden="true" />Tap links to preview. They never open</li>}
+              <li>Read it like it's real.</li>
+              {email && <li>Tap the sender to see the address.</li>}
+              {hasLink(scenario) && <li>Tap a link to preview its destination.</li>}
             </ul>
           )}
       </div>

@@ -1,4 +1,4 @@
-import { Ban, Check, Flag, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { Ban, Check } from 'lucide-react'
 import { m, useReducedMotion } from 'motion/react'
 import { useState } from 'react'
 import { spring } from '../../../lib/motion'
@@ -150,7 +150,7 @@ export function ResponseControls({
     <div className="phone-actions" role="group" aria-labelledby="decide-label">
       <div className="phone-actions-hint" role="status" aria-live="polite">
         {flaggedCount > 0 ? (
-          <span><Flag size={13} aria-hidden="true" /> {flaggedCount} phrase{flaggedCount === 1 ? '' : 's'} flagged</span>
+          <span>{flaggedCount} phrase{flaggedCount === 1 ? '' : 's'} flagged</span>
         ) : (
           <span>Tap suspicious phrases to flag them</span>
         )}
@@ -158,10 +158,10 @@ export function ResponseControls({
       <p id="decide-label" className="sr-only">What would you do?</p>
       <div className="phone-decision-buttons">
         <button type="button" onClick={() => setPendingAction('safe')}>
-          <ShieldCheck size={18} aria-hidden="true" />Looks safe
+          Looks safe
         </button>
         <button type="button" onClick={() => setPendingAction('report')}>
-          <ShieldAlert size={18} aria-hidden="true" />Report &amp; block
+          Report &amp; block
         </button>
       </div>
     </div>
