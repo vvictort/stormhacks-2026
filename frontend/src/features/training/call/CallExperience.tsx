@@ -1,10 +1,12 @@
 import { ConversationProvider } from '@elevenlabs/react'
-import { Captions, Mic, PhoneIncoming, PhoneOff, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useSimulatedCall } from '../../../comms/useSimulatedCall'
 import { api } from '../../../lib/api'
 import { guardsNavigation, leaveDecision, setNavigationGuard, type LeaveTrigger } from '../../../lib/navigationGuard'
 import { readCallResult, isScored, type CallResult } from '../callOutcome'
+import { getAdventure, updateAdventure, useAdventure } from '../adventureStore'
+import { badges, completeCallAdventure, missionComplete, missionUrl } from '../missions'
 import { LearnedPanel } from '../components/NextForYou'
 import { PhoneFrame } from '../components/PhoneFrame'
 import { recommend, recordAttempt, type Progress } from '../progress'
@@ -34,6 +36,14 @@ const clockTime = () => new Date().toLocaleTimeString([], { hour: 'numeric', min
 
 function CallStage({ uid, scenario, progress, record }: Props) {
   const call = useSimulatedCall()
+  const adventure = useAdventure(uid)
+  const [params] = useSearchParams()
+  const missionId = params.get('mission')
+  const mission = adventure.mission?.id === missionId ? adventure.mission : null
+  const [earnedBefore] = useState(() => getAdventure(uid).earned)
+  const [practiceAttemptId] = useState(() => `practice-call:${crypto.randomUUID()}`)
+  const previouslyMissed = useRef(false)
+  const submittedPractice = useRef(false)
   const [practice, setPractice] = useState<{ result: CallResult | null } | null>(null)
   const [asking, setAsking] = useState<{ trigger: LeaveTrigger; resolve: (leave: boolean) => void } | null>(null)
   const [time] = useState(clockTime)
@@ -79,28 +89,49 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     if (!completed || !call.callId) return
     const callId = call.callId
     const controller = new AbortController()
-    api<unknown>(`/training/attempts/${encodeURIComponent(callId)}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(4000)]) })
+    api<unknown>(`/training/attempts/${encodeURIComponent(callId)}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(4000)]) }, uid ?? undefined)
       .then((data) => { if (!controller.signal.aborted) setAttempt({ callId, data }) })
       .catch(() => { if (!controller.signal.aborted) setAttempt({ callId, data: null }) })
     return () => controller.abort()
-  }, [completed, call.callId])
+  }, [completed, call.callId, uid])
   const attemptReady = attempt !== null && attempt.callId === call.callId
 
   function finishPractice(action: 'hang_up' | 'comply') {
+    if (submittedPractice.current) return
+    submittedPractice.current = true
     const outcome = practiceResult(action)
     setPractice({ result: outcome })
     if (isScored(outcome)) record(scenario.id, outcome.success)
   }
 
   function startPractice() {
+    previouslyMissed.current = progress[scenario.id]?.correct === false
+    submittedPractice.current = false
     call.reset()
     setPractice({ result: null })
+  }
+  function startLive() {
+    previouslyMissed.current = progress[scenario.id]?.correct === false
+    void call.start(scenario.id)
   }
 
   const debrief = practice?.result
     ? buildCallDebrief(scenario, { result: practice.result, from: 'practice' })
     : completed && attemptReady ? buildCallDebrief(scenario, debriefSource(attempt.data, call.record)) : null
   const liveResult = !practice && completed ? debriefSource(attemptReady ? attempt.data : null, call.record).result : null
+  // Award only after the same authoritative result used by the debrief is ready.
+  const finishedResult = practice?.result ?? (attemptReady ? liveResult : null)
+  const finishedId = practice ? practiceAttemptId : call.callId
+  const finishedOutcome = finishedResult?.outcome
+  const finishedSuccess = finishedResult?.success
+  useEffect(() => {
+    if (!finishedId || !finishedOutcome || finishedSuccess === undefined) return
+    updateAdventure(uid, state => completeCallAdventure(state, {
+      attemptId: finishedId, scenarioId: scenario.id, result: { outcome: finishedOutcome, success: finishedSuccess },
+      previouslyMissed: previouslyMissed.current, missionId, at: Date.now(),
+    }))
+  }, [uid, finishedId, finishedOutcome, finishedSuccess, scenario.id, missionId])
+  const earnedNow = badges.filter(badge => earnedBefore[badge.id] === undefined && adventure.earned[badge.id] !== undefined).map(badge => badge.id)
   // A live result may not be on the server yet; count it for the recommendation so "Next" moves on.
   const next = recommend(isScored(liveResult) ? recordAttempt(progress, scenario.id, liveResult.success) : progress, scenario.id)
   // Scored live calls are saved server-side once analysed; the debrief then shows what changed (practice stays local).
@@ -116,8 +147,8 @@ function CallStage({ uid, scenario, progress, record }: Props) {
             : (
               <LiveCallScreen scenario={scenario} screen={screen} callerLabel={callerLabel} captions={call.captions}
                 agentSpeaking={call.agentSpeaking} durationSecs={call.record?.durationSecs}
-                onStart={() => void call.start(scenario.id)} onAccept={() => void call.accept()} onDecline={() => void call.decline()}
-                onHangUp={call.hangUp} onCancel={call.cancel} onRetry={() => void (call.phase === 'ringing' ? call.accept() : call.start(scenario.id))}
+                onStart={startLive} onAccept={() => void call.accept()} onDecline={() => void call.decline()}
+                onHangUp={call.hangUp} onCancel={call.cancel} onRetry={() => call.phase === 'ringing' ? void call.accept() : startLive()}
                 onPractice={startPractice} />
             )}
         </PhoneFrame>
@@ -126,7 +157,9 @@ function CallStage({ uid, scenario, progress, record }: Props) {
       <div className="scenario-panel">
         {debrief
           ? <CallDebrief key={practice ? 'practice' : call.callId} view={debrief} next={next} callerLabel={practice ? scenario.callerLabel : callerLabel}
-            learned={savedId && learning.status !== 'off' && learning.status !== 'loading' ? <LearnedPanel learning={learning} attemptId={savedId} /> : undefined} />
+            mission={mission} missionHref={mission && !missionComplete(mission) && isScored(finishedResult) ? missionUrl(mission) : undefined} earnedNow={earnedNow}
+            retry={mission && !isScored(finishedResult) ? { live: call.reset, captions: startPractice } : undefined}
+            learned={savedId && learning.status !== 'off' && learning.status !== 'loading' ? <LearnedPanel learning={learning} attemptId={savedId} withActions={!mission} /> : undefined} />
           : <CallHowTo practice={Boolean(practice)} />}
       </div>
 
@@ -139,9 +172,9 @@ function CallHowTo({ practice }: { practice: boolean }) {
   return (
     <ul className="scenario-howto" aria-label="Tips">
       {practice
-        ? <><li><Captions size={15} aria-hidden="true" />No voice: read the captions</li><li><PhoneOff size={15} aria-hidden="true" />Hang up anytime</li></>
-        : <><li><PhoneIncoming size={15} aria-hidden="true" />Answer or decline</li><li><Mic size={15} aria-hidden="true" />Talk out loud to the AI caller</li></>}
-      <li><ShieldCheck size={15} aria-hidden="true" />Nothing real is at risk</li>
+        ? <><li>Read the caller's words in the captions.</li><li>Hang up whenever you need to.</li></>
+        : <><li>Answer or decline, just as you would on your phone.</li><li>Talk to the practice caller. Captions appear as you go.</li></>}
+      <li>This is a simulation. Nothing real is at risk.</li>
     </ul>
   )
 }

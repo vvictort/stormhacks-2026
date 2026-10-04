@@ -26,12 +26,14 @@
 .home-title { margin: 8px 0 22px; font-family: var(--font-editorial); font-size: clamp(32px, 3.4vw, 42px); font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
 .home-title:focus { outline: none; }
 
-/* Segmented control: the home tabs and History's channel filter. */
+/* Channel filters use a segmented control; the main destinations use a quiet underline. */
 .segmented { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); }
 .segmented button { flex: 1; min-height: 40px; padding: 0 12px; border-radius: 9px; color: var(--color-muted-strong); font-size: 14px; font-weight: 600; white-space: nowrap; }
 .segmented button:hover:not([aria-selected="true"], [aria-pressed="true"]) { color: var(--color-foreground); }
 .segmented [aria-selected="true"], .segmented [aria-pressed="true"] { background: var(--color-surface); color: var(--color-foreground); box-shadow: 0 1px 3px #4836261f; }
-.home-tabs { position: sticky; top: 8px; z-index: 2; }
+.home-tabs { position: sticky; top: 0; z-index: 2; gap: 20px; padding: 0; border-radius: 0; border-bottom: 1px solid var(--color-border); background: var(--color-background); }
+.home-tabs button { flex: 0 1 auto; min-height: 48px; padding: 0 4px; border-radius: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; }
+.home-tabs [aria-selected="true"] { border-bottom-color: var(--color-primary-strong); background: transparent; box-shadow: none; color: var(--color-primary-strong); }
 .home-panel { padding-top: 8px; --rise: 6px; animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
 .home-panel > .next-for-you { margin-top: 20px; }
 .home-panel > .train-notice { margin-top: 20px; }
@@ -78,31 +80,29 @@
 .home-recent .is-right { background: var(--color-success-strong); }
 .home-recent .is-missed { background: var(--color-accent-strong); }
 
-/* History: filters, then a flat list of scenario rows (also the Practice tab's "On your path" row). */
+/* Library: filters followed by a flat list of readable scenario rows. */
 .path { padding-top: 20px; }
 .path-filters { display: grid; gap: 14px; }
 .path-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.path-chips button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-muted-strong); font-size: 13px; font-weight: 500; }
+.path-chips button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 8px; background: transparent; color: var(--color-muted-strong); font-size: 13px; font-weight: 500; }
 .path-chips button[aria-pressed="true"] { border-color: var(--color-foreground); background: var(--color-foreground); color: var(--color-surface); }
 .path-chip-count { font-size: 12px; font-variant-numeric: tabular-nums; opacity: .7; }
 .path-empty { margin-top: 24px; font-size: 15px; color: var(--color-muted-strong); }
 .path-more { width: 100%; margin-top: 12px; }
-.path-stops { display: grid; gap: 2px; margin: 8px 0 0; padding: 0; list-style: none; }
-.path-stop { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; transition: background-color 160ms ease, border-color 160ms ease; }
-/* Hover cards only where hover exists: on touch a stuck card would look like a second "Up next". */
-@media (hover: hover) { .path-stop:hover { background: var(--color-surface); border-color: var(--color-border); } }
-.path-stop.is-upnext { background: var(--color-surface); border-color: var(--color-border); box-shadow: 0 6px 20px #4836260d, 0 1px 3px #48362608; }
-.path-stop:has(.path-stop-link:focus-visible) { outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
-.path-dot { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); color: var(--color-muted-strong); }
-.is-right .path-dot { background: var(--color-success-strong); color: var(--color-surface); }
-.is-missed .path-dot { background: var(--color-accent-strong); color: var(--color-surface); }
-.is-upnext .path-dot { background: var(--color-primary-strong); color: var(--color-surface); }
-.path-stop-body { min-width: 0; }
-.path-stop-link { font-size: 15px; font-weight: 600; color: var(--color-foreground); }
-.path-stop-link::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
+.path-stops { display: grid; margin: 16px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--color-border); }
+.path-stop { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 18px 4px; border-bottom: 1px solid var(--color-border); }
+.path-stop::before { content: ""; position: absolute; z-index: -1; inset: 4px -8px; border-radius: 12px; background: var(--color-surface); opacity: 0; pointer-events: none; transition: opacity var(--motion-quick) var(--ease-out-quint); }
+/* Whole rows are clickable, with the same visible focus treatment as links. */
+@media (hover: hover) { .path-stop:hover::before { opacity: 1; } }
+.path-stop.is-upnext { background: transparent; }
+.path-stop:has(.path-stop-link:focus-visible)::before { opacity: 1; outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
+.path-channel { grid-column: 1; grid-row: 1; font-size: 12px; color: var(--color-muted-strong); }
+.path-stop-body { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
+.path-stop-link { font-size: 15px; font-weight: 600; line-height: 1.5; color: var(--color-foreground); }
+.path-stop-link::after { content: ""; position: absolute; inset: 0 -8px; border-radius: 12px; }
 .path-stop-link:focus-visible { outline: none; }
 .path-stop-body p { margin-top: 2px; overflow: hidden; font-size: 13px; line-height: 1.45; color: var(--color-muted-strong); text-overflow: ellipsis; white-space: nowrap; }
-.path-status { font-size: 12px; font-weight: 500; color: var(--color-muted-strong); white-space: nowrap; }
+.path-status { grid-column: 2; grid-row: 1; font-size: 12px; font-weight: 500; color: var(--color-muted-strong); white-space: nowrap; }
 .is-right .path-status { color: var(--color-success-strong); }
 .is-missed .path-status { color: var(--color-accent-strong); }
 .is-upnext .path-status { color: var(--color-primary-strong); }
@@ -138,9 +138,7 @@
 .scenario-generated details p { margin-top: 6px; line-height: 1.5; text-wrap: pretty; }
 .scenario-situation { margin-top: 12px; max-width: 46ch; font-size: 15px; line-height: 1.55; color: var(--color-muted-strong); text-wrap: pretty; }
 .scenario-panel { grid-area: panel; padding-top: 28px; min-width: 0; }
-.scenario-howto { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--color-muted-strong); }
-.scenario-howto li { display: inline-flex; align-items: center; gap: 6px; }
-.scenario-howto svg { flex-shrink: 0; color: var(--color-primary-strong); }
+.scenario-howto { display: grid; gap: 8px; margin: 0; padding: 16px 0 0; border-top: 1px solid var(--color-border); list-style: none; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); }
 .scenario-missing { width: min(560px, calc(100% - 32px)); margin: 80px auto; }
 .scenario-missing h1 { margin: 0 0 12px; font-family: var(--font-editorial); font-size: 38px; font-weight: 400; letter-spacing: -0.03em; line-height: 1.15; }
 .scenario-missing p { margin-bottom: 28px; color: var(--color-muted-strong); line-height: 1.6; }
@@ -186,8 +184,14 @@
 .clue-tip strong { display: flex; align-items: center; gap: 2px; margin-bottom: 4px; font-size: 14px; font-weight: 600; }
 .clue-num { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-right: 3px; padding: 0 4px; border-radius: 9px; background: var(--color-primary-strong); color: var(--color-surface); font-size: 11px; font-weight: 700; line-height: 1; vertical-align: 2px; text-decoration: none; font-variant-numeric: tabular-nums; }
 .sms-link.is-marked { background: color-mix(in srgb, var(--color-primary) 18%, transparent); border-radius: 4px; }
-.is-safe-scenario .clue, .is-safe-scenario .sms-link.is-marked { background: color-mix(in srgb, var(--color-success) 26%, transparent); text-decoration-color: var(--color-success-strong); }
 .is-safe-scenario .clue-num { background: var(--color-success-strong); }
+
+/* Tap-to-flag interactive phrases */
+.flaggable-phrase { display: inline; padding: 1px 4px; border-radius: 4px; cursor: pointer; transition: background-color var(--motion-quick) var(--ease-out-quint); outline: 1px dashed transparent; }
+.flaggable-phrase:hover { background: color-mix(in srgb, var(--color-accent) 18%, transparent); outline-color: color-mix(in srgb, var(--color-accent) 40%, transparent); }
+.flaggable-phrase.is-flagged { background: color-mix(in srgb, var(--color-accent) 30%, transparent); outline: 1px solid var(--color-accent-strong); font-weight: 500; }
+.flaggable-phrase:focus-visible { outline: 2px solid var(--color-primary-strong); outline-offset: 1px; }
+.flaggable-phrase .flag-icon { display: inline; vertical-align: -1px; margin-right: 3px; color: var(--color-accent-strong); }
 
 /* Mail app: subject, a sender you can expand, then the body. */
 .email-bar { min-height: 44px; gap: 2px; padding-block: 4px; font-size: 15px; color: #1F5C99; }
@@ -210,11 +214,20 @@
 .phone-actions { padding: 12px 14px 16px; border-top: 1px solid #E7E1D7; }
 .phone-actions > p { margin-bottom: 10px; text-align: center; font-size: 13px; font-weight: 500; color: #5A4F43; }
 .phone-actions > div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.phone-actions button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--color-control); background: var(--color-surface); box-shadow: 0 1px 2px #2525250f; color: #252525; font-size: 15px; font-weight: 600; line-height: 1.2; transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), scale var(--motion-quick) var(--ease-out-quint); }
+.phone-actions button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--color-control); background: var(--color-surface); color: #252525; font-size: 15px; font-weight: 600; line-height: 1.2; transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), scale var(--motion-quick) var(--ease-out-quint); }
 .phone-actions button:hover { background: #fff; border-color: var(--color-muted-strong); }
 .phone-actions button:active { scale: calc(1 - 0.03 * var(--motion-scale)); }
-.phone-actions button:focus-visible { outline-offset: 2px; }
-.phone-decided { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 18px 14px 22px; border-top: 1px solid #E7E1D7; font-size: 15px; font-weight: 600; color: #252525; text-align: center; }
+.phone-actions-hint { text-align: center; margin-bottom: 8px; font-size: 12px; font-weight: 500; color: var(--color-muted-strong); }
+.phone-decision-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.phone-conf-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.phone-conf-head p { margin: 0; font-size: 13px; font-weight: 600; color: #5A4F43; }
+.phone-change-btn { font-size: 12px; }
+.phone-conf-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.phone-conf-buttons button { min-height: 44px; padding: 6px 4px; font-size: 13px; font-weight: 600; border-radius: 12px; border: 1px solid var(--color-control); background: var(--color-surface); color: var(--color-foreground); }
+.phone-conf-buttons button:hover { background: #fff; border-color: var(--color-muted-strong); }
+.phone-decided { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 16px 14px 20px; border-top: 1px solid #E7E1D7; font-size: 15px; font-weight: 600; color: #252525; text-align: center; }
+.phone-decided p { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.phone-decided-conf { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: var(--color-muted-strong); }
 .phone-decided.is-report svg { color: var(--color-danger-strong); }
 .phone-decided.is-safe svg { color: var(--color-success-strong); }
 
@@ -225,6 +238,8 @@
 .debrief-verdict h2 { margin: 0; font-family: var(--font-editorial); font-size: 30px; font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
 .debrief-verdict h2:focus { outline: none; }
 .debrief-lede { margin-top: 10px; max-width: 60ch; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); text-wrap: pretty; }
+.debrief-confidence { margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: var(--color-muted-strong); }
+.debrief-confidence strong { color: var(--color-foreground); }
 .debrief h3 { margin: 28px 0 2px; font-size: 15px; font-weight: 600; }
 .debrief-hint { font-size: 13px; color: var(--color-muted-strong); }
 .debrief-clues { display: grid; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
@@ -245,9 +260,18 @@
 .debrief-next { margin-top: 26px; padding: 14px 16px; border-radius: 10px; background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent); }
 .debrief-next h3 { margin: 0 0 4px; }
 .debrief-next p { font-size: 14px; line-height: 1.55; }
-.debrief-tip { display: flex; align-items: flex-start; gap: 10px; margin-top: 20px; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); font-size: 14px; line-height: 1.5; }
-.debrief-tip > svg { flex-shrink: 0; margin-top: 2px; color: var(--color-accent-strong); }
-.debrief-habit { display: flex; align-items: center; gap: 6px; width: fit-content; margin-top: 16px; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface)); color: var(--color-success-strong); font-size: 13px; font-weight: 500; }
+.debrief-tip { margin-top: 22px; padding: 2px 0 2px 16px; border-left: 2px solid var(--color-accent-strong); font-size: 14px; line-height: 1.65; }
+.debrief-tip > strong { display: block; margin-bottom: 4px; font-size: 13px; }
+.debrief-habits { margin-top: 20px; }
+.debrief-habits h3 { margin: 0 0 8px; font-size: 13px; }
+.debrief-habits ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; list-style: disc; }
+.debrief-habit { font-size: 13px; line-height: 1.6; color: var(--color-muted-strong); }
+.debrief-habit::marker { color: var(--color-success-strong); }
+.debrief-flag-score { margin-top: 20px; padding: 16px 0; border-block: 1px solid var(--color-border); }
+.debrief-flag-score h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--color-foreground); }
+.flag-score-chips { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.flag-chip { display: inline-flex; align-items: baseline; gap: 5px; font-size: 13px; line-height: 1.6; color: var(--color-muted-strong); }
+.flag-chip strong { color: var(--color-foreground); font-variant-numeric: tabular-nums; }
 .debrief-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
 
 /* ---------- Motion: one arrival, one reveal ---------- */
@@ -276,7 +300,9 @@
   .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
   .home-title { font-size: 30px; }
   .segmented button { padding-inline: 8px; }
-  .path-stop { gap: 12px; padding: 10px 8px; }
+  .home-tabs button { padding-inline: 4px; }
+  .path-stop { column-gap: 10px; padding: 16px 0; }
+  .path-stop-body p { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .home-stat-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .home-stat-grid > div:first-child { grid-column: 1 / -1; }
   .home-channels li { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
@@ -316,3 +342,28 @@ p.call-loading { flex-direction: row; gap: 8px; }
 .caught-lede { margin-top: 18px; font-size: 16px; line-height: 1.65; color: var(--color-muted-strong); }
 .caught-main h2 { margin: 32px 0 0; font-size: 16px; font-weight: 600; }
 @media (max-width: 540px) { .caught-mascot { width: 56px; height: 56px; } }
+
+/* Keep decision controls visible while the message scrolls, including at 200% zoom. */
+.phone-screen { min-height: 0; }
+.phone-actions, .phone-decided { flex-shrink: 0; }
+.phone-actions-hint span { display: inline-flex; align-items: center; gap: 5px; }
+.phone-conf-buttons { flex-wrap: wrap; }
+.phone-conf-buttons > button { min-height: 44px; }
+.scenario-meta { flex-wrap: wrap; }
+@media (max-width: 540px) {
+  .scenario-main { width: calc(100% - 24px); }
+  .phone { padding: 5px; border-radius: 28px; box-shadow: 0 10px 26px -16px #3a2a1e59; }
+  .phone-screen { border-radius: 23px; }
+  .phone-decision-buttons { flex-wrap: wrap; }
+  .phone-decision-buttons button { white-space: normal; min-height: 46px; flex: 1 1 110px; }
+  .train-primary, .train-ghost { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .debrief-clues > li, .email-view, .sms-typing span { animation: none; }
+}
+.phone-actions > .phone-actions-hint { display: block; }
+.phone-actions > .phone-conf-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.phone-actions > .phone-conf-buttons { display: flex; flex-wrap: wrap; }
+.phone-conf-buttons > button { flex: 1 1 70px; }
+.phone-actions .phone-change-btn { box-shadow: none; padding: 4px 8px; font-size: 12px; min-height: 44px; background: transparent; border: 0; }
+@media (max-width: 540px) { .phone-actions > .phone-decision-buttons { display: flex; flex-wrap: wrap; } }

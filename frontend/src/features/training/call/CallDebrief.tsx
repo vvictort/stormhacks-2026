@@ -1,18 +1,21 @@
 import { ArrowRight, Check, CircleAlert, Lightbulb } from 'lucide-react'
-import { m } from 'motion/react'
+import { m, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Mascot } from '../../../components/Mascot'
-import { RevealText } from '../../../components/RevealText'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { spring } from '../../../lib/motion'
 import { debriefActions } from '../adaptive'
 import { voiceCredit } from '../attribution'
+import { NewBadges } from '../components/MissionCard'
+import { missionComplete, type BadgeId, type Mission } from '../missions'
 import type { Scenario } from '../scenarios'
 import type { CallDebriefView, Moment } from './callModel'
 
 /** After a call: the result (from callOutcome, never decided here), the warning signs, and moments from the redacted transcript. */
-export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDebriefView; next?: Scenario; callerLabel: string; learned?: ReactNode }) {
-  const heading = useRef<HTMLElement>(null)
+export function CallDebrief({ view, next, callerLabel, learned, mission, missionHref, earnedNow = [], retry }: { view: CallDebriefView; next?: Scenario; callerLabel: string; learned?: ReactNode; mission?: Mission | null; missionHref?: string; earnedNow?: BadgeId[]; retry?: { live: () => void; captions: () => void } }) {
+  const heading = useRef<HTMLHeadingElement>(null)
+  const reduce = useReducedMotion()
+  const complete = mission && missionComplete(mission)
   const credit = voiceCredit(view)
   // One next step: the adaptive panel's "Next scenario made for you" when it shows, the path's next otherwise.
   const actions = debriefActions({ hasNext: Boolean(next), adaptive: Boolean(learned) })
@@ -26,14 +29,22 @@ export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDe
 
   return (
     <m.section className={`debrief call-debrief is-${view.tone}`} aria-labelledby="debrief-title"
-      initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ ...spring, stiffness: 300 }}>
+      initial={reduce ? false : { opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={reduce ? { duration: 0 } : { ...spring, stiffness: 300 }}>
       <div className="debrief-verdict">
-        <m.span className="debrief-mascot-pop" initial={{ scale: 0.5, opacity: 0, rotate: -8 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} transition={{ ...spring, delay: 0.12 }}>
-          <Mascot className="debrief-mascot" mood={view.mood} />
+        <m.span className="debrief-mascot-pop" initial={reduce ? false : { scale: 0.5, opacity: 0, rotate: -8 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} transition={reduce ? { duration: 0 } : { ...spring, delay: 0.12 }}>
+          <Mascot className="debrief-mascot" mood={complete ? 'happy' : view.mood} />
         </m.span>
-        <RevealText as="h2" id="debrief-title" ref={heading} tabIndex={-1} text={view.title} delay={140} />
+        <h2 id="debrief-title" ref={heading} tabIndex={-1}>{view.title}</h2>
       </div>
       <p className="debrief-lede"><strong>{view.outcomeLine}</strong> {view.explanation}</p>
+      <NewBadges ids={earnedNow} />
+      {complete && <p className="debrief-mission-complete" role="status"><strong>Mission accomplished.</strong>Three scenarios completed. Ready for your next adventure?</p>}
+      {mission && <div className="debrief-actions">
+        {retry ? <><button type="button" className="train-primary" onClick={retry.live}>Retry call</button><button type="button" className="train-ghost" onClick={retry.captions}>Use captions</button></>
+          : complete ? <TransitionLink className="train-primary" to="/home">See your mission rewards<ArrowRight size={17} aria-hidden="true" /></TransitionLink>
+          : missionHref ? <TransitionLink className="train-primary" to={missionHref}>Continue mission<ArrowRight size={17} aria-hidden="true" /></TransitionLink> : null}
+        {!complete && <TransitionLink direction="back" className="train-ghost" to="/home">Back to home</TransitionLink>}
+      </div>}
 
       <p className="call-pretext">{view.pretext}</p>
       {view.tactics.length > 0 && <ul className="call-tactics" aria-label="Tactics the caller used">{view.tactics.map((tactic) => <li key={tactic}>{tactic}</li>)}</ul>}
@@ -74,10 +85,10 @@ export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDe
 
       {learned}
 
-      <div className="debrief-actions">
+      {!mission && <div className="debrief-actions">
         {actions.pathNext && next && <TransitionLink className="train-primary" to={`/train/${next.id}`}>Next scenario<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
         <TransitionLink direction="back" className={actions.homePrimary ? 'train-primary' : 'train-ghost'} to="/home">Back to home</TransitionLink>
-      </div>
+      </div>}
     </m.section>
   )
 }

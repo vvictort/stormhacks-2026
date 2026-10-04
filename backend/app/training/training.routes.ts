@@ -15,7 +15,8 @@ export function trainingRouter({
       attempts.list(req.user!.uid, HISTORY_LIMIT),
       insights.latestFocus(req.user!.uid),
     ]);
-    const { stats, vulnerability, difficulty } = summarizeAttempts(history);
+    const { stats, vulnerability, difficulty, tacticMastery } =
+      summarizeAttempts(history);
     // `difficulty` and `focus` are exactly what the next generated email or call will use.
     res.json({
       attempts: history
@@ -23,6 +24,7 @@ export function trainingRouter({
         .map(({ tactics: _, ...attempt }) => attempt),
       stats,
       vulnerability,
+      tacticMastery,
       difficulty,
       focus,
     });

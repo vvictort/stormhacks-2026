@@ -20,11 +20,22 @@ Start the backend separately from `backend/` after configuring its `.env` and ru
 - Incomplete profiles are directed to `/onboarding` before accessing home or messaging scenarios.
 - Onboarding requires name and an international phone number. Account email is displayed read-only; profession and interests are optional.
 - Saving opens the existing `/home` training page. Its profile summary links back to edit onboarding details.
+- Home offers Practice, Library, and Insights. Practice starts a three-message mission mixing scams and genuine messages, with standalone email, text, and call choices below it. Older `?tab=history` links still open the Library.
 - `/train/:scenarioId` retains the current messaging simulator and debrief. Phone-call scenarios open a call screen on the practice phone instead (see below).
 - `/caught?sim=<threadId>` is a public page that tracked practice links redirect to. It explains the simulated link and the red flags to check.
 - Profile data survives refresh, sign-out/login and browser changes. Every result (calls, texts and emails) is saved by the backend and drives Next for you, Your scam instincts and What Tellio has learned; the practice path's text and email progress also stays in browser-local storage.
 
 The profile provider clears displayed data when account identities differ and ignores responses from cancelled loads. While the profile is loading, protected routes show a loader. Failed profile loads show retry/sign-out controls; failed saves keep all form input. Firebase remains the sole authentication provider: application code never stores passwords or copies Firebase tokens into TigerData.
+
+## Missions and badges
+
+New missions select three scenarios near the learner's current difficulty: one email, one text, and one scam call, in varied order. The genuine message varies between email and text. Existing text/email missions keep their selected scenarios and progress. The selection is saved before a personal scam email is generated; preparation can be retried, or the learner can keep the selected library email. Missions with a genuine email open directly using that library scenario. Wrong decisions still complete a step. Mission routes use `/train/:scenarioId?mission=<id>`, so standalone practice does not advance a mission.
+
+Scored live and caption-only calls both complete their mission step once, including compromised results. Declined and missed calls follow the existing success contract; errors do not consume a step and offer retry/captions. Live results are awarded after the debrief resolves the saved attempt or call record. First Steps rewards a completed mission, Good Catch a correctly reported scam message or resisted call, and Comeback a correct answer after the same scenario was missed on the last attempt. Each badge is awarded once. Mission debriefs show Continue mission or See your mission rewards.
+
+Home's standalone practice picker offers one-click text practice and generated emails/calls with loading announcements and library fallbacks. Pending generation is cancelled on unmount/account switching.
+
+Mission selection, completed steps, the active generated email, badge timestamps, and the dismissed practice tip are stored per account under `tellio.adventure.v1.<uid>` in this browser. Blocked storage falls back to memory. These rewards do not sync across devices; the UI labels this explicitly. Existing backend attempts and analytics continue unchanged.
 
 ## Phone calls
 

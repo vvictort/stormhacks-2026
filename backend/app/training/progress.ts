@@ -15,7 +15,21 @@ export interface ScoredAttempt {
   success: boolean | null;
   outcome: string;
   completedAt: string;
+  confidence?: string | null;
 }
+
+export type TacticMasteryState = "untouched" | "shaky" | "solid";
+
+export interface TacticMastery {
+  tactic: string;
+  attempts: number;
+  correct: number;
+  accuracy: number; // 0 to 100
+  confidentlyWrong: number;
+  state: TacticMasteryState;
+}
+
+export const CORE_TACTICS = ["authority", "urgency", "fear", "reward"] as const;
 
 export interface CategoryAccuracy {
   attempts: number;
@@ -104,6 +118,41 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
       levels[Math.min(2, Math.max(0, levels.indexOf(difficulty) + step))];
   }
 
+  const tacticStats = new Map<string, { attempts: number; correct: number; confidentlyWrong: number }>();
+  for (const t of CORE_TACTICS) {
+    tacticStats.set(t, { attempts: 0, correct: 0, confidentlyWrong: 0 });
+  }
+
+  for (const attempt of scored) {
+    const isCertainWrong = attempt.success === false && attempt.confidence === "certain";
+    for (const tactic of attempt.tactics) {
+      const current = tacticStats.get(tactic) ?? { attempts: 0, correct: 0, confidentlyWrong: 0 };
+      current.attempts++;
+      if (attempt.success) current.correct++;
+      if (isCertainWrong) current.confidentlyWrong++;
+      tacticStats.set(tactic, current);
+    }
+  }
+
+  const tacticMastery: Record<string, TacticMastery> = {};
+  for (const [tactic, st] of tacticStats.entries()) {
+    const accuracy = st.attempts > 0 ? Math.round((st.correct / st.attempts) * 100) : 0;
+    const state: TacticMasteryState =
+      st.attempts === 0
+        ? "untouched"
+        : st.confidentlyWrong > 0 || accuracy < 75
+          ? "shaky"
+          : "solid";
+    tacticMastery[tactic] = {
+      tactic,
+      attempts: st.attempts,
+      correct: st.correct,
+      accuracy,
+      confidentlyWrong: st.confidentlyWrong,
+      state,
+    };
+  }
+
   return {
     stats: { total: scored.length, successes, compromised },
     vulnerability: {
@@ -113,6 +162,7 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
         .map(([tactic]) => tactic),
       categoryAccuracy,
     },
+    tacticMastery,
     difficulty,
   };
 }

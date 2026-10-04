@@ -9,6 +9,7 @@ import { useAuth } from '../features/auth/AuthContext'
 import { InstinctsCard } from '../features/insights/InstinctsCard'
 import { ScamProfileCard } from '../features/insights/ScamProfileCard'
 import { ChannelSection } from '../features/training/components/ChannelSection'
+import { MissionCard } from '../features/training/components/MissionCard'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { nextForYou } from '../features/training/adaptive'
@@ -99,6 +100,9 @@ export function HomePage() {
                   </button>
                 </div>
               )}
+
+              {/* Gamification Mission Card */}
+              <MissionCard key={user?.uid} uid={user?.uid} progress={progress} adaptive={adaptive} difficulty={currentLevel(progress)} loading={callSync === 'loading'} />
 
               {/* Quick jump navigation pills across all 3 channels */}
               <nav className="home-channel-jump" aria-label="Jump to channel section">
