@@ -32,6 +32,12 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Motion: quick state feedback, slightly longer arrivals, one decelerating curve.
+     --motion-scale multiplies every travel distance and drops to 0 for reduced motion. */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-quick: 160ms;
+  --motion-enter: 280ms;
+  --motion-scale: 1;
 }
 
 body { margin: 0; min-width: 320px; }
@@ -40,9 +46,11 @@ button, a, input { -webkit-tap-highlight-color: transparent; }
 button, a { touch-action: manipulation; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .6; }
+/* The control doing the work stays at full strength; only the others dim. */
+button[aria-busy="true"]:disabled { opacity: 1; }
 [aria-busy="true"] button:disabled, button[aria-busy="true"] { cursor: progress; }
 a { text-decoration: none; }
-button, a, input { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+button, a, input { transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint); }
 :focus-visible { outline: 2px solid var(--color-primary-strong); outline-offset: 4px; border-radius: 4px; }
 h1:focus, #auth-content:focus { outline: none; }
 ::selection { background: color-mix(in srgb, var(--color-primary) 19%, transparent); }
@@ -78,38 +86,49 @@ h1:focus, #auth-content:focus { outline: none; }
 .auth-input:hover:not(:disabled, [aria-invalid="true"]) { border-color: var(--color-muted-strong); }
 .auth-input:focus { border-color: var(--color-primary-strong); outline: 2px solid color-mix(in srgb, var(--color-primary) 15%, transparent); outline-offset: 1px; }
 .auth-input[aria-invalid="true"] { border-color: var(--color-danger); }
+.auth-input[aria-invalid="true"]:focus { outline-color: color-mix(in srgb, var(--color-danger) 18%, transparent); }
 .auth-input:disabled { background: var(--color-background); color: var(--color-muted); }
 .auth-input.has-action { padding-right: 48px; }
 .password-toggle { position: absolute; display: grid; place-items: center; top: 2px; right: 2px; width: 43px; height: calc(100% - 4px); min-height: 43px; border-radius: 7px; }
 .password-toggle:hover { color: var(--color-primary-strong); background: var(--color-background); }
+.password-toggle svg, .dialog-close svg { transition: scale 120ms var(--ease-out-quint); }
+.password-toggle:active:not(:disabled) svg, .dialog-close:active svg { scale: .88; }
 .field-hint, .field-error { margin-top: 7px; font-size: 13px; line-height: 1.5; text-wrap: pretty; }
-.field-error { color: var(--color-danger-strong); }
+.field-error { color: var(--color-danger-strong); --rise: -4px; animation: rise-in 200ms var(--ease-out-quint) backwards; }
 .forgot-row { display: flex; justify-content: flex-end; margin-top: 9px; margin-bottom: -2px; }
-.text-link { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--color-primary-strong); font-size: inherit; font-weight: 600; text-underline-offset: 4px; }
-.text-link:hover { text-decoration: underline; }
+.text-link { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--color-primary-strong); font-size: inherit; font-weight: 600; text-decoration: underline 1px transparent; text-underline-offset: 4px; transition: color var(--motion-quick) var(--ease-out-quint), text-decoration-color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint); }
+.text-link:hover:not(:disabled, [aria-disabled="true"]) { text-decoration-color: currentColor; }
+.text-link:active:not(:disabled, [aria-disabled="true"]) { color: var(--color-primary-deep); }
+.text-link[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
+.text-link > svg, .primary-button > svg { transition: translate 200ms var(--ease-out-quint); }
+.text-link:hover:not([aria-disabled="true"]) > svg, .primary-button:hover:not(:disabled) > svg:not(.spinner) { translate: calc(2px * var(--motion-scale)) 0; }
 .forgot-row .text-link { min-height: 44px; margin-block: -7px; font-size: 12px; }
-.primary-button, .social-button { min-height: 47px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.5; border-radius: 9px; }
+.primary-button, .social-button { transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint), translate 120ms var(--ease-out-quint); min-height: 47px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.5; border-radius: 9px; }
 .primary-button { color: var(--color-surface); background-color: var(--color-primary-strong); margin-top: 23px; }
 .primary-button:hover:not(:disabled) { background-color: var(--color-primary-deep); }
 .primary-button > svg:last-child:not(.spinner) { margin-left: 3px; }
 .social-button { border-width: 1px; background: transparent; }
 .social-button:hover:not(:disabled) { background: var(--color-background); border-color: var(--color-muted-strong); }
+/* Press: a 1px settle, the same on every full-width button. */
+.primary-button:active:not(:disabled), .social-button:active:not(:disabled) { translate: 0 calc(1px * var(--motion-scale)); }
+.primary-button:active:not(:disabled) { background-color: var(--color-primary-deep); }
+.social-button:active:not(:disabled) { background: color-mix(in srgb, var(--color-border) 45%, var(--color-background)); }
 .auth-divider { display: flex; align-items: center; gap: 14px; font-size: 12px; margin: 21px 0; }
 .auth-divider > span { flex: 1; height: 1px; background: var(--color-border); }
 .auth-switch { margin-top: 25px; font-size: 12px; text-align: center; line-height: 2; }
 .auth-switch a { min-height: 44px; margin-block: -10px; }
 .card-caption { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 20px; font-size: 12px; }
-.auth-notice { display: flex; align-items: flex-start; gap: 9px; padding: 12px; border: 1px solid; border-radius: 9px; font-size: 13px; line-height: 1.6; margin-top: 17px; overflow-wrap: anywhere; }
+.auth-notice { animation: rise-in 220ms var(--ease-out-quint) backwards; --rise: -4px; display: flex; align-items: flex-start; gap: 9px; padding: 12px; border: 1px solid; border-radius: 9px; font-size: 13px; line-height: 1.6; margin-top: 17px; overflow-wrap: anywhere; }
 .auth-notice > svg { flex-shrink: 0; margin-top: 2px; }
 .notice-error { color: var(--color-danger-strong); border-color: color-mix(in srgb, var(--color-danger) 25%, transparent); background: color-mix(in srgb, var(--color-danger) 3%, transparent); }
 .notice-success { color: var(--color-success-strong); border-color: color-mix(in srgb, var(--color-success) 40%, transparent); background: color-mix(in srgb, var(--color-success) 7%, transparent); }
 .notice-info { color: var(--color-accent-strong); border-color: color-mix(in srgb, var(--color-accent) 40%, transparent); background: color-mix(in srgb, var(--color-accent) 7%, transparent); }
-.signed-in-icon { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; margin-bottom: 20px; }
+.signed-in-icon { animation: settle-in var(--motion-enter) var(--ease-out-quint) 120ms backwards; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; margin-bottom: 20px; }
 .signed-in-message { font-size: 14px; line-height: 1.8; }
 .signed-in-email { margin: 16px 0 24px; font-size: 13px; overflow-wrap: anywhere; }
 .signed-in-email + .auth-notice { margin-bottom: 20px; }
 .auth-notice + .social-button { margin-top: 20px; }
-.session-loading { display: flex; justify-content: center; padding: 50px 0; }
+.session-loading { display: flex; justify-content: center; padding: 50px 0; animation: fade-in 200ms var(--ease-out-quint) 350ms backwards; }
 .site-footer { min-height: 77px; justify-content: space-between; border-top: 1px solid var(--color-border); font-size: 12px; }
 .skip-link { position: fixed; top: -80px; left: 20px; z-index: 50; background: var(--color-surface); color: var(--color-primary-strong); padding: 12px 20px; border: 1px solid var(--color-border); border-radius: 8px; }
 .skip-link:focus { top: 16px; }
@@ -119,8 +138,24 @@ h1:focus, #auth-content:focus { outline: none; }
 .dialog-close { position: absolute; right: 8px; top: 8px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; }
 .dialog-close:hover { background: var(--color-background); }
 .reset-form, .reset-result { margin-top: 24px; }
-.spinner { animation: spin 900ms linear infinite; }
+.spinner { animation: spin 900ms linear infinite, fade-in var(--motion-quick) var(--ease-out-quint); }
+
+/* Arrival: the editorial panel, then the card. The card re-runs this whenever it
+   remounts, which gives /login and /signup a soft hand-off inside the Outlet. */
+.editorial { animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
+.auth-card { animation: rise-in var(--motion-enter) var(--ease-out-quint) 60ms backwards; }
+/* Session checks usually finish in a blink; only show the loader card if it doesn't. */
+.auth-card:has(.session-loading) { animation: fade-in 200ms var(--ease-out-quint) 350ms backwards; }
+.illustration-check { stroke-dasharray: 52; animation: draw-in 300ms var(--ease-out-quint) 260ms backwards; }
+.reset-dialog[open] { --rise: 6px; animation: rise-in 240ms var(--ease-out-quint); }
+.reset-dialog[open]::backdrop { animation: fade-in 200ms var(--ease-out-quint); }
+
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes rise-in { from { opacity: 0; translate: 0 calc(var(--rise, 8px) * var(--motion-scale)); } }
+@keyframes settle-in { from { opacity: 0; scale: calc(1 - .12 * var(--motion-scale)); } }
+@keyframes draw-in { from { stroke-dashoffset: 52; } }
+@keyframes pulse { to { opacity: .35; } }
 
 @media (min-width: 1500px) {
   .auth-main { margin-block: 60px 85px; }
@@ -151,6 +186,11 @@ h1:focus, #auth-content:focus { outline: none; }
   .site-footer { flex-direction: column; justify-content: center; gap: 6px; padding-block: 18px; text-align: center; }
   .reset-dialog { padding: 30px 24px; }
 }
+/* Reduced motion keeps every state change visible but removes travel:
+   arrivals become plain fades, presses and nudges stay put, the loader pulses
+   instead of spinning, and the illustration is simply drawn. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  :root { --motion-scale: 0; }
+  .spinner { animation: pulse 700ms ease-in-out infinite alternate; }
+  .illustration-check { animation: none; }
 }
