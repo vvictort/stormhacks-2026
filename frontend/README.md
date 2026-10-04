@@ -42,7 +42,7 @@ Email/password registration checks Firebase's current password policy, creates t
 
 Account creation and display-name saving have separate outcomes. Firebase signs the user in before the name is saved, so the redirect off `/signup` waits until the whole operation settles (`pending` is null). If the name can't be saved, the user stays signed in and `profileWarning` stays in the auth context after the redirect, for `/home` to show. `dismissProfileWarning()` clears it, and so does signing out (including from another tab). Retrying account creation is not offered.
 
-Backend calls go through `api()` in `src/lib/api.ts`, which sends the user's Firebase ID token as `Authorization: Bearer <token>`. The backend verifies it on every `/api` route except `/api/health` and only serves the caller's own records. If the backend answers 401, `api()` signs the user out and `RequireAuth` sends them to `/login`. The route guards control what the UI shows. The backend is what actually protects the data.
+Backend calls go through `api()` in `src/lib/api.ts`, which sends the user's Firebase ID token as `Authorization: Bearer <token>`. The backend verifies it on every `/api` route except `/api/health` and only serves the caller's own records. If the backend answers 401, `api()` signs the user out and `RequireAuth` sends them to `/login`. `AuthProvider` has the backend confirm each restored or new session this way (`GET /api/users/me`). An unreachable backend only logs a warning, so the UI never locks anyone out. The route guards control what the UI shows. The backend is what actually protects the data.
 
 Redirect decisions are pure functions in `src/features/auth/redirect.ts`. `safeReturnPath` accepts only in-app paths and never sends users back to an auth page.
 
