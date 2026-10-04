@@ -28,12 +28,15 @@
 
 /* Channel filters use a segmented control; the main destinations use a quiet underline. */
 .segmented { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); }
-.segmented button { flex: 1; min-height: 40px; padding: 0 12px; border-radius: 9px; color: var(--color-muted-strong); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.segmented button { position: relative; isolation: isolate; flex: 1; min-height: 40px; padding: 0 12px; border-radius: 9px; color: var(--color-muted-strong); font-size: 14px; font-weight: 600; white-space: nowrap; }
 .segmented button:hover:not([aria-selected="true"], [aria-pressed="true"]) { color: var(--color-foreground); }
-.segmented [aria-selected="true"], .segmented [aria-pressed="true"] { background: var(--color-surface); color: var(--color-foreground); box-shadow: 0 1px 3px #4836261f; }
+.segmented [aria-selected="true"], .segmented [aria-pressed="true"] { color: var(--color-foreground); }
+/* The selected pill is its own element so it can slide between options (layoutId in the markup). */
+.seg-thumb { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--color-surface); box-shadow: 0 1px 3px #4836261f; }
 .home-tabs { position: sticky; top: 0; z-index: 2; gap: 20px; padding: 0; border-radius: 0; border-bottom: 1px solid var(--color-border); background: var(--color-background); }
 .home-tabs button { flex: 0 1 auto; min-height: 48px; padding: 0 4px; border-radius: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; }
-.home-tabs [aria-selected="true"] { border-bottom-color: var(--color-primary-strong); background: transparent; box-shadow: none; color: var(--color-primary-strong); }
+.home-tabs [aria-selected="true"] { color: var(--color-primary-strong); }
+.home-tabs .seg-thumb { inset: auto 0 -2px; height: 2px; border-radius: 0; background: var(--color-primary-strong); box-shadow: none; }
 .home-panel { padding-top: 8px; --rise: 6px; animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
 .home-panel > .next-for-you { margin-top: 20px; }
 .home-panel > .train-notice { margin-top: 20px; }

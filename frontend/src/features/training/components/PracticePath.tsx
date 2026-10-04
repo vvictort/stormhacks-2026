@@ -1,6 +1,8 @@
+import { m } from 'motion/react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { TransitionLink } from '../../../components/TransitionLink'
+import { spring } from '../../../lib/motion'
 import type { Progress } from '../progress'
 import { scenarios, type Scenario } from '../scenarios'
 
@@ -41,7 +43,10 @@ export function PracticePath({ progress }: { progress: Progress }) {
       <div className="path-filters">
         <div className="segmented" role="group" aria-label="Channel">
           {channelTabs.map((tab) => (
-            <button key={tab.id} type="button" aria-pressed={channel === tab.id} onClick={() => pick('channel', tab.id)}>{tab.label}</button>
+            <button key={tab.id} type="button" aria-pressed={channel === tab.id} onClick={() => pick('channel', tab.id)}>
+              {tab.label}
+              {channel === tab.id && <m.span className="seg-thumb" layoutId="channel-tab" layout="x" transition={spring} />}
+            </button>
           ))}
         </div>
         {/* Toggles: pressing the active result again shows every result. */}

@@ -52,6 +52,9 @@
      and arrivals, and the iOS sheet curve for screen pushes. */
   --spring: linear(0, 0.046, 0.154, 0.29, 0.431, 0.563, 0.679, 0.776, 0.852, 0.91, 0.953, 0.982, 1.001, 1.012, 1.018, 1.02, 1.019, 1.017, 1.015, 1.012, 1.009, 1.007, 1.005, 1.003, 1);
   --spring-duration: 485ms;
+  /* Tell's own squash spring (stiffness 190, damping 13 in Mascot.tsx) as an easing: one visible wobble. */
+  --bubbly: linear(0, 0.053, 0.186, 0.364, 0.557, 0.74, 0.899, 1.024, 1.112, 1.164, 1.185, 1.182, 1.161, 1.13, 1.095, 1.06, 1.028, 1.003, 0.984, 0.972, 0.966, 0.965, 0.968, 0.974, 0.98, 0.987, 0.993, 0.998, 1.002, 1.005, 1.006, 1.006, 1);
+  --bubbly-duration: 800ms;
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -184,14 +187,16 @@ h1:focus, #auth-content:focus { outline: none; }
 .reset-dialog[open] { --rise: 6px; animation: rise-in 240ms var(--ease-out-quint); }
 .reset-dialog[open]::backdrop { animation: fade-in 200ms var(--ease-out-quint); }
 /* ---------- Touch feel: press in fast, spring back out ---------- */
-:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .path-stop, .sms-link) {
-  --press: .97;
+:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .path-stop, .sms-link, .segmented button, .path-chips button) {
+  --press: .97; --release: var(--spring); --release-duration: var(--spring-duration);
   transition-property: background-color, border-color, color, opacity, box-shadow, scale;
-  transition-duration: var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--spring-duration);
-  transition-timing-function: var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--spring);
+  transition-duration: var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--release-duration);
+  transition-timing-function: var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--release);
 }
 .path-stop { --press: .985; }
-:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .sms-link):active:not(:disabled),
+/* Tabs and filters are bubbly like Tell: a deeper squish, let go on the mascot's spring. */
+:is(.segmented, .path-chips) button { --press: .9; --release: var(--bubbly); --release-duration: var(--bubbly-duration); }
+:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .sms-link, .segmented button, .path-chips button):active:not(:disabled),
 .path-stop:active { scale: calc(1 - (1 - var(--press)) * var(--motion-scale)); transition-duration: 90ms; transition-timing-function: ease-out; }
 
 /* ---------- Text that arrives word by word ---------- */

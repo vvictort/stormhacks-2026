@@ -1,4 +1,5 @@
 import { ArrowRight, Check, History, Info, Mail, MessageSquareText, Phone, RotateCcw, X } from 'lucide-react'
+import { m } from 'motion/react'
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
@@ -14,6 +15,7 @@ import { channelStats, currentLevel, recommend, summarize, timeline, type Progre
 import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
+import { spring } from '../lib/motion'
 
 const tabs = [{ id: 'practice', label: 'Practice' }, { id: 'library', label: 'Library' }, { id: 'insights', label: 'Insights' }] as const
 type Tab = (typeof tabs)[number]['id']
@@ -65,6 +67,8 @@ export function HomePage() {
             <button key={t.id} ref={(node) => { tabRefs.current[t.id] = node }} type="button" role="tab" id={`tab-${t.id}`}
               aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1} onClick={() => show(t.id)}>
               {t.label}
+              {/* layout="x": the bar is sticky, so a scroll jump must not make it fly vertically. */}
+              {tab === t.id && <m.span className="seg-thumb" layoutId="home-tab" layout="x" transition={spring} />}
             </button>
           ))}
         </div>
