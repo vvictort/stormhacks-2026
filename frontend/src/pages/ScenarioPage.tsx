@@ -1,16 +1,21 @@
-import { ArrowLeft, Mail, MessageSquareText } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, LoaderCircle, Mail, MessageSquareText, Phone } from 'lucide-react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { Debrief } from '../features/training/components/Debrief'
+import { PhoneFrame } from '../features/training/components/PhoneFrame'
 import { PhoneSimulator } from '../features/training/components/PhoneSimulator'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { recommend } from '../features/training/progress'
-import { getScenario, hasLink, type Action, type Scenario } from '../features/training/scenarios'
+import { getScenario, hasLink, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 
 const difficultyLabel = { easy: 'Gentle start', medium: 'A little trickier', hard: 'Tricky' }
+const channelMeta = { sms: { Icon: MessageSquareText, label: 'Text message' }, email: { Icon: Mail, label: 'Email' }, call: { Icon: Phone, label: 'Phone call' } }
+
+// The voice SDK (and LiveKit under it) is big: it loads only when a call scenario opens.
+const CallExperience = lazy(() => import('../features/training/call/CallExperience'))
 
 export function ScenarioPage() {
   const { scenarioId } = useParams()
@@ -19,18 +24,15 @@ export function ScenarioPage() {
   return (
     <div className="train-shell">
       <TrainingHeader />
-      {scenario ? <ScenarioRun key={scenario.id} scenario={scenario} /> : <MissingScenario />}
+      {/* Keyed by id: a new scenario is a new run, and a call's voice provider lives exactly as long as its run. */}
+      {!scenario ? <MissingScenario /> : scenario.type === 'call' ? <CallRun key={scenario.id} scenario={scenario} /> : <ScenarioRun key={scenario.id} scenario={scenario} />}
     </div>
   )
 }
 
-function ScenarioRun({ scenario }: { scenario: Scenario }) {
-  const { user } = useAuth()
-  const { progress, record } = useProgress(user?.uid)
-  const [choice, setChoice] = useState<Action | null>(null)
-  const [inspected, setInspected] = useState(false)
+function ScenarioIntro({ scenario }: { scenario: Scenario }) {
   const heading = useRef<HTMLHeadingElement>(null)
-  const email = scenario.type === 'email'
+  const { Icon, label } = channelMeta[scenario.type]
 
   useEffect(() => {
     document.title = `${scenario.title} · Tellio`
@@ -39,6 +41,46 @@ function ScenarioRun({ scenario }: { scenario: Scenario }) {
     heading.current?.focus({ preventScroll: true })
   }, [scenario.title])
 
+  return (
+    <div className="scenario-intro">
+      <TransitionLink direction="back" className="train-back" to="/home"><ArrowLeft size={16} aria-hidden="true" />All scenarios</TransitionLink>
+      <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
+      <p className="scenario-meta"><Icon size={15} aria-hidden="true" /> {label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
+      <p className="scenario-situation"><strong>What you know:</strong> {scenario.situation}</p>
+    </div>
+  )
+}
+
+function CallRun({ scenario }: { scenario: CallScenario }) {
+  const { user } = useAuth()
+  const { progress, record } = useProgress(user?.uid)
+  return (
+    <main className="scenario-main">
+      <ScenarioIntro scenario={scenario} />
+      <Suspense fallback={<CallLoading />}>
+        <CallExperience scenario={scenario} progress={progress} record={record} />
+      </Suspense>
+    </main>
+  )
+}
+
+function CallLoading() {
+  return (
+    <section className="phone-wrap" aria-label="Practice phone">
+      <PhoneFrame time="">
+        <p className="call-loading" role="status"><LoaderCircle size={20} className="spinner" aria-hidden="true" /> Getting the phone ready…</p>
+      </PhoneFrame>
+    </section>
+  )
+}
+
+function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
+  const { user } = useAuth()
+  const { progress, record } = useProgress(user?.uid)
+  const [choice, setChoice] = useState<Action | null>(null)
+  const [inspected, setInspected] = useState(false)
+  const email = scenario.type === 'email'
+
   function choose(action: Action) {
     setChoice(action)
     record(scenario.id, action === scenario.correctAction)
@@ -46,12 +88,7 @@ function ScenarioRun({ scenario }: { scenario: Scenario }) {
 
   return (
     <main className="scenario-main">
-      <div className="scenario-intro">
-        <TransitionLink direction="back" className="train-back" to="/home"><ArrowLeft size={16} aria-hidden="true" />All scenarios</TransitionLink>
-        <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
-        <p className="scenario-meta">{email ? <Mail size={15} aria-hidden="true" /> : <MessageSquareText size={15} aria-hidden="true" />} {email ? 'Email' : 'Text message'} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
-        <p className="scenario-situation"><strong>What you know:</strong> {scenario.situation}</p>
-      </div>
+      <ScenarioIntro scenario={scenario} />
 
       <PhoneSimulator scenario={scenario} choice={choice} onChoose={choose} onInspect={() => { if (!choice) setInspected(true) }} />
 

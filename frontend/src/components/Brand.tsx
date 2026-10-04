@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom'
+import { TransitionLink } from './TransitionLink'
 
 export function Brand({ to = '/' }: { to?: string }) {
   return (
-    <Link to={to} className="brand" aria-label="Tellio home">
+    <TransitionLink direction="back" to={to} className="brand" aria-label="Tellio home">
       <span>tellio<span className="text-primary">.</span></span>
-    </Link>
+    </TransitionLink>
   )
 }
