@@ -172,7 +172,7 @@
 .debrief-mascot { flex-shrink: 0; width: 64px; height: 64px; }
 .debrief-verdict h2 { margin: 0; font-family: var(--font-editorial); font-size: 30px; font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
 .debrief-verdict h2:focus { outline: none; }
-.debrief-lede { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.debrief-lede { margin-top: 10px; max-width: 60ch; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); text-wrap: pretty; }
 .debrief h3 { margin: 28px 0 2px; font-size: 15px; font-weight: 600; }
 .debrief-hint { font-size: 13px; color: var(--color-muted-strong); }
 .debrief-clues { display: grid; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
@@ -181,10 +181,21 @@
 .debrief.is-safe-scenario .clue-num { background: var(--color-success-strong); }
 .debrief-clues strong { font-size: 15px; font-weight: 600; }
 .debrief-clues p { margin-top: 2px; font-size: 14px; line-height: 1.55; color: var(--color-muted-strong); }
+/* Message debrief: each clue is a row whose detail opens on tap. */
+.debrief-clues:has(details) { gap: 0; margin-top: 8px; }
+.debrief-clues details { grid-column: 1 / -1; border-bottom: 1px solid var(--color-border); }
+.debrief-clues summary { display: flex; align-items: center; gap: 12px; min-height: 48px; cursor: pointer; list-style: none; }
+.debrief-clues summary::-webkit-details-marker { display: none; }
+.debrief-clues summary .clue-num { margin: 0; }
+.debrief-clues summary::after { content: ""; flex-shrink: 0; width: 7px; height: 7px; margin: 0 6px 0 auto; border-right: 1.5px solid var(--color-muted-strong); border-bottom: 1.5px solid var(--color-muted-strong); rotate: 45deg; translate: 0 -2px; transition: rotate var(--motion-quick) var(--ease-out-quint), translate var(--motion-quick) var(--ease-out-quint); }
+.debrief-clues details[open] summary::after { rotate: 225deg; translate: 0 2px; }
+.debrief-clues details p { margin: -6px 0 0; padding: 0 0 12px 34px; font-size: 13.5px; --rise: -4px; animation: rise-in var(--motion-enter) var(--ease-out-quint); }
 .debrief-next { margin-top: 26px; padding: 14px 16px; border-radius: 10px; background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent); }
 .debrief-next h3 { margin: 0 0 4px; }
 .debrief-next p { font-size: 14px; line-height: 1.55; }
-.debrief-habit { margin-top: 20px; font-size: 14px; line-height: 1.55; color: var(--color-success-strong); }
+.debrief-tip { display: flex; align-items: flex-start; gap: 10px; margin-top: 20px; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); font-size: 14px; line-height: 1.5; }
+.debrief-tip > svg { flex-shrink: 0; margin-top: 2px; color: var(--color-accent-strong); }
+.debrief-habit { display: flex; align-items: center; gap: 6px; width: fit-content; margin-top: 16px; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface)); color: var(--color-success-strong); font-size: 13px; font-weight: 500; }
 .debrief-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
 
 /* ---------- Motion: one arrival, one reveal ---------- */
@@ -195,7 +206,7 @@
    "entry 100%" is reached as soon as each is fully on screen. Not on the phone or dialogs. */
 @supports (animation-timeline: view()) {
   .home-progress, .path-channel-head, .path-blurb, .path-stop,
-  .debrief-next, .debrief-habit, .debrief-actions { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  .debrief-next, .debrief-tip, .debrief-habit, .debrief-actions { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
 }
 @keyframes clue-in { from { background-color: transparent; } }
 
