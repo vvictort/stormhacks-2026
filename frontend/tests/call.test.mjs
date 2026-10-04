@@ -25,12 +25,12 @@ test('the call channel is ready with exactly the five contract scenarios and dif
 })
 
 // The live caller is the comms fixture with the same id; the page around it must describe the same call.
-const fixtureDir = new URL('../../backend/comms/fixtures/scenarios/', import.meta.url)
+const fixtureDir = new URL('../../backend/fixtures/scenarios/', import.meta.url)
 const fixtures = readdirSync(fixtureDir)
   .filter((file) => file.startsWith('call-') && file.endsWith('.json'))
   .map((file) => JSON.parse(readFileSync(new URL(file, fixtureDir), 'utf8')).scenario)
 
-test('call metadata matches the comms fixtures: ids, titles, caller labels, numbers, difficulty, tactics', () => {
+test('call metadata matches the server fixtures: ids, titles, caller labels, numbers, difficulty, tactics', () => {
   assert.deepEqual(calls.map((scenario) => scenario.id).sort(), fixtures.map((fixture) => fixture.id).sort())
   for (const fixture of fixtures) {
     const scenario = getScenario(fixture.id)
@@ -105,8 +105,7 @@ test('callScreen maps each hook state to a phone screen', () => {
   assert.equal(screen('ringing', 'elevenlabs_error'), 'voice_unavailable')
   assert.equal(screen('error', 'network_error', { callId: null }), 'comms_unavailable')
   assert.equal(screen('error', 'http_502', { callId: null }), 'comms_unavailable')
-  assert.equal(screen('error', 'internal_error', { callId: null }), 'comms_unavailable')
-  assert.equal(screen('error', 'backend_unavailable', { callId: null }), 'comms_unavailable')
+  assert.equal(screen('error', 'SERVICE_UNAVAILABLE', { callId: null }), 'comms_unavailable')
   assert.equal(screen('error', 'unauthorized', { callId: null }), 'failed')
   assert.equal(screen('error', 'not_ringing'), 'failed')
   assert.equal(screen('error', 'not_in_call'), 'failed')

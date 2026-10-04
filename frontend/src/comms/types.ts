@@ -1,4 +1,4 @@
-// Mirror of backend/comms/src/types.ts and its route responses. Keep in sync by hand.
+// Mirror of backend/app/shared/types.ts and the /api/comms route responses. Keep in sync by hand.
 
 export type Channel = 'text' | 'call'
 
@@ -53,7 +53,7 @@ export interface CallScenario extends ScenarioBase {
   voiceId?: string
 }
 
-/** `GET /comms/scenarios` entry. */
+/** `GET /api/comms/scenarios` entry. */
 export interface ScenarioSummary {
   id: string
   channel: Channel
@@ -153,12 +153,12 @@ export interface CallOverrides {
   tts?: { voiceId: string }
 }
 
-/** Body of `POST /comms/texts`; an empty pick means a random scenario. Scenarios are server-owned: ids only. */
+/** Body of `POST /api/comms/texts`; an empty pick means a random scenario. Scenarios are server-owned: ids only. */
 export interface ScenarioPick {
   scenarioId?: string
 }
 
-/** `POST /comms/texts` 201 response. */
+/** `POST /api/comms/texts` 201 response. */
 export interface StartTextResponse {
   threadId: string
   streamUrl: string
@@ -171,14 +171,14 @@ export interface StartTextResult {
   resumed: boolean
 }
 
-/** `POST /comms/calls` 201 response. */
+/** `POST /api/comms/calls` 201 response. */
 export interface StartCallResponse {
   callId: string
   callerLabel: string
   call: CallRecord
 }
 
-/** `POST /comms/calls/:id/accept` response. */
+/** `POST /api/comms/calls/:id/accept` response. */
 export interface AcceptCallResponse {
   conversationToken: string
   /** Omitted if ElevenLabs didn't return one with the token. */

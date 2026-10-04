@@ -10,9 +10,9 @@ export type CallScreen =
   | 'ended' | 'declined' | 'missed'
   | 'mic_denied' | 'mic_unavailable' | 'insecure' | 'comms_unavailable' | 'voice_unavailable' | 'failed'
 
-// Comms unreachable or broken: fetch failed, a 5xx (a dev proxy with comms down answers 500 with no JSON), or comms
-// couldn't reach the backend to look up a generated scenario (502 backend_unavailable).
-const COMMS_DOWN = /^(network_error|internal_error|backend_unavailable|http_5\d\d)$/
+// The API unreachable or broken: fetch failed, a 5xx without a JSON body (a dev proxy with the API down answers 500),
+// or the API's own 503 SERVICE_UNAVAILABLE (e.g. the database is down while looking up a generated scenario).
+const COMMS_DOWN = /^(network_error|SERVICE_UNAVAILABLE|http_5\d\d)$/
 
 /** Which screen the phone shows for a call-hook state. `result` comes from callOutcome only. */
 export function callScreen({ phase, callId, error, result }: { phase: CallPhase; callId: string | null; error: string | null; result: CallResult | null }): CallScreen {

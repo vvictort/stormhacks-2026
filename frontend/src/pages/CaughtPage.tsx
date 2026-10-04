@@ -16,7 +16,7 @@ const checks = [
 
 /**
  * Public page that tracked practice links redirect to (`/caught?sim=<threadId>`). Signed out is fine:
- * it only teaches, and records nothing. The click itself was already recorded by the comms service.
+ * it only teaches, and records nothing. The click itself was already recorded by the server.
  */
 export function CaughtPage() {
   const { user } = useAuth()

@@ -1,5 +1,5 @@
-// Phone-call practice: teaching metadata only. The caller's script and voice live on the comms service
-// (backend/comms/fixtures/scenarios/call-*.json); ids here must match those exactly.
+// Phone-call practice: teaching metadata only. The caller's script and voice live on the server
+// (backend/fixtures/scenarios/call-*.json); ids here must match those exactly.
 // Every company, person and number here is invented.
 import type { CallScenario } from './scenarios.ts'
 

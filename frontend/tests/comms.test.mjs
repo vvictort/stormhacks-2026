@@ -221,7 +221,7 @@ function fakeClient(responses) {
   const calls = []
   const tokens = []
   const client = createCommsClient({
-    baseUrl: '/comms',
+    baseUrl: '/api/comms',
     getToken: async (forceRefresh) => {
       tokens.push(forceRefresh)
       return forceRefresh ? 'fresh-token' : 'cached-token'
@@ -236,29 +236,29 @@ function fakeClient(responses) {
 
 test('a 401 retries once with a force-refreshed token', async () => {
   const { client, calls, tokens } = fakeClient([
-    json(401, { error: 'unauthorized', reason: 'expired' }),
+    json(401, { error: { code: 'INVALID_TOKEN', message: 'expired' } }),
     json(200, thread()),
   ])
   const result = await client.getThread('a b/c')
   assert.equal(result.id, T)
   assert.deepEqual(tokens, [false, true])
   assert.equal(calls.length, 2)
-  assert.equal(calls[0].url, '/comms/texts/a%20b%2Fc')
+  assert.equal(calls[0].url, '/api/comms/texts/a%20b%2Fc')
   assert.equal(calls[0].headers.authorization, 'Bearer cached-token')
   assert.equal(calls[1].headers.authorization, 'Bearer fresh-token')
 })
 
 test('a second 401 is not retried again', async () => {
   const { client, calls } = fakeClient([
-    json(401, { error: 'unauthorized', reason: 'expired' }),
-    json(401, { error: 'unauthorized', reason: 'revoked' }),
+    json(401, { error: { code: 'INVALID_TOKEN', message: 'expired' } }),
+    json(401, { error: { code: 'INVALID_TOKEN', message: 'revoked' } }),
   ])
-  await assert.rejects(client.report(T), (error) => error instanceof CommsError && error.status === 401 && error.code === 'unauthorized')
+  await assert.rejects(client.report(T), (error) => error instanceof CommsError && error.status === 401 && error.code === 'INVALID_TOKEN')
   assert.equal(calls.length, 2)
 })
 
 test('startText resumes the active thread on 409 active_thread_exists', async () => {
-  const { client, calls } = fakeClient([json(409, { error: 'active_thread_exists', threadId: 'existing' })])
+  const { client, calls } = fakeClient([json(409, { error: { code: 'active_thread_exists', message: 'busy', threadId: 'existing' } })])
   assert.deepEqual(await client.startText({ scenarioId: 'text-bank-alert' }), { threadId: 'existing', resumed: true })
   assert.equal(calls[0].method, 'POST')
   assert.equal(calls[0].headers['content-type'], 'application/json')
@@ -266,20 +266,20 @@ test('startText resumes the active thread on 409 active_thread_exists', async ()
 })
 
 test('startText returns a new thread on 201', async () => {
-  const { client } = fakeClient([json(201, { threadId: 'new', streamUrl: '/comms/texts/new/stream', thread: thread({ id: 'new' }) })])
+  const { client } = fakeClient([json(201, { threadId: 'new', streamUrl: '/api/comms/texts/new/stream', thread: thread({ id: 'new' }) })])
   assert.deepEqual(await client.startText(), { threadId: 'new', resumed: false })
 })
 
 test('non-ok responses throw CommsError with the code from the body', async () => {
   const { client } = fakeClient([
-    json(404, { error: 'scenario_not_found' }),
+    json(404, { error: { code: 'scenario_not_found', message: 'Scenario not found.' } }),
     new Response('<html>Bad gateway</html>', { status: 502 }),
   ])
   await assert.rejects(client.startCall('missing'), (error) => {
     assert.ok(error instanceof CommsError)
     assert.equal(error.status, 404)
     assert.equal(error.code, 'scenario_not_found')
-    assert.deepEqual(error.details, { error: 'scenario_not_found' })
+    assert.deepEqual(error.details, { error: { code: 'scenario_not_found', message: 'Scenario not found.' } })
     assert.equal(describeError(error), 'scenario_not_found')
     return true
   })
@@ -290,10 +290,10 @@ test('non-ok responses throw CommsError with the code from the body', async () =
 test('listScenarios is unauthenticated and streamUrl carries the token in the query', async () => {
   const { client, calls, tokens } = fakeClient([json(200, { scenarios: [{ id: 's1', channel: 'call' }] })])
   assert.deepEqual(await client.listScenarios('call'), [{ id: 's1', channel: 'call' }])
-  assert.equal(calls[0].url, '/comms/scenarios?channel=call')
+  assert.equal(calls[0].url, '/api/comms/scenarios?channel=call')
   assert.equal(calls[0].headers.authorization, undefined)
   assert.deepEqual(tokens, [])
-  assert.equal(await client.streamUrl('t/1'), '/comms/texts/t%2F1/stream?access_token=cached-token')
+  assert.equal(await client.streamUrl('t/1'), '/api/comms/texts/t%2F1/stream?access_token=cached-token')
 })
 
 test('startCall sends only the scenario id; callConnected binds the conversation id', async () => {
@@ -302,16 +302,16 @@ test('startCall sends only the scenario id; callConnected binds the conversation
     json(200, callRecord('in_call')),
   ])
   await client.startCall('bank-fraud-dept-otp-1')
-  assert.equal(calls[0].url, '/comms/calls')
+  assert.equal(calls[0].url, '/api/comms/calls')
   assert.deepEqual(JSON.parse(calls[0].body), { scenarioId: 'bank-fraud-dept-otp-1' })
   await client.callConnected('call-1', 'conv_9')
-  assert.equal(calls[1].url, '/comms/calls/call-1/connected')
+  assert.equal(calls[1].url, '/api/comms/calls/call-1/connected')
   assert.equal(calls[1].method, 'POST')
   assert.deepEqual(JSON.parse(calls[1].body), { conversationId: 'conv_9' })
 })
 
 test('409 conversation_mismatch surfaces as a CommsError code', async () => {
-  const { client } = fakeClient([json(409, { error: 'conversation_mismatch' })])
+  const { client } = fakeClient([json(409, { error: { code: 'conversation_mismatch', message: 'mismatch' } })])
   await assert.rejects(client.callEnded('call-1', 'conv_other'), (error) => describeError(error) === 'conversation_mismatch' && error.status === 409)
 })
 
@@ -327,14 +327,16 @@ test('microphone checks: insecure context and missing API are caught before aski
   assert.equal(microphoneErrorCode('weird'), 'microphone_denied')
 })
 
-test('abandonCall gives up a ringing call with an authenticated, body-less POST', async () => {
+test('abandonCall gives up a ringing call with an authenticated JSON POST', async () => {
   const abandoned = { ...callRecord('completed'), error: 'abandoned', training: { outcome: 'error', success: null, difficulty: 'medium' } }
-  const { client, calls } = fakeClient([json(200, abandoned), json(409, { error: 'not_ringing' })])
+  const { client, calls } = fakeClient([json(200, abandoned), json(409, { error: { code: 'not_ringing', message: 'over' } })])
   assert.deepEqual((await client.abandonCall('call 1')).training, { outcome: 'error', success: null, difficulty: 'medium' })
-  assert.equal(calls[0].url, '/comms/calls/call%201/abandon')
+  assert.equal(calls[0].url, '/api/comms/calls/call%201/abandon')
   assert.equal(calls[0].method, 'POST')
   assert.equal(calls[0].headers.authorization, 'Bearer cached-token')
-  assert.equal(calls[0].body, undefined)
+  // The API's write guard needs JSON, so a POST without arguments still sends {}.
+  assert.equal(calls[0].headers['content-type'], 'application/json')
+  assert.equal(calls[0].body, '{}')
   await assert.rejects(client.abandonCall('call-1'), (error) => describeError(error) === 'not_ringing')
 })
 
