@@ -12,7 +12,7 @@ import { createApp } from '../app/server.ts';
 import { EmailScenario, generateEmailScenario, type EmailGenerationInput } from '../app/scenarios/email-generator.ts';
 import type { JsonModel } from '../app/scenarios/gemini.ts';
 import { generateCallScenario, type CallScenarioRequest } from '../app/scenarios/generator.ts';
-import { groundingBlock, ScamLibrary } from '../app/scenarios/library.ts';
+import { blockedBrand, groundingBlock, ScamLibrary } from '../app/scenarios/library.ts';
 
 // backend/tests/fixtures/scam-library.json: a small, clearly synthetic library in the real file's shape.
 const FIXTURE = fileURLToPath(new URL('./fixtures/scam-library.json', import.meta.url));
@@ -257,4 +257,9 @@ test('grounding survives storage: GET returns it for generated emails and calls,
   const read = (await get(`email-scenarios/${scenario.id}`).expect(200)).body;
   assert.deepEqual(read, scenario);
   assert.ok(!/SYNTHETIC|syn-/.test(JSON.stringify([teaching, read])), 'no library text or ids reach the browser');
+});
+
+test('blockedBrand catches the courier, not hyphenated words like pop-ups', () => {
+  assert.ok(blockedBrand.test('Your UPS parcel is held'));
+  assert.ok(!blockedBrand.test('Close the pop-ups and sign-ups, then follow-ups'));
 });

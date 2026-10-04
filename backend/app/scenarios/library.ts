@@ -7,7 +7,7 @@ import { Channel, Difficulty, ScamCategory, Tactic } from '../shared/vocabulary.
 // datasets) that ground generation. Rows only ever go into prompts; the browser sees an example count, never a row.
 
 /** Real companies, banks, couriers and agencies a generated scenario (or a grounding example) must never name. */
-export const blockedBrand = /paypal|amazon|apple|google|gmail|microsoft|outlook|netflix|facebook|instagram|whatsapp|canada ?post|postes|interac|\brbc\b|\btd\b|scotia|\bcibc\b|\bbmo\b|desjardins|fedex|\bups\b|purolator|\bdhl\b|\bcra\b|service ?canada|canada\.ca|gc\.ca/i;
+export const blockedBrand = /paypal|amazon|apple|google|gmail|microsoft|outlook|netflix|facebook|instagram|whatsapp|canada ?post|postes|interac|\brbc\b|\btd\b|scotia|\bcibc\b|\bbmo\b|desjardins|fedex|(?<![\w-])ups(?![\w-])|purolator|\bdhl\b|\bcra\b|service ?canada|canada\.ca|gc\.ca/i;
 
 const Source = z.object({
   channel: Channel, dataset: z.string().min(1), url: z.string(), license: z.string().min(1), redistribution: z.enum(['excerpts', 'derived-only']),
