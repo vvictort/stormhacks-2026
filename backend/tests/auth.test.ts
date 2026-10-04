@@ -135,6 +135,11 @@ test("browser writes need the app Origin and JSON; the scenario list and tracked
     (await post().set("Origin", origin).send("x").type("text/plain")).status,
     415,
   );
+  // The same dev server under its other loopback name passes the origin check; another port doesn't.
+  const plain = (from: string) =>
+    post().set("Origin", from).send("x").type("text/plain");
+  assert.equal((await plain("http://127.0.0.1:5173")).status, 415);
+  assert.equal((await plain("http://localhost:5174")).status, 403);
   assert.equal((await post().set("Origin", origin).send({})).status, 201);
 
   const list = await app.api("GET", "/scenarios", { token: null });
