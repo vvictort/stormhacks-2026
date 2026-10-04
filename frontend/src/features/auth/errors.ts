@@ -24,16 +24,21 @@ export function getAuthErrorMessage(error: unknown): string {
     case 'auth/too-many-requests':
       return 'Too many attempts. Please wait a little before trying again.'
     case 'auth/network-request-failed':
+    case 'auth/timeout':
       return 'We couldn’t connect. Check your internet connection and try again.'
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
+    case 'auth/user-cancelled':
       return 'Google sign-in was cancelled. You can try again when you’re ready.'
     case 'auth/popup-blocked':
       return 'Your browser blocked the sign-in window. Allow popups for this site and try again.'
+    case 'auth/web-storage-unsupported':
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'Your browser settings are blocking sign-in. Allow cookies and site data for this site, or try another browser.'
     case 'auth/account-exists-with-different-credential':
       return 'This email uses another sign-in method. Try the method you used to create your account.'
     case 'auth/user-disabled':
-      return 'This account is currently unavailable. Please contact your training administrator.'
+      return 'This account has been disabled, so it can’t sign in right now.'
     case 'auth/operation-not-allowed':
     case 'auth/unauthorized-domain':
     case 'auth/configuration-not-found':

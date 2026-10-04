@@ -66,6 +66,9 @@ export async function resetPassword(email: string) {
 
 export const signOut = () => firebaseSignOut(auth)
 
+// The live session, which an operation's own credential can lag behind (e.g. a sign-out in another tab).
+export const currentUser = () => auth.currentUser
+
 export const observeAuthState = (
   onChange: (user: User | null) => void,
   onError?: (error: Error) => void,

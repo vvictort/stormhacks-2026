@@ -16,6 +16,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => authService.observeAuthState(
     (nextUser) => {
       setUser(nextUser)
+      // Covers sign-out from another tab, so a warning never outlives its session.
+      if (!nextUser) setProfileWarning(null)
       setInitializing(false)
     },
     (authError) => {
@@ -28,6 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null)
     setPasswordError(null)
   }, [])
+
+  const dismissProfileWarning = useCallback(() => setProfileWarning(null), [])
 
   async function run(operation: AuthOperation, action: () => Promise<void>) {
     if (busy.current) return false
@@ -49,19 +53,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, initializing, pending, error, passwordError, profileWarning, clearError,
+      user, initializing, pending, error, passwordError, profileWarning, clearError, dismissProfileWarning,
       login: (email, password) => run('login', async () => {
-        const result = await authService.signIn(email, password)
-        setUser(result.user)
+        await authService.signIn(email, password)
+        setUser(authService.currentUser())
       }),
       register: (email, password, name) => run('signup', async () => {
         const result = await authService.signUp(email, password, name)
         setProfileWarning(result.profileWarning)
-        setUser(result.credential.user)
+        setUser(authService.currentUser())
       }),
       google: () => run('google', async () => {
-        const result = await authService.signInWithGoogle()
-        setUser(result.user)
+        await authService.signInWithGoogle()
+        setUser(authService.currentUser())
       }),
       recoverPassword: (email) => run('reset', () => authService.resetPassword(email)),
       logout: () => run('signout', async () => {
