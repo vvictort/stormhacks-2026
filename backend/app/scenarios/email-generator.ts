@@ -212,6 +212,18 @@ export function hiddenIndicators(email: Rendered) {
 const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
+ * One quoted character as a pattern that also accepts any spacing and either
+ * style of quote mark or dash.
+ */
+function looseChar(ch: string) {
+  if (ch === " ") return "\\s+";
+  if (/["“”]/.test(ch)) return '["“”]';
+  if (/['‘’]/.test(ch)) return "['‘’]";
+  if (/[-–—]/.test(ch)) return "[-–—]";
+  return escape(ch);
+}
+
+/**
  * A quote that differs from the email only in case, spacing, quote marks,
  * dashes or end punctuation, as the exact email text.
  */
@@ -226,22 +238,7 @@ export function repairQuote(
     .replace(/["'“”‘’.,;:!?]+$/, "");
   if (core.length < 2) return null;
 
-  const pattern = new RegExp(
-    [...core]
-      .map((ch) =>
-        ch === " "
-          ? "\\s+"
-          : /["“”]/.test(ch)
-            ? '["“”]'
-            : /['‘’]/.test(ch)
-              ? "['‘’]"
-              : /[-–—]/.test(ch)
-                ? "[-–—]"
-                : escape(ch),
-      )
-      .join(""),
-    "i",
-  );
+  const pattern = new RegExp([...core].map(looseChar).join(""), "i");
   for (const value of markedTexts(email)) {
     const found = value.match(pattern)?.[0];
     if (found) return found;
@@ -993,10 +990,14 @@ export function emailFromExample(
     ? `https://${domain}/verify`
     : undefined;
 
+  let moment = "";
+  if (profession) moment = ` on a busy day in your ${profession} work`;
+  else if (interest) moment = ` while you're reading up on ${interest}`;
+
   return {
     title: `${named[0].toUpperCase()}${named.slice(1)} email from ${sender.name}`,
     summary: `An email from ${sender.name} that wants you to act.`,
-    situation: `This email from ${sender.name} lands in your inbox${profession ? ` on a busy day in your ${profession} work` : interest ? ` while you're reading up on ${interest}` : ""}.`,
+    situation: `This email from ${sender.name} lands in your inbox${moment}.`,
     senderName: sender.name,
     senderEmail: sender.address,
     subject,

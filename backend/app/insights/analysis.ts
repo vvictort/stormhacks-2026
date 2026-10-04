@@ -309,15 +309,14 @@ const channelLabels: Record<Channel, string> = {
   call: "scam calls",
 };
 
-export const areaLabel = (a: {
+export function areaLabel(a: {
   dimension: Dimension | "channel";
   area: string;
-}) =>
-  a.dimension === "category"
-    ? categoryLabels[a.area as ScamCategory]
-    : a.dimension === "channel"
-      ? channelLabels[a.area as Channel]
-      : tacticLabels[a.area as Tactic];
+}) {
+  if (a.dimension === "category") return categoryLabels[a.area as ScamCategory];
+  if (a.dimension === "channel") return channelLabels[a.area as Channel];
+  return tacticLabels[a.area as Tactic];
+}
 
 /** "authority combined with urgency" */
 export const pairLabel = ([a, b]: [Tactic, Tactic]) =>
@@ -333,6 +332,121 @@ const pct = (n: number, d: number) => (d ? n / d : 0);
 const WEAK = 0.4;
 const STRONG = 0.25;
 export const COHORT_MIN = 5;
+
+/** What still catches the user out, from the most specific evidence there is. */
+function struggleText(
+  summary: TrainingSummary,
+  weak: RankedArea[],
+  interp: Interpretation | null,
+): string | null {
+  const weakPair = interp?.weakPair;
+  if (weakPair) {
+    const cohort =
+      weakPair.cohortMissRate === null
+        ? ""
+        : `, against ${Math.round(weakPair.cohortMissRate * 100)}% for other trainees`;
+    return `${pairLabel(weakPair.tactics)} still causes mistakes: ${weakPair.missed} of ${weakPair.attempts} times${cohort}`;
+  }
+
+  const pair = summary.missedPair;
+  if (pair) {
+    const [first, second] = pair.map((tactic) => tacticWords[tactic as Tactic]);
+    return `you struggle when ${first} and ${second} are combined`;
+  }
+
+  return weak[0] ? `you struggle with ${areaLabel(weak[0])}` : null;
+}
+
+function strengthText(
+  strong: RankedArea[],
+  interp: Interpretation | null,
+  struggle: string | null,
+): string | null {
+  if (interp?.quickCatch) {
+    return `You catch ${areaLabel(interp.quickCatch)} quickly`;
+  }
+  if (!strong[0]) return null;
+
+  // One strength when a struggle shares the sentence, otherwise up to two.
+  const areas = struggle
+    ? areaLabel(strong[0])
+    : list(strong.slice(0, 2).map(areaLabel));
+  return `You consistently see through ${areas}`;
+}
+
+function leadSentence(strength: string | null, struggle: string | null) {
+  if (strength && struggle) return `${strength}, but ${struggle}.`;
+  if (strength) return `${strength}.`;
+  if (struggle) return `${capital(struggle)}.`;
+  return "Your results are mixed so far, with no clear weak spot yet.";
+}
+
+function cohortSentence(weak: RankedArea[], strong: RankedArea[]) {
+  const behind = weak.find(
+    (r) =>
+      (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 0) >= 0.6,
+  );
+  if (behind) {
+    return `Compared with other trainees, you're weaker than most on ${areaLabel(behind)}.`;
+  }
+
+  const ahead = strong.find(
+    (r) =>
+      (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 1) <= 0.3,
+  );
+  return ahead
+    ? `Compared with other trainees, you're ahead of most on ${areaLabel(ahead)}.`
+    : null;
+}
+
+/** How the user decides: speed, then difficulty, then the recent trend. */
+function habitSentence(summary: TrainingSummary): string | null {
+  const { overall } = summary;
+  const { correct: rightMs, fellFor: fooledMs } = summary.responseMs;
+  const { easy, hard } = summary.byDifficulty;
+  const trend =
+    overall.recentAccuracy !== null && overall.earlierAccuracy !== null
+      ? overall.recentAccuracy - overall.earlierAccuracy
+      : 0;
+
+  if (rightMs && fooledMs && fooledMs < 0.7 * rightMs) {
+    return "You decide faster on the ones that fool you, so slowing down is your best defence.";
+  }
+  if (
+    hard.attempts >= 2 &&
+    pct(hard.correct, hard.attempts) < 0.5 &&
+    easy.attempts &&
+    pct(easy.correct, easy.attempts) >= 0.75
+  ) {
+    return "You handle the obvious ones well, but the more convincing scams still get through.";
+  }
+  if (trend >= 0.15) {
+    return "Your recent attempts are more accurate than your early ones.";
+  }
+  if (trend <= -0.15) {
+    return "Your recent attempts have slipped a little, so take the next few slowly.";
+  }
+  return null;
+}
+
+function planText(
+  weakCategories: ScamCategory[],
+  untried: ScamCategory[],
+  weakest: ScamCategory | undefined,
+) {
+  const firstTwo = (categories: ScamCategory[]) =>
+    list(categories.slice(0, 2).map((c) => categoryLabels[c]));
+
+  if (weakCategories.length) {
+    return `Your next training should focus on ${firstTwo(weakCategories)}.`;
+  }
+  if (untried.length) {
+    return `Next, try ${firstTwo(untried)}: chatisthisreal hasn't seen you handle those yet.`;
+  }
+  return weakest
+    ? `Keep practising ${categoryLabels[weakest]} at a harder level.`
+    : "";
+}
 
 /**
  * The contract's analysis from ranked areas (Snowflake's or local), with
@@ -365,90 +479,19 @@ export function buildInsights(
   );
   const weakest = [...categories].sort((a, b) => b.weakness - a.weakness)[0]
     ?.area as ScamCategory | undefined;
-  const focus = [...weakCategories, ...untried].slice(0, 3);
-  const nextTrainingFocus = focus.length ? focus : weakest ? [weakest] : [];
+  const nextTrainingFocus = [...weakCategories, ...untried].slice(0, 3);
+  if (!nextTrainingFocus.length && weakest) nextTrainingFocus.push(weakest);
 
-  const pair = summary.missedPair;
-  const weakPair = interp?.weakPair;
-  const struggle = weakPair
-    ? `${pairLabel(weakPair.tactics)} still causes mistakes: ${weakPair.missed} of ${weakPair.attempts} times${weakPair.cohortMissRate === null ? "" : `, against ${Math.round(weakPair.cohortMissRate * 100)}% for other trainees`}`
-    : pair
-      ? `you struggle when ${tacticWords[pair[0] as Tactic]} and ${tacticWords[pair[1] as Tactic]} are combined`
-      : weak[0]
-        ? `you struggle with ${areaLabel(weak[0])}`
-        : null;
-  const opening = interp?.quickCatch
-    ? `You catch ${areaLabel(interp.quickCatch)} quickly`
-    : strong[0]
-      ? `You consistently see through ${struggle ? areaLabel(strong[0]) : list(strong.slice(0, 2).map(areaLabel))}`
-      : null;
-
+  const struggle = struggleText(summary, weak, interp);
   const sentences = [
-    opening && struggle
-      ? `${opening}, but ${struggle}.`
-      : opening
-        ? `${opening}.`
-        : struggle
-          ? `${capital(struggle)}.`
-          : "Your results are mixed so far, with no clear weak spot yet.",
-  ];
-
-  const behind = weak.find(
-    (r) =>
-      (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 0) >= 0.6,
-  );
-  const ahead = strong.find(
-    (r) =>
-      (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 1) <= 0.3,
-  );
-  if (behind) {
-    sentences.push(
-      `Compared with other trainees, you're weaker than most on ${areaLabel(behind)}.`,
-    );
-  } else if (ahead) {
-    sentences.push(
-      `Compared with other trainees, you're ahead of most on ${areaLabel(ahead)}.`,
-    );
-  }
-
-  const { correct: rightMs, fellFor: fooledMs } = summary.responseMs;
-  const { easy, hard } = summary.byDifficulty;
-  const trend =
-    overall.recentAccuracy !== null && overall.earlierAccuracy !== null
-      ? overall.recentAccuracy - overall.earlierAccuracy
-      : 0;
-  if (rightMs && fooledMs && fooledMs < 0.7 * rightMs) {
-    sentences.push(
-      "You decide faster on the ones that fool you, so slowing down is your best defence.",
-    );
-  } else if (
-    hard.attempts >= 2 &&
-    pct(hard.correct, hard.attempts) < 0.5 &&
-    easy.attempts &&
-    pct(easy.correct, easy.attempts) >= 0.75
-  ) {
-    sentences.push(
-      "You handle the obvious ones well, but the more convincing scams still get through.",
-    );
-  } else if (trend >= 0.15) {
-    sentences.push(
-      "Your recent attempts are more accurate than your early ones.",
-    );
-  } else if (trend <= -0.15) {
-    sentences.push(
-      "Your recent attempts have slipped a little, so take the next few slowly.",
-    );
-  }
+    leadSentence(strengthText(strong, interp, struggle), struggle),
+    cohortSentence(weak, strong),
+    habitSentence(summary),
+  ].filter((sentence) => sentence !== null);
 
   const tip = (weak.find((r) => r.dimension === "tactic")?.area ??
-    pair?.[0]) as Tactic | undefined;
-  const plan = weakCategories.length
-    ? `Your next training should focus on ${list(weakCategories.slice(0, 2).map((c) => categoryLabels[c]))}.`
-    : untried.length
-      ? `Next, try ${list(untried.slice(0, 2).map((c) => categoryLabels[c]))}: chatisthisreal hasn't seen you handle those yet.`
-      : weakest
-        ? `Keep practising ${categoryLabels[weakest]} at a harder level.`
-        : "";
+    summary.missedPair?.[0]) as Tactic | undefined;
+  const plan = planText(weakCategories, untried, weakest);
 
   return {
     strongestAreas: [
@@ -458,7 +501,7 @@ export function buildInsights(
       .slice(0, 3)
       .map(capital),
     weakAreas: weak.slice(0, 3).map(areaLabel).map(capital),
-    behavioralPattern: sentences.slice(0, 3).join(" "),
+    behavioralPattern: sentences.join(" "),
     recommendation: [plan, tip && tips[tip]].filter(Boolean).join(" "),
     nextTrainingFocus,
     source,

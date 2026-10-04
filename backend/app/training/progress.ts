@@ -70,6 +70,71 @@ export const HISTORY_LIMIT = 1000;
 const levels: Difficulty[] = ["easy", "medium", "hard"];
 
 /**
+ * Up, down or stay after the attempt at `index`. Steps follow the last 5
+ * results, so two old misses don't pin someone at easy forever.
+ */
+function difficultyStep(scored: ScoredAttempt[], index: number) {
+  if (index < 2) return 0;
+
+  const recent = scored.slice(Math.max(0, index - 4), index + 1);
+  const recentRight = recent.filter((a) => a.success).length;
+  const recentFell = recent.filter((a) => fellForScam(a.outcome)).length;
+  if (recentRight / recent.length >= 0.85 && recentFell === 0) return 1;
+  return recentFell >= 2 ? -1 : 0;
+}
+
+function masteryState(
+  attempts: number,
+  confidentlyWrong: number,
+  accuracy: number,
+): TacticMasteryState {
+  if (attempts === 0) return "untouched";
+  return confidentlyWrong > 0 || accuracy < 75 ? "shaky" : "solid";
+}
+
+/** Per tactic: every core tactic, plus any other the attempts used. */
+function tacticMasteryOf(scored: ScoredAttempt[]) {
+  const tacticStats = new Map<
+    string,
+    { attempts: number; correct: number; confidentlyWrong: number }
+  >();
+  for (const t of CORE_TACTICS) {
+    tacticStats.set(t, { attempts: 0, correct: 0, confidentlyWrong: 0 });
+  }
+
+  for (const attempt of scored) {
+    const isCertainWrong =
+      attempt.success === false && attempt.confidence === "certain";
+    for (const tactic of attempt.tactics) {
+      const current = tacticStats.get(tactic) ?? {
+        attempts: 0,
+        correct: 0,
+        confidentlyWrong: 0,
+      };
+      current.attempts++;
+      if (attempt.success) current.correct++;
+      if (isCertainWrong) current.confidentlyWrong++;
+      tacticStats.set(tactic, current);
+    }
+  }
+
+  const tacticMastery: Record<string, TacticMastery> = {};
+  for (const [tactic, st] of tacticStats.entries()) {
+    const accuracy =
+      st.attempts > 0 ? Math.round((st.correct / st.attempts) * 100) : 0;
+    tacticMastery[tactic] = {
+      tactic,
+      attempts: st.attempts,
+      correct: st.correct,
+      accuracy,
+      confidentlyWrong: st.confidentlyWrong,
+      state: masteryState(st.attempts, st.confidentlyWrong, accuracy),
+    };
+  }
+  return tacticMastery;
+}
+
+/**
  * Stats, category accuracy, vulnerability and adaptive difficulty from a user's
  * attempts (any order).
  */
@@ -111,65 +176,9 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
     if (cat.accuracy < 75) weak.add(category);
     else if (cat.accuracy >= 80) weak.delete(category);
 
-    // Steps follow the last 5 results, so two old misses don't pin someone at
-    // easy forever.
-    const recent = scored.slice(Math.max(0, index - 4), index + 1);
-    const recentRight = recent.filter((a) => a.success).length;
-    const recentFell = recent.filter((a) => fellForScam(a.outcome)).length;
-    const step =
-      index < 2
-        ? 0
-        : recentRight / recent.length >= 0.85 && recentFell === 0
-          ? 1
-          : recentFell >= 2
-            ? -1
-            : 0;
+    const step = difficultyStep(scored, index);
     difficulty =
       levels[Math.min(2, Math.max(0, levels.indexOf(difficulty) + step))];
-  }
-
-  const tacticStats = new Map<
-    string,
-    { attempts: number; correct: number; confidentlyWrong: number }
-  >();
-  for (const t of CORE_TACTICS) {
-    tacticStats.set(t, { attempts: 0, correct: 0, confidentlyWrong: 0 });
-  }
-
-  for (const attempt of scored) {
-    const isCertainWrong =
-      attempt.success === false && attempt.confidence === "certain";
-    for (const tactic of attempt.tactics) {
-      const current = tacticStats.get(tactic) ?? {
-        attempts: 0,
-        correct: 0,
-        confidentlyWrong: 0,
-      };
-      current.attempts++;
-      if (attempt.success) current.correct++;
-      if (isCertainWrong) current.confidentlyWrong++;
-      tacticStats.set(tactic, current);
-    }
-  }
-
-  const tacticMastery: Record<string, TacticMastery> = {};
-  for (const [tactic, st] of tacticStats.entries()) {
-    const accuracy =
-      st.attempts > 0 ? Math.round((st.correct / st.attempts) * 100) : 0;
-    const state: TacticMasteryState =
-      st.attempts === 0
-        ? "untouched"
-        : st.confidentlyWrong > 0 || accuracy < 75
-          ? "shaky"
-          : "solid";
-    tacticMastery[tactic] = {
-      tactic,
-      attempts: st.attempts,
-      correct: st.correct,
-      accuracy,
-      confidentlyWrong: st.confidentlyWrong,
-      state,
-    };
   }
 
   return {
@@ -181,7 +190,7 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
         .map(([tactic]) => tactic),
       categoryAccuracy,
     },
-    tacticMastery,
+    tacticMastery: tacticMasteryOf(scored),
     difficulty,
   };
 }

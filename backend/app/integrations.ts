@@ -9,32 +9,47 @@ const SNOWFLAKE_REQUIRED = [
   "SNOWFLAKE_ID_SALT",
 ] as const;
 
+function elevenLabsStatus(config: Config) {
+  if (config.ELEVENLABS_API_KEY && config.ELEVENLABS_AGENT_ID) {
+    return "configured";
+  }
+  if (config.ELEVENLABS_API_KEY) {
+    return "unavailable (set ELEVENLABS_AGENT_ID: npm run setup:agent; caption-only practice)";
+  }
+  return "unavailable (caption-only practice)";
+}
+
+function snowflakeStatus(config: Config) {
+  const set = SNOWFLAKE_REQUIRED.filter((key) => config[key]);
+  if (set.length === SNOWFLAKE_REQUIRED.length) {
+    return `configured (Cortex ${config.SNOWFLAKE_CORTEX_MODEL ? "on" : "off"})`;
+  }
+  // Partly configured: say what is missing rather than fall back silently.
+  if (set.length || config.SNOWFLAKE_ROLE || config.SNOWFLAKE_CORTEX_MODEL) {
+    return `built-in analysis (Snowflake needs all of ${SNOWFLAKE_REQUIRED.join(", ")})`;
+  }
+  return "built-in analysis";
+}
+
 /**
  * One startup line per sponsor integration: what is on and what the app falls
  * back to. Names only, never values.
  */
 export function integrationLines(config: Config): string[] {
-  const snowflakeSet = SNOWFLAKE_REQUIRED.filter((key) => config[key]);
+  const gemini = config.GEMINI_API_KEY
+    ? "configured"
+    : "not configured (fallback templates)";
   return [
-    `Gemini: ${config.GEMINI_API_KEY ? "configured" : "not configured (fallback templates)"}`,
-    `ElevenLabs: ${
-      config.ELEVENLABS_API_KEY && config.ELEVENLABS_AGENT_ID
-        ? "configured"
-        : config.ELEVENLABS_API_KEY
-          ? "unavailable (set ELEVENLABS_AGENT_ID: npm run setup:agent; caption-only practice)"
-          : "unavailable (caption-only practice)"
-    }`,
-    `Snowflake: ${
-      snowflakeSet.length === SNOWFLAKE_REQUIRED.length
-        ? `configured (Cortex ${config.SNOWFLAKE_CORTEX_MODEL ? "on" : "off"})`
-        : snowflakeSet.length ||
-            config.SNOWFLAKE_ROLE ||
-            config.SNOWFLAKE_CORTEX_MODEL
-          ? `built-in analysis (Snowflake needs all of ${SNOWFLAKE_REQUIRED.join(", ")})`
-          : "built-in analysis"
-    }`,
+    `Gemini: ${gemini}`,
+    `ElevenLabs: ${elevenLabsStatus(config)}`,
+    `Snowflake: ${snowflakeStatus(config)}`,
   ];
 }
 
+const STORAGE_STATUS: Record<Storage, string> = {
+  timescale: "timescaledb hypertable",
+  postgres: "plain Postgres (no timescaledb hypertable)",
+};
+
 export const storageLine = (storage: Storage | null) =>
-  `TigerData: ${storage === "timescale" ? "timescaledb hypertable" : storage === "postgres" ? "plain Postgres (no timescaledb hypertable)" : "unknown (database unreachable)"}`;
+  `TigerData: ${storage ? STORAGE_STATUS[storage] : "unknown (database unreachable)"}`;
