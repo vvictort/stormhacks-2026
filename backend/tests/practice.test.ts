@@ -21,12 +21,14 @@ const committed = JSON.parse(readFileSync(PRACTICE_FILE, "utf8"));
 const texts: PracticeText[] = committed.texts.map((t: unknown) =>
   PracticeText.parse(t),
 );
+
 const meta = {
   id: "lib-sms-shipping",
   category: "shipping" as const,
   difficulty: "easy" as const,
   exampleCount: 2,
 };
+
 const answer = (overrides: Record<string, unknown> = {}) =>
   JSON.stringify({
     title: "Parcel held for a fee",
@@ -66,10 +68,12 @@ const answer = (overrides: Record<string, unknown> = {}) =>
 test("the committed practice path is exactly what the library builds (rebuild with npm run build:practice)", () => {
   const { practice, fixtures } = buildPractice(library, texts);
   assert.deepEqual(committed, JSON.parse(JSON.stringify(practice)));
+
   const onDisk = readdirSync(FIXTURE_DIR)
     .filter((f) => f.endsWith(".json"))
     .sort();
   assert.deepEqual(onDisk, Object.keys(fixtures).sort());
+
   for (const file of onDisk) {
     assert.deepEqual(
       JSON.parse(readFileSync(join(FIXTURE_DIR, file), "utf8")),
@@ -105,12 +109,14 @@ test("the practice path has no hand-written scams: library emails and calls, Gem
           t.generated.grounding.exampleCount >= 1,
       ),
   );
+
   for (const list of [emails, texts, calls]) {
     assert.deepEqual(
       new Set(list.map((s: { difficulty: string }) => s.difficulty)),
       new Set(["easy", "medium", "hard"]),
     );
   }
+
   assert.ok(
     calls.every((c: { indicators: unknown[] }) => c.indicators.length >= 3),
     "the call debrief needs 3 warning signs",
@@ -125,6 +131,7 @@ test("the app catalog loads the library-built comms fixtures", () => {
       call.id,
     );
   }
+
   for (const text of texts) {
     assert.ok(
       catalog.list("text").some((s) => s.id === text.id),
@@ -142,6 +149,7 @@ test("practice texts: near-miss quotes are repaired, and fake numbers, real bran
     "case repaired to the exact text",
   );
   assert.equal(ok.value.generated.grounding.exampleCount, 2);
+
   assert.ok(
     "problems" in checkText(answer({ sender: "+1 (604) 382-9911" }), meta),
     "a real-looking number",
@@ -184,6 +192,7 @@ test("practice texts are grounded or not written at all", async () => {
     prompt = p;
     return answer();
   };
+
   const text = await generatePracticeText(model, library, "shipping", "easy");
   assert.ok(text && prompt.includes("REAL-WORLD GROUNDING EXAMPLES"));
   assert.equal(

@@ -68,15 +68,20 @@
   --color-danger: #c85555;
   --color-accent: #c8a15a;
   --color-border: #ded6c9;
-  /* Control edges need 3:1 against surface and background (WCAG 1.4.11); --color-border is for dividers only. */
+
+  /* Control edges need 3:1 against surface and background (WCAG 1.4.11);
+     --color-border is for dividers only. */
   --color-control: #9a8a76;
-  /* Deeper companion shades give small text and controls accessible contrast. */
+
+  /* Deeper companion shades give small text and controls accessible
+     contrast. */
   --color-muted-strong: #75634f;
   --color-primary-strong: #a34f36;
   --color-primary-deep: #8e432e;
   --color-success-strong: #52674b;
   --color-danger-strong: #ac3838;
   --color-accent-strong: #725822;
+
   --font-sans: 'Inter', 'Segoe UI', Arial, sans-serif;
   --font-editorial:
     'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
@@ -91,14 +96,18 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Motion: quick state feedback, slightly longer arrivals, one decelerating curve.
-     --motion-scale multiplies every travel distance and drops to 0 for reduced motion. */
+
+  /* Motion: quick state feedback, slightly longer arrivals, one decelerating
+     curve. --motion-scale multiplies every travel distance and drops to 0 for
+     reduced motion. */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-quick: 160ms;
   --motion-enter: 280ms;
   --motion-scale: 1;
-  /* Phone-app feel: a gentle spring (damping .78, ~2% overshoot, settles in 485ms) for releases
-     and arrivals, and the iOS sheet curve for screen pushes. */
+
+  /* Phone-app feel: a gentle spring (damping .78, ~2% overshoot, settles in
+     485ms) for releases and arrivals, and the iOS sheet curve for screen
+     pushes. */
   --spring: linear(
     0,
     0.046,
@@ -127,7 +136,9 @@
     1
   );
   --spring-duration: 485ms;
-  /* Tell's own squash spring (stiffness 190, damping 13 in Mascot.tsx) as an easing: one visible wobble. */
+
+  /* Tell's own squash spring (stiffness 190, damping 13 in Mascot.tsx) as an
+     easing: one visible wobble. */
   --bubbly: linear(
     0,
     0.053,
@@ -164,14 +175,16 @@
     1
   );
   --bubbly-duration: 800ms;
+
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Scrolling stays fully live (wheel, touch, keys); only the bar is hidden, here and in every inner scroller. */
 html {
   scroll-behavior: smooth;
 }
 
+/* Scrolling stays fully live (wheel, touch, keys); only the bar is hidden, here
+   and in every inner scroller. */
 * {
   scrollbar-width: none;
 }
@@ -249,8 +262,10 @@ h1:focus,
   background: color-mix(in srgb, var(--color-primary) 19%, transparent);
 }
 
-/* Auth is an app screen, not a page: the same bar as the signed-in app, then one quiet column.
-   Tell sits beside the heading on phones and moves out into the margin once there is room. */
+/* Auth is an app screen, not a page: the same bar as the signed-in app, then
+   one quiet column. Tell sits beside the heading on phones and moves out into
+   the margin once there is room. */
+
 .auth-shell {
   min-height: 100svh;
   display: flex;
@@ -276,7 +291,8 @@ h1:focus,
   letter-spacing: -1.2px;
 }
 
-/* Auto margins centre the column but collapse to zero when it overflows, so short screens scroll instead of clipping. */
+/* Auto margins centre the column but collapse to zero when it overflows, so
+   short screens scroll instead of clipping. */
 .auth-stage {
   flex: 1;
   display: flex;
@@ -453,7 +469,8 @@ h1:focus,
   scale: 0.88;
 }
 
-/* One reserved line under every field; hint and error stack in the same cell and crossfade. */
+/* One reserved line under every field; hint and error stack in the same cell
+   and crossfade. */
 .field-message {
   display: grid;
   min-height: 1.5em;
@@ -579,7 +596,6 @@ h1:focus,
   border-color: var(--color-muted-strong);
 }
 
-/* Press: a 1px settle, the same on every full-width button. */
 .primary-button:active:not(:disabled) {
   background-color: var(--color-primary-deep);
 }
@@ -647,7 +663,8 @@ h1:focus,
   color: var(--color-danger-strong);
 }
 
-/* The divider's row doubles as the form-level error slot; a long message grows it rather than overflowing. */
+/* The divider's row doubles as the form-level error slot; a long message grows
+   it rather than overflowing. */
 .form-feedback {
   display: grid;
   align-items: center;
@@ -669,7 +686,8 @@ h1:focus,
     visibility 0s;
 }
 
-/* Fades out faster than the error rises in, so the "or" never ghosts through the message. */
+/* Fades out faster than the error rises in, so the "or" never ghosts through
+   the message. */
 .auth-divider[data-hidden] {
   opacity: 0;
   visibility: hidden;
@@ -855,8 +873,10 @@ h1:focus,
     fade-in var(--motion-quick) var(--ease-out-quint);
 }
 
-/* Arrival: the column rises in, Tell settles a beat later, then the note's arrow draws itself.
-   The card re-runs this whenever it remounts, which gives /login and /signup a soft hand-off. */
+/* Arrival: the column rises in, Tell settles a beat later, then the note's
+   arrow draws itself. The card re-runs this whenever it remounts, which gives
+   /login and /signup a soft hand-off. */
+
 .auth-card {
   animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards;
 }
@@ -874,7 +894,8 @@ h1:focus,
   animation: draw 520ms var(--ease-out-quint) 600ms backwards;
 }
 
-/* Session checks usually finish in a blink; only show the loader card if it doesn't. */
+/* Session checks usually finish in a blink; only show the loader card if it
+   doesn't. */
 .auth-card:has(.session-loading) {
   animation: fade-in 200ms var(--ease-out-quint) 350ms backwards;
 }
@@ -888,7 +909,8 @@ h1:focus,
   animation: fade-in 200ms var(--ease-out-quint);
 }
 
-/* ---------- Touch feel: press in fast, spring back out ---------- */
+/* Touch feel: press in fast, spring back out */
+
 :is(
   .primary-button,
   .social-button,
@@ -917,7 +939,8 @@ h1:focus,
   --press: 0.985;
 }
 
-/* Tabs and filters are bubbly like Tell: a deeper squish, let go on the mascot's spring. */
+/* Tabs and filters are bubbly like Tell: a deeper squish, let go on the
+   mascot's spring. */
 :is(.segmented, .path-chips) button {
   --press: 0.9;
   --release: var(--bubbly);
@@ -940,7 +963,8 @@ h1:focus,
   transition-timing-function: ease-out;
 }
 
-/* ---------- Text that arrives word by word ---------- */
+/* Text that arrives word by word */
+
 .reveal-word,
 .reveal-line {
   display: inline-block;
@@ -956,7 +980,8 @@ h1:focus,
   }
 }
 
-/* ---------- Screen transitions (View Transitions; see lib/viewTransition.ts) ---------- */
+/* Screen transitions (View Transitions; see lib/viewTransition.ts) */
+
 /* The nav bar stays put, like an app's, including across login -> home. */
 :is(.train-header, .auth-bar) {
   view-transition-name: app-header;
@@ -975,8 +1000,9 @@ h1:focus,
   animation-timing-function: var(--ease-ios);
 }
 
-/* Push: the new screen slides over from the right while the old one drifts left and dims. Pop reverses it.
-   Full width on phones; a shorter glide on wide screens so the whole desktop doesn't sweep. */
+/* Push: the new screen slides over from the right while the old one drifts left
+   and dims. Pop reverses it. Full width on phones; a shorter glide on wide
+   screens so the whole desktop doesn't sweep. */
 :root {
   --push: 36px;
 }
@@ -1033,13 +1059,15 @@ h1:focus,
   }
 }
 
-/* Login <-> signup: only the card morphs (size and content); the page around it holds still. */
+/* Login <-> signup: only the card morphs (size and content); the page around it
+   holds still. */
 [data-nav='swap']::view-transition-old(root),
 [data-nav='swap']::view-transition-new(root) {
   animation: none;
 }
 
-/* Fade-through, not crossfade: old card content leaves before the new arrives, so they never overlap. */
+/* Fade-through, not crossfade: old card content leaves before the new arrives,
+   so they never overlap. */
 [data-nav='swap']::view-transition-old(auth-card) {
   animation: 200ms ease-out both vt-fade-out;
 }
@@ -1067,7 +1095,8 @@ h1:focus,
   overflow: clip;
 }
 
-/* Only the fields move; the rest of the card (description, button label) switches at once while its height morphs. */
+/* Only the fields move; the rest of the card (description, button label)
+   switches at once while its height morphs. */
 [data-nav^='step']::view-transition-old(auth-card),
 [data-nav^='step']::view-transition-old(root) {
   display: none;
@@ -1122,8 +1151,9 @@ h1:focus,
   }
 }
 
-/* The view transition already animates these, so their own entrances finish instantly underneath it.
-   Not `animation: none`: lifting that when the transition ends restarts the entrance from opacity 0 (a flash). */
+/* The view transition already animates these, so their own entrances finish
+   instantly underneath it. Not `animation: none`: lifting that when the
+   transition ends restarts the entrance from opacity 0 (a flash). */
 [data-nav] :is(.auth-card, .form-step) {
   animation-duration: 0s;
   animation-delay: 0s;
@@ -1167,7 +1197,8 @@ h1:focus,
   }
 }
 
-/* Wide screens: Tell steps out of the column into the right margin, with a hand-drawn note under it. */
+/* Wide screens: Tell steps out of the column into the right margin, with a
+   hand-drawn note under it. */
 @media (min-width: 900px) {
   .card-heading {
     display: block;
@@ -1212,8 +1243,9 @@ h1:focus,
   }
 }
 
-/* Phones: a native sign-in screen. A slimmer bar, tighter rhythm, nothing decorative but Tell.
-   The column still centres, biased upward, so tall phones lose the dead band and short ones sit near the top. */
+/* Phones: a native sign-in screen. A slimmer bar, tighter rhythm, nothing
+   decorative but Tell. The column still centres, biased upward, so tall phones
+   lose the dead band and short ones sit near the top. */
 @media (max-width: 540px) {
   .auth-bar {
     width: calc(100% - 40px);

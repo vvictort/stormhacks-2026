@@ -26,6 +26,7 @@ export const badges = [
   },
 ] as const
 export type BadgeId = (typeof badges)[number]['id']
+
 export interface Mission {
   id: string
   scenarioIds: string[]
@@ -33,6 +34,7 @@ export interface Mission {
   ready: boolean
   generated?: EmailScenario
 }
+
 export interface Adventure {
   version: 1
   mission: Mission | null
@@ -41,6 +43,7 @@ export interface Adventure {
   tipSeen: boolean
   processed: string[]
 }
+
 export const emptyAdventure = (): Adventure => ({
   version: 1,
   mission: null,
@@ -49,17 +52,23 @@ export const emptyAdventure = (): Adventure => ({
   tipSeen: false,
   processed: [],
 })
+
 export const missionComplete = (mission: Mission) =>
   mission.completed.length === 3
+
 export const missionNext = (mission: Mission) =>
   mission.scenarioIds.find((id) => !mission.completed.includes(id))
+
 export const missionUrl = (
   mission: Mission,
   scenarioId = missionNext(mission),
 ) =>
   `/train/${encodeURIComponent(scenarioId!)}?mission=${encodeURIComponent(mission.id)}`
 
-/** One of each channel, with one genuine message, near the learner's difficulty and in varied order. */
+/**
+ * One of each channel, with one genuine message, near the learner's difficulty
+ * and in varied order.
+ */
 export function createMission(
   progress: Progress,
   difficulty: Difficulty,
@@ -84,6 +93,7 @@ export function createMission(
     }
     return candidates[0].id
   }
+
   const rotation = [...id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 3
   const genuineEmail = rotation === 1
   const ids = [
@@ -99,7 +109,10 @@ export function createMission(
   }
 }
 
-/** Personalizes the selected email; a genuine result keeps mixed-channel missions balanced. */
+/**
+ * Personalizes the selected email; a genuine result keeps mixed-channel
+ * missions balanced.
+ */
 export function prepareMission(
   state: Adventure,
   missionId: string,
@@ -107,6 +120,7 @@ export function prepareMission(
 ): Adventure {
   const mission = state.mission
   if (!mission || mission.id !== missionId || mission.ready) return state
+
   const scenarioIds = [...mission.scenarioIds]
   let selectedEmail: EmailScenario | undefined
   if (generated) {
@@ -151,6 +165,7 @@ export function prepareMission(
       }
     }
   }
+
   return {
     ...state,
     mission: {
@@ -171,15 +186,21 @@ export interface AdventureResult {
   missionId: string | null
   at: number
 }
-/** One attempt, one reward; a wrong answer still completes the current mission step. */
+
+/**
+ * One attempt, one reward; a wrong answer still completes the current mission
+ * step.
+ */
 export function completeAdventure(
   state: Adventure,
   result: AdventureResult,
 ): Adventure {
   if (state.processed.includes(result.attemptId)) return state
+
   const earned = { ...state.earned }
   if (result.correct && result.scam) earned['good-catch'] ??= result.at
   if (result.correct && result.previouslyMissed) earned.comeback ??= result.at
+
   let mission = state.mission
   let completedMissions = state.completedMissions
   if (
@@ -196,6 +217,7 @@ export function completeAdventure(
       earned['first-steps'] ??= result.at
     }
   }
+
   return {
     ...state,
     mission,
@@ -206,7 +228,10 @@ export function completeAdventure(
   }
 }
 
-/** Errors never consume a step. Resisting earns Good Catch; declining/ringing out still completes the call. */
+/**
+ * Errors never consume a step. Resisting earns Good Catch; declining/ringing
+ * out still completes the call.
+ */
 export function completeCallAdventure(
   state: Adventure,
   result: Omit<AdventureResult, 'correct' | 'scam'> & {
@@ -227,6 +252,7 @@ export function readAdventure(raw: string | null): Adventure | null {
     const s = JSON.parse(raw)
     const strings = (v: unknown): v is string[] =>
       Array.isArray(v) && v.every((x) => typeof x === 'string')
+
     if (
       s.version !== 1 ||
       !Number.isInteger(s.completedMissions) ||
@@ -250,6 +276,7 @@ export function readAdventure(raw: string | null): Adventure | null {
     ) {
       return null
     }
+
     const m = s.mission
     if (m !== null) {
       if (
@@ -266,6 +293,7 @@ export function readAdventure(raw: string | null): Adventure | null {
       ) {
         return null
       }
+
       const g = m.generated
       if (g) {
         const fields = [
@@ -303,6 +331,7 @@ export function readAdventure(raw: string | null): Adventure | null {
           return null
         }
       }
+
       if (
         m.scenarioIds.some(
           (id: string) =>
@@ -312,6 +341,7 @@ export function readAdventure(raw: string | null): Adventure | null {
         return null
       }
     }
+
     return s as Adventure
   } catch {
     return null

@@ -42,8 +42,6 @@ import {
 
 const calls = scenarios.filter((scenario) => scenario.type === 'call')
 
-// --- Channel and scenarios ---
-
 test('the call channel is ready with five library-built calls across every difficulty', () => {
   assert.equal(channelReady('call'), true)
   assert.ok(channels.every((channel) => channel.ready))
@@ -58,7 +56,8 @@ test('the call channel is ready with five library-built calls across every diffi
   )
 })
 
-// The live caller is the comms fixture with the same id; the page around it must describe the same call.
+// The live caller is the comms fixture with the same id; the page around it
+// must describe the same call.
 const fixtureDir = new URL('../../backend/fixtures/scenarios/', import.meta.url)
 const fixtures = readdirSync(fixtureDir)
   .filter((file) => file.startsWith('call-') && file.endsWith('.json'))
@@ -90,7 +89,8 @@ test('call metadata matches the server fixtures: ids, titles, caller labels, num
       [...fixture.tactics].sort(),
       `${fixture.id}: tactics`,
     )
-    // A caller that shows up as a number gets no second, different number on the ringing screen.
+    // A caller that shows up as a number gets no second, different number on
+    // the ringing screen.
     if (/^\+?[\d\s().-]+$/.test(fixture.callerLabel)) {
       assert.equal(scenario.callerNumber, undefined, `${fixture.id}: number`)
     }
@@ -120,6 +120,7 @@ test('call scenarios carry teaching metadata only and work with shared helpers',
       'the caller script stays server-side',
     )
   }
+
   assert.equal(isScam(getScenario('dental-reminder')), false)
   assert.equal(isScam(getScenario('lib-sms-shipping')), true)
   assert.equal(
@@ -127,8 +128,6 @@ test('call scenarios carry teaching metadata only and work with shared helpers',
     scenarios.length,
   )
 })
-
-// --- Canonical outcomes ---
 
 test('the contract table: declined and missed count as success, compromised fails, error is not scored', () => {
   assert.deepEqual(normalizeCommsOutcome('declined'), {
@@ -155,9 +154,11 @@ test('the contract table: declined and missed count as success, compromised fail
     outcome: 'error',
     success: null,
   })
+
   assert.equal(normalizeCommsOutcome('toString'), null)
   assert.equal(normalizeCommsOutcome(undefined), null)
   assert.equal(Object.keys(OUTCOME_TABLE).length, 7)
+
   assert.equal(isScored(normalizeCommsOutcome('error')), false)
   assert.equal(isScored(normalizeCommsOutcome('declined')), true)
   assert.equal(isScored(null), false)
@@ -176,6 +177,7 @@ test('readCallResult prefers the training field, then a canonical attempt, then 
     }),
     { outcome: 'compromised', success: false },
   )
+
   assert.deepEqual(
     readCallResult({
       id: 'a1',
@@ -189,13 +191,16 @@ test('readCallResult prefers the training field, then a canonical attempt, then 
     readCallResult({ status: 'completed', outcome: 'ignored', signals: [] }),
     { outcome: 'missed', success: true },
   )
+
   // An error is never scored, whatever success says.
   assert.deepEqual(
     readCallResult({ training: { outcome: 'error', success: true } }),
     { outcome: 'error', success: null },
   )
+
   assert.equal(readCallResult({ status: 'ringing' }), null)
   assert.equal(readCallResult(null), null)
+
   // Malformed training falls through to the raw outcome.
   assert.deepEqual(
     readCallResult({
@@ -205,8 +210,6 @@ test('readCallResult prefers the training field, then a canonical attempt, then 
     { outcome: 'resisted', success: true },
   )
 })
-
-// --- Screen states ---
 
 const screen = (phase, error = null, extra = {}) =>
   callScreen({ phase, callId: 'call-1', error, result: null, ...extra })
@@ -218,6 +221,7 @@ test('callScreen maps each hook state to a phone screen', () => {
   assert.equal(screen('connecting'), 'connecting')
   assert.equal(screen('in_call'), 'active')
   assert.equal(screen('analyzing'), 'analyzing')
+
   assert.equal(screen('ringing', 'microphone_denied'), 'mic_denied')
   assert.equal(screen('ringing', 'microphone_unavailable'), 'mic_unavailable')
   assert.equal(screen('ringing', 'insecure_context'), 'insecure')
@@ -226,6 +230,7 @@ test('callScreen maps each hook state to a phone screen', () => {
     'voice_unavailable',
   )
   assert.equal(screen('ringing', 'elevenlabs_error'), 'voice_unavailable')
+
   assert.equal(
     screen('error', 'network_error', { callId: null }),
     'comms_unavailable',
@@ -253,6 +258,7 @@ test('callScreen maps each hook state to a phone screen', () => {
   assert.equal(screen('error', 'conversation_mismatch'), 'failed')
   assert.equal(screen('error', 'connect_cancelled'), 'not_connected')
   assert.equal(screen('error', 'connect_timeout'), 'not_connected')
+
   assert.equal(
     screen('completed', null, {
       result: { outcome: 'declined', success: true },
@@ -289,6 +295,7 @@ test('caption-only practice is offered only when live voice is unavailable or fa
   ]) {
     assert.equal(offersPractice(s), true, s)
   }
+
   for (const s of [
     'idle',
     'starting',
@@ -317,12 +324,11 @@ test('practice-mode results use the same contract table', () => {
     outcome: 'declined',
     success: true,
   })
+
   assert.equal(formatDuration(74), '1:14')
   assert.equal(formatDuration(5.6), '0:05')
   assert.equal(formatDuration(-3), '0:00')
 })
-
-// --- Navigation guard ---
 
 test('leaveDecision: only live phases ask; Back restores its entry or hangs up then goes back', () => {
   assert.equal(guardsNavigation('connecting'), true)
@@ -330,6 +336,7 @@ test('leaveDecision: only live phases ask; Back restores its entry or hangs up t
   for (const phase of ['idle', 'ringing', 'analyzing', 'completed', 'error']) {
     assert.equal(leaveDecision(phase, 'link'), 'allow', phase)
   }
+
   assert.equal(leaveDecision('in_call', 'link'), 'confirm')
   assert.equal(leaveDecision('in_call', 'sign_out'), 'confirm')
   assert.equal(leaveDecision('in_call', 'unload'), 'browser_prompt')
@@ -351,9 +358,11 @@ test('leaveDecision: only live phases ask; Back restores its entry or hangs up t
 test('the guard registry: one guard, removed only by its own unregister', async () => {
   assert.equal(navigationGuarded(), false)
   assert.equal(await confirmNavigation(), true)
+
   const off = setNavigationGuard(async () => false)
   assert.equal(navigationGuarded(), true)
   assert.equal(await confirmNavigation(), false)
+
   const offNext = setNavigationGuard(async () => true)
   off()
   assert.equal(
@@ -364,8 +373,6 @@ test('the guard registry: one guard, removed only by its own unregister', async 
   offNext()
   assert.equal(navigationGuarded(), false)
 })
-
-// --- Debrief ---
 
 const bank = getScenario('lib-call-b5c8c2ff529a')
 const transcript = [
@@ -408,6 +415,7 @@ test('debriefSource prefers the stored attempt and falls back to the comms recor
     tactics: ['otp_request'],
     transcript: [transcript[0]],
   }
+
   const fromAttempt = debriefSource(attempt, record)
   assert.equal(fromAttempt.from, 'attempt')
   assert.deepEqual(fromAttempt.result, {
@@ -415,11 +423,13 @@ test('debriefSource prefers the stored attempt and falls back to the comms recor
     success: false,
   })
   assert.deepEqual(fromAttempt.signals, ['shared_code'])
+
   const fromRecord = debriefSource(null, record)
   assert.equal(fromRecord.from, 'record')
   assert.deepEqual(fromRecord.result, { outcome: 'resisted', success: true })
   assert.deepEqual(fromRecord.tactics, ['urgency'])
   assert.equal(fromRecord.transcript.length, 5)
+
   // A 404 body or junk is not an attempt.
   assert.equal(debriefSource({ error: 'not_found' }, record).from, 'record')
 })
@@ -432,6 +442,7 @@ test('buildCallDebrief: a resisted call with a challenge', () => {
     tactics: ['urgency', 'authority'],
     transcript,
   })
+
   assert.equal(view.tone, 'success')
   assert.equal(view.mood, 'happy')
   assert.equal(view.answered, true)
@@ -479,12 +490,14 @@ test('buildCallDebrief: a resisted call that nearly went wrong, and a lingering 
       timeInCallSecs: 20,
     },
   ]
+
   const view = buildCallDebrief(bank, {
     from: 'attempt',
     result: { outcome: 'resisted', success: true },
     signals: ['engaged'],
     transcript: wobble,
   })
+
   assert.match(view.nearMiss.line, /started to go along/)
   assert.deepEqual(
     [view.nearMiss.exchange.ask.time, view.nearMiss.exchange.reply.time],
@@ -506,12 +519,14 @@ test('buildCallDebrief: compromised shows where the caller got through and one f
       timeInCallSecs: 14,
     },
   ]
+
   const lost = buildCallDebrief(bank, {
     from: 'attempt',
     result: { outcome: 'compromised', success: false },
     signals: ['engaged', 'shared_code', 'agreed_to_action'],
     transcript: gave,
   })
+
   assert.equal(lost.tone, 'missed')
   assert.equal(lost.mood, 'alert')
   assert.equal(lost.didWell.length, 0)
@@ -524,6 +539,7 @@ test('buildCallDebrief: compromised shows where the caller got through and one f
     "Sure, it's [NUMBER:6 digits].",
   )
   assert.match(lost.recommendation, /Never read out a code/)
+
   const practice = buildCallDebrief(bank, {
     from: 'practice',
     result: practiceResult('comply'),
@@ -546,11 +562,13 @@ test('buildCallDebrief: declined, missed and unscored', () => {
   assert.equal(declined.nearMiss, null)
   assert.ok(declined.didWell[0].includes("didn't pick up"))
   assert.equal(declined.recommendation, bank.nextTime)
+
   const missed = buildCallDebrief(bank, {
     from: 'record',
     result: { outcome: 'missed', success: true },
   })
   assert.equal(missed.tone, 'success')
+
   const unscored = buildCallDebrief(bank, {
     from: 'record',
     result: { outcome: 'error', success: null },
@@ -558,6 +576,7 @@ test('buildCallDebrief: declined, missed and unscored', () => {
   })
   assert.equal(unscored.tone, 'unscored')
   assert.equal(unscored.ask, null)
+
   assert.equal(
     buildCallDebrief(bank, { from: 'record', result: null }).tone,
     'unscored',
@@ -580,6 +599,7 @@ test('riskyExchange finds the ask and a reply that went along, ignoring refusals
     ]),
     null,
   )
+
   const gave = riskyExchange([
     {
       role: 'agent',
@@ -599,7 +619,8 @@ test('riskyExchange finds the ask and a reply that went along, ignoring refusals
   )
 })
 
-// A generated call as GET /api/training/call-scenarios/:id returns it (backend/app/scenarios/generator.ts).
+// A generated call as GET /api/training/call-scenarios/:id returns it
+// (backend/app/scenarios/generator.ts).
 const generated = {
   id: 'gen-call-1b4e28ba-2fa1-4d3b-a3f5-ef19f6b1c2d3',
   type: 'call',
@@ -637,6 +658,7 @@ test('a generated call debriefs like a built-in one and never becomes the recomm
     signals: ['engaged', 'asked_to_verify'],
     tactics: generated.tactics,
   })
+
   assert.equal(view.pretext, generated.summary)
   assert.deepEqual(view.tactics, [
     'Posing as someone in charge',
@@ -659,6 +681,7 @@ test('requestPersonalisedCall lives outside the call chunk', () => {
     new URL('../src/features/training/call/requestCall.ts', import.meta.url),
     'utf8',
   )
+
   assert.ok(
     !/@elevenlabs|useSimulatedCall|livekit/.test(
       source.replace(/^\s*\/\/.*$/gm, ''),
@@ -678,13 +701,12 @@ test('importantMoments keeps the opener and pressure lines in order, capped', ()
   )
   assert.equal(importantMoments(transcript, 2).length, 2)
   assert.deepEqual(importantMoments(undefined), [])
+
   const long = importantMoments([
     { role: 'agent', message: 'x'.repeat(400), timeInCallSecs: 0 },
   ])
   assert.ok(long[0].message.length <= 220 && long[0].message.endsWith('…'))
 })
-
-// --- Progress merge ---
 
 const server = (scenarioId, success, completedAt, channel = 'call') => ({
   id: `a-${completedAt}`,
@@ -702,13 +724,17 @@ test('mergeProgress folds scored server calls into local progress, oldest first'
     false,
     3000,
   )
+
   const merged = mergeProgress(local, [
     server('lib-call-0e5cfce002d9', true, new Date(5000).toISOString()),
     server('lib-call-0e5cfce002d9', false, new Date(2000).toISOString()),
-    server('lib-call-b5c8c2ff529a', null, new Date(4000).toISOString()), // error: not scored
-    server('lib-sms-shipping', false, new Date(6000).toISOString(), 'sms'), // texts stay local
+    // error: not scored
+    server('lib-call-b5c8c2ff529a', null, new Date(4000).toISOString()),
+    // texts stay local
+    server('lib-sms-shipping', false, new Date(6000).toISOString(), 'sms'),
     server('lib-call-b5c8c2ff529a', true, 'not a date'),
   ])
+
   assert.deepEqual(
     merged['lib-call-0e5cfce002d9'].history.map((a) => [a.at, a.correct]),
     [
@@ -738,6 +764,7 @@ test('merged call results feed summary, level and recommendation', () => {
     server('lib-call-b5c8c2ff529a', true, '2026-10-01T11:00:00Z'),
   ])
   assert.equal(summarize(merged).done, 2)
+
   const callsOnly = calls
   assert.equal(currentLevel(merged, callsOnly), 'medium')
   assert.notEqual(

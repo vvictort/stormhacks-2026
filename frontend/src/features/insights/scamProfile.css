@@ -1,4 +1,6 @@
-/* "How you're doing": the summary that closes Progress, after the numbers. A section, not a card. */
+/* "How you're doing": the summary that closes Progress, after the numbers. A
+   section, not a card. */
+
 .scam-profile {
   margin-top: var(--space-section, 48px);
 }

@@ -10,6 +10,7 @@ export function trainingRouter({
   insights,
 }: Pick<Repositories, "attempts" | "insights">) {
   const router = Router();
+
   router.get("/progress", async (req, res) => {
     const [history, focus] = await Promise.all([
       attempts.list(req.user!.uid, HISTORY_LIMIT),
@@ -17,7 +18,9 @@ export function trainingRouter({
     ]);
     const { stats, vulnerability, difficulty, tacticMastery } =
       summarizeAttempts(history);
-    // `difficulty` and `focus` are exactly what the next generated email or call will use.
+
+    // `difficulty` and `focus` are exactly what the next generated email or
+    // call will use.
     res.json({
       attempts: history
         .slice(0, LIST_LIMIT)
@@ -29,10 +32,12 @@ export function trainingRouter({
       focus,
     });
   });
+
   router.get("/attempts/:id", async (req, res) => {
     const attempt = await attempts.get(req.user!.uid, req.params.id);
     if (!attempt) throw new AppError(404, "NOT_FOUND", "Attempt not found.");
     res.json(attempt);
   });
+
   return router;
 }

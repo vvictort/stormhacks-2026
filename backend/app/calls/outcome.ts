@@ -5,8 +5,9 @@ import {
   type SimOutcome,
 } from "../shared/types.ts";
 
-// The contract table in docs/call-integration.md. Every call scenario is a scam, so anything short of
-// compromised (declining, missing, hanging up) counts as a success.
+// The contract table in docs/call-integration.md. Every call scenario is a
+// scam, so anything short of compromised (declining, missing, hanging up)
+// counts as a success.
 const CANONICAL: Record<
   SimOutcome,
   Pick<CallTraining, "outcome" | "success">

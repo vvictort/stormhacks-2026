@@ -21,12 +21,14 @@ const REPLY_DEBOUNCE_MS = 3000;
 
 const union = (...lists: Signal[][]) => [...new Set(lists.flat())];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /** Human-ish "typing" time proportional to message length. */
 const typingDelayMs = (text: string) =>
   Math.min(8000, Math.max(2000, 1500 + text.length * 35));
 
 const userMessages = (t: TextThread) =>
   t.messages.filter((m) => m.from === "user");
+
 /** User messages not yet passed to the provider. */
 const unhandled = (t: TextThread) =>
   userMessages(t).slice(t.userMessagesHandled);
@@ -41,7 +43,10 @@ function textOutcome(t: TextThread, reason: ThreadEndReason): SimOutcome {
 }
 
 export interface TextServiceOptions {
-  /** The frontend origin; tracked links redirect to its "this was a simulation" page. */
+  /**
+   * The frontend origin; tracked links redirect to its "this was a simulation"
+   * page.
+   */
   appOrigin: string;
   /** Nudge after this much silence. */
   followUpSec: number;
@@ -99,7 +104,8 @@ export class TextService {
     thread.messages.push(opening);
     if (opening.links) thread.linkFirstSentAt = at;
 
-    // Another request (or process) started one since the check above: report that one instead.
+    // Another request (or process) started one since the check above: report
+    // that one instead.
     if (!(await this.store.createThread(thread))) {
       return this.start(userId, scenario);
     }
@@ -182,7 +188,10 @@ export class TextService {
     return (await this.end(threadId, "reported")) ?? thread;
   }
 
-  /** Records a tracked-link tap and returns the URL to redirect to, or null for an unknown token. */
+  /**
+   * Records a tracked-link tap and returns the URL to redirect to, or null for
+   * an unknown token.
+   */
   async handleLinkClick(token: string): Promise<string | null> {
     const found = await this.store.findThreadByLinkToken(token);
     if (!found) return null;
@@ -216,7 +225,9 @@ export class TextService {
     return caughtUrl(this.options.appOrigin, thread.id);
   }
 
-  /** Periodic pass: follow-up nudges, idle endings, and turns lost to a restart. */
+  /**
+   * Periodic pass: follow-up nudges, idle endings, and turns lost to a restart.
+   */
   async sweep() {
     if (this.sweeping) return;
     this.sweeping = true;
@@ -282,7 +293,8 @@ export class TextService {
           preSignals,
         });
       } catch (err) {
-        // Left unhandled; the sweeper retries and eventually ends the thread as idle.
+        // Left unhandled; the sweeper retries and eventually ends the thread as
+        // idle.
         console.error("[texts] nextTextTurn failed", err);
         return;
       }
@@ -323,7 +335,10 @@ export class TextService {
     }
   }
 
-  /** Appends a scammer message if the thread is still active; returns it, or null if the thread ended. */
+  /**
+   * Appends a scammer message if the thread is still active; returns it, or
+   * null if the thread ended.
+   */
   private async sendScammerMessage(
     threadId: string,
     raw: string,
@@ -377,7 +392,8 @@ export class TextService {
       threadId,
       (t) => {
         if (t.status !== "active") return false;
-        // Replies the provider never saw (e.g. shared a code, then reported) still count.
+        // Replies the provider never saw (e.g. shared a code, then reported)
+        // still count.
         t.signals = union(
           t.signals,
           ...unhandled(t).map((m) => m.signals ?? []),

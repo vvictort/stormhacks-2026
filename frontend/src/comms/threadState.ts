@@ -17,7 +17,6 @@ export interface ThreadState {
   typing: boolean
   outcome: Outcome | null
   endReason: ThreadEndReason | null
-  /** User replies in flight. */
   pendingSends: number
   error: string | null
 }
@@ -57,10 +56,12 @@ function addMessage(state: ThreadState, message: TextMessage): ThreadState {
   if (state.messages.some((m) => m.id === message.id)) return state
   const last = state.messages[state.messages.length - 1]
   const messages = [...state.messages, message]
-  // Late arrival (e.g. a snapshot racing the stream): restore chronological order.
+  // Late arrival (e.g. a snapshot racing the stream): restore chronological
+  // order.
   if (last && time(last) > time(message)) {
     messages.sort((a, b) => time(a) - time(b))
   }
+
   return {
     ...state,
     messages,
@@ -113,7 +114,8 @@ export function threadReducer(
       return {
         ...next,
         typing: false,
-        // The backend always sets outcome when it ends a thread; 'error' only guards a malformed snapshot.
+        // The backend always sets outcome when it ends a thread; 'error' only
+        // guards a malformed snapshot.
         outcome: thread.outcome ?? next.outcome ?? 'error',
         endReason: thread.endReason ?? next.endReason,
       }
@@ -153,7 +155,10 @@ function isTextMessage(value: unknown): value is TextMessage {
   )
 }
 
-/** Maps an SSE frame (`event` name + raw `data`) to a reducer action; null for anything malformed or unknown. */
+/**
+ * Maps an SSE frame (`event` name + raw `data`) to a reducer action; null for
+ * anything malformed or unknown.
+ */
 export function parseThreadEvent(
   event: string,
   data: string,
@@ -189,6 +194,7 @@ export function parseThreadEvent(
   ) {
     return null
   }
+
   return {
     type: 'ended',
     threadId,

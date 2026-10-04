@@ -17,7 +17,7 @@ export interface TextTurnResult {
   done: boolean;
 }
 
-/** Generates the scammer's side of a text conversation. Sijing implements this with Gemini. */
+/** Generates the scammer's side of a text conversation. */
 export interface ScenarioProvider {
   nextTextTurn(input: TextTurnInput): Promise<TextTurnResult>;
   /** Unprompted nudge after the user goes quiet, or null for none. */
@@ -30,7 +30,10 @@ const ESCALATION = [
   "Final notice: reply with the code now to avoid suspension.",
 ];
 
-/** Canned, escalating replies so the flow runs end-to-end before the Gemini provider exists. */
+/**
+ * Canned, escalating replies so the flow runs end-to-end before the Gemini
+ * provider exists.
+ */
 export class StubProvider implements ScenarioProvider {
   async nextTextTurn({
     scenario,

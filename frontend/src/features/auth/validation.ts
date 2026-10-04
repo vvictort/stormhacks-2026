@@ -3,7 +3,10 @@ export type FieldErrors = Partial<Record<AuthFieldName, string>>
 
 export const MIN_PASSWORD_LENGTH = 8
 
-/** The signup password rules, shown as a live checklist and enforced by validateAuthForm. */
+/**
+ * The signup password rules, shown as a live checklist and enforced by
+ * validateAuthForm.
+ */
 export function passwordChecks(password: string, confirmPassword: string) {
   return [
     {
@@ -34,6 +37,7 @@ export function validateAuthForm(
   if (isSignup && !values.name.trim()) errors.name = 'Please enter your name.'
   const emailError = validateEmail(values.email)
   if (emailError) errors.email = emailError
+
   if (!values.password) errors.password = 'Please enter your password.'
   else if (isSignup && values.password.length < MIN_PASSWORD_LENGTH) {
     errors.password = 'Use at least 8 characters.'
@@ -45,5 +49,6 @@ export function validateAuthForm(
       errors.confirmPassword = 'Your passwords don’t match yet.'
     }
   }
+
   return errors
 }

@@ -1,11 +1,13 @@
 import type { ScamCategory } from '../training/scenarios.ts'
 
-// GET /api/training/metrics (backend/app/behavior/behavior.repository.ts `Metrics`), from the behaviour events table:
-// a TimescaleDB hypertable on TigerData (`storage: 'timescale'`), or a plain Postgres table.
+// GET /api/training/metrics (backend/app/behavior/behavior.repository.ts
+// `Metrics`), from the behaviour events table: a TimescaleDB hypertable on
+// TigerData (`storage: 'timescale'`), or a plain Postgres table.
 export interface Period {
   accuracy: number | null
   avgDetectionMs: number | null
 }
+
 export interface Metrics {
   attempts: number
   accuracy: number | null
@@ -38,6 +40,7 @@ const categoryNames: Record<ScamCategory, string> = {
   workplace: 'workplace scams',
   promotional: 'prize and promo scams',
 }
+
 export const categoryLabel = (category: ScamCategory) =>
   categoryNames[category] ?? 'other scams'
 
@@ -52,7 +55,10 @@ export interface InstinctRow {
   better?: boolean
 }
 
-/** The card's rows: then → now once there are two attempts, the current value before that. Null with no history. */
+/**
+ * The card's rows: then → now once there are two attempts, the current value
+ * before that. Null with no history.
+ */
 export function instinctsView(
   m: Metrics | null,
 ): { rows: InstinctRow[]; improved: string | null; note: string } | null {
@@ -62,12 +68,14 @@ export function instinctsView(
     then: null,
     now: { accuracy: m.accuracy, avgDetectionMs: m.avgDetectionMs },
   }
+
   if (now.avgDetectionMs !== null) {
     const before = then?.avgDetectionMs ?? null
     rows.push(
       before === null
         ? { label: 'Time to decide', now: seconds(now.avgDetectionMs) }
-        : // Faster only counts as better when the right-call rate didn't fall with it.
+        : // Faster only counts as better when the right-call rate didn't fall
+          // with it.
           {
             label: 'Time to decide',
             then: seconds(before),
@@ -78,6 +86,7 @@ export function instinctsView(
           },
     )
   }
+
   if (now.accuracy !== null) {
     const before = then?.accuracy ?? null
     rows.push(
@@ -91,14 +100,17 @@ export function instinctsView(
           },
     )
   }
+
   if (m.reportRate !== null) {
     rows.push({ label: 'Scams reported', now: `${m.reportRate}%` })
   }
+
   const note = m.trend
     ? m.trend.window === 1
       ? 'Your first scenario against your latest.'
       : `Your first ${m.trend.window} scenarios against your latest ${m.trend.window}.`
     : 'Finish one more scenario to see how your instincts are changing.'
+
   return {
     rows,
     improved: m.mostImproved ? categoryLabel(m.mostImproved.category) : null,
@@ -106,7 +118,9 @@ export function instinctsView(
   }
 }
 
-/** Names TigerData only when the events really are in a TimescaleDB hypertable. */
+/**
+ * Names TigerData only when the events really are in a TimescaleDB hypertable.
+ */
 export const instinctsSource = (storage: Metrics['storage']) =>
   storage === 'timescale'
     ? 'Every tap and decision is timed and stored in TigerData.'
@@ -122,8 +136,9 @@ export interface Bar {
 const DAYS = 14
 
 /**
- * The card's mini chart: right calls per day once there are 3 days of history, otherwise time to decide on each recent
- * scenario (a same-day history is a single day). Null under 2 bars.
+ * The card's mini chart: right calls per day once there are 3 days of history,
+ * otherwise time to decide on each recent scenario (a same-day history is a
+ * single day). Null under 2 bars.
  */
 export function instinctsChart(
   m: Metrics,
@@ -140,6 +155,7 @@ export function instinctsChart(
       })),
     }
   }
+
   const recent = m.recent ?? []
   if (recent.length < 2) return null
   const slowest = Math.max(...recent.map((r) => r.detectionMs ?? 0))

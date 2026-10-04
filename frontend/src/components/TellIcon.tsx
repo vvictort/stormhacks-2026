@@ -1,6 +1,9 @@
 import type { SVGProps } from 'react'
 
-/** Tell, the mascot, shrunk to an icon: body, tail, eyes glancing aside and the beacon. Drop-in for a lucide icon. */
+/**
+ * Tell, the mascot, shrunk to an icon: body, tail, eyes glancing aside and the
+ * beacon. Drop-in for a lucide icon.
+ */
 export function TellIcon({
   size = 24,
   ...props

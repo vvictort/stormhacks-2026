@@ -2,8 +2,10 @@ import type { Metrics } from '../insights/instincts.ts'
 import type { InsightSource } from '../insights/scamProfile.ts'
 import type { Difficulty, ScamCategory } from './scenarios.ts'
 
-// The server's adaptive state (GET /api/training/progress `difficulty` and `focus`, docs/mvp-contracts.md): exactly
-// what the next generated email or call will use. Pure, so Home and both debriefs agree and it's testable in Node.
+// The server's adaptive state (GET /api/training/progress `difficulty` and
+// `focus`, docs/mvp-contracts.md): exactly what the next generated email or
+// call will use. Pure, so Home and both debriefs agree and it's testable
+// in Node.
 
 export interface Adaptive {
   difficulty: Difficulty
@@ -18,7 +20,10 @@ export interface Adaptive {
   attempts: { id: string; scamCategory?: ScamCategory | null }[]
 }
 
-/** Before and after a run. Each part is null when its API couldn't be reached, so each degrades on its own. */
+/**
+ * Before and after a run. Each part is null when its API couldn't be reached,
+ * so each degrades on its own.
+ */
 export interface Snapshot {
   adaptive: Adaptive | null
   metrics: Metrics | null
@@ -28,7 +33,10 @@ export interface Snapshot {
 const levels: Difficulty[] = ['easy', 'medium', 'hard']
 const isList = (value: unknown): value is unknown[] => Array.isArray(value)
 
-/** The progress response's adaptive part; null when the backend predates it or the shape is off. */
+/**
+ * The progress response's adaptive part; null when the backend predates it or
+ * the shape is off.
+ */
 export function readAdaptive(data: unknown): Adaptive | null {
   const d = data as Record<string, unknown> | null
   if (
@@ -39,6 +47,7 @@ export function readAdaptive(data: unknown): Adaptive | null {
   ) {
     return null
   }
+
   const vulnerability = (d.vulnerability ?? {}) as Partial<Adaptive>
   return {
     difficulty: d.difficulty as Difficulty,
@@ -59,6 +68,7 @@ const plural: Record<ScamCategory, string> = {
   workplace: 'workplace scams',
   promotional: 'prize and promo scams',
 }
+
 const emailKind: Record<ScamCategory, string> = {
   banking: 'a bank',
   government: 'a tax-office',
@@ -67,6 +77,7 @@ const emailKind: Record<ScamCategory, string> = {
   workplace: 'a workplace',
   promotional: 'a prize',
 }
+
 const tactics: Record<string, string> = {
   urgency: 'urgency',
   authority: 'someone claiming authority',
@@ -76,6 +87,7 @@ const tactics: Record<string, string> = {
   reward: 'a promised reward',
   fear: 'threats',
 }
+
 export const levelName = (difficulty: Difficulty) =>
   difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
 const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
@@ -86,7 +98,10 @@ export interface NextView {
   difficulty: Difficulty
 }
 
-/** What Tellio trains next and why, from the server's state. Without it (API down), a plain personalised email at the local level. */
+/**
+ * What Tellio trains next and why, from the server's state. Without it (API
+ * down), a plain personalised email at the local level.
+ */
 export function nextForYou(
   adaptive: Adaptive | null,
   localLevel: Difficulty,
@@ -101,6 +116,7 @@ export function nextForYou(
       difficulty: adaptive?.difficulty ?? localLevel,
     }
   }
+
   const record = adaptive.categoryAccuracy[category]
   const tactic = tactics[adaptive.vulnerableTactics[0]]
   const reason = !record
@@ -108,6 +124,7 @@ export function nextForYou(
     : record.correct < record.attempts
       ? `Tellio noticed ${plural[category]} catch you out: you've made the right call on ${record.correct} of ${record.attempts}.`
       : `You've caught every one of the ${plural[category]} so far. This one keeps that sharp.`
+
   return {
     title: `${capital(emailKind[category])} email, made for you`,
     reason: tactic
@@ -120,14 +137,19 @@ export function nextForYou(
 export const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`
 
 export interface Learned {
-  /** Real before → after changes, or one line on what Tellio keeps practising. */
+  /**
+   * Real before → after changes, or one line on what Tellio keeps practising.
+   */
   lines: string[]
   /** The analysis sentence, when it changed. */
   insight: Snapshot['insight']
   next: NextView
 }
 
-/** What changed between the state before a run and after it was recorded. Null without the after state. */
+/**
+ * What changed between the state before a run and after it was recorded. Null
+ * without the after state.
+ */
 export function learned(
   before: Snapshot,
   after: Snapshot,
@@ -161,11 +183,13 @@ export function learned(
       lines.push(`Your first result on ${plural[category]} is on your record.`)
     }
   }
+
   const mBefore = before.metrics?.avgDetectionMs
   const mAfter = after.metrics?.avgDetectionMs
   const accBefore = before.metrics?.accuracy
   const accAfter = after.metrics?.accuracy
-  // Deciding faster isn't an improvement when the run lowered the right-call rate (falling for it faster).
+  // Deciding faster isn't an improvement when the run lowered the right-call
+  // rate (falling for it faster).
   const accuracyDropped =
     typeof accBefore === 'number' &&
     typeof accAfter === 'number' &&
@@ -194,6 +218,7 @@ export function learned(
         : 'Nothing to adjust yet. Tellio will keep practising with you.',
     )
   }
+
   const insight =
     after.insight && after.insight.pattern !== before.insight?.pattern
       ? after.insight
@@ -206,8 +231,9 @@ export function learned(
 }
 
 /**
- * The debrief's buttons: one clear next step. When the adaptive panel shows (it carries "Next scenario made for you"),
- * the local "Next on your path" link hides; without the panel it is the next step.
+ * The debrief's buttons: one clear next step. When the adaptive panel shows
+ * (it carries "Next scenario made for you"), the local "Next on your path"
+ * link hides; without the panel it is the next step.
  */
 export function debriefActions({
   hasNext,

@@ -79,7 +79,8 @@ export function HomePage() {
     document.title = 'Home · Tellio'
   }, [])
 
-  // Tabs live in the URL (Back and reload keep them); filters are dropped when you leave History.
+  // Tabs live in the URL (Back and reload keep them); filters are dropped when
+  // you leave History.
   function show(id: Tab) {
     setParams(id === 'practice' ? {} : { tab: id }, { replace: true })
   }
@@ -129,7 +130,8 @@ export function HomePage() {
               onClick={() => show(t.id)}
             >
               {t.label}
-              {/* layout="x": the bar is sticky, so a scroll jump must not make it fly vertically. */}
+              {/* layout="x": the bar is sticky, so a scroll jump must not make
+                  it fly vertically. */}
               {tab === t.id && (
                 <m.span
                   className="seg-thumb"
@@ -166,7 +168,6 @@ export function HomePage() {
                 </div>
               )}
 
-              {/* Gamification Mission Card */}
               <MissionCard
                 key={user?.uid}
                 uid={user?.uid}
@@ -176,7 +177,6 @@ export function HomePage() {
                 loading={callSync === 'loading'}
               />
 
-              {/* Quick jump navigation pills across all 3 channels */}
               <nav
                 className="home-channel-jump"
                 aria-label="Jump to channel section"
@@ -210,7 +210,6 @@ export function HomePage() {
                 </a>
               </nav>
 
-              {/* Adaptive recommendation banner if Tellio has user insights */}
               {adaptiveFocus && (
                 <div
                   className="home-adaptive-banner"
@@ -231,7 +230,6 @@ export function HomePage() {
                 </div>
               )}
 
-              {/* Section 1: Calls */}
               <ChannelSection
                 channel="call"
                 title="Calls"
@@ -242,7 +240,6 @@ export function HomePage() {
                 adaptiveDifficulty={userLevel}
               />
 
-              {/* Section 2: Emails */}
               <ChannelSection
                 channel="email"
                 title="Emails"
@@ -253,7 +250,6 @@ export function HomePage() {
                 adaptiveDifficulty={userLevel}
               />
 
-              {/* Section 3: Messaging */}
               <ChannelSection
                 channel="sms"
                 title="Messaging"
@@ -317,10 +313,14 @@ const channelRows = [
   { key: 'call', label: 'Calls', Icon: Phone },
   { key: 'other', label: 'Older scenarios', Icon: History },
 ] as const
+
 const percent = (part: number, whole: number) =>
   whole ? Math.round((part / whole) * 100) : 0
 
-/** Progress' numbers, all from this user's attempts: one headline rate with its counts, then per channel and lately. */
+/**
+ * Progress' numbers, all from this user's attempts: one headline rate with its
+ * counts, then per channel and lately.
+ */
 function ResultsSummary({
   progress,
   saved,

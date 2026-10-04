@@ -9,7 +9,8 @@ from . import REPO_DIR
 VOCAB_TS = REPO_DIR / 'backend' / 'app' / 'shared' / 'vocabulary.ts'
 NEEDED = ('Channel', 'Tactic', 'ScamCategory', 'Difficulty')
 
-# Tellio-derived heuristic tags that are not Tactics (fixed list from the output contract).
+# Tellio-derived heuristic tags that are not Tactics (fixed list from the
+# output contract).
 SIGNALS = (
     'suspicious_domain',
     'payment_request',
@@ -28,9 +29,8 @@ def parse(source: str) -> dict[str, tuple[str, ...]]:
     for name, body in re.findall(
         r'export const (\w+) = z\.enum\(\[(.*?)\]\)', source, re.S
     ):
-        enums[name] = tuple(
-            re.findall(r"""["']([a-z_]+)["']""", body)
-        )  # either quote style (Prettier uses double)
+        # either quote style (Prettier uses double)
+        enums[name] = tuple(re.findall(r"""["']([a-z_]+)["']""", body))
     missing = [n for n in NEEDED if not enums.get(n)]
     if missing:
         raise ValueError(

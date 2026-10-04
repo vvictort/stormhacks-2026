@@ -9,7 +9,10 @@ export type { ScamCategory };
 export interface ScoredAttempt {
   scenarioId: string;
   scenarioTitle: string;
-  /** Stored with the attempt when known; otherwise inferred from the id and title. */
+  /**
+   * Stored with the attempt when known; otherwise inferred from the id and
+   * title.
+   */
   scamCategory?: ScamCategory | null;
   tactics: string[];
   success: boolean | null;
@@ -66,9 +69,13 @@ export const HISTORY_LIMIT = 1000;
 
 const levels: Difficulty[] = ["easy", "medium", "hard"];
 
-/** Stats, category accuracy, vulnerability and adaptive difficulty from a user's attempts (any order). */
+/**
+ * Stats, category accuracy, vulnerability and adaptive difficulty from a user's
+ * attempts (any order).
+ */
 export function summarizeAttempts(attempts: ScoredAttempt[]) {
-  // Unscored (error) attempts are listed elsewhere but never count for or against the user.
+  // Unscored (error) attempts are listed elsewhere but never count for or
+  // against the user.
   const scored = attempts
     .filter((a) => a.success !== null)
     .sort((a, b) => a.completedAt.localeCompare(b.completedAt));
@@ -79,7 +86,8 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
   let compromised = 0;
   let difficulty: Difficulty = "easy";
 
-  // Replayed in order so the weak-category hysteresis and difficulty steps match a live update per attempt.
+  // Replayed in order so the weak-category hysteresis and difficulty steps
+  // match a live update per attempt.
   for (const [index, attempt] of scored.entries()) {
     if (attempt.success) successes++;
     if (fellForScam(attempt.outcome)) {
@@ -103,7 +111,8 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
     if (cat.accuracy < 75) weak.add(category);
     else if (cat.accuracy >= 80) weak.delete(category);
 
-    // Steps follow the last 5 results, so two old misses don't pin someone at easy forever.
+    // Steps follow the last 5 results, so two old misses don't pin someone at
+    // easy forever.
     const recent = scored.slice(Math.max(0, index - 4), index + 1);
     const recentRight = recent.filter((a) => a.success).length;
     const recentFell = recent.filter((a) => fellForScam(a.outcome)).length;

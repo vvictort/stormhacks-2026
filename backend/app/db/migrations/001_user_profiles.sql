@@ -10,5 +10,8 @@ CREATE TABLE user_profiles (
   onboarding_completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CHECK (onboarding_completed_at IS NULL OR (name IS NOT NULL AND phone IS NOT NULL))
+  CHECK (
+    onboarding_completed_at IS NULL
+    OR (name IS NOT NULL AND phone IS NOT NULL)
+  )
 );

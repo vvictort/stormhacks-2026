@@ -7,7 +7,10 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-/** Neutral handset shell shared by every channel. The status bar is decoration, hidden from assistive tech. */
+/**
+ * Neutral handset shell shared by every channel. The status bar is decoration,
+ * hidden from assistive tech.
+ */
 export function PhoneFrame({
   time,
   children,

@@ -50,7 +50,6 @@ export function ChannelSection({
     fallbackId?: string
   }>()
 
-  // Overall channel stats
   const stats = channelStats(progress)[channel]
   const rate = stats.attempts
     ? Math.round((stats.right / stats.attempts) * 100)
@@ -134,7 +133,6 @@ export function ChannelSection({
         </div>
       </div>
 
-      {/* Quick Action Box */}
       <div className="channel-action-box">
         {channel === 'call' && (
           <>

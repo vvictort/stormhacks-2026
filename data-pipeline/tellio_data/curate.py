@@ -1,4 +1,7 @@
-"""Dedupe + diversity sampling. Deterministic: per-group RNGs seeded from SEED and the group key."""
+"""Dedupe + diversity sampling.
+
+Deterministic: per-group RNGs seeded from SEED and the group key.
+"""
 
 import random
 import re
@@ -6,7 +9,8 @@ from collections import defaultdict
 
 from . import SEED
 
-# Max examples per (channel, kind, category); None = uncategorised. Scam text is what Tellio scenarios reuse.
+# Max examples per (channel, kind, category); None = uncategorised. Scam text is what
+# Tellio scenarios reuse.
 SCAM_QUOTA = {'email': 70, 'sms': 50, 'call': 45}
 SCAM_NULL_QUOTA = {'email': 40, 'sms': 25, 'call': 30}
 LEGIT_QUOTA = {'email': 15, 'sms': 15, 'call': 12}
@@ -91,8 +95,10 @@ def select(examples: list[dict]) -> list[dict]:
                         continue
                     ex = q.pop(0)
                     sh = shingles(ex['text'])
-                    # ponytail: O(n^2) near-dup scan per channel; fine for ~1k picks, MinHash if quotas grow 10x.
-                    # Pattern summaries are short and formulaic by design: exact dedupe only.
+                    # ponytail: O(n^2) near-dup scan per channel; fine for ~1k picks,
+                    # MinHash if quotas grow 10x.
+                    # Pattern summaries are short and formulaic by design: exact
+                    # dedupe only.
                     if ex['textKind'] == 'excerpt' and any(
                         jaccard(sh, o) >= NEAR_DUP for o in kept_shingles[channel]
                     ):

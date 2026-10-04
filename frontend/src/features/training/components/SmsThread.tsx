@@ -22,17 +22,23 @@ interface ThreadProps {
   onToggleFlag?: (phrase: string) => void
 }
 
-/** How many messages have "arrived". Each one is preceded by a typing indicator, like a real phone. */
+/**
+ * How many messages have "arrived". Each one is preceded by a typing indicator,
+ * like a real phone.
+ */
 function useArrivals(total: number, instant: boolean) {
   const [arrived, setArrived] = useState(0)
+
   useEffect(() => {
     if (instant) return
-    // First message after a short beat; later ones after the sender "types" for a moment.
+    // First message after a short beat; later ones after the sender "types"
+    // for a moment.
     const timers = Array.from({ length: total }, (_, i) =>
       window.setTimeout(() => setArrived(i + 1), 1050 + i * 1350),
     )
     return () => timers.forEach(window.clearTimeout)
   }, [total, instant])
+
   return instant ? total : arrived
 }
 
@@ -61,7 +67,8 @@ export function MessageThread({
       tabIndex={0}
     >
       <p className="sms-day">Today {scenario.receivedAt}</p>
-      {/* Polite live region: screen readers hear each message arrive, as on a real phone. */}
+      {/* Polite live region: screen readers hear each message arrive, as on a
+          real phone. */}
       <ol className="sms-list" aria-live="polite">
         <AnimatePresence initial={false}>
           {scenario.messages.slice(0, arrived).map((message, i) => (
@@ -171,7 +178,9 @@ export function Marked({
   )
 }
 
-/** A marked clue: hover or focus previews what it means, a click pins it open. */
+/**
+ * A marked clue: hover or focus previews what it means, a click pins it open.
+ */
 function Clue({
   n,
   indicator,
@@ -188,17 +197,20 @@ function Clue({
   const tip = useRef<HTMLSpanElement>(null)
   const id = useId()
 
-  // The tip is a popover so the phone's scroll box can't clip it; it sits under the clue's last line.
+  // The tip is a popover so the phone's scroll box can't clip it; it sits under
+  // the clue's last line.
   useLayoutEffect(() => {
     const el = tip.current
     const lines = anchor.current?.getClientRects()
     if (!el || !lines?.length) return
     if (!open) return void (el.matches(':popover-open') && el.hidePopover())
+
     el.showPopover()
     const line = lines[lines.length - 1]
     const below = line.bottom + 8 + el.offsetHeight < innerHeight
     el.style.left = `${Math.max(8, Math.min(line.left, innerWidth - el.offsetWidth - 8))}px`
     el.style.top = `${below ? line.bottom + 8 : line.top - el.offsetHeight - 8}px`
+
     const close = () => setOpen(null)
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
     window.addEventListener('scroll', close, true)
@@ -212,9 +224,11 @@ function Clue({
   }, [open])
 
   const toggle = () => setOpen((o) => (o === 'pinned' ? null : 'pinned'))
-  // Glue the number to the first character only: there's no break inside a word anyway, and a long
-  // unbroken mark (an email address) can still wrap instead of overflowing the phone.
+  // Glue the number to the first character only: there's no break inside a word
+  // anyway, and a long unbroken mark (an email address) can still wrap instead
+  // of overflowing the phone.
   const [first = '', ...rest] = Array.from(children)
+
   return (
     // Not a <button>: buttons can't wrap mid-text, and long marks must.
     <mark
@@ -303,7 +317,8 @@ export function LinkPreview({
           {mark ? ` (${clueLabel} ${mark})` : ''}, inspect link
         </span>
       </button>
-      {/* Springs open like a link preview sheet; inert while closed so it can't take focus. */}
+      {/* Springs open like a link preview sheet; inert while closed so it can't
+          take focus. */}
       <m.div
         id={panel}
         className="sms-inspect-wrap"

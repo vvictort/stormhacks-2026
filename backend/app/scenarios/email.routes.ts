@@ -6,12 +6,15 @@ import { generateEmailScenario } from "./email-generator.ts";
 import type { JsonModel } from "./gemini.ts";
 import type { ScamLibrary } from "./library.ts";
 
-// About one generated email in three is genuine, so "Report" is not always the right answer.
+// About one generated email in three is genuine, so "Report" is not always the
+// right answer.
 const GENUINE_SHARE = 1 / 3;
 
 /**
- * POST /api/training/email-scenarios → 201 { scenario }: an email written for this user from their saved profile, history
- * and current training focus (the request body is ignored): a scam, or sometimes a genuine one. GET /:id → the scenario, owner only.
+ * POST /api/training/email-scenarios → 201 { scenario }: an email written for
+ * this user from their saved profile, history and current training focus (the
+ * request body is ignored): a scam, or sometimes a genuine one.
+ * GET /:id → the scenario, owner only.
  */
 export function emailScenariosRouter(
   { users, attempts, scenarios, insights }: Repositories,
@@ -28,6 +31,7 @@ export function emailScenariosRouter(
         "You’ve generated a lot of scenarios. Please wait a moment and try again.",
       );
     }
+
     const [profile, history, focus] = await Promise.all([
       users.ensureUser(req.user!),
       attempts.list(uid, HISTORY_LIMIT),
@@ -48,6 +52,7 @@ export function emailScenariosRouter(
     await scenarios.saveMessage(uid, scenario, source);
     res.status(201).json({ scenario });
   });
+
   router.get("/:id", async (req, res) => {
     const scenario = /^gen-email-[0-9a-f-]{36}$/.test(req.params.id)
       ? await scenarios.getMessage(req.user!.uid, req.params.id)
@@ -55,5 +60,6 @@ export function emailScenariosRouter(
     if (!scenario) throw new AppError(404, "NOT_FOUND", "Scenario not found.");
     res.json(scenario);
   });
+
   return router;
 }

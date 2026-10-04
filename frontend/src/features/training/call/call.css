@@ -1,6 +1,8 @@
-/* Phone-call app inside the practice phone, plus the call debrief. Loaded with the call chunk only. */
+/* Phone-call app inside the practice phone, plus the call debrief. Loaded with
+   the call chunk only. */
 
-/* The call app takes over the screen in a warm dark tone, like a real incoming-call screen. */
+/* The call app takes over the screen in a warm dark tone, like a real
+   incoming-call screen. */
 .phone-screen:has(.call-screen) {
   background: linear-gradient(180deg, #3b302a 0%, #2a231f 55%, #221c19 100%);
   color: #fbf6ee;
@@ -109,6 +111,7 @@
 }
 
 /* Round call buttons, labelled underneath like a phone's. */
+
 .call-actions {
   display: flex;
   justify-content: space-around;
@@ -284,6 +287,7 @@
 }
 
 /* In call: speaking indicator, then captions filling the middle. */
+
 .call-screen.is-active .call-caller {
   margin-top: 10px;
 }
@@ -365,7 +369,8 @@
   }
 }
 
-/* Newest at the bottom via margin-top: auto, not justify-content: flex-end, which cuts a tall caption's top off unscrollably. */
+/* Newest at the bottom via margin-top: auto, not justify-content: flex-end,
+   which cuts a tall caption's top off unscrollably. */
 .call-captions {
   flex: 1;
   min-height: 0;
@@ -438,6 +443,7 @@
 }
 
 /* Problem screens: what's wrong, and the way forward. */
+
 .call-screen.is-problem {
   justify-content: center;
   gap: 10px;
@@ -478,6 +484,7 @@
 }
 
 /* Leave-call confirmation, styled like the app's other dialogs. */
+
 .call-leave h2 {
   padding-right: 0;
 }
@@ -499,7 +506,9 @@
   flex: 1 1 180px;
 }
 
-/* ---------- Call debrief: a result sheet. Weight and spacing carry hierarchy; extras sit behind <details>. ---------- */
+/* Call debrief: a result sheet. Weight and spacing carry hierarchy; extras sit
+   behind <details>. */
+
 .call-debrief .debrief-lede strong {
   display: block;
   margin-bottom: 2px;

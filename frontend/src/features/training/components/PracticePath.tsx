@@ -48,6 +48,7 @@ const statusText = {
   missed: 'Missed',
   todo: 'Not tried',
 } as const
+
 const PAGE = 12
 
 export interface HistoryAttempt {
@@ -133,7 +134,10 @@ function resolveAttempt(
   }
 }
 
-/** Attempted scenarios, filtered by channel and result (kept in the URL), newest first. */
+/**
+ * Attempted scenarios, filtered by channel and result (kept in the URL), newest
+ * first.
+ */
 export function PracticePath({ progress }: { progress: Progress }) {
   const [params, setParams] = useSearchParams()
   const channel = params.get('channel') ?? 'all'
@@ -148,7 +152,6 @@ export function PracticePath({ progress }: { progress: Progress }) {
     setShown(PAGE)
   }
 
-  // Every completed attempt from timeline, newest first
   const allAttempts = timeline(progress)
     .map(resolveAttempt)
     .sort((a, b) => b.at - a.at)

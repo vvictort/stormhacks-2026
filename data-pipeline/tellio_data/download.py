@@ -1,7 +1,8 @@
 """Fetch raw datasets into data-pipeline/raw/ (gitignored) with kagglehub.
 
-Public datasets download anonymously. The SMS competition needs credentials (KAGGLE_USERNAME/KAGGLE_KEY or
-~/.kaggle/kaggle.json, read by kagglehub itself) and its rules accepted on kaggle.com.
+Public datasets download anonymously. The SMS competition needs credentials
+(KAGGLE_USERNAME/KAGGLE_KEY or ~/.kaggle/kaggle.json, read by kagglehub itself) and its
+rules accepted on kaggle.com.
 """
 
 import os
@@ -24,7 +25,9 @@ def download(channel: str) -> Path:
 
 
 def local_dir(channel: str) -> Path | None:
-    """Where a source's raw files live: the kagglehub cache, or raw/<slug>/ if dropped in by hand."""
+    """Where a source's raw files live: the kagglehub cache, or raw/<slug>/ if dropped
+    in by hand.
+    """
     slug = SOURCES[channel]['dataset']
     candidates = sorted(CACHE.glob(f'datasets/{slug}/versions/*')) + sorted(
         CACHE.glob(f'competitions/{slug}*')

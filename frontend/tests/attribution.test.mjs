@@ -11,6 +11,7 @@ test('Gemini is credited only when it wrote the scenario; grounding only with li
     reason: 'Matched to your work',
     ...overrides,
   })
+
   assert.equal(generatedCredit(undefined), null, 'built-in scenarios')
   assert.equal(
     generatedCredit(

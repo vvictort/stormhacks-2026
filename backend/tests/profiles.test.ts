@@ -10,9 +10,12 @@ import { createRepositories, type Repositories } from "../app/repositories.ts";
 import { createApp } from "../app/server.ts";
 
 const origin = "http://localhost:5173";
-// Profile routes never touch simulations; one shared set keeps createApp's wiring complete.
+
+// Profile routes never touch simulations; one shared set keeps createApp's
+// wiring complete.
 const sims = testServices(fakeRepos());
 const services = sims.services;
+
 const identity = (uid: string) =>
   ({
     uid,
@@ -27,17 +30,20 @@ const identity = (uid: string) =>
     email_verified: true,
     name: uid === "alex" ? "Alex" : undefined,
   }) as DecodedIdToken;
+
 const verifyToken = async (token: string) => {
   if (token === "alex" || token === "sam") return identity(token);
   throw Object.assign(new Error("TOKEN_PRIVATE"), {
     code: "auth/invalid-id-token",
   });
 };
+
 test("profile validation normalizes phone and rejects empty fields, credentials and identity overrides", () => {
   assert.equal(
     profileSchema.parse({ name: " Alex ", phone: "+1 (604) 555-1234" }).phone,
     "+16045551234",
   );
+
   for (const input of [
     { name: "", phone: "+16045551234" },
     { name: "Alex", phone: "6045551234" },
@@ -48,6 +54,7 @@ test("profile validation normalizes phone and rejects empty fields, credentials 
     assert.equal(profileSchema.safeParse(input).success, false);
   }
 });
+
 test("Firebase rejection is 401 but database/provider failures remain retryable without leaking details", async () => {
   const repo = createRepositories({
     query: async () => {
@@ -55,17 +62,20 @@ test("Firebase rejection is 401 but database/provider failures remain retryable 
     },
   } as unknown as Database);
   const app = createApp({ repos: repo, services, origin, verifyToken });
+
   await supertest(app).get("/api/users/me").expect(401);
   const invalid = await supertest(app)
     .get("/api/users/me")
     .set("Authorization", "Bearer invalid")
     .expect(401);
   assert.equal(invalid.body.error.code, "INVALID_TOKEN");
+
   const offline = await supertest(app)
     .get("/api/users/me")
     .set("Authorization", "Bearer alex")
     .expect(503);
   assert.equal(JSON.stringify(offline.body).includes("PRIVATE"), false);
+
   const provider = createApp({
     repos: repo,
     services,
@@ -93,6 +103,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
     profession: "student",
     interests: ["gaming", "travel"],
   };
+
   before(async () => {
     assert.match(
       new URL(url!).pathname,
@@ -111,6 +122,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
   after(async () => {
     await db?.end();
   });
+
   const get = (token = "alex") =>
     supertest(app).get("/api/users/me").set("Authorization", `Bearer ${token}`);
   const put = (body: object, token = "alex") =>
@@ -119,6 +131,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       .set("Origin", origin)
       .set("Authorization", `Bearer ${token}`)
       .send(body);
+
   test("first login persists Firebase identity and concurrent retries create one profile", async () => {
     const results = await Promise.all([get().expect(200), get().expect(200)]);
     assert.equal(results[0].body.id, results[1].body.id);
@@ -132,10 +145,12 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       1,
     );
   });
+
   test("onboarding persists through repeated saves, relogin and recreated server", async () => {
     const first = await put(profile).expect(200);
     assert.equal(first.body.onboardingComplete, true);
     assert.equal(first.body.phone, "+16045551234");
+
     const repeated = await put({ ...profile, name: "My saved name" }).expect(
       200,
     );
@@ -149,6 +164,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       .get("/api/users/me")
       .set("Authorization", "Bearer alex")
       .expect(200);
+
     assert.equal(restored.body.id, first.body.id);
     assert.equal(restored.body.name, "My saved name");
     assert.deepEqual(restored.body, repeated.body);
@@ -158,6 +174,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       1,
     );
   });
+
   test("Firebase identities isolate profiles and cannot be overridden in the browser", async () => {
     const a = await put(profile).expect(200);
     const b = await get("sam").expect(200);
@@ -172,6 +189,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       .expect(404);
     assert.equal((await get("sam")).body.onboardingComplete, false);
   });
+
   test("invalid onboarding never completes and names missing in the token remain editable", async () => {
     await get("sam").expect(200);
     await put({ ...profile, phone: "5551234" }, "sam").expect(400);
@@ -179,6 +197,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
     assert.equal((await get("sam")).body.onboardingComplete, false);
     assert.equal((await put(profile, "sam")).body.name, "Alex Taylor");
   });
+
   test("browser writes require the allowed origin and JSON and no passwords are stored", async () => {
     await supertest(app)
       .put("/api/users/me")
@@ -198,6 +217,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       .type("form")
       .send("name=Alex")
       .expect(415);
+
     const saved = await put(profile).expect(200);
     assert.equal(JSON.stringify(saved.body).includes("password"), false);
     const columns = await db.query(
@@ -208,6 +228,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       false,
     );
   });
+
   test("account email changes follow Firebase without overwriting personal preferences", async () => {
     const saved = await put(profile).expect(200);
     const updated = await repo.users.ensureUser({
@@ -216,6 +237,7 @@ describe("TigerData-compatible profile persistence", { skip: !url }, () => {
       email_verified: false,
       name: "Provider name",
     });
+
     assert.equal(updated.id, saved.body.id);
     assert.equal(updated.email, "updated@example.test");
     assert.equal(updated.emailVerified, false);

@@ -34,7 +34,10 @@ const Indicator = z.object({
   detail: text(10, 500),
 });
 
-/** The frontend `SmsScenario` (frontend/src/features/training/scenarios.ts) as received by the browser. */
+/**
+ * The frontend `SmsScenario` (frontend/src/features/training/scenarios.ts) as
+ * received by the browser.
+ */
 export const SmsScenario = z
   .object({
     id: z.string().regex(/^gen-sms-[0-9a-f-]{36}$/),
@@ -209,11 +212,17 @@ export interface SmsGenerationInput {
   difficulty: Difficulty;
   weakCategories?: ScamCategory[];
   vulnerableTactics?: string[];
-  /** Preferred categories, e.g. Snowflake's `nextTrainingFocus`; the first valid one wins over weak categories. */
+  /**
+   * Preferred categories, e.g. Snowflake's `nextTrainingFocus`; the first valid
+   * one wins over weak categories.
+   */
   focus?: ScamCategory[];
   /** Unset uses the built-in SMS. */
   model?: JsonModel;
-  /** Real-world examples to ground the prompt; none (or no library) runs the prompt ungrounded. */
+  /**
+   * Real-world examples to ground the prompt; none (or no library) runs the
+   * prompt ungrounded.
+   */
   library?: ScamLibrary;
   budgetMs?: number;
 }
@@ -258,6 +267,7 @@ function plan(input: SmsGenerationInput) {
     : weak
       ? `focused on ${categoryNoun[category]}, where you slipped before`
       : `with ${categoryNoun[category]} to widen your practice`;
+
   return { profession, interests, category, tactics, why };
 }
 
@@ -322,6 +332,7 @@ function checkSms(
         ),
     };
   }
+
   const sms = parsed.data;
   const messages = sms.messages.map((m) =>
     m.link ? { text: m.text, link: m.link } : { text: m.text },
@@ -403,7 +414,10 @@ function getCommittedTexts(): SmsScenario[] {
   return cachedCommittedTexts;
 }
 
-/** Generates a personalised scam SMS: Gemini when configured, checked and repaired, else a built-in one. */
+/**
+ * Generates a personalised scam SMS: Gemini when configured, checked and
+ * repaired, else a built-in one.
+ */
 export async function generateSmsScenario(
   input: SmsGenerationInput,
 ): Promise<{ scenario: SmsScenario; source: "gemini" | "fallback" }> {
@@ -450,7 +464,6 @@ export async function generateSmsScenario(
     if (scenario) return { scenario, source: "gemini" };
   }
 
-  // Fallback: pick matching committed practice text
   const committed = getCommittedTexts();
   const match =
     committed.find((t) => t.scamCategory === p.category) ??

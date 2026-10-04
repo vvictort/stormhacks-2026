@@ -1,6 +1,8 @@
-// Rebuilds the practice path from the scam library: frontend/src/features/training/practice.json and the comms
-// fixtures in backend/fixtures/scenarios/. Emails and calls are rebuilt every run; the Gemini-written texts are kept,
-// --texts writes the missing ones and --texts=all rewrites every one (both need GEMINI_API_KEY).
+// Rebuilds the practice path from the scam library:
+// frontend/src/features/training/practice.json and the comms fixtures in
+// backend/fixtures/scenarios/. Emails and calls are rebuilt every run; the
+// Gemini-written texts are kept, --texts writes the missing ones and
+// --texts=all rewrites every one (both need GEMINI_API_KEY).
 //   npm run build:practice
 //   npm run build:practice -- --texts
 //   npm run build:practice -- --texts=all

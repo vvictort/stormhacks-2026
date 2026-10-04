@@ -9,6 +9,7 @@ function deferred() {
   })
   return { promise, resolve }
 }
+
 function fixture(request) {
   const user = { uid: 'account-a', getIdToken: async () => 'fixture-token' }
   const session = { currentUser: user, authStateReady: async () => {} }
@@ -22,6 +23,7 @@ function fixture(request) {
   )
   return { session, user, api, signouts: () => signouts }
 }
+
 const otherUser = () => ({
   uid: 'account-b',
   getIdToken: async () => 'other-fixture-token',
@@ -34,6 +36,7 @@ test('profile requests use the current token and JSON content type', async () =>
     assert.equal(init.headers.get('Content-Type'), 'application/json')
     return Response.json({ name: 'Saved name' })
   })
+
   assert.deepEqual(
     await api(
       '/users/me',
@@ -52,9 +55,11 @@ test('a profile save cannot use another account after waiting for auth restorati
     return Response.json({})
   })
   session.authStateReady = () => ready.promise
+
   const save = api('/users/me', { method: 'PUT', body: '{}' }, 'account-a')
   session.currentUser = otherUser()
   ready.resolve()
+
   await assert.rejects(save, /Session changed/)
   assert.equal(requests, 0)
 })
@@ -71,10 +76,12 @@ test('switching accounts during token refresh prevents sending the old request',
     started.resolve()
     return token.promise
   }
+
   const save = api('/users/me', { method: 'PUT', body: '{}' }, 'account-a')
   await started.promise
   session.currentUser = otherUser()
   token.resolve('fixture-token')
+
   await assert.rejects(save, /Session changed/)
   assert.equal(requests, 0)
 })
@@ -87,11 +94,13 @@ test('delayed success or rejection from a previous account cannot change the cur
       started.resolve()
       return response.promise
     })
+
     const save = api('/users/me', { method: 'PUT', body: '{}' }, 'account-a')
     await started.promise
     const newUser = otherUser()
     session.currentUser = newUser
     response.resolve(Response.json({ name: 'Previous account' }, { status }))
+
     await assert.rejects(save, /Session changed/)
     assert.equal(signouts(), 0)
     assert.equal(session.currentUser, newUser)
@@ -116,10 +125,12 @@ test('aborting a request discards its late authentication error', async () => {
     started.resolve()
     return response.promise
   })
+
   const read = api('/users/me', { signal: controller.signal }, 'account-a')
   await started.promise
   controller.abort()
   response.resolve(Response.json({}, { status: 401 }))
+
   await assert.rejects(read, { name: 'AbortError' })
   assert.equal(signouts(), 0)
 })

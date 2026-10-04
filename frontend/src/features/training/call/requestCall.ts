@@ -1,8 +1,8 @@
 import { api } from '../../../lib/api'
 import { saveCachedScenarioMeta } from '../scenarioCache'
 
-// Outside the lazy call chunk on purpose: safe to import from the main bundle (Home). Never import `@elevenlabs/react`
-// or `useSimulatedCall` here.
+// Outside the lazy call chunk on purpose: safe to import from the main bundle
+// (Home). Never import `@elevenlabs/react` or `useSimulatedCall` here.
 
 /** `POST /api/training/call-scenarios` 201 (docs/call-integration.md). */
 export interface CreatedCallScenario {
@@ -15,8 +15,9 @@ export interface CreatedCallScenario {
 }
 
 /**
- * Asks the backend for a call written for this user's training profile and resolves with its id (`gen-call-…`);
- * navigate to `/train/${id}` to ring it. Rejects on any failure, including the rate limit (the message names the
+ * Asks the backend for a call written for this user's training profile and
+ * resolves with its id (`gen-call-…`); navigate to `/train/${id}` to ring it.
+ * Rejects on any failure, including the rate limit (the message names the
  * status, e.g. 429), so the caller can fall back to a built-in call.
  */
 export async function requestPersonalisedCall(

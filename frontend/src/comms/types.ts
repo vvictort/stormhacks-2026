@@ -1,4 +1,5 @@
-// Mirror of backend/app/shared/types.ts and the /api/comms route responses. Keep in sync by hand.
+// Mirror of backend/app/shared/types.ts and the /api/comms route responses.
+// Keep in sync by hand.
 
 export type Channel = 'text' | 'call'
 
@@ -45,7 +46,10 @@ interface ScenarioBase {
 export interface TextScenario extends ScenarioBase {
   /** Shown as the sender in the fake messaging UI (a name or a fake number). */
   senderLabel: string
-  /** First scam text. `{{link}}` is replaced with `linkDisplayUrl` and made tappable. */
+  /**
+   * First scam text. `{{link}}` is replaced with `linkDisplayUrl` and made
+   * tappable.
+   */
   openingMessage: string
   linkDisplayUrl?: string
   persona: string
@@ -125,7 +129,10 @@ export interface CallTranscriptTurn {
 export type TrainingOutcome =
   'resisted' | 'compromised' | 'declined' | 'missed' | 'error'
 
-/** Comms' normalised result on a completed call: `success` is null when the call isn't scored. */
+/**
+ * Comms' normalised result on a completed call: `success` is null when the
+ * call isn't scored.
+ */
 export interface CallTraining {
   outcome: TrainingOutcome
   success: boolean | null
@@ -151,18 +158,26 @@ export interface CallRecord {
   /** ElevenLabs `user_resisted` evaluation result. */
   resisted?: string
   signals: Signal[]
-  /** Canonical outcome, set once the call is completed. The UI reads results from here, never from `outcome`. */
+  /**
+   * Canonical outcome, set once the call is completed. The UI reads results
+   * from here, never from `outcome`.
+   */
   training?: CallTraining
   error?: string
 }
 
-/** Session overrides in the shape `@elevenlabs/react` `startSession` expects. */
+/**
+ * Session overrides in the shape `@elevenlabs/react` `startSession` expects.
+ */
 export interface CallOverrides {
   agent: { prompt: { prompt: string }; firstMessage: string }
   tts?: { voiceId: string }
 }
 
-/** Body of `POST /api/comms/texts`; an empty pick means a random scenario. Scenarios are server-owned: ids only. */
+/**
+ * Body of `POST /api/comms/texts`; an empty pick means a random scenario.
+ * Scenarios are server-owned: ids only.
+ */
 export interface ScenarioPick {
   scenarioId?: string
 }
@@ -174,7 +189,10 @@ export interface StartTextResponse {
   thread: TextThread
 }
 
-/** Client-side result of starting a text: `resumed` when the user already had an active thread. */
+/**
+ * Client-side result of starting a text: `resumed` when the user already had
+ * an active thread.
+ */
 export interface StartTextResult {
   threadId: string
   resumed: boolean

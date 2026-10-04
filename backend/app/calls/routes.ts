@@ -25,7 +25,7 @@ const conflicts = {
     ),
 };
 
-/** /api/comms/calls (behind requireAuth): simulated scam calls (ringing, accept, decline, abandon, connected, ended). */
+/** /api/comms/calls (behind requireAuth): simulated scam calls. */
 export function callsRouter({
   calls,
   catalog,
@@ -79,7 +79,8 @@ export function callsRouter({
     res.json(result);
   });
 
-  // Ringing only: the browser gave up on the call (caption practice, left the page). Unscored and never saved.
+  // Ringing only: the browser gave up on the call (caption practice, left the
+  // page). Unscored and never saved.
   router.post("/:id/abandon", async (req, res) => {
     await ownCall(req);
     const result = await calls.abandon(req.params.id);

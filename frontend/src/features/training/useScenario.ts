@@ -10,7 +10,10 @@ export type ScenarioState =
   | { status: 'loading' }
   | { status: 'missing' }
 
-/** Generated scenarios live on the backend, owner-only; the GET returns the frontend `Scenario` shape. */
+/**
+ * Generated scenarios live on the backend, owner-only; the GET returns the
+ * frontend `Scenario` shape.
+ */
 function generatedPath(id: string) {
   if (id.startsWith('gen-email-')) {
     return `/training/email-scenarios/${encodeURIComponent(id)}`

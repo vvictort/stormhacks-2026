@@ -9,7 +9,9 @@ import type { VerifyToken } from "../app/http/auth.ts";
 
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const now = Math.floor(Date.now() / 1000);
-// Claims that would pass a decode-only check: right project, a uid, not expired.
+
+// Claims that would pass a decode-only check: right project, a uid, not
+// expired.
 const claims = {
   iss: "https://securetoken.google.com/tellio-test",
   aud: "tellio-test",
@@ -26,9 +28,11 @@ test("the real Firebase verifier rejects unsigned and forged tokens offline", as
     initializeApp({ projectId: "tellio-test" }, "auth-test"),
   );
   const app = startApp({ verify: (token) => firebase.verifyIdToken(token) });
+
   const unsigned = `${b64({ alg: "none", typ: "JWT" })}.${b64(claims)}.`;
   const forged = `${b64({ alg: "RS256", typ: "JWT" })}.${b64(claims)}.${Buffer.from("not-a-signature").toString("base64url")}`;
   const hmac = `${b64({ alg: "HS256", typ: "JWT", kid: "k1" })}.${b64(claims)}.${Buffer.from("sig").toString("base64url")}`;
+
   for (const token of [unsigned, forged, hmac, "not.a.jwt", "garbage"]) {
     const res = await app.api("POST", "/calls", {
       token,
@@ -50,7 +54,7 @@ test("a verified token is accepted and its uid is the only identity used", async
   });
   assert.equal(res.status, 201);
   assert.equal(res.body.call.userId, "alice");
-  // Another verified user can't see it.
+
   assert.equal(
     (await app.api("GET", `/calls/${res.body.callId}`, { token: "valid:bob" }))
       .status,
@@ -73,6 +77,7 @@ test("missing, invalid and expired tokens are 401", async () => {
     [missing.status, missing.body.error.code],
     [401, "UNAUTHENTICATED"],
   );
+
   const invalid = await app.api("POST", "/calls", {
     token: "forged.token.here",
   });
@@ -80,8 +85,10 @@ test("missing, invalid and expired tokens are 401", async () => {
     [invalid.status, invalid.body.error.code],
     [401, "INVALID_TOKEN"],
   );
+
   const old = await expiredApp.api("POST", "/calls", { token: "whatever" });
   assert.deepEqual([old.status, old.body.error.code], [401, "INVALID_TOKEN"]);
+
   // The old dev-only call page is gone.
   assert.equal(
     (await app.api("GET", "/dev/call", { token: null })).status,
@@ -95,6 +102,7 @@ test("?access_token= is verified the same way and accepted only on the SSE strea
     token: null,
   });
   assert.deepEqual([bad.status, bad.body.error.code], [401, "INVALID_TOKEN"]);
+
   // Verified, so it reaches the ownership check.
   assert.equal(
     (
@@ -104,6 +112,7 @@ test("?access_token= is verified the same way and accepted only on the SSE strea
     ).status,
     404,
   );
+
   // Everywhere else the query token is ignored.
   assert.equal(
     (
@@ -130,12 +139,15 @@ test("browser writes need the app Origin and JSON; the scenario list and tracked
     supertest(app.app)
       .post("/api/comms/calls")
       .set("Authorization", "Bearer valid:alice");
+
   assert.equal((await post().send({})).status, 403);
   assert.equal(
     (await post().set("Origin", origin).send("x").type("text/plain")).status,
     415,
   );
-  // The same dev server under its other loopback name passes the origin check; another port doesn't.
+
+  // The same dev server under its other loopback name passes the origin check;
+  // another port doesn't.
   const plain = (from: string) =>
     post().set("Origin", from).send("x").type("text/plain");
   assert.equal((await plain("http://127.0.0.1:5173")).status, 415);
@@ -153,6 +165,7 @@ test("browser writes need the app Origin and JSON; the scenario list and tracked
     ],
     [5, 7],
   );
+
   const link = await supertest(app.app).get("/api/comms/l/unknown");
   assert.deepEqual([link.status, link.text], [404, "This link has expired."]);
 });
@@ -175,6 +188,7 @@ test("the SSE stream replays the thread through the real middleware, and a track
     started.body.streamUrl,
     `/api/comms/texts/${started.body.threadId}/stream`,
   );
+
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const res = await realFetch(
     `${base}${started.body.streamUrl}?access_token=valid:alice`,
@@ -182,6 +196,7 @@ test("the SSE stream replays the thread through the real middleware, and a track
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("content-type"), "text/event-stream");
   assert.equal(res.headers.get("content-encoding"), null);
+
   const reader = res.body!.getReader();
   let text = "";
   while (!text.includes("event: message")) {

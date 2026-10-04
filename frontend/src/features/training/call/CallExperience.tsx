@@ -32,14 +32,18 @@ import {
 } from './callModel'
 import './call.css'
 
-// The lazily loaded call boundary: @elevenlabs/react (and LiveKit under it) only ships in this chunk.
-// ScenarioPage mounts it once per call run, keyed by scenario id, so the provider never remounts mid-call.
+// The lazily loaded call boundary: @elevenlabs/react (and LiveKit under it)
+// only ships in this chunk. ScenarioPage mounts it once per call run, keyed by
+// scenario id, so the provider never remounts mid-call.
 
 interface Props {
   uid: string | null | undefined
   scenario: CallScenario
   progress: Progress
-  /** Saves a local (practice-mode) result. Live results are stored by the backend. */
+  /**
+   * Saves a local (practice-mode) result. Live results are stored by the
+   * backend.
+   */
   record: (id: string, correct: boolean) => void
 }
 
@@ -74,6 +78,7 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     resolve: (leave: boolean) => void
   } | null>(null)
   const [time] = useState(clockTime)
+
   const completed = call.phase === 'completed'
   const result = completed ? readCallResult(call.record) : null
   const screen = callScreen({
@@ -85,8 +90,9 @@ function CallStage({ uid, scenario, progress, record }: Props) {
   const callerLabel = call.callerLabel ?? scenario.callerLabel
   const guarded = !practice && guardsNavigation(call.phase)
 
-  // While a live call is connecting or on: links and sign-out ask first, reload/close gets the browser's prompt,
-  // and Back lands on a duplicate entry of this page so we can ask before really leaving.
+  // While a live call is connecting or on: links and sign-out ask first,
+  // reload/close gets the browser's prompt, and Back lands on a duplicate entry
+  // of this page so we can ask before really leaving.
   useEffect(() => {
     if (!guarded) return
     const unregister = setNavigationGuard(
@@ -97,6 +103,7 @@ function CallStage({ uid, scenario, progress, record }: Props) {
       event.returnValue = ''
     }
     const onPop = () => setAsking({ trigger: 'back_button', resolve: () => {} })
+
     window.history.pushState(
       { ...window.history.state, tellioCallGuard: true },
       '',
@@ -104,11 +111,13 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     )
     window.addEventListener('beforeunload', onUnload)
     window.addEventListener('popstate', onPop)
+
     return () => {
       unregister()
       window.removeEventListener('beforeunload', onUnload)
       window.removeEventListener('popstate', onPop)
-      // Call over and still on this page: drop the duplicate entry so Back isn't a dead press.
+      // Call over and still on this page: drop the duplicate entry so Back
+      // isn't a dead press.
       if (window.history.state?.tellioCallGuard) window.history.back()
     }
   }, [guarded])
@@ -132,7 +141,8 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     else asking.resolve(true)
   }
 
-  // Debrief data: the stored backend attempt if it's there yet, otherwise the comms record (always available).
+  // Debrief data: the stored backend attempt if it's there yet, otherwise the
+  // comms record (always available).
   const [attempt, setAttempt] = useState<{
     callId: string
     data: unknown
@@ -172,6 +182,7 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     call.reset()
     setPractice({ result: null })
   }
+
   function startLive() {
     previouslyMissed.current = progress[scenario.id]?.correct === false
     void call.start(scenario.id)
@@ -186,7 +197,9 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     !practice && completed
       ? debriefSource(attemptReady ? attempt.data : null, call.record).result
       : null
-  // Award only after the same authoritative result used by the debrief is ready.
+
+  // Award only after the same authoritative result used by the debrief is
+  // ready.
   const finishedResult = practice?.result ?? (attemptReady ? liveResult : null)
   const finishedId = practice ? practiceAttemptId : call.callId
   const finishedOutcome = finishedResult?.outcome
@@ -211,6 +224,7 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     scenario.id,
     missionId,
   ])
+
   const earnedNow = badges
     .filter(
       (badge) =>
@@ -218,14 +232,18 @@ function CallStage({ uid, scenario, progress, record }: Props) {
         adventure.earned[badge.id] !== undefined,
     )
     .map((badge) => badge.id)
-  // A live result may not be on the server yet; count it for the recommendation so "Next" moves on.
+
+  // A live result may not be on the server yet; count it for the
+  // recommendation so "Next" moves on.
   const next = recommend(
     isScored(liveResult)
       ? recordAttempt(progress, scenario.id, liveResult.success)
       : progress,
     scenario.id,
   )
-  // Scored live calls are saved server-side once analysed; the debrief then shows what changed (practice stays local).
+
+  // Scored live calls are saved server-side once analysed; the debrief then
+  // shows what changed (practice stays local).
   const savedId = !practice && isScored(liveResult) ? call.callId : null
   const learning = useLearning(uid, savedId)
 

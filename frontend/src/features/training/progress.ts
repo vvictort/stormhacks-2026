@@ -5,15 +5,21 @@ import {
   type Scenario,
 } from './scenarios.ts'
 
-// Texts and emails (and call practice-mode results) are saved in localStorage per account. Live calls are stored
-// by the backend and read from GET /api/training/progress; mergeProgress folds them in, so the rest of this module
-// never cares where an attempt came from. Moving texts/emails server-side means dropping the local half here.
+// Texts and emails (and call practice-mode results) are saved in localStorage
+// per account. Live calls are stored by the backend and read from
+// GET /api/training/progress; mergeProgress folds them in, so the rest of this
+// module never cares where an attempt came from. Moving texts/emails
+// server-side means dropping the local half here.
 
 export interface Attempt {
   correct: boolean
   at: number
 }
-/** Per scenario id: the latest attempt, plus every attempt oldest first. Old saves have no `history`; their one attempt stands in. */
+
+/**
+ * Per scenario id: the latest attempt, plus every attempt oldest first. Old
+ * saves have no `history`; their one attempt stands in.
+ */
 export type Progress = Record<string, Attempt & { history?: Attempt[] }>
 
 const memory = new Map<string, Progress>()
@@ -75,7 +81,10 @@ export interface ServerAttempt {
   completedAt: string
 }
 
-/** Local progress plus the server's scored call attempts, each scenario's history re-sorted oldest first. */
+/**
+ * Local progress plus the server's scored call attempts, each scenario's
+ * history re-sorted oldest first.
+ */
 export function mergeProgress(
   local: Progress,
   attempts: ServerAttempt[],
@@ -96,6 +105,7 @@ export function mergeProgress(
     ])
   }
   if (extra.size === 0) return local
+
   const merged = { ...local }
   for (const [id, added] of extra) {
     const history = [
@@ -104,6 +114,7 @@ export function mergeProgress(
     ].sort((a, b) => a.at - b.at)
     merged[id] = { ...history[history.length - 1], history }
   }
+
   return merged
 }
 
@@ -122,7 +133,10 @@ export function timeline(progress: Progress) {
 
 export const levels: Difficulty[] = ['easy', 'medium', 'hard']
 
-/** Replays the history: two right calls at or above the level step up, a miss at or below it steps back. */
+/**
+ * Replays the history: two right calls at or above the level step up, a miss
+ * at or below it steps back.
+ */
 // ponytail: heuristic stand-in for the planned Python personalization engine (backend/personalization/); swap in its pick once that service exists.
 export function currentLevel(
   progress: Progress,
@@ -155,8 +169,9 @@ export function summarize(progress: Progress, list: Scenario[] = scenarios) {
 }
 
 /**
- * Every attempt, repeats included, per channel. Scenarios made for you count under their channel (`gen-<channel>-…`);
- * ids no longer in the library count as `other`.
+ * Every attempt, repeats included, per channel. Scenarios made for you count
+ * under their channel (`gen-<channel>-…`); ids no longer in the library count
+ * as `other`.
  */
 export function channelStats(
   progress: Progress,
@@ -180,8 +195,9 @@ export function channelStats(
 }
 
 /**
- * The scenario to practise next: closest to the current level first, untried before missed at each level,
- * ties in list order starting after `afterId`. Nothing once every scenario's latest call was right.
+ * The scenario to practise next: closest to the current level first, untried
+ * before missed at each level, ties in list order starting after `afterId`.
+ * Nothing once every scenario's latest call was right.
  */
 export function recommend(
   progress: Progress,

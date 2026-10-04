@@ -35,6 +35,7 @@ const identity = (uid: string) =>
     email: `${uid}@example.test`,
     email_verified: true,
   }) as DecodedIdToken;
+
 const verifyToken = async (token: string) => {
   if (token === "alex" || token === "sam") return identity(token);
   throw Object.assign(new Error("invalid"), { code: "auth/invalid-id-token" });
@@ -70,9 +71,11 @@ function routes(repos: Repositories = fakeRepos()) {
     origin,
     verifyToken,
   });
+
   return {
     app,
-    // What the call service does for a completed call (calls/attempt.ts parses with the same schema).
+    // What the call service does for a completed call (calls/attempt.ts parses
+    // with the same schema).
     save: (body: object) => repos.attempts.insert(attemptSchema.parse(body)),
     startCall: (scenarioId: string, user = "alex") =>
       supertest(app)
@@ -105,6 +108,7 @@ test("a completed call is saved once; repeats are idempotent and invalid attempt
   const { save } = routes();
   assert.equal(await save(attempt()), true);
   assert.equal(await save(attempt()), false);
+
   assert.equal(
     attemptSchema.safeParse(
       attempt({ attemptId: "call_2", outcome: "reported" }),
@@ -130,6 +134,7 @@ test("a completed call is saved once; repeats are idempotent and invalid attempt
     ).success,
     false,
   );
+
   assert.equal(
     await save(
       attempt({
@@ -206,6 +211,7 @@ test("progress and the vulnerability profile update after each attempt", async (
     difficulty: "easy",
     focus: [],
   });
+
   await save(attempt());
   await save(
     attempt({
@@ -227,6 +233,7 @@ test("progress and the vulnerability profile update after each attempt", async (
       completedAt: "2026-10-03T12:00:00Z",
     }),
   );
+
   const body = (await progress().expect(200)).body;
   assert.deepEqual(
     body.attempts.map((a: { id: string }) => a.id),
@@ -273,6 +280,7 @@ test("scenario generation falls back without Gemini, stores the scenario and onl
     "title",
   ]);
   assert.equal(created.difficulty, "easy");
+
   const { call } = (await startCall(created.scenarioId).expect(201)).body;
   assert.equal(call.scenario.id, created.scenarioId);
   assert.equal(call.scenario.difficulty, 1);
@@ -383,6 +391,7 @@ test("call generation prefers the training focus, then weak areas, then the prof
     pickCategory({ difficulty: "easy", profession: "Student" }).category,
     "banking",
   );
+
   for (const category of [
     "banking",
     "government",
@@ -411,6 +420,7 @@ test("call generation prefers the training focus, then weak areas, then the prof
     );
     assert.match(scenario.teaching!.generated.reason, /training focus/);
   }
+
   const anonymous = await generateCallScenario({ difficulty: "easy" });
   assert.ok(!/\{first\}|Hi,? ,/.test(anonymous.scenario.firstMessage));
 });
@@ -423,9 +433,11 @@ test("category inference covers the contract call scenarios", () => {
     "tech-support-remote-1": "account_security",
     "exec-vendor-payment-1": "workplace",
   };
+
   for (const [id, category] of Object.entries(ids)) {
     assert.equal(inferCategory({ id, title: "" }), category, id);
   }
+
   assert.equal(
     inferCategory({
       id: "gen-1",
@@ -455,11 +467,14 @@ test("summary replays attempts in order for weak categories and adaptive difficu
     outcome: success ? "resisted" : "compromised",
     completedAt: `2026-10-0${i}T00:00:00Z`,
   });
+
   assert.equal(
     summarizeAttempts([at(1, true), at(2, true), at(3, true)]).difficulty,
     "medium",
   );
-  // 3/4 = 75% sits in the hysteresis band, so banking stays weak after the early miss.
+
+  // 3/4 = 75% sits in the hysteresis band, so banking stays weak after the
+  // early miss.
   const mixed = summarizeAttempts([
     at(4, true),
     at(3, true),
@@ -468,6 +483,7 @@ test("summary replays attempts in order for weak categories and adaptive difficu
   ]);
   assert.deepEqual(mixed.vulnerability.weakCategories, ["banking"]);
   assert.equal(mixed.difficulty, "easy");
+
   assert.deepEqual(
     summarizeAttempts([at(2, true), at(1, true), at(4, false), at(3, true)])
       .vulnerability.weakCategories,
@@ -522,6 +538,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
         .rows[0].n,
       1,
     );
+
     const own = (await getAttempt("call_1").expect(200)).body;
     assert.equal(own.startedAt, "2026-10-03T10:00:00.000Z");
     assert.equal(own.durationSecs, 74);
@@ -532,6 +549,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
     });
     await getAttempt("call_1", "sam").expect(404);
     assert.equal((await progress("sam")).body.stats.total, 0);
+
     const { metadata } = (
       await db.query("SELECT metadata FROM training_attempts")
     ).rows[0];
@@ -551,6 +569,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
         }),
       );
     }
+
     const body = (await progress().expect(200)).body;
     assert.equal(body.attempts.length, 50);
     assert.equal(body.attempts[0].id, "call_51");
@@ -568,6 +587,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
     );
     assert.ok(teaching.practice.lines.length >= 3);
     await getScenario(created.scenarioId, "sam").expect(404);
+
     const row = (
       await db.query(
         "SELECT firebase_uid, source FROM generated_call_scenarios WHERE id=$1",
@@ -592,6 +612,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
       .set("Authorization", "Bearer alex")
       .send({ reason: "declined" })
       .expect(200);
+
     let saved;
     for (let i = 0; i < 50 && !saved; i++) {
       saved =
@@ -602,6 +623,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
           )
         ).rows[0] ?? (await new Promise((r) => setTimeout(r, 20)));
     }
+
     assert.deepEqual(saved, {
       outcome: "declined",
       success: true,
@@ -615,7 +637,8 @@ describe("Postgres training persistence", { skip: !url }, () => {
   });
 
   test("the generation rate limit holds across app instances and concurrent requests", async () => {
-    // Two repositories (and apps) on one database stand in for two processes, or one restarted.
+    // Two repositories (and apps) on one database stand in for two processes,
+    // or one restarted.
     const other = createRepositories(db);
     const claims = await Promise.all(
       Array.from({ length: 8 }, (_, i) =>
@@ -623,6 +646,7 @@ describe("Postgres training persistence", { skip: !url }, () => {
       ),
     );
     assert.equal(claims.filter(Boolean).length, 5);
+
     await db.query("TRUNCATE scenario_generation_requests");
     const [first, second] = [routes(repo), routes(other)];
     for (let i = 0; i < 5; i++) {
@@ -642,16 +666,19 @@ describe("Postgres training persistence", { skip: !url }, () => {
       db.query(
         `UPDATE scenario_generation_requests SET requested_at = requested_at - interval '${interval}'`,
       );
+
     assert.deepEqual(
       [await claim(), await claim(), await claim()],
       [true, true, false],
     );
+
     await age("61 seconds");
     assert.deepEqual(
       [await claim(), await claim()],
       [true, false],
       "a new minute, but only one left today",
     );
+
     await age("1 day");
     assert.equal(await claim(), true);
     assert.equal(

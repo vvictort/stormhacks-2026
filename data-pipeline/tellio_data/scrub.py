@@ -1,4 +1,7 @@
-"""PII / URL / brand scrubbing and junk filtering for excerpt text. Tagging runs AFTER this, on its output."""
+"""PII / URL / brand scrubbing and junk filtering for excerpt text.
+
+Tagging runs AFTER this, on its output.
+"""
 
 import hashlib
 import html
@@ -9,8 +12,9 @@ from urllib.parse import urlsplit
 MAX_TEXT = 1200
 MAX_SUBJECT = 200
 
-# Invented hosts under the reserved .example TLD (RFC 2606) so nothing can resolve. Suspicious-looking originals
-# keep a suspicious-looking replacement (the keywords tagging.py looks for); ordinary ones get a bland host.
+# Invented hosts under the reserved .example TLD (RFC 2606) so nothing can resolve.
+# Suspicious-looking originals keep a suspicious-looking replacement (the keywords
+# tagging.py looks for); ordinary ones get a bland host.
 SUSPICIOUS_HOSTS = (
     'secure-account-verify.example',
     'login-update-center.example',
@@ -45,8 +49,9 @@ GENERIC_LOCAL = {
     'contact',
 }
 
-# Real brands -> bracketed generic roles (the call dataset already uses [Company]-style placeholders).
-# Entries written in ALL CAPS match case-sensitively (UPS != "sign ups"); the rest ignore case.
+# Real brands -> bracketed generic roles (the call dataset already uses [Company]-style
+# placeholders). Entries written in ALL CAPS match case-sensitively (UPS != "sign ups");
+# the rest ignore case.
 BRANDS = {
     '[Bank]': [
         'Bank of America',
@@ -181,7 +186,8 @@ _BRAND_RES = [
     for name in sorted(names, key=len, reverse=True)
 ]
 
-# Mailbox owners that recur throughout the source corpora (e.g. the Nazario honeypot "jose@monkey.org").
+# Mailbox owners that recur throughout the source corpora (e.g. the Nazario honeypot
+# "jose@monkey.org").
 KNOWN_NAMES = re.compile(r'\b(jose|monkey)\b', re.I)
 GREETING_OK = {
     'Customer',
@@ -211,14 +217,16 @@ JUNK_MARKERS = re.compile(
     r'internal format of your mail folder|BEGIN PGP|base64',
     re.I,
 )
-# Pharma/adult/replica spam teaches nothing about the scams Tellio trains for (and is unfit for a demo).
+# Pharma/adult/replica spam teaches nothing about the scams Tellio trains for (and is
+# unfit for a demo).
 OFF_TOPIC = re.compile(
     r'viagra|cialis|levitra|tramadol|phentermine|penis|libido|erection|male enhancement|'
     r'\bsex\w*|porn|replica|rolex|\bpills?\b|\bmeds\b|pharmacy|love (?:wand|gun|stick)|\blover\b|manhood|'
     r'potency|enlarge|weight loss',
     re.I,
 )
-# Mailing-list chatter (quoted replies, list footers) is personal correspondence, not a useful "safe" example.
+# Mailing-list chatter (quoted replies, list footers) is personal correspondence, not a
+# useful "safe" example.
 LIST_TRAFFIC = re.compile(
     r'^>|mailing list|unsubscribe from this (?:list|group)|^-- ?$', re.I | re.M
 )
@@ -245,18 +253,16 @@ GREETING_RE = re.compile(
     r'\b(Dear|Hi|Hello|Attn:?)\s+((?:Mr\.?|Mrs\.?|Ms\.?|Dr\.?)\s+)?'
     r'([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,2})(?!\w)'
 )
-HANDLE_GREETING_RE = re.compile(
-    r'\b(Dear|Hi|Hello) ([a-z][\w.]{2,20})(\s*,)'
-)  # "Dear hulkjr ,"
+# "Dear hulkjr ,"
+HANDLE_GREETING_RE = re.compile(r'\b(Dear|Hi|Hello) ([a-z][\w.]{2,20})(\s*,)')
 SELF_INTRO_RE = re.compile(
     r'\b(My name is|I am|I\'m) (?:(?:Mr|Mrs|Ms|Dr|Barrister)\.? )?[A-Z][a-z]+(?: [A-Z][a-z]+){1,2}\b'
 )
 HONORIFIC_RE = re.compile(
     r'\b(Mr|Mrs|Ms|Miss|Dr|Prof|Barrister)\.? [A-Z][a-z]+(?: [A-Z][a-z]+){0,2}\b'
 )
-LONE_NAME_RE = re.compile(
-    r'\n(?:-- ?\n)?[A-Z][a-z]{2,15}\.?\s*$'
-)  # a bare first name signing off at the end
+# a bare first name signing off at the end
+LONE_NAME_RE = re.compile(r'\n(?:-- ?\n)?[A-Z][a-z]{2,15}\.?\s*$')
 SIGNOFF_RE = re.compile(
     r'\b(Regards|Sincerely|Best wishes|Yours truly|Thanks|Thank you),?\s+([A-Z][a-z]+\s+[A-Z][a-z]+)\b'
 )
@@ -333,9 +339,8 @@ def strip_markup(text: str) -> str:
     text = re.sub(r'<br\s*/?>|</p>|</div>|</tr>', '\n', text, flags=re.I)
     text = html.unescape(re.sub(r'<[^>]+>', ' ', text))
     text = text.replace('\r', '').replace('\xa0', ' ')
-    text = re.sub(
-        r'[ \t]{3,}', '\n', text
-    )  # wide gaps were layout breaks in the flattened HTML
+    # wide gaps were layout breaks in the flattened HTML
+    text = re.sub(r'[ \t]{3,}', '\n', text)
     text = re.sub(r'[ \t]+', ' ', text)
     text = re.sub(r' *\n[ \n]*', '\n', text).strip()
     text = re.sub(
@@ -343,7 +348,8 @@ def strip_markup(text: str) -> str:
         '',
         text,
     )
-    # HTML + plain-text parts are often both flattened into the body: keep the first copy only.
+    # HTML + plain-text parts are often both flattened into the body: keep the first
+    # copy only.
     repeat = text.find(text[:40], 40) if len(text) > 200 else -1
     return text[:repeat].strip() if repeat > 0 else text
 
@@ -394,21 +400,22 @@ def is_junk(text: str) -> bool:
         return True
     if sum(not c.isascii() for c in text) > 0.05 * len(text):
         return True  # mostly non-English or mojibake
-    return sum(w.lower() in STOPWORDS for w in words) < 0.15 * len(
-        words
-    )  # word salad / foreign language
+    # word salad / foreign language
+    return sum(w.lower() in STOPWORDS for w in words) < 0.15 * len(words)
 
 
-# Characters that only appear in this data as mis-decoded bytes; such rows are dropped rather than guessed at.
+# Characters that only appear in this data as mis-decoded bytes; such rows are dropped
+# rather than guessed at.
 MOJIBAKE = re.compile(r'[åÛÌÒÏ]|\ufffd')
 
 
 def scrub(record: dict) -> dict | None:
-    """Scrubbed copy of a raw record, or None if it is junk. Junk is judged before truncation."""
-    raw, scam = (
-        record['text'].replace('å£', '£'),
-        record['kind'] == 'scam',
-    )  # the UCI SMS file double-encodes £
+    """Scrubbed copy of a raw record, or None if it is junk.
+
+    Junk is judged before truncation.
+    """
+    # the UCI SMS file double-encodes £
+    raw, scam = record['text'].replace('å£', '£'), record['kind'] == 'scam'
     if (
         MOJIBAKE.search(raw)
         or JUNK_MARKERS.search(raw)

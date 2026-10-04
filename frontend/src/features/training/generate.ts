@@ -1,12 +1,16 @@
 import { saveCachedScenarioMeta } from './scenarioCache.ts'
 import type { EmailScenario, SmsScenario } from './scenarios.ts'
 
-/** The authenticated client from `lib/api.ts` (passed in, so this stays testable in Node). */
+/**
+ * The authenticated client from `lib/api.ts` (passed in, so this stays
+ * testable in Node).
+ */
 type Api = <T>(path: string, init?: RequestInit) => Promise<T>
 
 /**
- * Asks the backend for a scenario written for this user's profile and history; the server reads the profile itself,
- * so the body is empty. Fails with a message fit to show as is.
+ * Asks the backend for a scenario written for this user's profile and history;
+ * the server reads the profile itself, so the body is empty. Fails with a
+ * message fit to show as is.
  */
 export async function generateScenario(
   api: Api,

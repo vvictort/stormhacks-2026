@@ -13,12 +13,15 @@ import {
 } from "./analysis.ts";
 
 /*
- * Snowflake's job: hold every trainee's pseudonymous aggregates and analyse them together. Each refresh MERGEs this
- * trainee's rows (per category and tactic, plus per tactic pair and channel), then two queries run in parallel:
- * ANALYSE scores and ranks this trainee's categories and tactics and places each in the cohort (PERCENT_RANK over
- * all trainees); INTERPRET reads what the built-in analysis can't: how often tactic combinations fool this trainee
- * against everyone else, and where they decide faster than their own average. Optional: Cortex writes the text.
- * The same objects, for a one-off setup by hand: backend/scripts/snowflake-setup.sql.
+ * Snowflake's job: hold every trainee's pseudonymous aggregates and analyse
+ * them together. Each refresh MERGEs this trainee's rows (per category and
+ * tactic, plus per tactic pair and channel), then two queries run in parallel:
+ * ANALYSE scores and ranks this trainee's categories and tactics and places
+ * each in the cohort (PERCENT_RANK over all trainees); INTERPRET reads what the
+ * built-in analysis can't: how often tactic combinations fool this trainee
+ * against everyone else, and where they decide faster than their own average.
+ * Optional: Cortex writes the text. The same objects, for a one-off setup by
+ * hand: backend/scripts/snowflake-setup.sql.
  */
 const TABLE_DDL = `CREATE TABLE IF NOT EXISTS TELLIO_SKILL_STATS (
   TRAINEE STRING NOT NULL, DIMENSION STRING NOT NULL, AREA STRING NOT NULL,
@@ -49,6 +52,7 @@ const types = [
   "FLOAT",
   "FLOAT",
 ];
+
 const UPSERT = `MERGE INTO TELLIO_SKILL_STATS t USING (
   SELECT ? AS TRAINEE, f.value:dimension::STRING AS DIMENSION, f.value:area::STRING AS AREA,
     ${columns.map((c, i) => `f.value:${c.toLowerCase()}::${types[i]} AS ${c}`).join(", ")}
@@ -58,7 +62,8 @@ WHEN MATCHED THEN UPDATE SET ${columns.map((c) => `${c} = s.${c}`).join(", ")}, 
 WHEN NOT MATCHED THEN INSERT (TRAINEE, DIMENSION, AREA, ${columns.join(", ")}, UPDATED_AT)
   VALUES (s.TRAINEE, s.DIMENSION, s.AREA, ${columns.map((c) => `s.${c}`).join(", ")}, CURRENT_TIMESTAMP())`;
 
-// Same weakness formula as analysis.ts. The cohort is every trainee active in the last 180 days.
+// Same weakness formula as analysis.ts. The cohort is every trainee active in
+// the last 180 days.
 const ANALYSE = `WITH scored AS (
   SELECT TRAINEE, DIMENSION, AREA, ATTEMPTS, CORRECT / ATTEMPTS AS ACCURACY,
     0.6 * (1 - (CORRECT + 1) / (ATTEMPTS + 2)) + 0.3 * FELL_FOR / ATTEMPTS
@@ -74,8 +79,10 @@ const ANALYSE = `WITH scored AS (
 SELECT DIMENSION, AREA, ATTEMPTS, ACCURACY, WEAKNESS, TREND, COHORT_SIZE, COHORT_PERCENTILE
 FROM cohort WHERE TRAINEE = ? ORDER BY WEAKNESS DESC`;
 
-// Pair, channel and tactic rows: miss rate against every other trainee's, and decision time against this trainee's own average for that
-// dimension. QUALIFY keeps only the rows this refresh wrote (the MERGE stamps them all with one timestamp).
+// Pair, channel and tactic rows: miss rate against every other trainee's, and
+// decision time against this trainee's own average for that dimension. QUALIFY
+// keeps only the rows this refresh wrote (the MERGE stamps them all with one
+// timestamp).
 const INTERPRET = `WITH rates AS (
   SELECT TRAINEE, DIMENSION, AREA, ATTEMPTS, (ATTEMPTS - CORRECT) / ATTEMPTS AS MISS_RATE, AVG_RESPONSE_MS, UPDATED_AT
   FROM TELLIO_SKILL_STATS
@@ -130,6 +137,7 @@ const resultSchema = z.object({
   }),
   data: z.array(z.array(z.string().nullable())),
 });
+
 const unit = z.coerce.number().min(0).max(1);
 const rowSchema = z
   .object({
@@ -147,6 +155,7 @@ const rowSchema = z
       (r.DIMENSION === "category" ? ScamCategory : Tactic).safeParse(r.AREA)
         .success,
   );
+
 const patternSchema = z.object({
   DIMENSION: z.enum(["pair", "channel", "tactic"]),
   AREA: z.string(),
@@ -156,6 +165,7 @@ const patternSchema = z.object({
   COHORT_SIZE: z.coerce.number().int().positive(),
   OTHERS_MISS_RATE: unit.nullable(),
 });
+
 const textSchema = z.object({
   behavioralPattern: z.string().trim().min(20).max(320),
   recommendation: z.string().trim().min(20).max(320),
@@ -165,6 +175,7 @@ export class Snowflake {
   private ready?: Promise<unknown>;
   private readonly config: SnowflakeConfig;
   private readonly fetch: typeof fetch;
+
   constructor(
     config: SnowflakeConfig,
     fetchImpl: typeof fetch = (...args) => fetch(...args),
@@ -182,7 +193,10 @@ export class Snowflake {
     return createHmac("sha256", this.config.idSalt).update(uid).digest("hex");
   }
 
-  /** One statement over the SQL API, with positional text bindings. Rows are keyed by column name. */
+  /**
+   * One statement over the SQL API, with positional text bindings. Rows are
+   * keyed by column name.
+   */
   async query(statement: string, binds: string[], signal: AbortSignal) {
     const { account, token, warehouse, database, schema, role } = this.config;
     const res = await this.fetch(
@@ -209,10 +223,12 @@ export class Snowflake {
         }),
       },
     );
+
     // 202 means still running: too slow for us, so the caller falls back.
     if (res.status !== 200) {
       throw new Error(`Snowflake SQL API returned ${res.status}`);
     }
+
     const { resultSetMetaData, data } = resultSchema.parse(await res.json());
     const names = resultSetMetaData.rowType.map((c) => c.name.toUpperCase());
     return data.map((row) =>
@@ -221,8 +237,9 @@ export class Snowflake {
   }
 
   /**
-   * Uploads this trainee's aggregates, then returns Snowflake's ranking of their areas (with cohort placement) and its
-   * interpretation. The ranking is required; a failed interpretation is just null.
+   * Uploads this trainee's aggregates, then returns Snowflake's ranking of
+   * their areas (with cohort placement) and its interpretation. The ranking is
+   * required; a failed interpretation is just null.
    */
   async analyse(
     uid: string,
@@ -234,6 +251,7 @@ export class Snowflake {
       throw error;
     });
     await this.ready;
+
     const trainee = this.trainee(uid);
     const rows = [...summary.areas, ...summary.patterns].map((a) => ({
       dimension: a.dimension,
@@ -249,6 +267,7 @@ export class Snowflake {
       earlier_accuracy: a.earlierAccuracy,
     }));
     await this.query(UPSERT, [trainee, JSON.stringify(rows)], signal);
+
     const [ranking, interp] = await Promise.all([
       this.query(ANALYSE, [trainee], signal),
       this.query(INTERPRET, [trainee], signal)
@@ -267,6 +286,7 @@ export class Snowflake {
     if (result.length !== summary.areas.length) {
       throw new Error("Snowflake analysis is missing areas");
     }
+
     return {
       ranked: result.map((r) => ({
         dimension: r.DIMENSION,
@@ -283,8 +303,9 @@ export class Snowflake {
   }
 
   /**
-   * Cortex's reading of the computed results only (labels, rates, the deterministic next focus and why). Null when
-   * unset, invalid or failed, so the caller keeps the Snowflake-computed text.
+   * Cortex's reading of the computed results only (labels, rates, the
+   * deterministic next focus and why). Null when unset, invalid or failed, so
+   * the caller keeps the Snowflake-computed text.
    */
   async cortexText(
     summary: TrainingSummary,
@@ -295,6 +316,7 @@ export class Snowflake {
   ) {
     const model = this.config.cortexModel;
     if (!model) return null;
+
     const results = ranked.map((r) => ({
       area: areaLabel(r),
       attempts: r.attempts,
@@ -328,6 +350,7 @@ export class Snowflake {
       },
       results,
     };
+
     const prompt =
       "You coach someone practising how to spot scams in a training app. From these aggregate results, reply with only JSON " +
       '{"behavioralPattern": string, "recommendation": string}. Second person, warm and plain, no greeting, no numbers or facts beyond the data. ' +
@@ -335,6 +358,7 @@ export class Snowflake {
       'still fools them (prefer the weakest combination when there is one). recommendation: start with "Next: " and the practise-next area, ' +
       "say in a few words why it was chosen from the data, then one habit to use. At most two short sentences each.\n" +
       `Data: ${JSON.stringify(facts)}`;
+
     try {
       const [row] = await this.query(
         "SELECT SNOWFLAKE.CORTEX.COMPLETE(?, ?) AS TEXT",
@@ -354,7 +378,10 @@ export class Snowflake {
     }
   }
 
-  /** Cortex gets less time than the SQL: its text is optional and the user is waiting. */
+  /**
+   * Cortex gets less time than the SQL: its text is optional and the user is
+   * waiting.
+   */
   get cortexTimeoutMs() {
     return Math.min(this.timeoutMs, 6000);
   }
@@ -377,6 +404,7 @@ export function interpret(rows: Record<string, unknown>[]): Interpretation {
         r.SPEED_RATIO < 0.9,
     )
     .sort((a, b) => a.SPEED_RATIO! - b.SPEED_RATIO!)[0];
+
   return {
     weakPair:
       pair &&

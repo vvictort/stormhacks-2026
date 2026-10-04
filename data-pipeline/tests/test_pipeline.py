@@ -1,4 +1,7 @@
-"""python -m unittest (from data-pipeline/). Uses only the SYNTHETIC fixtures in tests/fixtures/."""
+"""python -m unittest (from data-pipeline/).
+
+Uses only the SYNTHETIC fixtures in tests/fixtures/.
+"""
 
 import json
 import re

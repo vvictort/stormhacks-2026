@@ -31,7 +31,8 @@ const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig)
 export const auth = getAuth(firebaseApp)
 
-// Loaded on demand so the analytics SDK stays out of the sign-in bundle. Skipped without a measurement ID.
+// Loaded on demand so the analytics SDK stays out of the sign-in bundle.
+// Skipped without a measurement ID.
 export const analytics = firebaseConfig.measurementId
   ? import('firebase/analytics').then(({ getAnalytics, isSupported }) =>
       isSupported().then((supported) =>

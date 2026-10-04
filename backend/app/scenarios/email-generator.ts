@@ -13,8 +13,9 @@ import {
   type ScamLibrary,
 } from "./library.ts";
 
-// Generated practice emails: Gemini writes one for the user's profile and weak spots (a scam, or on request a genuine
-// email, so "Report" is not always the answer), the server checks every word the debrief will highlight, and a
+// Generated practice emails: Gemini writes one for the user's profile and weak
+// spots (a scam, or on request a genuine email, so "Report" is not always the
+// answer), the server checks every word the debrief will highlight, and a
 // built-in scam email stands in whenever the model is missing, slow or wrong.
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
@@ -29,10 +30,12 @@ const httpsUrl = z
       return false;
     }
   }, "must be an https URL");
+
 const fileName = text(3, 80).regex(
   /^[\w .()-]+\.[a-z0-9]{2,5}$/i,
   "must be a file name",
 );
+
 // Gemini sends null for optional fields it leaves out.
 const optional = <T extends z.ZodType>(schema: T) =>
   schema.nullish().transform((value) => value ?? undefined);
@@ -77,7 +80,10 @@ const Indicator = z.object({
   detail: text(10, 500),
 });
 
-/** The frontend `EmailScenario` (frontend/src/features/training/scenarios.ts), as the browser receives it. */
+/**
+ * The frontend `EmailScenario` (frontend/src/features/training/scenarios.ts),
+ * as the browser receives it.
+ */
 export const EmailScenario = z
   .object({
     id: z.string().regex(/^gen-email-[0-9a-f-]{36}$/),
@@ -157,7 +163,10 @@ type Rendered = Pick<
   | "indicators"
 >;
 
-/** The texts the email view runs through `markText` (frontend scenarios.ts). Links are marked only as a whole URL. */
+/**
+ * The texts the email view runs through `markText` (frontend scenarios.ts).
+ * Links are marked only as a whole URL.
+ */
 const markedTexts = (email: Omit<Rendered, "indicators">) =>
   [
     email.subject,
@@ -167,7 +176,10 @@ const markedTexts = (email: Omit<Rendered, "indicators">) =>
     email.attachment,
   ].filter((value): value is string => Boolean(value));
 
-/** Quotes the debrief could not highlight: the same first-match, earliest-wins rules as the frontend's `markText`/`markFor`. */
+/**
+ * Quotes the debrief could not highlight: the same first-match, earliest-wins
+ * rules as the frontend's `markText`/`markFor`.
+ */
 export function hiddenIndicators(email: Rendered) {
   const quotes = email.indicators.map((indicator) => indicator.quote);
   const shown = new Set<number>();
@@ -191,6 +203,7 @@ export function hiddenIndicators(email: Rendered) {
     const i = quotes.indexOf(url);
     if (i >= 0) shown.add(i);
   }
+
   return quotes.filter(
     (quote, i) => !shown.has(i) || quotes.indexOf(quote) !== i,
   );
@@ -198,7 +211,10 @@ export function hiddenIndicators(email: Rendered) {
 
 const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** A quote that differs from the email only in case, spacing, quote marks, dashes or end punctuation, as the exact email text. */
+/**
+ * A quote that differs from the email only in case, spacing, quote marks,
+ * dashes or end punctuation, as the exact email text.
+ */
 export function repairQuote(
   quote: string,
   email: Omit<Rendered, "indicators">,
@@ -209,6 +225,7 @@ export function repairQuote(
     .replace(/^["'“”‘’]+/, "")
     .replace(/["'“”‘’.,;:!?]+$/, "");
   if (core.length < 2) return null;
+
   const pattern = new RegExp(
     [...core]
       .map((ch) =>
@@ -229,13 +246,17 @@ export function repairQuote(
     const found = value.match(pattern)?.[0];
     if (found) return found;
   }
+
   // A domain or path quoted from a link: highlight the whole link.
   return email.links?.find((url) => pattern.test(url)) ?? null;
 }
 
 type Draft = { scenario: EmailScenario } | { problems: string[] };
 
-/** Model (or built-in) JSON to a checked scenario, repairing near-miss quotes; otherwise the problems, for a retry. */
+/**
+ * Model (or built-in) JSON to a checked scenario, repairing near-miss quotes;
+ * otherwise the problems, for a retry.
+ */
 export function toScenario(
   raw: string,
   meta: {
@@ -244,7 +265,9 @@ export function toScenario(
     category: ScamCategory;
     generated: EmailScenario["generated"];
     receivedAt: string;
-    /** The email was asked to be genuine ("safe"); otherwise it must be a scam. */
+    /**
+     * The email was asked to be genuine ("safe"); otherwise it must be a scam.
+     */
     genuine?: boolean;
   },
 ): Draft {
@@ -262,6 +285,7 @@ export function toScenario(
         ),
     };
   }
+
   const email = parsed.data;
   const problems: string[] = [];
   if (email.expectedAction !== (meta.genuine ? "safe" : "report")) {
@@ -272,7 +296,8 @@ export function toScenario(
     );
   }
   if (meta.genuine) {
-    // A genuine email is only fair to judge when the trainee can check it: one real domain, named in the situation.
+    // A genuine email is only fair to judge when the trainee can check it: one
+    // real domain, named in the situation.
     const domain = email.senderEmail.split("@")[1].toLowerCase();
     const hosts = [
       ...(email.links ?? []).map((url) => new URL(url).hostname),
@@ -308,7 +333,9 @@ export function toScenario(
     links: email.links,
     attachment: email.attachment,
   };
-  // Greedy, in order: repair a near-miss quote, keep the flag only if every kept flag still highlights.
+
+  // Greedy, in order: repair a near-miss quote, keep the flag only if every
+  // kept flag still highlights.
   const visible: z.infer<typeof Indicator>[] = [];
   for (const flag of email.redFlags) {
     const quote = hiddenIndicators({
@@ -361,6 +388,7 @@ export function toScenario(
     tactics: meta.genuine ? [] : email.tactics,
     generated: meta.generated,
   });
+
   return scenario.success
     ? { scenario: scenario.data }
     : {
@@ -525,16 +553,23 @@ export interface EmailGenerationInput {
   difficulty: Difficulty;
   weakCategories?: ScamCategory[];
   vulnerableTactics?: string[];
-  /** Preferred categories, e.g. Snowflake's `nextTrainingFocus`; the first valid one wins over weak categories. */
+  /**
+   * Preferred categories, e.g. Snowflake's `nextTrainingFocus`; the first valid
+   * one wins over weak categories.
+   */
   focus?: ScamCategory[];
   /**
-   * Ask for a genuine email ("safe" is the right answer) instead of a scam, so trainees don't learn to report everything.
-   * Needs the model; without it, or when its answer fails the checks, a built-in scam is used.
+   * Ask for a genuine email ("safe" is the right answer) instead of a scam, so
+   * trainees don't learn to report everything. Needs the model; without it, or
+   * when its answer fails the checks, a built-in scam is used.
    */
   genuine?: boolean;
   /** Unset uses the built-in emails. */
   model?: JsonModel;
-  /** Real-world examples to ground the prompt; none (or no library) runs the prompt ungrounded. */
+  /**
+   * Real-world examples to ground the prompt; none (or no library) runs the
+   * prompt ungrounded.
+   */
   library?: ScamLibrary;
   budgetMs?: number;
 }
@@ -575,6 +610,7 @@ function plan(input: EmailGenerationInput) {
     : weak
       ? `focused on ${categoryNoun[category]}, where you slipped before`
       : `with ${categoryNoun[category]} to widen your practice`;
+
   return { profession, interests, category, tactics, why };
 }
 
@@ -625,7 +661,10 @@ ${rules}
 - Titles, reasons, explanation and nextTime are for the trainee: short, kind, plain words.`;
 }
 
-/** A personalised email (a scam, or a genuine one when asked): Gemini when configured, checked and repaired, else a built-in scam; says which. */
+/**
+ * A personalised email (a scam, or a genuine one when asked): Gemini when
+ * configured, checked and repaired, else a built-in scam; says which.
+ */
 export async function generateEmailScenario(
   input: EmailGenerationInput,
 ): Promise<{ scenario: EmailScenario; source: "gemini" | "fallback" }> {
@@ -677,7 +716,8 @@ export async function generateEmailScenario(
     if (scenario) return { scenario, source: "gemini" };
   }
 
-  // Built-in: the best clean library excerpt for this category, else the one generic last-resort email.
+  // Built-in: the best clean library excerpt for this category, else the one
+  // generic last-resort email.
   const candidates =
     input.library?.examplesFor({
       channel: "email",
@@ -711,7 +751,10 @@ export async function generateEmailScenario(
   throw new Error(`Built-in ${p.category} email is invalid`);
 }
 
-/** Invented senders, one per category; library emails are rewritten as if they sent them. */
+/**
+ * Invented senders, one per category; library emails are rewritten as if they
+ * sent them.
+ */
 const SENDERS: Record<ScamCategory, { name: string; address: string }> = {
   banking: {
     name: "Maple Ridge Credit Union",
@@ -739,7 +782,10 @@ const SENDERS: Record<ScamCategory, { name: string; address: string }> = {
   },
 };
 
-/** Debrief copy for each library cue tag (tactics and signals). Generic: it fits any email that uses the tactic. */
+/**
+ * Debrief copy for each library cue tag (tactics and signals). Generic: it fits
+ * any email that uses the tactic.
+ */
 const CUE_COPY: Record<string, { title: string; reason: string }> = {
   urgency: {
     title: "A deadline to rush you",
@@ -821,7 +867,10 @@ const CUE_COPY: Record<string, { title: string; reason: string }> = {
   },
 };
 
-/** The one hand-written email, used only when the library has nothing clean for the category (or is missing). */
+/**
+ * The one hand-written email, used only when the library has nothing clean for
+ * the category (or is missing).
+ */
 const LAST_RESORT: LibraryExample = {
   id: "built-in",
   channel: "email",
@@ -854,9 +903,11 @@ const mostlyCaps = (value: string) => {
 };
 
 /**
- * A library scam email rewritten for practice: placeholders become the category's invented names, a cut-off ending
- * is trimmed to the last full sentence, sentences are grouped into paragraphs, and each cue becomes a red flag with
- * generic copy. Null when the excerpt can't make a clean email (leftover brackets, shouting, too short or long, fewer than 3 findable cues).
+ * A library scam email rewritten for practice: placeholders become the
+ * category's invented names, a cut-off ending is trimmed to the last full
+ * sentence, sentences are grouped into paragraphs, and each cue becomes a red
+ * flag with generic copy. Null when the excerpt can't make a clean email
+ * (leftover brackets, shouting, too short or long, fewer than 3 findable cues).
  * `toScenario` still checks the result like any model answer.
  */
 export function emailFromExample(
@@ -878,8 +929,10 @@ export function emailFromExample(
   ) {
     return null;
   }
+
   const paragraphs: string[] = [];
-  // Excerpts often repeat themselves and trail off into legal footers: keep each sentence once, and no footers.
+  // Excerpts often repeat themselves and trail off into legal footers: keep
+  // each sentence once, and no footers.
   for (const sentence of new Set(text.split(/(?<=[.!?])\s+/))) {
     if (sentence.length > 600) return null;
     if (FOOTER.test(sentence)) continue;
@@ -890,6 +943,7 @@ export function emailFromExample(
       paragraphs[paragraphs.length - 1] += ` ${sentence}`;
     } else paragraphs.push(sentence);
   }
+
   const body = paragraphs.slice(0, 6);
   const filledSubject = fillPlaceholders(example.subject ?? "");
   const subject =
@@ -899,6 +953,7 @@ export function emailFromExample(
     !mostlyCaps(filledSubject)
       ? filledSubject
       : `A message from ${sender.name}`;
+
   const domain = sender.address.split("@")[1];
   const titles = new Set<string>();
   const cueFlags: { quote: string; title: string; reason: string }[] = [];
@@ -911,7 +966,8 @@ export function emailFromExample(
       title: "",
       detail: "",
     }));
-    // Missing from the cleaned text, or overlapping an earlier flag: the debrief couldn't highlight it.
+    // Missing from the cleaned text, or overlapping an earlier flag: the
+    // debrief couldn't highlight it.
     if (
       hiddenIndicators({
         subject,
@@ -925,12 +981,16 @@ export function emailFromExample(
     titles.add(copy.title);
     cueFlags.push({ quote, title: copy.title, reason: copy.reason });
   }
-  if (cueFlags.length < 2) return null; // + the sender-domain flag = the 3 visible flags toScenario requires
+  // + the sender-domain flag = the 3 visible flags toScenario requires
+  if (cueFlags.length < 2) return null;
+
   const named = CATEGORY_NAMES[category];
-  // The dataset flattened each email's HTML, so its "Click here" lost its address: point it at the sender's look-alike domain.
+  // The dataset flattened each email's HTML, so its "Click here" lost its
+  // address: point it at the sender's look-alike domain.
   const link = example.tactics.includes("suspicious_link")
     ? `https://${domain}/verify`
     : undefined;
+
   return {
     title: `${named[0].toUpperCase()}${named.slice(1)} email from ${sender.name}`,
     summary: `An email from ${sender.name} that wants you to act.`,

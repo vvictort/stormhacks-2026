@@ -75,6 +75,7 @@ const CX = 100,
   RY = 58,
   POINTS = 22,
   FOOT = 154
+
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k
 const superellipse = (c: number) => Math.sign(c) * Math.abs(c) ** 0.78
 const f = (n: number, d = 2) => n.toFixed(d)
@@ -93,7 +94,10 @@ function smooth(p: [number, number][]) {
   return d + 'Z'
 }
 
-/** Tell, the speech-bubble mascot. Decorative: it follows the pointer, blinks, and acts out `mood`. */
+/**
+ * Tell, the speech-bubble mascot. Decorative: it follows the pointer, blinks,
+ * and acts out `mood`.
+ */
 export function Mascot({
   mood = 'idle',
   className = '',
@@ -127,6 +131,7 @@ export function Mascot({
       shadow: $('.shadow'),
       beacon: $('.beacon'),
     }
+
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
     const seed = Math.random() * 100
     const now = () => performance.now() / 1000
@@ -194,7 +199,8 @@ export function Mascot({
       const ox = r.left + r.width / 2,
         oy = r.top + r.height * 0.47
       const tracking = performance.now() - pointer.at < 2600
-      // Where to look: the pointer if it moved recently, otherwise glance around.
+      // Where to look: the pointer if it moved recently, otherwise glance
+      // around.
       let tx: number, ty: number
       if (tracking) {
         const dx = pointer.x - ox,
@@ -216,6 +222,7 @@ export function Mascot({
         tx = st.wander.x
         ty = st.wander.y
       }
+
       const near =
         tracking && Math.hypot(pointer.x - ox, pointer.y - oy) < r.width * 0.7
       cur.lx = lerp(cur.lx, tx, k)
@@ -264,7 +271,8 @@ export function Mascot({
       const scx = 1 + st.s * 0.6 - breath * 0.5,
         scy = 1 - st.s + breath
 
-      // Jelly body: squircle points with a slow wobble and a bulge toward the look direction.
+      // Jelly body: squircle points with a slow wobble and a bulge toward the
+      // look direction.
       const mag = Math.hypot(cur.lx, cur.ly),
         pts: [number, number][] = []
       for (let i = 0; i < POINTS; i++) {

@@ -6,19 +6,27 @@ export interface OnboardingValues {
   interests: string
 }
 
-/** Joins the two phone boxes into E.164 (+16045551234), or null when they can't make a valid number. */
+/**
+ * Joins the two phone boxes into E.164 (+16045551234), or null when they can't
+ * make a valid number.
+ */
 export function toE164(countryCode: string, phone: string) {
   // A number pasted with its own "+" already carries a country code.
   if (phone.trim().startsWith('+')) return valid('+' + phone.replace(/\D/g, ''))
+
   const code = countryCode.replace(/\D/g, '')
   // ponytail: drops a leading trunk 0 (UK 07700… → 7700…); Italy keeps it, add per-country rules if needed
   const digits = phone.replace(/\D/g, '')
   const number = code === '39' ? digits : digits.replace(/^0/, '')
   return code ? valid(`+${code}${number}`) : null
 }
+
 const valid = (e164: string) => (/^\+[1-9]\d{7,14}$/.test(e164) ? e164 : null)
 
-/** Splits a stored E.164 number back into the two boxes; only +1 is split, other codes stay whole in the number box. */
+/**
+ * Splits a stored E.164 number back into the two boxes; only +1 is split, other
+ * codes stay whole in the number box.
+ */
 export function splitPhone(e164: string | null | undefined) {
   if (!e164) return { countryCode: '+1', phone: '' }
   return e164.startsWith('+1')
@@ -42,6 +50,7 @@ export function validateOnboarding(values: OnboardingValues) {
   if (values.profession.trim().length > 200) {
     errors.profession = 'Use at most 200 characters.'
   }
+
   const interests = values.interests
     .split(',')
     .map((value) => value.trim())
@@ -49,5 +58,6 @@ export function validateOnboarding(values: OnboardingValues) {
   if (interests.length > 30 || interests.some((value) => value.length > 100)) {
     errors.interests = 'Enter up to 30 interests, each under 100 characters.'
   }
+
   return errors
 }

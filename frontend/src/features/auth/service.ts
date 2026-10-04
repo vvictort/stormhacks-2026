@@ -22,6 +22,7 @@ export async function signUp(email: string, password: string, name: string) {
   if (!policy.isValid) {
     const requirements: string[] = []
     const strength = policy.passwordPolicy.customStrengthOptions
+
     if (policy.meetsMinPasswordLength === false) {
       requirements.push(`at least ${strength.minPasswordLength} characters`)
     }
@@ -38,7 +39,9 @@ export async function signUp(email: string, password: string, name: string) {
     if (policy.containsNonAlphanumericCharacter === false) {
       requirements.push('a symbol')
     }
-    // Short enough for the form's error row (no symbol list); "a, b and c" reads better than a comma dump.
+
+    // Short enough for the form's error row (no symbol list); "a, b and c"
+    // reads better than a comma dump.
     const list =
       requirements.length > 1
         ? `${requirements.slice(0, -1).join(', ')} and ${requirements.at(-1)}`
@@ -89,7 +92,8 @@ export async function resetPassword(email: string) {
 
 export const signOut = () => firebaseSignOut(auth)
 
-// The live session, which an operation's own credential can lag behind (e.g. a sign-out in another tab).
+// The live session, which an operation's own credential can lag behind (e.g. a
+// sign-out in another tab).
 export const currentUser = () => auth.currentUser
 
 export const observeAuthState = (

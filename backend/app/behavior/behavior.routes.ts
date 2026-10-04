@@ -14,14 +14,21 @@ import { inferCategory } from "../training/progress.ts";
 import type { BehaviorEvent } from "./behavior.repository.ts";
 
 export const MAX_BATCH = 50;
-/** Browser clocks drift and queues flush late: older timestamps are pulled up to this, future ones down to now. */
+
+/**
+ * Browser clocks drift and queues flush late: older timestamps are pulled up to
+ * this, future ones down to now.
+ */
 export const MAX_EVENT_AGE_MS = 10 * 60_000;
 const MAX_METADATA_BYTES = 512;
-// Metadata is for small facts about a tap (e.g. the practice link's site), never anything the user typed or said.
+
+// Metadata is for small facts about a tap (e.g. the practice link's site),
+// never anything the user typed or said.
 const SENSITIVE_KEY =
   /text|message|body|reply|transcript|email|phone|password|code|otp|card|name/i;
 
-// Call events come from the server's own call lifecycle (call-events.ts), never from the browser.
+// Call events come from the server's own call lifecycle (call-events.ts), never
+// from the browser.
 const BrowserEventType = BehaviorEventType.exclude([
   "call_received",
   "call_answered",
@@ -29,6 +36,7 @@ const BrowserEventType = BehaviorEventType.exclude([
   "call_missed",
   "call_ended",
 ]);
+
 const MessageOutcome = Outcome.extract([
   "reported_correct",
   "reported_incorrect",
@@ -42,12 +50,16 @@ const browserEvent = z
     channel: z.enum(["sms", "email"]),
     scenarioId: z.string().trim().min(1).max(128),
     scenarioTitle: z.string().trim().min(1).max(200),
-    // A browser-made UUID per run, so it can never collide with a call id in training_attempts.
+    // A browser-made UUID per run, so it can never collide with a call id in
+    // training_attempts.
     attemptId: z.uuid(),
     scamCategory: ScamCategory.optional(),
     difficulty: Difficulty,
     outcome: MessageOutcome.optional(),
-    /** The scenario's tactics; a finished run stores them with its training attempt. */
+    /**
+     * The scenario's tactics; a finished run stores them with its training
+     * attempt.
+     */
     tactics: z
       .array(Tactic)
       .max(Tactic.options.length)
@@ -87,7 +99,9 @@ export const eventBatch = z.object({
   events: z.array(browserEvent).min(1).max(MAX_BATCH),
 });
 
-/** A browser timestamp within [now - MAX_EVENT_AGE_MS, now]; missing means now. */
+/**
+ * A browser timestamp within [now - MAX_EVENT_AGE_MS, now]; missing means now.
+ */
 export function clampTime(at: string | undefined, now = Date.now()) {
   const t = at ? Date.parse(at) : now;
   return new Date(
@@ -110,6 +124,7 @@ export function behaviorRouter(
         e.scamCategory ??
         inferCategory({ id: e.scenarioId, title: e.scenarioTitle }),
     }));
+
     await repos.behavior.record(
       parsed.map((e): BehaviorEvent => ({
         at: e.at,
@@ -126,8 +141,9 @@ export function behaviorRouter(
       })),
     );
 
-    // A finished text or email is also a training attempt, so the vulnerability profile and adaptive difficulty see
-    // every channel. Idempotent on the attempt id.
+    // A finished text or email is also a training attempt, so the vulnerability
+    // profile and adaptive difficulty see every channel. Idempotent on the
+    // attempt id.
     for (const e of parsed) {
       if (e.type !== "scenario_completed" || !e.outcome) continue;
       const startedAt =
@@ -157,6 +173,7 @@ export function behaviorRouter(
         metadata: e.metadata,
       });
     }
+
     res.status(202).json({ accepted: parsed.length });
   });
 

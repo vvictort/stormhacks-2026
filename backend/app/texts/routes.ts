@@ -75,16 +75,23 @@ export function textsRouter({
   return router;
 }
 
-/** GET /api/comms/texts/:id/stream: the thread's SSE stream. Mounted behind requireAuth with the query token allowed. */
+/**
+ * GET /api/comms/texts/:id/stream: the thread's SSE stream. Mounted behind
+ * requireAuth with the query token allowed.
+ */
 export const textStream =
   (texts: TextService): RequestHandler<{ id: string }> =>
   async (req, res) => {
     sse.subscribe(await ownThread(texts, req), req, res);
   };
 
-/** /api/comms/l/:token: tracked scam link inside a simulated text. No auth; it's a plain browser navigation. */
+/**
+ * /api/comms/l/:token: tracked scam link inside a simulated text. No auth; it's
+ * a plain browser navigation.
+ */
 export function linkRouter(texts: TextService) {
   const router = Router();
+
   router.get("/:token", async (req, res) => {
     const redirectTo = await texts.handleLinkClick(req.params.token);
     if (!redirectTo) {
@@ -93,5 +100,6 @@ export function linkRouter(texts: TextService) {
     }
     res.redirect(302, redirectTo);
   });
+
   return router;
 }

@@ -1,7 +1,8 @@
 import type { Outcome, TrainingOutcome } from '../../comms/types.ts'
 
-// The one place the call UI gets a result from. Comms owns outcome normalisation (docs/call-integration.md):
-// screens read the canonical `training` field or the backend attempt and never decide success themselves.
+// The one place the call UI gets a result from. Comms owns outcome
+// normalisation (docs/call-integration.md): screens read the canonical
+// `training` field or the backend attempt and never decide success themselves.
 
 export interface CallResult {
   outcome: TrainingOutcome
@@ -9,7 +10,10 @@ export interface CallResult {
   success: boolean | null
 }
 
-/** Contract table, comms Outcome → canonical. Used for practice mode and as a safety net for records without `training`. */
+/**
+ * Contract table, comms Outcome → canonical. Used for practice mode and as a
+ * safety net for records without `training`.
+ */
 export const OUTCOME_TABLE: Record<Outcome, CallResult> = {
   compromised: { outcome: 'compromised', success: false },
   resisted: { outcome: 'resisted', success: true },
@@ -51,8 +55,10 @@ function canonical(value: unknown): CallResult | null {
 }
 
 /**
- * The canonical result of a comms call record (its `training` field) or a backend attempt (`outcome` + `success`).
- * Falls back to the contract table for a record that only has comms' raw `outcome`. Null while there is no result.
+ * The canonical result of a comms call record (its `training` field) or a
+ * backend attempt (`outcome` + `success`). Falls back to the contract table
+ * for a record that only has comms' raw `outcome`. Null while there is no
+ * result.
  */
 export function readCallResult(source: unknown): CallResult | null {
   if (!isRecord(source)) return null

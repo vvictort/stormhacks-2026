@@ -1,4 +1,6 @@
-/* "Next for you" on Home and "What Tellio learned from this" in the debriefs. */
+/* "Next for you" on Home and "What Tellio learned from this" in the
+   debriefs. */
+
 .next-for-you {
   margin-top: 32px;
   padding: 22px 22px 20px;
@@ -46,7 +48,8 @@
   font-weight: 600;
 }
 
-/* Holds the text's height while it loads, so the Start button doesn't jump under the pointer. */
+/* Holds the text's height while it loads, so the Start button doesn't jump
+   under the pointer. */
 .next-for-you .scam-profile-skeleton {
   align-content: start;
   min-height: 122px;
@@ -75,7 +78,8 @@
   cursor: progress;
 }
 
-/* The quiet alternative: ink instead of the accent, with a standing underline so it still reads as a link. */
+/* The quiet alternative: ink instead of the accent, with a standing underline
+   so it still reads as a link. */
 .made-for-you-call {
   gap: 7px;
   min-height: 44px;

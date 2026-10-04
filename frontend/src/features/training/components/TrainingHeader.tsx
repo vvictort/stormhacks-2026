@@ -5,7 +5,10 @@ import { useAuth } from '../../auth/AuthContext'
 import { confirmNavigation } from '../../../lib/navigationGuard'
 import '../training.css'
 
-/** `children`: Home's nav. Scenario pages leave it out, so nothing competes with the practice phone. */
+/**
+ * `children`: Home's nav. Scenario pages leave it out, so nothing competes with
+ * the practice phone.
+ */
 export function TrainingHeader({ children }: { children?: ReactNode }) {
   const { logout, pending, error } = useAuth()
   const [failed, setFailed] = useState(false)
@@ -13,7 +16,8 @@ export function TrainingHeader({ children }: { children?: ReactNode }) {
 
   // No navigation here: the route guard sends signed-out users to /login.
   async function signOut() {
-    // Mid-call, ask first; leaving hangs up and reports the call before the session goes.
+    // Mid-call, ask first; leaving hangs up and reports the call before the
+    // session goes.
     if (!(await confirmNavigation())) return
     setFailed(!(await logout()))
   }

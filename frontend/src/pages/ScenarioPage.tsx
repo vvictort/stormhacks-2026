@@ -63,7 +63,8 @@ const difficultyLabel = {
 }
 const channelLabel = { sms: 'Text message', email: 'Email', call: 'Phone call' }
 
-// The voice SDK (and LiveKit under it) is big: it loads only when a call scenario opens.
+// The voice SDK (and LiveKit under it) is big: it loads only when a call
+// scenario opens.
 const CallExperience = lazy(
   () => import('../features/training/call/CallExperience'),
 )
@@ -77,7 +78,8 @@ export function ScenarioPage() {
   return (
     <div className="train-shell">
       <TrainingHeader />
-      {/* Keyed by id: a new scenario is a new run, and a call's voice provider lives exactly as long as its run. */}
+      {/* Keyed by id: a new scenario is a new run, and a call's voice provider
+          lives exactly as long as its run. */}
       {state.status === 'loading' ? (
         <ScenarioLoading />
       ) : !scenario ? (
@@ -91,7 +93,11 @@ export function ScenarioPage() {
   )
 }
 
-/** `sourceShown`: the source line says what a text or email was built from (real scams or real genuine emails), which gives the answer away; it waits for the choice. */
+/**
+ * `sourceShown`: the source line says what a text or email was built from
+ * (real scams or real genuine emails), which gives the answer away; it waits
+ * for the choice.
+ */
 function ScenarioIntro({
   scenario,
   embedded = false,
@@ -107,7 +113,8 @@ function ScenarioIntro({
 
   useEffect(() => {
     document.title = `${scenario.title} · Tellio`
-    // A new scenario is a new page: jump, don't glide, past the global smooth scroll.
+    // A new scenario is a new page: jump, don't glide, past the global smooth
+    // scroll.
     window.scrollTo({ top: 0, behavior: 'instant' })
     heading.current?.focus({ preventScroll: true })
   }, [scenario.title])
@@ -136,14 +143,17 @@ function ScenarioIntro({
       </p>
       {scenario.generated && sourceShown && (
         <div className="scenario-generated">
-          {/* The reason can carry a dataset licence credit, so it stays one tap away. Practice-path scenarios (lib-…) weren't made for this user. */}
+          {/* The reason can carry a dataset licence credit, so it stays one
+              tap away. Practice-path scenarios (lib-…) weren't made for this
+              user. */}
           <details>
             <summary>
               {scenario.id.startsWith('gen-') ? 'Made for you' : 'Source'}
             </summary>
             <p>{scenario.generated.reason}</p>
           </details>
-          {/* Honest source line: only when Gemini really wrote it (the fallback is a built-in template). */}
+          {/* Honest source line: only when Gemini really wrote it (the
+              fallback is a built-in template). */}
           {credit && <span className="scenario-source">{credit}</span>}
         </div>
       )}
@@ -159,6 +169,7 @@ function CallRun({ scenario }: { scenario: CallScenario }) {
   const [params] = useSearchParams()
   const mission =
     adventure.mission?.id === params.get('mission') ? adventure.mission : null
+
   return (
     <main className="scenario-main">
       <div className="scenario-intro">
@@ -217,7 +228,10 @@ function CallLoading({ failed = false }: { failed?: boolean }) {
   )
 }
 
-/** The call chunk can fail to download (offline, or a deploy replaced it): show a way out instead of a blank phone. */
+/**
+ * The call chunk can fail to download (offline, or a deploy replaced it): show
+ * a way out instead of a blank phone.
+ */
 class CallChunkBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }
@@ -247,9 +261,13 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
   const [inspectedLink, setInspectedLink] = useState(false)
   const [inspectedSender, setInspectedSender] = useState(false)
   const email = scenario.type === 'email'
-  // One run, one attempt id: every behaviour event of this run is timed from when it opened (features/insights).
+
+  // One run, one attempt id: every behaviour event of this run is timed from
+  // when it opened (features/insights).
   const run = useRef<Run | null>(null)
-  // Set once this run's result has been sent: the debrief then compares Tellio's picture of the user before and after.
+
+  // Set once this run's result has been sent: the debrief then compares
+  // Tellio's picture of the user before and after.
   const [finished, setFinished] = useState<{
     attemptId: string
     sent: boolean
@@ -292,6 +310,7 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
   function choose(action: Action, conf: Confidence) {
     if (submitted.current || !run.current) return
     submitted.current = true
+
     const correct = action === scenario.correctAction
     const before = adventure.earned
     const after = updateAdventure(user?.uid, (state) =>
@@ -312,11 +331,13 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
         )
         .map((b) => b.id),
     )
+
     setChoice(action)
     setConfidence(conf)
     const score = scoreFlags(flaggedPhrases, scenario.indicators)
     setFlagScore(score)
     record(scenario.id, action === scenario.correctAction)
+
     track(action === 'report' ? 'message_reported' : 'message_marked_safe')
     track('scenario_completed', {
       outcome: messageOutcome(action, scenario.correctAction),
@@ -330,6 +351,7 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
     })
     // The debrief shows as soon as there is a choice.
     track('debrief_viewed')
+
     const attemptId = run.current?.attemptId
     if (!attemptId) return void tracker.flush()
     setFinished({ attemptId, sent: false })
@@ -456,6 +478,7 @@ function MissingScenario() {
   useEffect(() => {
     document.title = 'Scenario not found · Tellio'
   }, [])
+
   return (
     <main className="scenario-missing">
       <h1>We couldn't find that scenario.</h1>

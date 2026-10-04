@@ -25,6 +25,7 @@ const thread = (userId: string, overrides: Partial<TextThread> = {}) =>
     createdAt: new Date().toISOString(),
     ...overrides,
   }) as unknown as TextThread;
+
 const call = (userId: string, status: CallRecord["status"] = "ringing") =>
   ({
     id: `call_${++seq}`,
@@ -39,7 +40,10 @@ const call = (userId: string, status: CallRecord["status"] = "ringing") =>
     signals: [],
   }) as unknown as CallRecord;
 
-/** The SimStore contract the text and call services rely on, for any implementation. */
+/**
+ * The SimStore contract the text and call services rely on, for any
+ * implementation.
+ */
 function storeContract(name: string, make: () => SimStore) {
   test(`${name}: one active thread per user; ended threads don't count`, async () => {
     const store = make();
@@ -48,6 +52,7 @@ function storeContract(name: string, make: () => SimStore) {
     assert.equal(await store.createThread(thread("alice")), false);
     assert.equal((await store.findActiveThreadByUser("alice"))?.id, first.id);
     assert.equal(await store.createThread(thread("bob")), true);
+
     await store.updateThread(first.id, (t) => {
       t.status = "ended";
     });
@@ -59,6 +64,7 @@ function storeContract(name: string, make: () => SimStore) {
     const store = make();
     const c = call("alice");
     await store.createCall(c);
+
     const results = await Promise.all(
       Array.from({ length: 10 }, (_, i) =>
         store.updateCall(c.id, (rec) => {
@@ -71,6 +77,7 @@ function storeContract(name: string, make: () => SimStore) {
       results.map((r) => r.result).sort((a, b) => a - b),
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     );
+
     const stored = (await store.getCall(c.id))!;
     assert.equal(stored.signals.length, 10);
     stored.signals.length = 0;
@@ -79,6 +86,7 @@ function storeContract(name: string, make: () => SimStore) {
       10,
       "mutating a returned copy changes nothing",
     );
+
     await assert.rejects(
       store.updateCall("call_missing", () => {}),
       /call not found/,
@@ -113,12 +121,14 @@ function storeContract(name: string, make: () => SimStore) {
     const inCall = call("dave", "in_call");
     await store.createCall(ringing);
     await store.createCall(inCall);
+
     const ids = (list: { id: string }[]) => list.map((x) => x.id);
     assert.ok(ids(await store.listActiveThreads()).includes(active.id));
     assert.ok(!ids(await store.listActiveThreads()).includes(ended.id));
     assert.ok(
       ids(await store.listCallsByStatus("ringing")).includes(ringing.id),
     );
+
     await store.updateCall(ringing.id, (c) => {
       c.status = "completed";
     });
@@ -138,6 +148,7 @@ function storeContract(name: string, make: () => SimStore) {
     const t = thread("frank", { linkToken: `tok_${seq}` });
     await store.createThread(t);
     assert.equal((await store.findThreadByLinkToken(t.linkToken!))?.id, t.id);
+
     await store.updateThread(t.id, (x) => {
       x.status = "ended";
     });
@@ -189,10 +200,12 @@ describe("Postgres simulation store and events", { skip: !url }, () => {
       events: new PgEventSink(db),
     });
     const scenario = (await services.catalog.pickText("pkg-redelivery-fee-1"))!;
+
     const results = await Promise.all([
       services.texts.start("hank", scenario),
       services.texts.start("hank", scenario),
     ]);
+
     assert.deepEqual(results.map((r) => Object.keys(r)[0]).sort(), [
       "conflict",
       "thread",
@@ -220,9 +233,11 @@ describe("Postgres simulation store and events", { skip: !url }, () => {
     await store.updateCall(started.id, (c) => {
       c.createdAt = new Date(Date.now() - 3 * 60_000).toISOString();
     });
+
     await services.calls.sweep();
     const swept = (await store.getCall(started.id))!;
     assert.deepEqual([swept.status, swept.error], ["completed", "abandoned"]);
+
     const types = (
       await db.query(
         "SELECT type FROM sim_events WHERE simulation_id=$1 ORDER BY at, type",
@@ -239,6 +254,7 @@ describe("Postgres simulation store and events", { skip: !url }, () => {
     });
     await sink.emit(event);
     await sink.emit(event);
+
     const rows = (await db.query("SELECT type, user_id, event FROM sim_events"))
       .rows;
     assert.equal(rows.length, 1);

@@ -1,9 +1,11 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+
 // backend/.env, wherever the command is run from.
 const envFile = fileURLToPath(new URL("../.env", import.meta.url));
 if (existsSync(envFile)) process.loadEnvFile(envFile);
+
 const schema = z.object({
   DATABASE_URL: z
     .url()
@@ -19,7 +21,8 @@ const schema = z.object({
     .default("development"),
   // Unset uses the built-in call scenarios.
   GEMINI_API_KEY: z.string().min(1).optional(),
-  // Unset: calls still ring and score, but accept is 503 elevenlabs_not_configured (caption-only practice).
+  // Unset: calls still ring and score, but accept is 503
+  // elevenlabs_not_configured (caption-only practice).
   ELEVENLABS_API_KEY: z.string().min(1).optional(),
   ELEVENLABS_AGENT_ID: z.string().min(1).optional(),
   ELEVENLABS_DEFAULT_VOICE_ID: z.string().min(1).optional(),
@@ -27,7 +30,8 @@ const schema = z.object({
   CALL_MAX_SECONDS: z.coerce.number().int().positive().default(180),
   TEXT_FOLLOWUP_SEC: z.coerce.number().positive().default(120),
   TEXT_IDLE_END_SEC: z.coerce.number().positive().default(600),
-  // Unset: vulnerability analysis is computed in the backend from TigerData metrics (deterministic fallback).
+  // Unset: vulnerability analysis is computed in the backend from TigerData
+  // metrics (deterministic fallback).
   SNOWFLAKE_ACCOUNT: z
     .string()
     .regex(/^[A-Za-z0-9_.-]+$/)
@@ -38,10 +42,13 @@ const schema = z.object({
   SNOWFLAKE_SCHEMA: z.string().min(1).default("PUBLIC"),
   SNOWFLAKE_ROLE: z.string().min(1).optional(),
   SNOWFLAKE_CORTEX_MODEL: z.string().min(1).optional(),
-  // Secret key for the pseudonymous trainee id sent to Snowflake (HMAC of the uid). Required for the Snowflake path.
+  // Secret key for the pseudonymous trainee id sent to Snowflake (HMAC of the
+  // uid). Required for the Snowflake path.
   SNOWFLAKE_ID_SALT: z.string().min(16).optional(),
 });
+
 export type Config = z.infer<typeof schema>;
+
 export function loadConfig(): Config {
   // `KEY=` lines in .env count as unset, so defaults and optionals apply.
   const result = schema.safeParse(
@@ -54,6 +61,7 @@ export function loadConfig(): Config {
       `Invalid configuration fields: ${result.error.issues.map((issue) => issue.path.join(".")).join(", ")}`,
     );
   }
+
   const config = result.data;
   if (
     config.NODE_ENV === "production" &&
@@ -66,5 +74,6 @@ export function loadConfig(): Config {
       "APP_ORIGIN must be an origin without a path or trailing slash.",
     );
   }
+
   return config;
 }

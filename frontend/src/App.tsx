@@ -12,7 +12,8 @@ import { ProfileProvider } from './features/profile/ProfileProvider'
 import { lazyPage, preloadPages } from './lib/lazyPage'
 import { loadMotionFeatures } from './lib/motion'
 
-// Each page is its own chunk; the one on screen loads first, the rest right after the first render.
+// Each page is its own chunk; the one on screen loads first, the rest right
+// after the first render.
 const HomePage = lazyPage(() =>
   import('./pages/HomePage').then((m) => m.HomePage),
 )
@@ -39,11 +40,13 @@ function App() {
 
   return (
     <LazyMotion features={loadMotionFeatures} strict>
-      {/* Reduced motion: Motion drops transform animations (slides, pops) and keeps fades. */}
+      {/* Reduced motion: Motion drops transform animations (slides, pops) and
+          keeps fades. */}
       <MotionConfig reducedMotion="user">
         <AuthProvider>
-          {/* Synchronous route updates let a View Transition capture the new screen (see lib/viewTransition). */}
           <ProfileProvider>
+            {/* Synchronous route updates let a View Transition capture the
+                new screen (see lib/viewTransition). */}
             <BrowserRouter useTransitions={false}>
               <Suspense fallback={<SessionLoading />}>
                 <Routes>
@@ -63,9 +66,11 @@ function App() {
                       <Route path="/signup" element={<SignupPage />} />
                     </Route>
                   </Route>
-                  {/* Public: tracked practice links land here, signed in or not. */}
+                  {/* Public: tracked practice links land here, signed in or
+                      not. */}
                   <Route path="/caught" element={<CaughtPage />} />
-                  {/* `/` and unknown paths go home; RequireAuth sends logged-out visitors on to /login. */}
+                  {/* `/` and unknown paths go home; RequireAuth sends
+                      logged-out visitors on to /login. */}
                   <Route path="*" element={<Navigate to="/home" replace />} />
                 </Routes>
               </Suspense>

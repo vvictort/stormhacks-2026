@@ -6,7 +6,10 @@ import type {
   TextThread,
 } from "../shared/types.ts";
 
-/** Where simulations report what happened: `PgEventSink` (sim.repository.ts) in production, `MemoryEventSink` in tests. */
+/**
+ * Where simulations report what happened: `PgEventSink` (sim.repository.ts) in
+ * production, `MemoryEventSink` in tests.
+ */
 export interface EventSink {
   /** Must never throw into the simulation flows. */
   emit(event: SimEvent): Promise<void>;

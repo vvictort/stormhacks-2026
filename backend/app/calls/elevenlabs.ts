@@ -1,10 +1,13 @@
 import { AppError } from "../http/errors.ts";
 
-// Thin fetch wrapper over the ElevenLabs Agents API. The API key stays server-side.
+// The API key stays server-side.
 
 const API_BASE = "https://api.elevenlabs.io";
 
-/** Without keys calls still ring and score; only accept fails, and the frontend offers caption-only practice. */
+/**
+ * Without keys calls still ring and score; only accept fails, and the frontend
+ * offers caption-only practice.
+ */
 export class ElevenLabsNotConfigured extends AppError {
   constructor(message: string) {
     super(503, "elevenlabs_not_configured", message);
@@ -75,7 +78,10 @@ export function createElevenLabs({
   }
 
   return {
-    /** Short-lived WebRTC token the browser uses to start a session with the (private) agent. */
+    /**
+     * Short-lived WebRTC token the browser uses to start a session with the
+     * (private) agent.
+     */
     conversationToken() {
       if (!agentId) {
         throw new ElevenLabsNotConfigured(

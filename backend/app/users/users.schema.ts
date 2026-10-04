@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 export const profileSchema = z
   .object({
     name: z.string().trim().min(1).max(100),
@@ -25,6 +26,7 @@ export const profileSchema = z
   })
   .strict();
 export type ProfileInput = z.infer<typeof profileSchema>;
+
 export interface User {
   id: string;
   uid: string;

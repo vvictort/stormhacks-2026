@@ -39,6 +39,7 @@ export function MissionProgress({
           const current = mission
             ? mission.scenarioIds[i] === (currentId ?? missionNext(mission))
             : i === 0
+
           return (
             <li
               key={i}
@@ -103,13 +104,17 @@ export function BadgeCollection({
   )
 }
 
-/** Small collectible seals: each achievement has its own mark, with shared ribbon details. */
+/**
+ * Small collectible seals: each achievement has its own mark, with shared
+ * ribbon details.
+ */
 function BadgeEmblem({ id }: { id: BadgeId }) {
   const edge = Array.from({ length: 48 }, (_, i) => {
     const angle = (i * Math.PI) / 24 - Math.PI / 2
     const radius = i % 2 ? 30 : 32
     return `${40 + Math.cos(angle) * radius},${38 + Math.sin(angle) * radius}`
   }).join(' ')
+
   return (
     <svg
       className="achievement-emblem"
@@ -169,7 +174,10 @@ export function NewBadges({ ids }: { ids: BadgeId[] }) {
   )
 }
 
-/** The selection is saved before generating. Failed/reloaded preparation can retry or keep its library email. */
+/**
+ * The selection is saved before generating. Failed/reloaded preparation can
+ * retry or keep its library email.
+ */
 export function MissionCard({
   uid,
   progress,
@@ -189,6 +197,7 @@ export function MissionCard({
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<string>()
   useEffect(() => () => request.current?.abort(), [])
+
   const mission = state.mission
   const complete = mission && missionComplete(mission)
   const next = nextForYou(adaptive, difficulty)
@@ -199,6 +208,7 @@ export function MissionCard({
   function open(m: Mission) {
     withViewTransition('forward', () => navigate(missionUrl(m)))
   }
+
   async function start() {
     if (pending || !uid) return
     let selected = mission
@@ -207,8 +217,10 @@ export function MissionCard({
       updateAdventure(uid, (previous) => ({ ...previous, mission: selected }))
     }
     if (selected.ready) return open(selected)
+
     const missionId = selected.id
-    // A mission with a genuine library email is already complete as a selection; keep that genuine message.
+    // A mission with a genuine library email is already complete as a
+    // selection; keep that genuine message.
     const hasScamEmail = selected.scenarioIds.some((id) => {
       const scenario = getScenario(id)
       return scenario?.type === 'email' && scenario.correctAction === 'report'
@@ -220,6 +232,7 @@ export function MissionCard({
       if (prepared.mission?.id === missionId) open(prepared.mission)
       return
     }
+
     const controller = new AbortController()
     request.current = controller
     setPending(true)
@@ -245,6 +258,7 @@ export function MissionCard({
       if (!controller.signal.aborted) setPending(false)
     }
   }
+
   function usePractice() {
     if (!mission || pending) return
     const prepared = updateAdventure(uid, (previous) =>

@@ -11,6 +11,7 @@ export interface UserProfile {
   createdAt: string
   updatedAt: string
 }
+
 export interface ProfileInput {
   name: string
   phone: string

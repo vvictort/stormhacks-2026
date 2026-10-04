@@ -30,10 +30,16 @@ import type {
 export interface CallScenarioRequest {
   /** Unset uses the built-in calls. */
   model?: JsonModel;
-  /** Real-world examples to ground the prompt; none (or no library) runs the prompt ungrounded. */
+  /**
+   * Real-world examples to ground the prompt; none (or no library) runs the
+   * prompt ungrounded.
+   */
   library?: ScamLibrary;
   difficulty: Difficulty;
-  /** Preferred categories, e.g. the latest insights' `nextTrainingFocus`; the first one wins. */
+  /**
+   * Preferred categories, e.g. the latest insights' `nextTrainingFocus`; the
+   * first one wins.
+   */
   focus?: ScamCategory[];
   weakCategories?: ScamCategory[];
   /** Tactics the user has fallen for; they rank the grounding examples. */
@@ -44,12 +50,16 @@ export interface CallScenarioRequest {
 }
 
 export interface GeneratedCallScenario {
-  /** The caller (prompt included, server-only) plus the teaching copy `GET /api/training/call-scenarios/:id` serves. */
+  /**
+   * The caller (prompt included, server-only) plus the teaching copy
+   * `GET /api/training/call-scenarios/:id` serves.
+   */
   scenario: StoredCallScenario;
   source: ScenarioSource;
 }
 
-// Profile text is user-controlled and goes into an LLM prompt: allowlist characters and cap the length.
+// Profile text is user-controlled and goes into an LLM prompt: allowlist
+// characters and cap the length.
 export const cleanProfileText = (value: string, max: number) =>
   value
     .normalize("NFKC")
@@ -144,7 +154,10 @@ function persona(request: CallScenarioRequest) {
   return { first, profession, interests };
 }
 
-/** The category to train, and why, in words the trainee sees ("Generated for your training profile" + this). */
+/**
+ * The category to train, and why, in words the trainee sees
+ * ("Generated for your training profile" + this).
+ */
 export function pickCategory(request: CallScenarioRequest): {
   category: ScamCategory;
   why: string;
@@ -162,6 +175,7 @@ export function pickCategory(request: CallScenarioRequest): {
       why: `You've been caught out by ${named(request.weakCategories[0])} scams in earlier practice.`,
     };
   }
+
   const { profession, interests } = persona(request);
   const shopping = interests.find((interest) =>
     /shop|travel|online|fashion|gadget/i.test(interest),
@@ -178,6 +192,7 @@ export function pickCategory(request: CallScenarioRequest): {
       why: `Matched to your work as ${/^[aeiou]/i.test(profession) ? "an" : "a"} ${profession.toLowerCase()}.`,
     };
   }
+
   return {
     category: "banking",
     why: "Bank calls are the most common phone scam, so they come first.",
@@ -188,7 +203,10 @@ const levelWords = { 1: "a gentle", 2: "a trickier", 3: "a tough" } as const;
 const reasonFor = (why: string, difficulty: 1 | 2 | 3) =>
   `${why} Set at ${levelWords[difficulty]} level from your results so far.`;
 
-/** Teaching copy for a Gemini-written call: its own sentences, plus warning signs and caption practice from its tactics. */
+/**
+ * Teaching copy for a Gemini-written call: its own sentences, plus warning
+ * signs and caption practice from its tactics.
+ */
 function teachingFor(
   tactics: Tactic[],
   firstMessage: string,
@@ -200,6 +218,7 @@ function teachingFor(
   const lines = tactics
     .map((tactic) => TACTIC_LINES[tactic])
     .filter((line): line is string => Boolean(line));
+
   return {
     summary:
       written.summary ??
@@ -211,7 +230,8 @@ function teachingFor(
       `This was a ${CATEGORY_NAMES[category]} scam call: the caller used pressure to get details or money no real organisation asks for by phone.`,
     nextTime: written.nextTime ?? GENERIC_NEXT_TIME,
     practice: {
-      // Caption practice needs a few lines; pad short ones with the commonest follow-ups.
+      // Caption practice needs a few lines; pad short ones with the commonest
+      // follow-ups.
       lines: [
         firstMessage,
         ...new Set(
@@ -235,7 +255,10 @@ const Written = z.object({
   nextTime: sentence,
 });
 
-/** Uses Gemini when an API key is set, otherwise (or when Gemini fails) a built-in scenario, and says which. */
+/**
+ * Uses Gemini when an API key is set, otherwise (or when Gemini fails) a
+ * built-in scenario, and says which.
+ */
 export async function generateCallScenario(
   request: CallScenarioRequest,
 ): Promise<GeneratedCallScenario> {
@@ -277,6 +300,7 @@ SPECIFICATION RULES:
    - Array of 1 to 4 applicable tactics from: ['urgency', 'authority', 'suspicious_link', 'otp_request', 'info_request', 'reward', 'fear'].
 5. "summary", "situation", "explanation", "nextTime": short, plain, warm sentences for the trainee (no jargon, no fearmongering).
 `;
+
   const examples =
     request.library?.examplesFor({
       channel: "call",
@@ -298,6 +322,7 @@ SPECIFICATION RULES:
       if (!parsed || typeof parsed !== "object") {
         return { problems: ["The answer was not valid JSON."] };
       }
+
       const call = CallScenario.safeParse({
         id,
         title: parsed.title,
@@ -336,6 +361,7 @@ SPECIFICATION RULES:
           ],
         };
       }
+
       const teaching = teachingFor(
         call.data.tactics,
         call.data.firstMessage,
@@ -358,6 +384,7 @@ SPECIFICATION RULES:
     },
     "Call",
   );
+
   return scenario
     ? { scenario, source: "gemini" }
     : {
@@ -367,8 +394,9 @@ SPECIFICATION RULES:
 }
 
 /**
- * A built-in call: the best library call pattern for the category (our own summary of a real scam call, never its
- * wording) played by the category's invented caller, else the one generic last-resort pattern.
+ * A built-in call: the best library call pattern for the category (our own
+ * summary of a real scam call, never its wording) played by the category's
+ * invented caller, else the one generic last-resort pattern.
  */
 function fallbackCallScenario(
   id: string,
@@ -384,6 +412,7 @@ function fallbackCallScenario(
       difficulty: request.difficulty,
       limit: Infinity,
     }) ?? [];
+
   for (const example of candidates) {
     const steps = patternSteps(example);
     if (!steps) continue;
@@ -396,6 +425,7 @@ function fallbackCallScenario(
       `${reason} Follows a real scam-call pattern summarised from a public dataset (${example.source.license}).`,
     );
   }
+
   return patternCall(
     id,
     category,
@@ -406,7 +436,10 @@ function fallbackCallScenario(
   );
 }
 
-/** A library call pattern's steps in the caller's order, without the "Caller claims…" opener; null if it can't make a call. */
+/**
+ * A library call pattern's steps in the caller's order, without the
+ * "Caller claims…" opener; null if it can't make a call.
+ */
 export function patternSteps(example: LibraryExample) {
   const steps = fillPlaceholders(example.text)
     ?.split("->")
@@ -415,7 +448,10 @@ export function patternSteps(example: LibraryExample) {
   return steps && steps.length >= 2 && example.tactics.length ? steps : null;
 }
 
-/** A call scenario and its teaching copy from a scam pattern's steps ("says …", "asks for …", in the caller's order). */
+/**
+ * A call scenario and its teaching copy from a scam pattern's steps ("says …",
+ * "asks for …", in the caller's order).
+ */
 export function patternCall(
   id: string,
   category: ScamCategory,
@@ -430,6 +466,7 @@ export function patternCall(
   const says = steps
     .find((step) => step.startsWith("says "))
     ?.slice("says ".length);
+
   const scenario = CallScenario.parse({
     id,
     title: says
@@ -448,6 +485,7 @@ If they hesitate, stay calm and explain why it can't wait. If they want to hang 
 ${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first}; use it once or twice, naturally.` : ""}`,
     firstMessage: `Hi${first ? ` ${first}` : ""}, this is ${caller.person} from ${caller.label}. I'm calling because ${says ?? "there is an urgent problem with your account"}, and I need to sort it out with you right now.`,
   });
+
   const teaching = teachingFor(
     scenario.tactics,
     scenario.firstMessage,
@@ -457,6 +495,7 @@ ${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first};
     },
     category,
   );
+
   return {
     ...scenario,
     teaching: {
@@ -468,8 +507,9 @@ ${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first};
 }
 
 /**
- * `GET /api/training/call-scenarios/:id`: the frontend `CallScenario` teaching shape. Never the prompt or voice.
- * Scenarios stored before teaching copy existed get it from their category.
+ * `GET /api/training/call-scenarios/:id`: the frontend `CallScenario` teaching
+ * shape. Never the prompt or voice. Scenarios stored before teaching copy
+ * existed get it from their category.
  */
 export function trainingCallScenario(stored: StoredCallScenario) {
   const scamCategory = stored.scamCategory ?? "banking";
@@ -480,6 +520,7 @@ export function trainingCallScenario(stored: StoredCallScenario) {
       reason: "Generated for your training profile.",
     },
   };
+
   return {
     id: stored.id,
     type: "call" as const,

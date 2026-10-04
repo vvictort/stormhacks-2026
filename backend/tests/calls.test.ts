@@ -17,7 +17,10 @@ import type { AttemptInput } from "../app/training/attempts.schema.ts";
 
 const ELEVENLABS = "https://api.elevenlabs.io";
 
-/** ElevenLabs stub: issues tokens (optionally with a conversation id) and serves finished conversations. */
+/**
+ * ElevenLabs stub: issues tokens (optionally with a conversation id) and serves
+ * finished conversations.
+ */
 function elevenLabs(
   url: string,
   {
@@ -31,6 +34,7 @@ function elevenLabs(
       ...(tokenConversationId ? { conversation_id: tokenConversationId } : {}),
     });
   }
+
   const id = /\/v1\/convai\/conversations\/([^/?]+)/.exec(url)?.[1];
   if (url.startsWith(ELEVENLABS) && id) {
     return json(
@@ -61,6 +65,7 @@ function elevenLabs(
           },
     );
   }
+
   return null;
 }
 
@@ -68,7 +73,10 @@ beforeEach(() =>
   mockOutbound((url) => elevenLabs(url) ?? json({ error: "unexpected" }, 500)),
 );
 
-/** Repositories whose attempt inserts are recorded, resolving `saved` on each one. */
+/**
+ * Repositories whose attempt inserts are recorded; `nextSave()` resolves on
+ * the next one.
+ */
 function recordingRepos() {
   const repos = fakeRepos();
   const inserted: AttemptInput[] = [];
@@ -79,10 +87,12 @@ function recordingRepos() {
     notify();
     return insert(a);
   };
+
   const nextSave = () =>
     new Promise<void>((r) => {
       notify = r;
     });
+
   return { repos, inserted, nextSave };
 }
 
@@ -94,6 +104,7 @@ async function inCall(
   mockOutbound(
     (url) => elevenLabs(url, { tokenConversationId }) ?? json({}, 500),
   );
+
   const { body } = await app.api("POST", "/calls", {
     body: { scenarioId: "bank-fraud-dept-otp-1" },
   });
@@ -112,6 +123,7 @@ test("unknown scenario ids are 404 scenario_not_found", async () => {
       scenarioId,
     );
   }
+
   assert.equal(
     (await app.api("POST", "/texts", { body: { scenarioId: "nope" } })).status,
     404,
@@ -129,6 +141,7 @@ test("a client-supplied scenario (or any extra key) is a 400", async () => {
     systemPrompt: "x",
     firstMessage: "x",
   };
+
   for (const path of ["/calls", "/texts"]) {
     assert.equal(
       (await app.api("POST", path, { body: { scenario } })).status,
@@ -169,12 +182,14 @@ test("generated scenarios resolve only for their owner", async () => {
     { ...generated, tactics: [...generated.tactics] },
     "fallback",
   );
+
   const res = await app.api("POST", "/calls", {
     token: "valid:alice",
     body: { scenarioId: "gen-1" },
   });
   assert.equal(res.status, 201);
   assert.equal(res.body.call.scenario.id, "gen-1");
+
   const other = await app.api("POST", "/calls", {
     token: "valid:bob",
     body: { scenarioId: "gen-1" },
@@ -196,13 +211,17 @@ test("a generated gen-call- scenario runs end to end with server-owned outcomes"
   const { scenarioId } = generated.body;
   assert.match(scenarioId, /^gen-call-/);
 
-  /** Rings the generated call, answers it, and hangs up after a conversation that went like `conversation`. */
+  /**
+   * Rings the generated call, answers it, and hangs up after a conversation
+   * that went like `conversation`.
+   */
   const run = async (conversation?: object) => {
     mockOutbound(
       (url) =>
         elevenLabs(url, { tokenConversationId: "conv_gen", conversation }) ??
         json({}, 500),
     );
+
     const { callId, call } = (
       await app.api("POST", "/calls", { body: { scenarioId } })
     ).body;
@@ -211,6 +230,7 @@ test("a generated gen-call- scenario runs end to end with server-owned outcomes"
       (await app.api("POST", `/calls/${callId}/accept`)).status,
       200,
     );
+
     const saved = nextSave();
     assert.equal(
       (
@@ -223,6 +243,7 @@ test("a generated gen-call- scenario runs end to end with server-owned outcomes"
     await saved;
     return (await app.api("GET", `/calls/${callId}`)).body as CallRecord;
   };
+
   const done = (results: Record<string, boolean>) => ({
     status: "done",
     transcript: [
@@ -312,6 +333,7 @@ test("the token conversation id is bound on accept; a different one is 409", asy
     ).status,
     200,
   );
+
   const res = await app.api("POST", `/calls/${callId}/connected`, {
     body: { conversationId: "conv_other" },
   });
@@ -380,6 +402,7 @@ test("canonical outcome mapping matches the contract table", () => {
     ["missed", "missed", true],
     ["error", "error", null],
   ] as const;
+
   for (const [raw, outcome, success] of table) {
     assert.deepEqual(
       toTraining(raw, 2),
@@ -387,6 +410,7 @@ test("canonical outcome mapping matches the contract table", () => {
       raw,
     );
   }
+
   assert.equal(toTraining("resisted", 1).difficulty, "easy");
   assert.equal(toTraining("resisted", 3).difficulty, "hard");
 });
@@ -416,6 +440,7 @@ test("an analysed call is saved as a training attempt with a redacted transcript
   assert.deepEqual([body.outcome, body.success], ["compromised", false]);
   assert.ok(body.signals.includes("shared_code"));
   assert.equal(body.durationSecs, 42);
+
   const text = JSON.stringify(body);
   for (const secret of ["123456", "654321", "me@example.com"]) {
     assert.ok(!text.includes(secret), secret);
@@ -441,6 +466,7 @@ test("a declined call carries its training result and is saved as a success", as
   const { body } = await app.api("POST", "/calls", {
     body: { scenarioId: "courier-customs-fee-1" },
   });
+
   const saved = nextSave();
   const declined = await app.api("POST", `/calls/${body.callId}/decline`, {
     body: { reason: "declined" },
@@ -450,6 +476,7 @@ test("a declined call carries its training result and is saved as a success", as
     success: true,
     difficulty: "easy",
   });
+
   await saved;
   assert.equal(inserted.length, 1);
   assert.deepEqual(
@@ -468,10 +495,12 @@ test("a database error while saving is logged and never breaks the call", async 
     failed();
     throw new Error("connection refused");
   };
+
   const app = startApp({ repos });
   const { body } = await app.api("POST", "/calls", {
     body: { scenarioId: "courier-customs-fee-1" },
   });
+
   const missed = await app.api("POST", `/calls/${body.callId}/decline`, {
     body: { reason: "missed" },
   });
@@ -481,6 +510,7 @@ test("a database error while saving is logged and never breaks the call", async 
     success: true,
     difficulty: "easy",
   });
+
   await attempted;
   assert.equal(
     (await app.api("GET", `/calls/${body.callId}`)).body.status,
@@ -492,6 +522,7 @@ test("without ElevenLabs keys calls still ring and score; only accept is 503 ele
   mockOutbound((url) => {
     throw new Error(`unexpected outbound request: ${url}`);
   });
+
   const { repos, inserted, nextSave } = recordingRepos();
   const app = startApp({ repos, elevenLabs: false });
   const ringing = (
@@ -499,6 +530,7 @@ test("without ElevenLabs keys calls still ring and score; only accept is 503 ele
       body: { scenarioId: "bank-fraud-dept-otp-1" },
     })
   ).body.callId;
+
   const accept = await app.api("POST", `/calls/${ringing}/accept`);
   assert.deepEqual(
     [accept.status, accept.body.error.code],
@@ -508,6 +540,7 @@ test("without ElevenLabs keys calls still ring and score; only accept is 503 ele
     (await app.api("GET", `/calls/${ringing}`)).body.status,
     "ringing",
   );
+
   const saved = nextSave();
   assert.equal(
     (
@@ -537,6 +570,7 @@ test("abandoning a ringing call completes it unscored and saves nothing", async 
     404,
     "owner only",
   );
+
   const abandoned = await app.api("POST", `/calls/${body.callId}/abandon`);
   assert.equal(abandoned.status, 200);
   assert.equal(abandoned.body.status, "completed");
@@ -546,7 +580,9 @@ test("abandoning a ringing call completes it unscored and saves nothing", async 
     success: null,
     difficulty: "medium",
   });
-  // Over: it can't be abandoned again, declined into a scored result, or answered.
+
+  // Over: it can't be abandoned again, declined into a scored result, or
+  // answered.
   for (const action of ["abandon", "decline", "accept"]) {
     const res = await app.api("POST", `/calls/${body.callId}/${action}`);
     assert.deepEqual(
@@ -555,6 +591,7 @@ test("abandoning a ringing call completes it unscored and saves nothing", async 
       action,
     );
   }
+
   await new Promise((r) => setTimeout(r, 20));
   assert.deepEqual(inserted, [], "nothing is saved");
 
@@ -615,6 +652,7 @@ test("attempts are clipped to the schema limits instead of being rejected", () =
     ],
     training: toTraining("resisted", 1),
   } as unknown as CallRecord;
+
   const body = trainingAttempt(call);
   assert.equal(body.summary!.length, 4000);
   assert.ok(body.summary!.endsWith("…"));

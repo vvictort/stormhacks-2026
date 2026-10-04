@@ -1,8 +1,9 @@
 import type { Signal } from "../shared/types.ts";
 import { DIGIT_RUN, countDigits } from "../shared/redact.ts";
 
-// Cheap rule-based hints computed on the raw (unredacted) reply, in memory only.
-// The reply provider returns the authoritative signals; these are passed to it as `preSignals`.
+// Cheap rule-based hints computed on the raw (unredacted) reply, in memory
+// only. The reply provider returns the authoritative signals; these are passed
+// to it as `preSignals`.
 
 const CHALLENGE =
   /\b(scam|scammer|fraud|fake|phishing|spam|not (?:falling|buying))\b/i;

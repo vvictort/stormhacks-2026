@@ -15,12 +15,18 @@ import { scenarios, type Difficulty } from '../scenarios'
 import type { Learning } from '../useLearning'
 import './nextForYou.css'
 
-/** A built-in scenario of that channel near that level: the calm way out when generating fails. */
+/**
+ * A built-in scenario of that channel near that level: the calm way out when
+ * generating fails.
+ */
 const builtIn = (type: 'email' | 'call', difficulty: Difficulty) =>
   scenarios.find((s) => s.type === type && s.difficulty === difficulty) ??
   scenarios.find((s) => s.type === type)!
 
-/** Generates an email (and optionally a call) for this user, then opens it. On failure, offers a built-in one instead. */
+/**
+ * Generates an email (and optionally a call) for this user, then opens it. On
+ * failure, offers a built-in one instead.
+ */
 export function MadeForYouActions({
   difficulty,
   label,
@@ -78,6 +84,7 @@ export function MadeForYouActions({
   const fallback = failed && builtIn(failed.type, difficulty)
   const texts = scenarios.filter((s) => s.type === 'sms')
   const text = recommend(progress, undefined, texts) ?? texts[0]
+
   return (
     <div
       className={`made-for-you${variant === 'picker' ? ' practice-picker' : ''}`}
@@ -221,7 +228,9 @@ export function MadeForYouActions({
   )
 }
 
-/** Home's primary path: what Tellio trains next, why, and at what difficulty. */
+/**
+ * Home's primary path: what Tellio trains next, why, and at what difficulty.
+ */
 export function NextForYou({
   adaptive,
   localLevel,
@@ -262,7 +271,10 @@ export function NextForYou({
   )
 }
 
-/** After a debrief: what changed in Tellio's picture of this user, compared with before the run, and the next step. */
+/**
+ * After a debrief: what changed in Tellio's picture of this user, compared with
+ * before the run, and the next step.
+ */
 export function LearnedPanel({
   learning,
   attemptId,

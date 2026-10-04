@@ -28,6 +28,7 @@ const msg = (id, at, from = 'scammer', body = `body ${id}`) => ({
   body,
   at: `2026-10-03T10:00:${at}.000Z`,
 })
+
 const thread = (overrides = {}) => ({
   id: T,
   userId: 'u1',
@@ -39,6 +40,7 @@ const thread = (overrides = {}) => ({
   createdAt: '2026-10-03T10:00:00.000Z',
   ...overrides,
 })
+
 const reduce = (actions, state = initialThreadState(T)) =>
   actions.reduce(threadReducer, state)
 
@@ -49,8 +51,6 @@ function deepFreeze(value) {
   }
   return value
 }
-
-// --- Thread reducer ---
 
 test('messages are deduped by id across the stream and snapshots', () => {
   const state = reduce([
@@ -102,12 +102,14 @@ test('late arrivals are kept in chronological order', () => {
 test('typing is cleared by a scammer message and by ended, and ignored after ended', () => {
   let state = reduce([{ type: 'typing', threadId: T, on: true }])
   assert.equal(state.typing, true)
+
   state = threadReducer(state, {
     type: 'message',
     threadId: T,
     message: msg('u', '01', 'user'),
   })
   assert.equal(state.typing, true, 'user messages leave typing alone')
+
   state = threadReducer(state, {
     type: 'message',
     threadId: T,
@@ -144,6 +146,7 @@ test('an ended snapshot sets outcome, reason and status ended', () => {
       }),
     },
   ])
+
   assert.equal(state.outcome, 'reported')
   assert.equal(state.endReason, 'reported')
   assert.equal(state.typing, false)
@@ -181,11 +184,13 @@ test('an action for another thread starts from fresh state', () => {
     },
     { type: 'send', threadId: T, phase: 'start' },
   ])
+
   const state = threadReducer(old, {
     type: 'message',
     threadId: 'thread-2',
     message: msg('x', '05'),
   })
+
   assert.equal(state.threadId, 'thread-2')
   assert.deepEqual(
     state.messages.map((m) => m.id),
@@ -213,12 +218,14 @@ test('connection open clears transient errors; fatal errors set connection error
   ])
   assert.equal(state.connection, 'connecting')
   assert.equal(state.error, 'network_error')
+
   state = threadReducer(state, {
     type: 'connection',
     threadId: T,
     connection: 'open',
   })
   assert.equal(state.error, null)
+
   state = threadReducer(state, {
     type: 'error',
     threadId: T,
@@ -237,6 +244,7 @@ test('the thread reducer never mutates prior state', () => {
     ]),
   )
   const snapshot = structuredClone(prior)
+
   const actions = [
     { type: 'connection', threadId: T, connection: 'open' },
     { type: 'message', threadId: T, message: msg('a', '01') },
@@ -256,6 +264,7 @@ test('the thread reducer never mutates prior state', () => {
     { type: 'error', threadId: T, error: 'x', fatal: true },
     { type: 'message', threadId: 'other', message: msg('z', '09') },
   ]
+
   for (const action of actions) threadReducer(prior, deepFreeze(action))
   assert.deepEqual(prior, snapshot)
 })
@@ -345,8 +354,6 @@ test('threadStatus covers idle, connecting, live, reconnecting, ended and error'
   )
 })
 
-// --- Call reducer ---
-
 const callRecord = (status, extra = {}) => ({
   id: 'call-1',
   userId: 'u1',
@@ -355,6 +362,7 @@ const callRecord = (status, extra = {}) => ({
   createdAt: '2026-10-03T10:00:00.000Z',
   ...extra,
 })
+
 const ringing = callReducer(
   callReducer(INITIAL_CALL_STATE, { type: 'start' }),
   {
@@ -395,12 +403,14 @@ test('a completed record moves the call to completed', () => {
   state = callReducer(state, { type: 'hung_up', callId: 'call-1' })
   assert.equal(state.phase, 'analyzing')
   assert.equal(state.captions.length, 1)
+
   state = callReducer(state, {
     type: 'record',
     callId: 'call-1',
     record: callRecord('analyzing'),
   })
   assert.equal(state.phase, 'analyzing')
+
   state = callReducer(state, {
     type: 'record',
     callId: 'call-1',
@@ -418,6 +428,7 @@ test('failed sets the error and keeps or overrides the phase', () => {
   })
   assert.equal(kept.phase, 'ringing')
   assert.equal(kept.error, 'network_error')
+
   const moved = callReducer(ringing, {
     type: 'failed',
     callId: 'call-1',
@@ -425,6 +436,7 @@ test('failed sets the error and keeps or overrides the phase', () => {
     phase: 'error',
   })
   assert.equal(moved.phase, 'error')
+
   const startFailed = callReducer(
     callReducer(INITIAL_CALL_STATE, { type: 'start' }),
     { type: 'failed', callId: null, error: 'unauthorized', phase: 'error' },
@@ -432,8 +444,6 @@ test('failed sets the error and keeps or overrides the phase', () => {
   assert.equal(startFailed.phase, 'error')
   assert.equal(callReducer(moved, { type: 'reset' }), INITIAL_CALL_STATE)
 })
-
-// --- Client ---
 
 const json = (status, body) =>
   new Response(JSON.stringify(body), {
@@ -463,6 +473,7 @@ test('a 401 retries once with a force-refreshed token', async () => {
     json(401, { error: { code: 'INVALID_TOKEN', message: 'expired' } }),
     json(200, thread()),
   ])
+
   const result = await client.getThread('a b/c')
   assert.equal(result.id, T)
   assert.deepEqual(tokens, [false, true])
@@ -497,6 +508,7 @@ test('startText resumes the active thread on 409 active_thread_exists', async ()
       },
     }),
   ])
+
   assert.deepEqual(await client.startText({ scenarioId: 'text-bank-alert' }), {
     threadId: 'existing',
     resumed: true,
@@ -527,6 +539,7 @@ test('non-ok responses throw CommsError with the code from the body', async () =
     }),
     new Response('<html>Bad gateway</html>', { status: 502 }),
   ])
+
   await assert.rejects(client.startCall('missing'), (error) => {
     assert.ok(error instanceof CommsError)
     assert.equal(error.status, 404)
@@ -537,6 +550,7 @@ test('non-ok responses throw CommsError with the code from the body', async () =
     assert.equal(describeError(error), 'scenario_not_found')
     return true
   })
+
   await assert.rejects(
     client.acceptCall('call-1'),
     (error) => error instanceof CommsError && error.code === 'http_502',
@@ -548,12 +562,14 @@ test('listScenarios is unauthenticated and streamUrl carries the token in the qu
   const { client, calls, tokens } = fakeClient([
     json(200, { scenarios: [{ id: 's1', channel: 'call' }] }),
   ])
+
   assert.deepEqual(await client.listScenarios('call'), [
     { id: 's1', channel: 'call' },
   ])
   assert.equal(calls[0].url, '/api/comms/scenarios?channel=call')
   assert.equal(calls[0].headers.authorization, undefined)
   assert.deepEqual(tokens, [])
+
   assert.equal(
     await client.streamUrl('t/1'),
     '/api/comms/texts/t%2F1/stream?access_token=cached-token',
@@ -569,11 +585,13 @@ test('startCall sends only the scenario id; callConnected binds the conversation
     }),
     json(200, callRecord('in_call')),
   ])
+
   await client.startCall('bank-fraud-dept-otp-1')
   assert.equal(calls[0].url, '/api/comms/calls')
   assert.deepEqual(JSON.parse(calls[0].body), {
     scenarioId: 'bank-fraud-dept-otp-1',
   })
+
   await client.callConnected('call-1', 'conv_9')
   assert.equal(calls[1].url, '/api/comms/calls/call-1/connected')
   assert.equal(calls[1].method, 'POST')
@@ -606,6 +624,7 @@ test('microphone checks: insecure context and missing API are caught before aski
     microphoneBlocker({ secureContext: true, getUserMedia: true }),
     null,
   )
+
   const named = (name) => Object.assign(new Error(name), { name })
   assert.equal(
     microphoneErrorCode(named('NotAllowedError')),
@@ -633,6 +652,7 @@ test('abandonCall gives up a ringing call with an authenticated JSON POST', asyn
     json(200, abandoned),
     json(409, { error: { code: 'not_ringing', message: 'over' } }),
   ])
+
   assert.deepEqual((await client.abandonCall('call 1')).training, {
     outcome: 'error',
     success: null,
@@ -641,9 +661,11 @@ test('abandonCall gives up a ringing call with an authenticated JSON POST', asyn
   assert.equal(calls[0].url, '/api/comms/calls/call%201/abandon')
   assert.equal(calls[0].method, 'POST')
   assert.equal(calls[0].headers.authorization, 'Bearer cached-token')
-  // The API's write guard needs JSON, so a POST without arguments still sends {}.
+  // The API's write guard needs JSON, so a POST without arguments still
+  // sends {}.
   assert.equal(calls[0].headers['content-type'], 'application/json')
   assert.equal(calls[0].body, '{}')
+
   await assert.rejects(
     client.abandonCall('call-1'),
     (error) => describeError(error) === 'not_ringing',
@@ -654,16 +676,19 @@ test('only stages where the server call still rings are abandoned when the call 
   for (const stage of ['ringing', 'answering']) {
     assert.equal(ringsOnServer(stage), true, stage)
   }
-  // starting: no call yet; in_call/analyzing: reported via /ended; done: already settled.
+  // starting: no call yet; in_call/analyzing: reported via /ended;
+  // done: already settled.
   for (const stage of ['starting', 'in_call', 'analyzing', 'done']) {
     assert.equal(ringsOnServer(stage), false, stage)
   }
 })
 
 test('a call stuck connecting is abandoned before accept lands and ended after; a connected call is left alone', () => {
-  // answering: the microphone prompt or the accept request is pending, so the call may still ring on the server.
+  // answering: the microphone prompt or the accept request is pending, so the
+  // call may still ring on the server.
   assert.equal(connectDrop('answering', false), 'abandon')
-  // in_call without onConnect: the server has it in_call, so /ended without a conversation completes it as error.
+  // in_call without onConnect: the server has it in_call, so /ended without a
+  // conversation completes it as error.
   assert.equal(connectDrop('in_call', false), 'end')
   assert.equal(connectDrop('in_call', true), null)
   for (const stage of ['starting', 'ringing', 'analyzing', 'done']) {
@@ -681,6 +706,7 @@ test('cancelling or timing out while connecting lands on the error phase and rel
     }),
     { type: 'connecting', callId: 'c1' },
   )
+
   assert.equal(guardsNavigation(connecting.phase), true)
   for (const error of ['connect_cancelled', 'connect_timeout']) {
     const dropped = callReducer(connecting, {

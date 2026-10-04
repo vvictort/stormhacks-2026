@@ -1,7 +1,10 @@
-// The genuine messages on the practice path: real-looking notices that are safe, so the path also tests over-reporting.
-// They are the only hand-written practice content. Every scam comes from practice.json (backend/scripts/build-practice.ts).
-// Each one mirrors a scam on the path (delivery, bank, prize, payroll, account security), so the topic never gives the
-// answer away. Keep them near half of the path's texts and emails: when nearly everything is a scam, "Report" is a habit, not a judgment.
+// The genuine messages on the practice path: real-looking notices that are
+// safe, so the path also tests over-reporting. They are the only hand-written
+// practice content. Every scam comes from practice.json
+// (backend/scripts/build-practice.ts). Each one mirrors a scam on the path
+// (delivery, bank, prize, payroll, account security), so the topic never gives
+// the answer away. Keep them near half of the path's texts and emails: when
+// nearly everything is a scam, "Report" is a habit, not a judgment.
 import type { MessageScenario } from './scenarios.ts'
 
 export const genuineScenarios: MessageScenario[] = [

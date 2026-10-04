@@ -5,7 +5,10 @@ import type { Grounding } from "./library.ts";
 
 export type ScenarioSource = "gemini" | "fallback";
 
-/** A generated call as stored: the caller (server-only) plus the teaching copy the browser may see. */
+/**
+ * A generated call as stored: the caller (server-only) plus the teaching copy
+ * the browser may see.
+ */
 export type StoredCallScenario = CallScenario & {
   teaching?: CallTeaching & {
     generated: {
@@ -18,6 +21,7 @@ export type StoredCallScenario = CallScenario & {
 
 export class ScenariosRepository {
   private readonly db: Database;
+
   constructor(db: Database) {
     this.db = db;
   }
@@ -44,7 +48,7 @@ export class ScenariosRepository {
     return row?.scenario ?? null;
   }
 
-  /** Generated texts and emails, stored in the frontend `Scenario` shape; the channel comes from the id. */
+  /** Generated texts and emails, stored in the frontend `Scenario` shape. */
   async saveMessage(
     uid: string,
     scenario: { id: string; type: "email" | "sms" },
@@ -68,14 +72,16 @@ export class ScenariosRepository {
   }
 
   /**
-   * Counts a generation request against the user's per-minute and per-day limits; false (nothing recorded) when
-   * either is used up. The per-user advisory lock makes count-then-insert atomic across requests and processes.
+   * Counts a generation request against the user's per-minute and per-day
+   * limits; false (nothing recorded) when either is used up. The per-user
+   * advisory lock makes count-then-insert atomic across requests and processes.
    */
   async claimGeneration(uid: string, perMinute: number, perDay: number) {
     return transaction(this.db, async (client) => {
       await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
         `scenario-generation:${uid}`,
       ]);
+
       await client.query(
         "DELETE FROM scenario_generation_requests WHERE firebase_uid=$1 AND requested_at <= now() - interval '1 day'",
         [uid],
@@ -86,6 +92,7 @@ export class ScenariosRepository {
         "SELECT count(*)::int AS day, (count(*) FILTER (WHERE requested_at > now() - interval '1 minute'))::int AS minute FROM scenario_generation_requests WHERE firebase_uid=$1",
         [uid],
       );
+
       if (used.day >= perDay || used.minute >= perMinute) return false;
       await client.query(
         "INSERT INTO scenario_generation_requests(firebase_uid) VALUES($1)",

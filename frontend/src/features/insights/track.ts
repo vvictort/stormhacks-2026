@@ -1,7 +1,7 @@
 import { api } from '../../lib/api'
 import { createTracker } from './tracker'
 
-/** The app's behaviour tracker. A failed send is dropped silently: tracking never gets in the user's way. */
+/** A failed send is dropped silently: tracking never gets in the user's way. */
 export const tracker = createTracker((events, keepalive) =>
   api('/training/events', {
     method: 'POST',

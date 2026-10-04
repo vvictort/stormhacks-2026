@@ -49,7 +49,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [resetOpen, setResetOpen] = useState(false)
-  // Signup is two short steps: who you are, then a password with a live checklist.
+  // Signup is two short steps: who you are, then a password with a live
+  // checklist.
   const [step, setStep] = useState<'details' | 'password'>('details')
   const [triedPassword, setTriedPassword] = useState(false)
   const [stepMoved, setStepMoved] = useState(false)
@@ -101,6 +102,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     event.preventDefault()
     if (pending) return
     clearError()
+
     // Each signup step only checks its own fields.
     const stepFields: AuthFieldName[] | null = !isSignup
       ? null
@@ -116,7 +118,9 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         )
       : allErrors
     if (onPasswordStep) setTriedPassword(true)
-    // Commit the errors first so the focused field is already described by its message.
+
+    // Commit the errors first so the focused field is already described by its
+    // message.
     flushSync(() => setErrors(nextErrors))
     const firstInvalidField = Object.keys(nextErrors)[0]
     if (firstInvalidField) {
@@ -126,6 +130,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
       return
     }
     if (isSignup && step === 'details') return goToStep('password')
+
     rememberFocus()
     const succeeded = isSignup
       ? await register(values.email.trim(), values.password, values.name.trim())
@@ -205,13 +210,15 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     values.password,
     values.confirmPassword,
   )
-  // Tell reacts to the form: thinking while a request runs, a sideways look when something needs fixing.
+  // Tell reacts to the form: thinking while a request runs, a sideways look
+  // when something needs fixing.
   const mood =
     formError || Object.values(errors).some(Boolean)
       ? 'suspicious'
       : pending
         ? 'curious'
         : 'idle'
+
   return (
     <>
       <AuthCard
@@ -312,7 +319,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               </div>
             ) : (
               <div key="password" className="form-step">
-                {/* Lets password managers save the new password against this email. */}
+                {/* Lets password managers save the new password against this
+                    email. */}
                 <input
                   type="email"
                   name="username"
@@ -393,7 +401,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             )}
           </button>
         </form>
-        {/* Form-level errors take the divider's place between the two buttons: next to whichever was pressed, and no extra height. */}
+        {/* Form-level errors take the divider's place between the two buttons:
+            next to whichever was pressed, and no extra height. */}
         <div className="form-feedback">
           <div
             className="auth-divider text-muted-strong"

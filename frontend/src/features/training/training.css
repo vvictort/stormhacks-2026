@@ -1,4 +1,5 @@
-/* Training surfaces: home, practice phone, debrief. Tokens come from index.css @theme. */
+/* Training surfaces: home, practice phone, debrief. Tokens come from index.css
+   @theme. */
 
 .train-shell {
   min-height: 100svh;
@@ -36,6 +37,7 @@
 }
 
 /* Buttons and links that act like buttons */
+
 .train-primary,
 .train-ghost {
   display: inline-flex;
@@ -127,7 +129,8 @@
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
-/* ---------- Home: one column, three tabs (Practice, History, Insights) ---------- */
+/* Home: one column, three tabs (Practice, History, Insights) */
+
 .home-main {
   width: min(860px, calc(100% - 48px));
   margin: 24px auto 72px;
@@ -147,7 +150,8 @@
   outline: none;
 }
 
-/* Channel filters use a segmented control; the main destinations use a quiet underline. */
+/* Channel filters use a segmented control; the main destinations use a quiet
+   underline. */
 .segmented {
   display: flex;
   gap: 2px;
@@ -178,7 +182,8 @@
   color: var(--color-foreground);
 }
 
-/* The selected pill is its own element so it can slide between options (layoutId in the markup). */
+/* The selected pill is its own element so it can slide between options
+   (layoutId in the markup). */
 .seg-thumb {
   position: absolute;
   inset: 0;
@@ -262,7 +267,9 @@
   margin-top: 2px;
 }
 
-/* Progress: one headline rate with its counts in a sentence, then the breakdowns. No boxes. */
+/* Progress: one headline rate with its counts in a sentence, then the
+   breakdowns. No boxes. */
+
 .home-stats {
   margin-top: var(--space-group);
 }
@@ -412,6 +419,7 @@
 }
 
 /* Library: filters followed by a flat list of readable scenario rows. */
+
 .path {
   padding-top: 20px;
 }
@@ -683,7 +691,8 @@
   font-size: 14px;
 }
 
-/* ---------- Scenario ---------- */
+/* Scenario */
+
 .scenario-main {
   width: min(1100px, calc(100% - 64px));
   margin: 8px auto 64px;
@@ -771,11 +780,13 @@
   display: none;
 }
 
+/* 28px pill, 44px tap target */
 .scenario-generated summary::after {
   content: '';
   position: absolute;
   inset: -8px 0;
-} /* 28px pill, 44px tap target */
+}
+
 .scenario-generated summary:focus-visible {
   border-radius: 999px;
   outline-offset: 2px;
@@ -834,7 +845,8 @@
   line-height: 1.6;
 }
 
-/* ---------- Practice phone ---------- */
+/* Practice phone */
+
 .phone-wrap {
   grid-area: phone;
   position: sticky;
@@ -1033,7 +1045,8 @@
   word-break: break-all;
 }
 
-/* Clue markers: number + tint + underline, so meaning never rests on colour alone. */
+/* Clue markers: number + tint + underline, so meaning never rests on colour
+   alone. */
 .clue {
   padding: 1px 2px;
   border-radius: 4px;
@@ -1117,6 +1130,7 @@
 }
 
 /* Tap-to-flag interactive phrases */
+
 .flaggable-phrase {
   display: inline;
   padding: 1px 4px;
@@ -1150,6 +1164,7 @@
 }
 
 /* Mail app: subject, a sender you can expand, then the body. */
+
 .email-bar {
   min-height: 44px;
   gap: 2px;
@@ -1390,7 +1405,8 @@
   color: var(--color-success-strong);
 }
 
-/* ---------- Debrief ---------- */
+/* Debrief */
+
 .debrief {
   max-width: 520px;
 }
@@ -1646,7 +1662,8 @@
   margin-top: 30px;
 }
 
-/* ---------- Motion: one arrival, one reveal ---------- */
+/* Motion: one arrival, one reveal */
+
 @media (prefers-reduced-motion: no-preference) {
   .clue,
   .sms-link.is-marked {
@@ -1654,8 +1671,9 @@
   }
 }
 
-/* Scroll reveal (rise-in and --motion-scale from index.css): short blocks only, so
-   "entry 100%" is reached as soon as each is fully on screen. Not on the phone or dialogs. */
+/* Scroll reveal (rise-in and --motion-scale from index.css): short blocks only,
+   so "entry 100%" is reached as soon as each is fully on screen. Not on the
+   phone or dialogs. */
 @supports (animation-timeline: view()) {
   .debrief-next,
   .debrief-tip,
@@ -1673,7 +1691,8 @@
   }
 }
 
-/* ---------- Responsive ---------- */
+/* Responsive */
+
 @media (max-width: 1023px) {
   .scenario-main {
     grid-template-columns: minmax(0, 1fr);
@@ -1792,7 +1811,8 @@
     margin-top: 20px;
   }
 
-  /* On a real phone, the practice phone takes the width and most of the height. */
+  /* On a real phone, the practice phone takes the width and most of the
+     height. */
   .phone {
     width: 100%;
     max-width: 400px;
@@ -1815,7 +1835,8 @@
   }
 }
 
-/* ---------- Phone-app motion ---------- */
+/* Phone-app motion */
+
 /* Typing indicator: three dots breathing in sequence, in an incoming bubble. */
 .sms-typing {
   display: inline-flex;
@@ -1895,7 +1916,8 @@ p.call-loading {
   gap: 8px;
 }
 
-/* ---------- /caught: where practice links land ---------- */
+/* /caught: where practice links land */
+
 .caught-main {
   width: min(620px, calc(100% - 32px));
   margin: 24px auto 72px;
@@ -1943,7 +1965,8 @@ p.call-loading {
   }
 }
 
-/* Keep decision controls visible while the message scrolls, including at 200% zoom. */
+/* Keep decision controls visible while the message scrolls, including at 200%
+   zoom. */
 .phone-screen {
   min-height: 0;
 }

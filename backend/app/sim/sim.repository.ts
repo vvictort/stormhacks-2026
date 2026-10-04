@@ -3,15 +3,20 @@ import type { CallRecord, SimEvent, TextThread } from "../shared/types.ts";
 import type { EventSink } from "./events.ts";
 import type { SimStore } from "./store.ts";
 
-// jsonb can't hold U+0000, which a user's reply could contain; drop it rather than fail the write.
+// jsonb can't hold U+0000, which a user's reply could contain; drop it rather
+// than fail the write.
 const json = (value: unknown) =>
   JSON.stringify(value, (_key, v) =>
     typeof v === "string" ? v.replaceAll("\0", "") : v,
   );
 
-/** Simulations as jsonb documents (migration 003). Every process shares them, so restarts and replicas see the same state. */
+/**
+ * Simulations as jsonb documents (migration 003). Every process shares them, so
+ * restarts and replicas see the same state.
+ */
 export class PgSimStore implements SimStore {
   private readonly db: Database;
+
   constructor(db: Database) {
     this.db = db;
   }
@@ -32,7 +37,10 @@ export class PgSimStore implements SimStore {
     );
   }
 
-  /** Row-locked read-modify-write: concurrent updates (other requests, other processes) apply one after another. */
+  /**
+   * Row-locked read-modify-write: concurrent updates (other requests, other
+   * processes) apply one after another.
+   */
   async updateThread<R>(id: string, fn: (thread: TextThread) => R) {
     return transaction(this.db, async (client) => {
       const {
@@ -123,9 +131,13 @@ export class PgSimStore implements SimStore {
   }
 }
 
-/** Appends every event to `sim_events` and logs a short line. A failed write is logged, never thrown. */
+/**
+ * Appends every event to `sim_events` and logs a short line. A failed write is
+ * logged, never thrown.
+ */
 export class PgEventSink implements EventSink {
   private readonly db: Database;
+
   constructor(db: Database) {
     this.db = db;
   }

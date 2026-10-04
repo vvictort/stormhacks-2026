@@ -1,9 +1,15 @@
 import type { ScamCategory } from '../training/scenarios.ts'
 
-/** Who wrote the analysis: Snowflake Cortex (text over Snowflake's results), Snowflake (computed there) or built in. */
+/**
+ * Who wrote the analysis: Snowflake Cortex (text over Snowflake's results),
+ * Snowflake (computed there) or built in.
+ */
 export type InsightSource = 'cortex' | 'snowflake' | 'fallback'
 
-/** Anything unknown counts as built in: fallback output is never labelled as Snowflake. */
+/**
+ * Anything unknown counts as built in: fallback output is never labelled as
+ * Snowflake.
+ */
 export const insightSource = (value: unknown): InsightSource =>
   value === 'cortex' || value === 'snowflake' ? value : 'fallback'
 
@@ -12,6 +18,7 @@ const sourceLabels: Record<InsightSource, string> = {
   snowflake: 'Analysed in Snowflake',
   fallback: 'Built-in analysis',
 }
+
 export const insightSourceLabel = (value: unknown) =>
   sourceLabels[insightSource(value)]
 
@@ -54,7 +61,10 @@ export const categoryLabel = (category: string) =>
 const strings = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string')
 
-/** The card's view of an API response; null when the response isn't the contract shape (the card then hides). */
+/**
+ * The card's view of an API response; null when the response isn't the contract
+ * shape (the card then hides).
+ */
 export function scamProfileView(data: unknown): ScamProfileView | null {
   const d = data as Partial<Insights> | null
   if (
@@ -68,6 +78,7 @@ export function scamProfileView(data: unknown): ScamProfileView | null {
   ) {
     return null
   }
+
   const attempts = d.basedOn.attempts
   return {
     empty: attempts === 0,

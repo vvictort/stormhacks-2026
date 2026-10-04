@@ -1,9 +1,11 @@
 import type { ScamCategory, Tactic } from "../shared/vocabulary.ts";
 
-// The plain-language teaching copy the browser shows around a generated call, and the invented callers built-in calls
-// use. Every company, person and number here is invented.
+// Every company, person and number here is invented.
 
-/** What the browser shows around a generated call (the frontend `CallScenario` teaching fields). Never the prompt. */
+/**
+ * What the browser shows around a generated call (the frontend `CallScenario`
+ * teaching fields). Never the prompt.
+ */
 export interface CallTeaching {
   summary: string;
   situation: string;
@@ -13,7 +15,10 @@ export interface CallTeaching {
   practice: { lines: string[]; complyLabel: string };
 }
 
-/** Invented callers, one per category: built-in calls present themselves as these, whatever the scam pattern claimed. */
+/**
+ * Invented callers, one per category: built-in calls present themselves as
+ * these, whatever the scam pattern claimed.
+ */
 export const CALLERS: Record<
   ScamCategory,
   { label: string; number: string; person: string }
@@ -50,7 +55,10 @@ export const CALLERS: Record<
   },
 };
 
-/** The one hand-written call pattern, used only when the library has nothing for the category (or is missing). */
+/**
+ * The one hand-written call pattern, used only when the library has nothing for
+ * the category (or is missing).
+ */
 export const LAST_RESORT_PATTERN = {
   steps: [
     "says there is an urgent problem with your account",
@@ -63,7 +71,7 @@ export const LAST_RESORT_PATTERN = {
 export const GENERIC_NEXT_TIME =
   "Hang up and call the organisation back on a number you already trust, like the one on your card or its official website.";
 
-/** Plain-language warning signs, one per tactic. Call indicators have no `quote`: there's no fixed text to mark. */
+/** Call indicators have no `quote`: there's no fixed text to mark. */
 export const TACTIC_INDICATORS: Record<
   Tactic,
   { title: string; detail: string }
@@ -111,7 +119,10 @@ export const CALLER_ID_INDICATOR = {
     "Caller ID can be faked. A familiar name on your phone doesn't mean that organisation is on the line.",
 };
 
-/** Caption-practice follow-ups for a Gemini-written call, after its opening line. */
+/**
+ * Caption-practice follow-ups for a Gemini-written call, after its opening
+ * line.
+ */
 export const TACTIC_LINES: Partial<Record<Tactic, string>> = {
   fear: "If we don’t sort this out now, you could lose access, or the money, for good.",
   info_request:
@@ -132,7 +143,9 @@ export const COMPLY_LABELS: Partial<Record<Tactic, string>> = {
   reward: "Pay the fee",
 };
 
-/** How the caller behaves at each difficulty, appended to the scenario prompt. */
+/**
+ * How the caller behaves at each difficulty, appended to the scenario prompt.
+ */
 export const DIFFICULTY_STYLE = {
   1: "Difficulty: beginner. Make a few small slips a careful person could notice (vague details, a slightly odd phrase), and give up politely after being challenged twice.",
   2: "Difficulty: intermediate. Sound convincing and keep a steady, polite pressure. Have one plausible answer ready for each objection before giving up.",

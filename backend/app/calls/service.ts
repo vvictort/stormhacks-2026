@@ -18,12 +18,18 @@ import { withPreamble } from "./preamble.ts";
 /** Give up waiting for ElevenLabs' post-call analysis after this long. */
 const ANALYSIS_TIMEOUT_MS = 90_000;
 const POLL_DELAYS_MS = [2000, 3000, 5000, 5000, 10_000];
+
 /**
- * A call still ringing after this long was given up by the browser (tab closed, or stuck on a voice/mic error), not
- * missed: the browser's own ring timer reports real misses. It is abandoned, so it never becomes a scored attempt.
+ * A call still ringing after this long was given up by the browser (tab closed,
+ * or stuck on a voice/mic error), not missed: the browser's own ring timer
+ * reports real misses. It is abandoned, so it never becomes a scored attempt.
  */
 const RING_ABANDON_MS = 2 * 60_000;
-/** An accepted call never reported as ended (tab closed) is analyzed after max duration + this grace. */
+
+/**
+ * An accepted call never reported as ended (tab closed) is analyzed after max
+ * duration + this grace.
+ */
 const IN_CALL_GRACE_MS = 60_000;
 
 /** Agent data-collection fields (see scripts/setup-agent.ts) → signals. */
@@ -38,7 +44,10 @@ const DATA_COLLECTION_SIGNALS: Record<string, Signal> = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Session overrides in the shape `@elevenlabs/client` / `@elevenlabs/react` `startSession` expects. */
+/**
+ * Session overrides in the shape `@elevenlabs/client` / `@elevenlabs/react`
+ * `startSession` expects.
+ */
 function buildOverrides(scenario: CallScenario) {
   return {
     agent: {
@@ -55,7 +64,10 @@ export type CallAccept = {
   overrides: ReturnType<typeof buildOverrides>;
 };
 
-/** Binds the first conversation id reported for a call; a different id later is a mismatch. */
+/**
+ * Binds the first conversation id reported for a call; a different id later is
+ * a mismatch.
+ */
 function bindConversation(c: CallRecord, conversationId: string) {
   c.conversationId ??= conversationId;
   return c.conversationId === conversationId;
@@ -161,6 +173,7 @@ export class CallService {
       },
     );
     if (!declined) return "wrong_state";
+
     await this.events.emit(
       callEvent(reason === "declined" ? "call.declined" : "call.missed", call, {
         ringMs: now - Date.parse(call.createdAt),
@@ -171,8 +184,9 @@ export class CallService {
   }
 
   /**
-   * The browser gave up on a ringing call (switched to caption practice after a voice or microphone failure, or left
-   * the page). It completes as an unscored `error` and is never saved as an attempt: nothing was practised.
+   * The browser gave up on a ringing call (switched to caption practice after a
+   * voice or microphone failure, or left the page). It completes as an unscored
+   * `error` and is never saved as an attempt: nothing was practised.
    */
   async abandon(
     callId: string,
@@ -188,6 +202,7 @@ export class CallService {
       },
     );
     if (!abandoned) return "wrong_state";
+
     await this.events.emit(
       callEvent("call.abandoned", call, {
         ringMs: Date.now() - Date.parse(call.createdAt),
@@ -196,7 +211,10 @@ export class CallService {
     return call;
   }
 
-  /** The browser's voice session connected: bind its conversation id if the token didn't provide one. */
+  /**
+   * The browser's voice session connected: bind its conversation id if the
+   * token didn't provide one.
+   */
   async connected(
     callId: string,
     conversationId: string,
@@ -215,8 +233,9 @@ export class CallService {
   }
 
   /**
-   * Browser hung up (or the agent ended the call). Analysis continues in the background.
-   * A mismatched conversation id leaves the call in_call, so the right `/ended` (or the sweeper) can still finish it.
+   * Browser hung up (or the agent ended the call). Analysis continues in the
+   * background. A mismatched conversation id leaves the call in_call, so the
+   * right `/ended` (or the sweeper) can still finish it.
    */
   async ended(
     callId: string,
@@ -235,6 +254,7 @@ export class CallService {
       return null;
     });
     if (result) return result;
+
     await this.events.emit(
       callEvent("call.ended", call, { conversationId: call.conversationId }),
     );
@@ -287,7 +307,8 @@ export class CallService {
             return await this.fail(callId, "ElevenLabs conversation failed");
           }
         } catch (err) {
-          // The conversation can briefly 404 right after hang-up; keep polling until the deadline.
+          // The conversation can briefly 404 right after hang-up; keep polling
+          // until the deadline.
           console.warn(
             `[calls] ${callId}: fetching conversation failed`,
             err instanceof Error ? err.message : err,
@@ -371,7 +392,10 @@ export class CallService {
     this.report(call);
   }
 
-  /** Best-effort and in the background: saving never holds up or breaks the call flow. Idempotent on the call id. */
+  /**
+   * Best-effort and in the background: saving never holds up or breaks the call
+   * flow. Idempotent on the call id.
+   */
   private report(call: CallRecord) {
     // ponytail: no retry, a failed insert is logged and the result stays only in the call record.
     Promise.resolve()

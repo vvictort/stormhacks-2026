@@ -1,11 +1,15 @@
 import type { RequestHandler } from "express";
 import { AppError } from "./errors.ts";
 
-// localhost and 127.0.0.1 are the same dev server; which one the browser sends depends on how the URL was typed.
+// localhost and 127.0.0.1 are the same dev server; which one the browser sends
+// depends on how the URL was typed.
 const loopback = (origin?: string) =>
   origin?.replace(/\/\/localhost(?=:|$)/, "//127.0.0.1");
 
-/** Browser writes must come from the app's own origin as JSON (a CSRF guard alongside the bearer token). */
+/**
+ * Browser writes must come from the app's own origin as JSON (a CSRF guard
+ * alongside the bearer token).
+ */
 export const requireAppRequest =
   (origin: string): RequestHandler =>
   (req, _res, next) => {

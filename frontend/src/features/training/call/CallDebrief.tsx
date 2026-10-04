@@ -11,7 +11,10 @@ import { missionComplete, type BadgeId, type Mission } from '../missions'
 import type { Scenario } from '../scenarios'
 import type { CallDebriefView, Moment } from './callModel'
 
-/** After a call: the result (from callOutcome, never decided here), the warning signs, and moments from the redacted transcript. */
+/**
+ * After a call: the result (from callOutcome, never decided here), the warning
+ * signs, and moments from the redacted transcript.
+ */
 export function CallDebrief({
   view,
   next,
@@ -35,17 +38,21 @@ export function CallDebrief({
   const reduce = useReducedMotion()
   const complete = mission && missionComplete(mission)
   const credit = voiceCredit(view)
-  // One next step: the adaptive panel's "Next scenario made for you" when it shows, the path's next otherwise.
+  // One next step: the adaptive panel's "Next scenario made for you" when it
+  // shows, the path's next otherwise.
   const actions = debriefActions({
     hasNext: Boolean(next),
     adaptive: Boolean(learned),
   })
   useEffect(() => heading.current?.focus(), [])
+
   // One list that reads by tone: the slip leads when the caller got through.
   const good = view.didWell.map((line) => [true, line] as const)
   const slip = view.nearMiss ? [[false, view.nearMiss.line] as const] : []
   const notes = view.tone === 'missed' ? [...slip, ...good] : [...good, ...slip]
-  // The caller's ask is only quoted up top as part of a near-miss pair; otherwise it joins the transcript moments.
+
+  // The caller's ask is only quoted up top as part of a near-miss pair;
+  // otherwise it joins the transcript moments.
   const moments =
     view.ask && !view.nearMiss?.exchange?.reply
       ? [view.ask, ...view.moments]

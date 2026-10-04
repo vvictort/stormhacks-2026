@@ -38,7 +38,9 @@ const row = (o: Partial<AttemptRow> = {}): AttemptRow => ({
   responseMs: null,
   ...o,
 });
-// Catches delivery scams and checks senders; falls for account-security and workplace scams that pair urgency with authority, quickly.
+
+// Catches delivery scams and checks senders; falls for account-security and
+// workplace scams that pair urgency with authority, quickly.
 const history = [
   row({
     senderInspected: true,
@@ -98,6 +100,7 @@ const sfConfig: SnowflakeConfig = {
   idSalt: "a-long-test-salt-value",
   timeoutMs: 200,
 };
+
 const result = (names: string[], data: (string | null)[][]) =>
   Response.json({
     resultSetMetaData: { rowType: names.map((name) => ({ name })) },
@@ -129,6 +132,7 @@ function fakeSnowflake(
       [key: string]: unknown;
     };
   }[] = [];
+
   type Sent = {
     dimension: string;
     area: string;
@@ -139,15 +143,18 @@ function fakeSnowflake(
     link_clicks: number;
     avg_response_ms: number | null;
   };
+
   const sent = () =>
     JSON.parse(
       requests.find((r) => r.body.statement.startsWith("MERGE"))!.body.bindings[
         "2"
       ].value,
     ) as Sent[];
+
   const fetchImpl = (async (url: string, init: RequestInit) => {
     const body = JSON.parse(String(init.body));
     requests.push({ url, init, body });
+
     if (body.statement.startsWith("WITH scored")) {
       const areas = sent().filter(
         (a) => a.dimension === "category" || a.dimension === "tactic",
@@ -160,6 +167,7 @@ function fakeSnowflake(
           linkClicks: a.link_clicks,
         })),
       } as never);
+
       return result(
         [
           "DIMENSION",
@@ -183,6 +191,7 @@ function fakeSnowflake(
         ]),
       );
     }
+
     if (body.statement.startsWith("WITH rates")) {
       const rows = sent().filter((a) => a.dimension !== "category");
       const mean = (dimension: string) => {
@@ -193,6 +202,7 @@ function fakeSnowflake(
           .map((r) => r.avg_response_ms!);
         return times.reduce((a, b) => a + b, 0) / times.length;
       };
+
       return result(
         [
           "DIMENSION",
@@ -216,11 +226,14 @@ function fakeSnowflake(
         ]),
       );
     }
+
     if (body.statement.includes("CORTEX")) {
       return result(["TEXT"], [[cortex ?? null]]);
     }
+
     return done();
   }) as typeof fetch;
+
   return { requests, snowflake: new Snowflake(config, fetchImpl) };
 }
 
@@ -233,6 +246,7 @@ function memoryRepo(
     (Insights & { lastAttemptAt: string | null; computedAt: string }) | null =
     null;
   let reads = 0;
+
   const repo: Repositories["insights"] = {
     async attemptRows() {
       reads++;
@@ -252,6 +266,7 @@ function memoryRepo(
       return [];
     },
   };
+
   return { repo, reads: () => reads, cached: () => cached };
 }
 
@@ -259,6 +274,7 @@ test("the summary aggregates per category and tactic, without text", () => {
   const summary = summarize(history);
   const area = (dimension: string, name: string) =>
     summary.areas.find((a) => a.dimension === dimension && a.area === name)!;
+
   assert.deepEqual(
     { ...area("category", "shipping") },
     {
@@ -309,6 +325,7 @@ test("the built-in analysis picks strengths, weaknesses, focus and writes the pa
     "fallback",
     new Date("2026-10-04T00:00:00Z"),
   );
+
   assert.deepEqual(insights.strongestAreas, [
     "Delivery scams",
     "Checking who a message is really from",
@@ -386,6 +403,7 @@ test("without Snowflake the analysis is built in, cached until a newer attempt",
     service.get("alex"),
     service.get("alex"),
   ]);
+
   assert.equal(first.source, "fallback");
   assert.deepEqual(concurrent, first);
   assert.equal(memory.reads(), 1, "concurrent requests share one computation");
@@ -409,8 +427,10 @@ test("Snowflake gets pseudonymous aggregates over bound variables and ranks agai
     memoryRepo(history).repo,
     snowflake,
   ).get("firebase-uid-alex");
+
   assert.equal(insights.source, "snowflake");
-  // Snowflake's interpretation: the tactic pair's miss rate against other trainees, and cohort placement.
+  // Snowflake's interpretation: the tactic pair's miss rate against other
+  // trainees, and cohort placement.
   assert.equal(
     insights.behavioralPattern,
     "You consistently see through delivery scams, but authority combined with urgency still causes mistakes: 3 of 3 times, against 40% for other trainees. " +
@@ -451,12 +471,14 @@ test("Snowflake gets pseudonymous aggregates over bound variables and ranks agai
       "values are bound, never concatenated",
     );
   }
+
   const [, merge, analyse, interpret] = requests.map((r) => r.body);
   assert.match(merge.bindings["1"].value, /^[0-9a-f]{64}$/);
   assert.deepEqual(analyse.bindings, {
     1: { type: "TEXT", value: merge.bindings["1"].value },
   });
   assert.deepEqual(interpret.bindings, analyse.bindings);
+
   const areas = JSON.parse(merge.bindings["2"].value) as {
     dimension: string;
     area: string;
@@ -468,6 +490,7 @@ test("Snowflake gets pseudonymous aggregates over bound variables and ranks agai
       .sort(),
     ["channel:call", "channel:email", "pair:authority+urgency"],
   );
+
   const sent = JSON.stringify(requests.map((r) => r.body));
   for (const secret of [
     "firebase-uid-alex",
@@ -479,6 +502,7 @@ test("Snowflake gets pseudonymous aggregates over bound variables and ranks agai
   ]) {
     assert.equal(sent.includes(secret), false, secret);
   }
+
   assert.deepEqual(
     Object.keys(JSON.parse(merge.bindings["2"].value)[0]).sort(),
     [
@@ -513,6 +537,7 @@ test("Cortex wording is used only when it is valid", async () => {
     recommendation:
       "Practise account security scams next and pause before acting.",
   };
+
   const good = fakeSnowflake(
     { cortex: `Sure!\n${JSON.stringify(text)}` },
     { ...sfConfig, cortexModel: "mistral-large2" },
@@ -525,12 +550,15 @@ test("Cortex wording is used only when it is valid", async () => {
     [cortexed.source, cortexed.behavioralPattern, cortexed.recommendation],
     ["cortex", text.behavioralPattern, text.recommendation],
   );
+
   const cortexCall = good.requests.find((r) =>
     r.body.statement.includes("CORTEX"),
   )!.body;
   assert.equal(cortexCall.bindings["1"].value, "mistral-large2");
   assert.equal(cortexCall.bindings["2"].value.includes("alex"), false);
-  // Cortex reads Snowflake's interpretation and the deterministic focus with its reason.
+
+  // Cortex reads Snowflake's interpretation and the deterministic focus with
+  // its reason.
   const data = JSON.parse(cortexCall.bindings["2"].value.split("Data: ")[1]);
   assert.deepEqual(data.weakestCombination, {
     tactics: "authority combined with urgency",
@@ -585,6 +613,7 @@ test("a failed interpretation keeps the Snowflake ranking; a small cohort gets n
   } finally {
     console.warn = warn;
   }
+
   const small = await new InsightsService(
     memoryRepo(history).repo,
     fakeSnowflake({ cohortSize: 3 }).snowflake,
@@ -614,6 +643,7 @@ test("interpret picks the most-missed tactic pair and a quick catch from Snowfla
     OTHERS_MISS_RATE:
       OTHERS_MISS_RATE === null ? null : String(OTHERS_MISS_RATE),
   });
+
   assert.deepEqual(
     interpret([
       r("pair", "authority+urgency", 4, 0.75, 1.1),
@@ -713,7 +743,8 @@ test("any Snowflake failure falls back to the built-in analysis, and retries soo
         throw new TypeError("fetch failed");
       }) as typeof fetch,
     ],
-    // A real request holds the event loop open; AbortSignal.timeout's timer alone doesn't.
+    // A real request holds the event loop open; AbortSignal.timeout's timer
+    // alone doesn't.
     [
       "timeout",
       ((_u: string, init: RequestInit) =>
@@ -726,6 +757,7 @@ test("any Snowflake failure falls back to the built-in analysis, and retries soo
         })) as typeof fetch,
     ],
   ];
+
   const warn = console.warn;
   const logged: string[] = [];
   console.warn = (...args: unknown[]) => {
@@ -749,6 +781,7 @@ test("any Snowflake failure falls back to the built-in analysis, and retries soo
   } finally {
     console.warn = warn;
   }
+
   assert.equal(
     logged.filter((line) => line.includes("using the built-in analysis"))
       .length,
@@ -769,6 +802,7 @@ test("Snowflake is only used with every required setting, and the account is nor
     SNOWFLAKE_SCHEMA: "PUBLIC",
     SNOWFLAKE_ID_SALT: "s".repeat(16),
   } as Config;
+
   assert.equal(snowflakeConfig(base)?.account, "myorg-acct");
   for (const key of [
     "SNOWFLAKE_ACCOUNT",
@@ -794,10 +828,12 @@ const identity = (uid: string) =>
     email: `${uid}@example.test`,
     email_verified: true,
   }) as DecodedIdToken;
+
 const verifyToken = async (token: string) => {
   if (token === "alex" || token === "sam") return identity(token);
   throw Object.assign(new Error("invalid"), { code: "auth/invalid-id-token" });
 };
+
 const appWith = (repos: Repositories, snowflake: Snowflake | null = null) =>
   createApp({
     repos,
@@ -823,6 +859,7 @@ const url = process.env.TEST_DATABASE_URL;
 describe("Postgres insights", { skip: !url }, () => {
   let db: Database;
   let repos: Repositories;
+
   const attempt = (id: string, uid: string, o: Record<string, unknown> = {}) =>
     db.query(
       `INSERT INTO training_attempts(id,firebase_uid,channel,scenario_id,scenario_title,difficulty,outcome,success,tactics,signals,completed_at,scam_category,metadata)
@@ -841,6 +878,7 @@ describe("Postgres insights", { skip: !url }, () => {
         o.category ?? "shipping",
       ],
     );
+
   const event = (
     uid: string,
     attemptId: string,
@@ -889,6 +927,7 @@ describe("Postgres insights", { skip: !url }, () => {
       success: null,
       at: "2026-10-01T11:00:00Z",
     });
+
     const rows = await repos.insights.attemptRows("alex");
     assert.deepEqual(rows, [
       {
@@ -922,12 +961,14 @@ describe("Postgres insights", { skip: !url }, () => {
           .set("Authorization", `Bearer ${user}`)
           .expect(200)
       ).body;
+
     await attempt("a1", "alex", {
       outcome: "safe_incorrect",
       success: false,
       category: "account_security",
       tactics: ["urgency"],
     });
+
     const first = await get("alex");
     assert.deepEqual(
       [first.source, first.basedOn.attempts, first.nextTrainingFocus[0]],
@@ -954,6 +995,7 @@ describe("Postgres insights", { skip: !url }, () => {
       await repos.insights.latestFocus("alex"),
       (await get("alex")).nextTrainingFocus,
     );
+
     await attempt("a3", "alex", {
       category: "banking",
       outcome: "safe_incorrect",

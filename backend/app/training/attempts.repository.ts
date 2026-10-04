@@ -7,6 +7,7 @@ import type {
 } from "./attempts.schema.ts";
 
 const iso = (value: Date | null) => value && new Date(value).toISOString();
+
 function mapAttempt(row: QueryResultRow): AttemptSummary {
   return {
     id: row.id,
@@ -22,11 +23,13 @@ function mapAttempt(row: QueryResultRow): AttemptSummary {
     confidence: (row.metadata?.confidence as string) ?? null,
   };
 }
+
 const summaryColumns =
   "id,channel,scenario_id,scenario_title,difficulty,scam_category,outcome,success,tactics,completed_at,metadata";
 
 export class AttemptsRepository {
   private readonly db: Database;
+
   constructor(db: Database) {
     this.db = db;
   }

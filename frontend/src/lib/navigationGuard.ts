@@ -1,5 +1,6 @@
-// Lets a live call stop the user from leaving by accident. TransitionLink, Brand and Sign out ask the
-// active guard first; the call screen registers one while it is connecting or in a call.
+// Lets a live call stop the user from leaving by accident. TransitionLink,
+// Brand and Sign out ask the active guard first; the call screen registers one
+// while it is connecting or in a call.
 // ponytail: one module-level guard, since only one call can run at a time; a context if that ever changes.
 
 type Guard = () => Promise<boolean>
@@ -15,7 +16,10 @@ export function setNavigationGuard(guard: Guard) {
 
 export const navigationGuarded = () => current !== null
 
-/** Resolves true when it's fine to navigate (no guard, or the user chose to leave and the call was hung up). */
+/**
+ * Resolves true when it's fine to navigate (no guard, or the user chose to
+ * leave and the call was hung up).
+ */
 export const confirmNavigation = () =>
   current ? current() : Promise.resolve(true)
 
@@ -26,8 +30,9 @@ export const guardsNavigation = (phase: string) =>
   phase === 'connecting' || phase === 'in_call'
 
 /**
- * What to do when the user tries to leave. `unload` can only get the browser's own prompt;
- * the back button has already moved the history entry, so staying means putting it back.
+ * What to do when the user tries to leave. `unload` can only get the browser's
+ * own prompt; the back button has already moved the history entry, so staying
+ * means putting it back.
  */
 export function leaveDecision(
   phase: string,

@@ -1,4 +1,6 @@
-/* "Speed and trend" in Insights: continues the results block (.home-stat-head comes from training.css). */
+/* "Speed and trend" in Insights: continues the results block (.home-stat-head
+   comes from training.css). */
+
 .home-instincts > p {
   font-size: 15px;
   line-height: 1.6;

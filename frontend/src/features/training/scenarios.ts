@@ -1,7 +1,7 @@
-// The practice path's scenarios and the helpers the phone, debrief and progress share.
 import type { Tactic } from '../../comms/types.ts'
 import { genuineScenarios } from './genuineScenarios.ts'
-// Built from the scam library by backend/scripts/build-practice.ts; rebuild there, never edit by hand.
+// Built from the scam library by backend/scripts/build-practice.ts; rebuild
+// there, never edit by hand.
 import practice from './practice.json' with { type: 'json' }
 
 export type Channel = 'sms' | 'email' | 'call'
@@ -16,16 +16,28 @@ export type ScamCategory =
   | 'workplace'
   | 'promotional'
 
-/** Set on scenarios the backend generated for this user (ids `gen-email-…`, `gen-sms-…`, `gen-call-…`). */
+/**
+ * Set on scenarios the backend generated for this user (ids `gen-email-…`,
+ * `gen-sms-…`, `gen-call-…`).
+ */
 export interface GeneratedInfo {
   source: 'gemini' | 'fallback'
-  /** Why this scenario, in plain words, e.g. "Matched to your work in software and a weak spot: account security". */
+  /**
+   * Why this scenario, in plain words, e.g. "Matched to your work in software
+   * and a weak spot: account security".
+   */
   reason: string
-  /** Gemini wrote it from a prompt grounded in this many real-world scam-library examples. Never on built-in fallbacks. */
+  /**
+   * Gemini wrote it from a prompt grounded in this many real-world
+   * scam-library examples. Never on built-in fallbacks.
+   */
   grounding?: { exampleCount: number; source: 'scam-library' }
 }
 
-/** Something worth noticing. `quote` is the exact text it points at, so the debrief can mark it in the message. */
+/**
+ * Something worth noticing. `quote` is the exact text it points at, so the
+ * debrief can mark it in the message.
+ */
 export interface Indicator {
   quote?: string
   title: string
@@ -51,9 +63,15 @@ interface ScenarioCore {
   explanation: string
   /** What to check next time, shown when the call was wrong. */
   nextTime: string
-  /** Built-in scenarios leave it out; the backend infers it from the id and title. */
+  /**
+   * Built-in scenarios leave it out; the backend infers it from the id and
+   * title.
+   */
   scamCategory?: ScamCategory
-  /** Social-engineering tactics it uses; a genuine message has none. Sent with the finished attempt. */
+  /**
+   * Social-engineering tactics it uses; a genuine message has none. Sent with
+   * the finished attempt.
+   */
   tactics?: Tactic[]
   generated?: GeneratedInfo
 }
@@ -86,12 +104,16 @@ export interface EmailScenario extends BaseScenario {
 }
 
 /**
- * A voiced scam call. Teaching metadata only: the caller's script is server-owned (comms), and every call is a scam.
- * Indicators here have no `quote`: there is no fixed text to mark.
+ * A voiced scam call. Teaching metadata only: the caller's script is
+ * server-owned (comms), and every call is a scam. Indicators here have no
+ * `quote`: there is no fixed text to mark.
  */
 export interface CallScenario extends ScenarioCore {
   type: 'call'
-  /** Shown before the call starts and in practice mode; the live call shows the server's label. */
+  /**
+   * Shown before the call starts and in practice mode; the live call shows the
+   * server's label.
+   */
   callerLabel: string
   /** Fictional number for the ringing screen. */
   callerNumber?: string
@@ -136,17 +158,25 @@ const built = practice as unknown as {
   emails: EmailScenario[]
   calls: CallScenario[]
 }
+
 const levels: Difficulty[] = ['easy', 'medium', 'hard']
 
-/** a1, b1, a2, b2, …: with the stable sort below, the path alternates scams and genuine messages instead of running long on one answer. */
+/**
+ * a1, b1, a2, b2, …: with the stable sort below, the path alternates scams and
+ * genuine messages instead of running long on one answer.
+ */
 const interleave = <T>(a: T[], b: T[]) => [
   ...a.flatMap((item, i) => (i < b.length ? [item, b[i]] : [item])),
   ...b.slice(a.length),
 ]
+
 const genuine = (type: MessageScenario['type']) =>
   genuineScenarios.filter((scenario) => scenario.type === type)
 
-/** The practice path: the library-built scams with the genuine messages mixed in, easiest first. */
+/**
+ * The practice path: the library-built scams with the genuine messages mixed
+ * in, easiest first.
+ */
 export const scenarios: Scenario[] = [
   ...interleave<Scenario>(built.texts, genuine('sms')),
   ...interleave<Scenario>(built.emails, genuine('email')),
@@ -169,11 +199,10 @@ export function hasLink(scenario: Scenario) {
 export const isScam = (scenario: Scenario) =>
   scenario.type === 'call' || scenario.correctAction === 'report'
 
-/** Whether a channel's scenarios can be practised. */
 export const channelReady = (channel: Channel) =>
   channels.some((item) => item.type === channel && item.ready)
 
-/** How the channel is named in copy: "text message", "email", "phone call". */
+/** How the channel is named in copy. */
 export const channelNoun: Record<Channel, string> = {
   sms: 'text message',
   email: 'email',
@@ -186,7 +215,10 @@ export interface Segment {
   mark?: number
 }
 
-/** Splits text into plain and marked pieces. Overlapping quotes keep the earliest. */
+/**
+ * Splits text into plain and marked pieces. Overlapping quotes keep the
+ * earliest.
+ */
 export function markText(text: string, indicators: Indicator[]): Segment[] {
   const hits = indicators
     .map((indicator, i) => ({

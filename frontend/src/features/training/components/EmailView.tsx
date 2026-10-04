@@ -45,7 +45,8 @@ export function EmailView({
           <span className="sr-only">Email: </span>
           {mark(scenario.subject)}
         </h2>
-        {/* Remount on reveal so the details open to show any marked address. */}
+        {/* Remount on reveal so the details open to show any marked
+            address. */}
         <SenderDetails
           key={String(revealed)}
           scenario={scenario}
@@ -89,7 +90,10 @@ interface SenderProps {
   onOpen: () => void
 }
 
-/** Like a real mail app: the name shows first, tap it to see the address it really came from. */
+/**
+ * Like a real mail app: the name shows first, tap it to see the address it
+ * really came from.
+ */
 function SenderDetails({ scenario, defaultOpen, mark, onOpen }: SenderProps) {
   const [open, setOpen] = useState(defaultOpen)
   const panel = useId()

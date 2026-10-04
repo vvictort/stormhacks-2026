@@ -27,6 +27,7 @@ test('run events carry the scenario, attempt and decision time; category only wh
     { outcome: 'reported_correct' },
     9400,
   )
+
   assert.deepEqual(
     { ...event, at: undefined },
     {
@@ -43,6 +44,7 @@ test('run events carry the scenario, attempt and decision time; category only wh
       at: undefined,
     },
   )
+
   assert.equal(
     'scamCategory' in
       runEvent(
@@ -54,6 +56,7 @@ test('run events carry the scenario, attempt and decision time; category only wh
       ),
     false,
   )
+
   assert.ok(email.tactics.length > 0)
   assert.equal(
     'tactics' in runEvent(email, run, 'scenario_started', {}, 1000),
@@ -70,6 +73,7 @@ test('run events carry the scenario, attempt and decision time; category only wh
     ).tactics,
     [],
   )
+
   assert.ok(!Number.isNaN(Date.parse(event.at)))
   assert.equal(
     runEvent(
@@ -104,6 +108,7 @@ test('the tracker batches after a pause, caps batches, flushes on demand and swa
     },
     { delayMs: 20, max: 3 },
   )
+
   const e = { type: 'scenario_started' }
   tracker.track(e)
   tracker.track(e)
@@ -153,6 +158,7 @@ const metrics = (overrides = {}) => ({
 test('the instincts card shows then → now, the most improved category and an honest window note', () => {
   assert.equal(instinctsView(null), null)
   assert.equal(instinctsView(metrics({ attempts: 0 })), null)
+
   const view = instinctsView(
     metrics({
       mostImproved: {
@@ -198,6 +204,7 @@ test('the instincts card shows then → now, the most improved category and an h
     { label: 'Right calls', then: '100%', now: '0%', better: false },
   ])
   assert.equal(slower.note, 'Your first scenario against your latest.')
+
   const fasterButWrong = instinctsView(
     metrics({
       trend: {
@@ -212,6 +219,7 @@ test('the instincts card shows then → now, the most improved category and an h
     false,
     'falling for it faster is not better',
   )
+
   assert.equal(seconds(14_249), '14.2s')
   assert.equal(categoryLabel('account_security'), 'account security scams')
 })
@@ -237,6 +245,7 @@ test('the mini chart shows recent decisions for a same-day history and right cal
     { at: 'b', correct: true, detectionMs: 6000 },
     { at: 'c', correct: true, detectionMs: null },
   ]
+
   assert.deepEqual(instinctsChart(metricsWith({ timeline: today, recent })), {
     title: 'Time to decide, last 3 scenarios',
     keys: ['right call', 'missed'],

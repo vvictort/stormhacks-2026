@@ -36,7 +36,8 @@ export function AuthCard({
           />
           <p className="card-description text-muted-strong">{description}</p>
         </div>
-        {/* Decorative: on wide screens Tell sits in the margin with a hand-drawn note; on phones, beside the heading. */}
+        {/* Decorative: on wide screens Tell sits in the margin with a
+            hand-drawn note; on phones, beside the heading. */}
         <div className="auth-mascot" aria-hidden="true">
           <Mascot mood={mood} />
           <p className="auth-note">

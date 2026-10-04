@@ -1,14 +1,19 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-/** One structured-output model call: a prompt and a JSON schema in, the raw JSON text out. Injected in tests. */
+/**
+ * One structured-output model call: a prompt and a JSON schema in, the raw JSON
+ * text out. Injected in tests.
+ */
 export type JsonModel = (
   prompt: string,
   schema: object,
   timeoutMs: number,
 ) => Promise<string>;
 
-// Tried in order: a model that is overloaded (503/429) or unavailable to this key (404) falls through to the next.
-// Flash-lite answers a full scenario in ~2s; the bigger flash models took 11-15s with low thinking and often return 503.
+// Tried in order: a model that is overloaded (503/429) or unavailable to this
+// key (404) falls through to the next. Flash-lite answers a full scenario in
+// ~2s; the bigger flash models took 11-15s with low thinking and often
+// return 503.
 const MODELS = [
   { model: "gemini-3.5-flash-lite" },
   { model: "gemini-3.1-flash-lite" },
@@ -17,10 +22,14 @@ const MODELS = [
     thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
   },
 ];
+
 const retryable = (error: unknown) =>
   [404, 429, 500, 503].includes((error as { status?: number }).status ?? 0);
 
-/** Gemini `generateContent` with a JSON response schema, all models sharing one time budget. */
+/**
+ * Gemini `generateContent` with a JSON response schema, all models sharing one
+ * time budget.
+ */
 export function geminiJson(apiKey: string, models = MODELS): JsonModel {
   const client = new GoogleGenAI({ apiKey });
   return async (prompt, schema, timeoutMs) => {
@@ -44,6 +53,7 @@ export function geminiJson(apiKey: string, models = MODELS): JsonModel {
         if (abortSignal.aborted || !retryable(error)) break;
       }
     }
+
     throw abortSignal.aborted ? new Error("Gemini timed out") : last;
   };
 }
@@ -52,8 +62,9 @@ export function geminiJson(apiKey: string, models = MODELS): JsonModel {
 const RETRY_MIN_MS = 6000;
 
 /**
- * Up to two model calls sharing one time budget; the second is told what was wrong with the first. Null when neither
- * answer passes `check` (or the model is unavailable), so the caller can use its built-in scenario.
+ * Up to two model calls sharing one time budget; the second is told what was
+ * wrong with the first. Null when neither answer passes `check` (or the model
+ * is unavailable), so the caller can use its built-in scenario.
  */
 export async function generateChecked<T>(
   model: JsonModel,
@@ -84,10 +95,14 @@ export async function generateChecked<T>(
       );
     }
   }
+
   return null;
 }
 
-/** Model JSON text, with any markdown code fence removed, parsed; undefined when it isn't JSON. */
+/**
+ * Model JSON text, with any markdown code fence removed, parsed; undefined when
+ * it isn't JSON.
+ */
 export function parseModelJson(raw: string): unknown {
   try {
     return JSON.parse(

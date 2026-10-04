@@ -4,6 +4,7 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import type { Database } from "../db/database.ts";
 import { AppError } from "../http/errors.ts";
 import type { ProfileInput, User } from "./users.schema.ts";
+
 function mapUser(row: QueryResultRow): User {
   return {
     id: row.id,
@@ -19,11 +20,14 @@ function mapUser(row: QueryResultRow): User {
     updatedAt: new Date(row.updated_at).toISOString(),
   };
 }
+
 export class UsersRepository {
   private readonly db: Database;
+
   constructor(db: Database) {
     this.db = db;
   }
+
   async ensureUser(identity: DecodedIdToken) {
     if (!identity.email) {
       throw new AppError(401, "INVALID_TOKEN", "An account email is required.");
@@ -46,6 +50,7 @@ export class UsersRepository {
     );
     return mapUser(rows[0]);
   }
+
   async updateProfile(identity: DecodedIdToken, profile: ProfileInput) {
     if (!identity.email) {
       throw new AppError(401, "INVALID_TOKEN", "An account email is required.");

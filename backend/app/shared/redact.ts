@@ -1,11 +1,17 @@
-// Users may type or say real codes / card numbers if they fall for a simulation,
-// so user-provided text is masked before it is stored, emitted, or sent to an LLM.
+// Users may type or say real codes / card numbers if they fall for a
+// simulation, so user-provided text is masked before it is stored, emitted, or
+// sent to an LLM.
 
-/** 4+ digits, optionally separated by single spaces or dashes ("123 456", "4111-1111-..."). */
+/**
+ * 4+ digits, optionally separated by single spaces or dashes ("123 456",
+ * "4111-1111-...").
+ */
 export const DIGIT_RUN = /\d(?:[ -]?\d){3,}/g;
 
 const NUMBER_WORD = "(?:zero|oh|one|two|three|four|five|six|seven|eight|nine)";
-/** 4+ spoken digits as transcribed by speech recognition ("four one one one"). */
+/**
+ * 4+ spoken digits as transcribed by speech recognition ("four one one one").
+ */
 const NUMBER_WORD_RUN = new RegExp(
   `\\b${NUMBER_WORD}(?:[\\s,-]+${NUMBER_WORD}){3,}\\b`,
   "gi",

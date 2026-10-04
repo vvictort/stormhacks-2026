@@ -10,7 +10,10 @@ export interface CachedScenarioMeta {
 
 const CACHE_KEY = 'tellio.scenarios_meta'
 
-/** Saves metadata for a scenario (including AI-generated ones) so it can be identified across history and reloads. */
+/**
+ * Saves metadata for a scenario (including AI-generated ones) so it can be
+ * identified across history and reloads.
+ */
 export function saveCachedScenarioMeta(meta: CachedScenarioMeta): void {
   if (typeof window === 'undefined' || !meta?.id) return
   try {
@@ -23,7 +26,6 @@ export function saveCachedScenarioMeta(meta: CachedScenarioMeta): void {
   }
 }
 
-/** Retrieves cached metadata for a scenario by id. */
 export function getCachedScenarioMeta(
   id: string | undefined,
 ): CachedScenarioMeta | undefined {

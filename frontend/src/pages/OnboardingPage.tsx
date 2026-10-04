@@ -30,14 +30,17 @@ export function OnboardingPage() {
   const [saving, setSaving] = useState(false)
   const busy = useRef(false)
   const form = useRef<HTMLFormElement>(null)
+
   function change(field: keyof OnboardingValues, value: string) {
     setValues((previous) => ({ ...previous, [field]: value }))
     setErrors((previous) => ({ ...previous, [field]: undefined }))
     setError(null)
   }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (busy.current || pending) return
+
     const next = validateOnboarding(values)
     setErrors(next)
     if (Object.keys(next).length) {
@@ -46,6 +49,7 @@ export function OnboardingPage() {
         ?.focus()
       return
     }
+
     busy.current = true
     setSaving(true)
     setError(null)
@@ -69,7 +73,9 @@ export function OnboardingPage() {
       setSaving(false)
     }
   }
+
   const disabled = saving || Boolean(pending)
+
   return (
     <AuthCard
       title={

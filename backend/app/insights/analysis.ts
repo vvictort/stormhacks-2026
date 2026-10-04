@@ -7,7 +7,10 @@ import {
   type Difficulty,
 } from "../shared/vocabulary.ts";
 
-/** One scored attempt with what TigerData's behaviour events add to it. No message text, no transcript. */
+/**
+ * One scored attempt with what TigerData's behaviour events add to it. No
+ * message text, no transcript.
+ */
 export interface AttemptRow {
   channel: Channel;
   scenarioId: string;
@@ -33,7 +36,10 @@ export interface Stats {
   linkClicks: number;
   senderChecks: number;
   avgResponseMs: number | null;
-  /** Accuracy of the older and newer half of the attempts (0 to 1), once there are 4 or more. */
+  /**
+   * Accuracy of the older and newer half of the attempts (0 to 1), once there
+   * are 4 or more.
+   */
   earlierAccuracy: number | null;
   recentAccuracy: number | null;
 }
@@ -43,19 +49,29 @@ export interface AreaStats extends Stats {
   dimension: Dimension;
   area: string;
 }
-/** Two tactics used together (`authority+urgency`, sorted) or a channel: only Snowflake interprets these. */
+
+/**
+ * Two tactics used together (`authority+urgency`, sorted) or a channel: only
+ * Snowflake interprets these.
+ */
 export interface PatternStats extends Stats {
   dimension: "pair" | "channel";
   area: string;
 }
 
-/** The pseudonymous aggregate summary of a user's training: the only thing analysed (and sent to Snowflake). */
+/**
+ * The pseudonymous aggregate summary of a user's training: the only thing
+ * analysed (and sent to Snowflake).
+ */
 export interface TrainingSummary {
   overall: Stats;
   areas: AreaStats[];
   patterns: PatternStats[];
   byDifficulty: Record<Difficulty, { attempts: number; correct: number }>;
-  /** Average decision time on the attempts the user got right and on the ones that fooled them. */
+  /**
+   * Average decision time on the attempts the user got right and on the ones
+   * that fooled them.
+   */
   responseMs: { correct: number | null; fellFor: number | null };
   /** The two tactics that most often appear together in missed attempts. */
   missedPair: [string, string] | null;
@@ -63,7 +79,9 @@ export interface TrainingSummary {
   repeatedMistakes: string[];
 }
 
-/** One analysed area: Snowflake's result row, or the same numbers computed here. */
+/**
+ * One analysed area: Snowflake's result row, or the same numbers computed here.
+ */
 export interface RankedArea {
   dimension: Dimension;
   area: string;
@@ -72,20 +90,32 @@ export interface RankedArea {
   weakness: number;
   trend: number | null;
   cohortSize?: number;
-  /** Share of other trainees less weak in this area (PERCENT_RANK over the cohort). */
+  /**
+   * Share of other trainees less weak in this area (PERCENT_RANK over the
+   * cohort).
+   */
   cohortPercentile?: number;
 }
 
-/** What Snowflake reads into the behaviour beyond the ranking (snowflake.ts INTERPRET); the built-in analysis has none. */
+/**
+ * What Snowflake reads into the behaviour beyond the ranking (snowflake.ts
+ * INTERPRET); the built-in analysis has none.
+ */
 export interface Interpretation {
-  /** The tactic pair missed most often (2+ attempts), with other trainees' miss rate on it (a cohort of COHORT_MIN+ only). */
+  /**
+   * The tactic pair missed most often (2+ attempts), with other trainees' miss
+   * rate on it (a cohort of COHORT_MIN+ only).
+   */
   weakPair: {
     tactics: [Tactic, Tactic];
     attempts: number;
     missed: number;
     cohortMissRate: number | null;
   } | null;
-  /** A tactic or channel always caught, and decided faster than the user's own average. */
+  /**
+   * A tactic or channel always caught, and decided faster than the user's own
+   * average.
+   */
   quickCatch: { dimension: "tactic" | "channel"; area: string } | null;
 }
 
@@ -95,7 +125,10 @@ export interface Insights {
   behavioralPattern: string;
   recommendation: string;
   nextTrainingFocus: ScamCategory[];
-  /** Who wrote this: Cortex (text over Snowflake's results), Snowflake (computed there, text from here) or built in. */
+  /**
+   * Who wrote this: Cortex (text over Snowflake's results), Snowflake (computed
+   * there, text from here) or built in.
+   */
   source: "cortex" | "snowflake" | "fallback";
   generatedAt: string;
   basedOn: { attempts: number };
@@ -141,6 +174,7 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
     patterns.set(key, [...(patterns.get(key) ?? []), row]);
   };
   const pairs = new Map<string, number>();
+
   for (const row of ordered) {
     add(
       `category:${row.scamCategory ?? inferCategory({ id: row.scenarioId, title: row.scenarioTitle })}`,
@@ -160,6 +194,7 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
       }
     }
   }
+
   const areas = [...groups].map(([key, list]) => {
     const [dimension, area] = key.split(":") as [Dimension, string];
     return { dimension, area, ...stats(list) };
@@ -169,6 +204,7 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
     return { attempts: list.length, correct: count(list, (r) => r.success) };
   };
   const [topPair] = [...pairs].sort((a, b) => b[1] - a[1]);
+
   return {
     overall: stats(ordered),
     areas,
@@ -200,8 +236,9 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
 }
 
 /**
- * 0 (solid) to 1 (weak): the smoothed miss rate, plus falling for it, plus clicking links in messages.
- * Snowflake computes the same formula in SQL (snowflake.ts), so both sources rank areas alike.
+ * 0 (solid) to 1 (weak): the smoothed miss rate, plus falling for it, plus
+ * clicking links in messages. Snowflake computes the same formula in SQL
+ * (snowflake.ts), so both sources rank areas alike.
  */
 export const weakness = (s: Stats) =>
   0.6 * (1 - (s.correct + 1) / (s.attempts + 2)) +
@@ -229,6 +266,7 @@ const categoryLabels: Record<ScamCategory, string> = {
   workplace: "workplace scams",
   promotional: "prize and promo scams",
 };
+
 const tacticLabels: Record<Tactic, string> = {
   urgency: "urgency pressure",
   authority: "authority pressure",
@@ -238,6 +276,7 @@ const tacticLabels: Record<Tactic, string> = {
   reward: "promised rewards",
   fear: "threats",
 };
+
 const tacticWords: Record<Tactic, string> = {
   urgency: "urgency",
   authority: "authority",
@@ -247,6 +286,7 @@ const tacticWords: Record<Tactic, string> = {
   reward: "a reward",
   fear: "a threat",
 };
+
 const tips: Record<Tactic, string> = {
   urgency:
     "When a message says you must act now, pause and check through a number or app you already trust.",
@@ -278,9 +318,11 @@ export const areaLabel = (a: {
     : a.dimension === "channel"
       ? channelLabels[a.area as Channel]
       : tacticLabels[a.area as Tactic];
+
 /** "authority combined with urgency" */
 export const pairLabel = ([a, b]: [Tactic, Tactic]) =>
   `${tacticWords[a]} combined with ${tacticWords[b]}`;
+
 const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 const list = (items: string[]) =>
   items.length < 2
@@ -292,7 +334,10 @@ const WEAK = 0.4;
 const STRONG = 0.25;
 export const COHORT_MIN = 5;
 
-/** The contract's analysis from ranked areas (Snowflake's or local), with backend-written text. */
+/**
+ * The contract's analysis from ranked areas (Snowflake's or local), with
+ * backend-written text.
+ */
 export function buildInsights(
   summary: TrainingSummary,
   ranked: RankedArea[],
@@ -337,6 +382,7 @@ export function buildInsights(
     : strong[0]
       ? `You consistently see through ${struggle ? areaLabel(strong[0]) : list(strong.slice(0, 2).map(areaLabel))}`
       : null;
+
   const sentences = [
     opening && struggle
       ? `${opening}, but ${struggle}.`
@@ -346,6 +392,7 @@ export function buildInsights(
           ? `${capital(struggle)}.`
           : "Your results are mixed so far, with no clear weak spot yet.",
   ];
+
   const behind = weak.find(
     (r) =>
       (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 0) >= 0.6,
@@ -363,6 +410,7 @@ export function buildInsights(
       `Compared with other trainees, you're ahead of most on ${areaLabel(ahead)}.`,
     );
   }
+
   const { correct: rightMs, fellFor: fooledMs } = summary.responseMs;
   const { easy, hard } = summary.byDifficulty;
   const trend =
@@ -401,6 +449,7 @@ export function buildInsights(
       : weakest
         ? `Keep practising ${categoryLabels[weakest]} at a harder level.`
         : "";
+
   return {
     strongestAreas: [
       ...strong.map(areaLabel),

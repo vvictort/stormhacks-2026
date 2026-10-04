@@ -14,7 +14,8 @@ import type {
   BehaviorRepository,
 } from "./behavior.repository.ts";
 
-// Call lifecycle → behaviour events. Abandoned and failed calls aren't scored, so they add nothing.
+// Call lifecycle → behaviour events. Abandoned and failed calls aren't scored,
+// so they add nothing.
 const MAPPED: Partial<Record<SimEventType, BehaviorEventType>> = {
   "call.ringing": "call_received",
   "call.accepted": "call_answered",
@@ -22,6 +23,7 @@ const MAPPED: Partial<Record<SimEventType, BehaviorEventType>> = {
   "call.missed": "call_missed",
   "call.ended": "call_ended",
 };
+
 /** Events that finish a scored call, with its raw outcome. */
 const COMPLETES: Partial<Record<SimEventType, (e: SimEvent) => SimOutcome>> = {
   "call.declined": () => "declined",
@@ -29,7 +31,10 @@ const COMPLETES: Partial<Record<SimEventType, (e: SimEvent) => SimOutcome>> = {
   "call.analyzed": (e) => e.data.outcome as SimOutcome,
 };
 
-/** Forwards every simulation event to `inner`, and records call behaviour in TigerData. Never throws. */
+/**
+ * Forwards every simulation event to `inner`, and records call behaviour in
+ * TigerData. Never throws.
+ */
 export class CallBehaviorSink implements EventSink {
   private readonly inner: EventSink;
   private readonly behavior: Pick<BehaviorRepository, "record">;
@@ -56,7 +61,9 @@ export class CallBehaviorSink implements EventSink {
     try {
       const call = await this.store.getCall(event.simulationId);
       if (!call) return;
-      // Time since the phone started ringing: to answer, to decline, or to the end of the call.
+
+      // Time since the phone started ringing: to answer, to decline, or to the
+      // end of the call.
       const sinceRing =
         typeof event.data.ringMs === "number"
           ? event.data.ringMs
@@ -75,6 +82,7 @@ export class CallBehaviorSink implements EventSink {
         responseTimeMs: Math.round(sinceRing),
         metadata: {},
       };
+
       const rows: BehaviorEvent[] = [];
       const type = MAPPED[event.type];
       if (type) rows.push({ ...base, type, outcome: null });

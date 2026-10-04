@@ -22,6 +22,7 @@ export function createDatabase(connectionString: string) {
   if (rootCert && !isAbsolute(rootCert)) {
     url.searchParams.set("sslrootcert", backendDir + rootCert);
   }
+
   // Preserve CA/cert parameters while making certificate verification explicit.
   return new pg.Pool({
     connectionString: url.toString(),
@@ -29,6 +30,7 @@ export function createDatabase(connectionString: string) {
     connectionTimeoutMillis: 5000,
   });
 }
+
 export type Database = pg.Pool;
 
 export async function transaction<T>(

@@ -1,7 +1,9 @@
-"""Deterministic Tellio tags from text: tactics, signals, cues, category, difficulty, and pattern summaries.
+"""Deterministic Tellio tags from text: tactics, signals, cues, category, difficulty,
+and pattern summaries.
 
-Every tag comes from a regex hit, so each cue quotes the exact span that triggered it. These are Tellio's own
-heuristics, kept separate from the dataset's label (source.label).
+Every tag comes from a regex hit, so each cue quotes the exact span that triggered it.
+These are Tellio's own heuristics, kept separate from the dataset's label
+(source.label).
 """
 
 import re
@@ -11,7 +13,8 @@ from .vocabulary import SIGNALS
 
 
 def _rx(body: str) -> re.Pattern:
-    # (?<!\w)/(?!\w) instead of \b so alternatives may start or end with "[" / "]" placeholders.
+    # (?<!\w)/(?!\w) instead of \b so alternatives may start or end with
+    # "[" / "]" placeholders.
     return re.compile(rf'(?<!\w)(?:{body})(?!\w)', re.I)
 
 
@@ -145,7 +148,8 @@ CATEGORY_RULES = {
         r'pharmacy|meds|viagra|cialis'
     ),
 }
-# Scam types Tellio has no category for: leave them null rather than force them into one.
+# Scam types Tellio has no category for: leave them null rather than force them
+# into one.
 UNCATEGORIZED = _rx(
     r'next of kin|beneficiary|inheritance|late (?:husband|father|client)|barrister|diplomat|'
     r'consignment|investment|crypto\w*|bitcoin|romance|lonely|dating|grandson|granddaughter|'
@@ -175,13 +179,14 @@ def split_tags(tags) -> tuple[list[str], list[str]]:
 
 
 def pick_cues(text: str, hits: dict, tags: list[str]) -> list[dict]:
-    """One exact, non-overlapping quote per tag (tactics first), max 6, each 3-120 chars."""
+    """One exact, non-overlapping quote per tag (tactics first), max 6, each
+    3-120 chars.
+    """
     cues, taken = [], []
     for tag in tags:
         for start, end in hits.get(tag, []):
-            fresh = text[start:end] not in {
-                c['quote'] for c in cues
-            }  # one highlight per phrase
+            # one highlight per phrase
+            fresh = text[start:end] not in {c['quote'] for c in cues}
             if (
                 3 <= end - start <= 120
                 and fresh
@@ -212,14 +217,16 @@ def categorize(text: str, min_score: int = 2) -> str | None:
 
 def difficulty(kind: str, category: str | None, n_tells: int) -> str:
     if kind == 'legitimate':
-        return (
-            'hard' if category else 'easy'
-        )  # a safe message on a scam-prone topic is the tricky one
+        # a safe message on a scam-prone topic is the tricky one
+        return 'hard' if category else 'easy'
     return 'easy' if n_tells >= 5 else 'medium' if n_tells >= 3 else 'hard'
 
 
 def tag_excerpt(text: str, kind: str, category_text: str) -> dict:
-    """Tags for a committed excerpt. Legitimate rows get a category (topic) but no tactics/signals/cues."""
+    """Tags for a committed excerpt.
+
+    Legitimate rows get a category (topic) but no tactics/signals/cues.
+    """
     if kind == 'legitimate':
         category = categorize(category_text, min_score=2)
         return {
@@ -241,7 +248,8 @@ def tag_excerpt(text: str, kind: str, category_text: str) -> dict:
     }
 
 
-# ---- Pattern summaries for derived-only sources: our own wording, chosen by keyword, never copied text. ----
+# Pattern summaries for derived-only sources: our own wording, chosen by keyword, never
+# copied text.
 
 ACTOR = {'call': 'Caller', 'sms': 'Text message', 'email': 'Email'}
 IDENTITY = [  # (keywords in source, phrase, official?, category)
@@ -439,7 +447,9 @@ def _first(rules, text):
 
 
 def pattern(source_text: str, kind: str, channel: str) -> dict:
-    """A short step summary written by this code from keyword hits; cues quote our own step phrases."""
+    """A short step summary written by this code from keyword hits; cues quote our own
+    step phrases.
+    """
     actor = ACTOR[channel]
     category = categorize(source_text, min_score=2 if kind == 'scam' else 3)
     if kind == 'legitimate':

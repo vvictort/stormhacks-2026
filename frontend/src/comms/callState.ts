@@ -65,7 +65,8 @@ export function callReducer(state: CallState, action: CallAction): CallState {
     }
   }
 
-  // Late events from a previous call (a slow poll, a stale session callback) are ignored.
+  // Late events from a previous call (a slow poll, a stale session callback)
+  // are ignored.
   if (action.callId !== state.callId) return state
 
   switch (action.type) {
@@ -94,7 +95,10 @@ export function callReducer(state: CallState, action: CallAction): CallState {
   }
 }
 
-/** Why the microphone can't be used before even asking: getUserMedia needs a secure context (HTTPS or localhost). */
+/**
+ * Why the microphone can't be used before even asking: getUserMedia needs a
+ * secure context (HTTPS or localhost).
+ */
 export function microphoneBlocker(env: {
   secureContext: boolean
   getUserMedia: boolean
@@ -104,7 +108,10 @@ export function microphoneBlocker(env: {
   return null
 }
 
-/** Maps a getUserMedia rejection to an error code: a refusal, or no usable microphone. */
+/**
+ * Maps a getUserMedia rejection to an error code: a refusal, or no usable
+ * microphone.
+ */
 export function microphoneErrorCode(error: unknown) {
   const name =
     error instanceof Error || error instanceof DOMException ? error.name : ''
@@ -117,16 +124,20 @@ export function microphoneErrorCode(error: unknown) {
 }
 
 /**
- * Hook stages in which the server-side call is still ringing: dropping the call there (caption practice, leaving the
- * page, a new call) must abandon it, or comms would later sweep it into a result nobody earned.
+ * Hook stages in which the server-side call is still ringing: dropping the
+ * call there (caption practice, leaving the page, a new call) must abandon it,
+ * or comms would later sweep it into a result nobody earned.
  */
 export const ringsOnServer = (stage: string) =>
   stage === 'ringing' || stage === 'answering'
 
 /**
- * Giving up on a call that hasn't connected (Cancel, the connect timeout): what the server must be told.
- * `abandon` while the accept may not have landed yet (the call can still ring there), `end` once the server has the
- * call in_call but the voice session never connected (it completes unscored as `error`). Null once connected or over.
+ * Giving up on a call that hasn't connected (Cancel, the connect timeout):
+ * what the server must be told.
+ * `abandon` while the accept may not have landed yet (the call can still ring
+ * there), `end` once the server has the call in_call but the voice session
+ * never connected (it completes unscored as `error`). Null once connected or
+ * over.
  */
 export function connectDrop(
   stage: string,

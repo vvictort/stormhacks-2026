@@ -10,7 +10,10 @@ interface RevealTextProps extends HTMLAttributes<HTMLElement> {
   as?: ElementType
   /** Delay before the first word, in ms. */
   delay?: number
-  /** A word to pick out in the primary color, e.g. the user's name. Trailing punctuation stays plain. */
+  /**
+   * A word to pick out in the primary color, e.g. the user's name. Trailing
+   * punctuation stays plain.
+   */
   highlight?: string
 }
 

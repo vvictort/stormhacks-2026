@@ -19,6 +19,7 @@ const progress = (overrides = {}) => ({
   focus: [],
   ...overrides,
 })
+
 const metrics = (overrides = {}) => ({
   attempts: 3,
   accuracy: 100,
@@ -67,11 +68,13 @@ test('nextForYou explains the focus from real numbers, and stays plain without t
       "Tellio noticed account-security scams catch you out: you've made the right call on 1 of 3. You also tend to go along with urgency.",
     difficulty: 'medium',
   })
+
   assert.equal(
     nextForYou(readAdaptive(progress({ focus: ['government'] })), 'easy')
       .reason,
     "You haven't practised tax and government scams yet, so that's next.",
   )
+
   assert.deepEqual(nextForYou(null, 'hard'), {
     title: 'An email made for you',
     reason: "Tellio writes it around your profile and how you've done so far.",
@@ -111,6 +114,7 @@ test('learned reports only real before/after changes', () => {
     metrics: metrics({ avgDetectionMs: 7900, accuracy: 75 }),
     insight: { pattern: 'You struggle with bank scams.', source: 'snowflake' },
   }
+
   const view = learned(before, after, 'run-1')
   assert.deepEqual(view.lines, [
     'Difficulty increased to Medium.',
@@ -118,7 +122,8 @@ test('learned reports only real before/after changes', () => {
     'Bank scams: right calls 100% → 50%.',
     'Right calls overall: 100% → 75%.',
   ])
-  // Faster with accuracy held (or up) is an improvement; faster while falling for it isn't.
+  // Faster with accuracy held (or up) is an improvement; faster while falling
+  // for it isn't.
   assert.ok(
     learned(
       { ...before, metrics: metrics({ avgDetectionMs: 10000, accuracy: 75 }) },

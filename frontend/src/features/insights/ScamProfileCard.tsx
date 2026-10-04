@@ -1,7 +1,10 @@
 import { useScamProfile } from './useScamProfile'
 import './scamProfile.css'
 
-/** Insights' closing summary: how the user is doing, then how to improve. Hidden if the API fails. */
+/**
+ * Insights' closing summary: how the user is doing, then how to improve. Hidden
+ * if the API fails.
+ */
 export function ScamProfileCard({ uid }: { uid: string | null | undefined }) {
   const state = useScamProfile(uid)
   if (state.status === 'error') return null

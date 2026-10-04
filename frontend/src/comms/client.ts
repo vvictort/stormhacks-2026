@@ -12,8 +12,9 @@ import type {
   TextThread,
 } from './types'
 
-// Typed HTTP client for the API's /api/comms routes (simulated texts and calls). Framework-free (no React, no Firebase)
-// so it can be unit tested in Node with a fake fetch.
+// Typed HTTP client for the API's /api/comms routes (simulated texts and
+// calls). Framework-free (no React, no Firebase) so it can be unit tested in
+// Node with a fake fetch.
 
 export class CommsError extends Error {
   readonly status: number
@@ -72,7 +73,8 @@ export function createCommsClient({
     const send = async (forceRefresh: boolean) => {
       const headers: Record<string, string> = {}
       if (auth) headers.authorization = `Bearer ${await getToken(forceRefresh)}`
-      // The API takes writes only as JSON (with the browser's own Origin), so every POST carries a body.
+      // The API takes writes only as JSON (with the browser's own Origin), so
+      // every POST carries a body.
       if (method === 'POST') headers['content-type'] = 'application/json'
       return doFetch(base + path, {
         method,
@@ -84,7 +86,8 @@ export function createCommsClient({
 
     let res = await send(false)
     if (res.status === 401 && auth) {
-      // The cached ID token may have expired or been revoked: retry once with a fresh one.
+      // The cached ID token may have expired or been revoked: retry once with
+      // a fresh one.
       res.body?.cancel().catch(() => {})
       res = await send(true)
     }
@@ -112,7 +115,9 @@ export function createCommsClient({
       return data.scenarios ?? []
     },
 
-    /** Starts a text thread, or resumes the user's active one (`resumed: true`). */
+    /**
+     * Starts a text thread, or resumes the user's active one (`resumed: true`).
+     */
     async startText(
       pick: ScenarioPick = {},
       signal?: AbortSignal,
@@ -159,11 +164,17 @@ export function createCommsClient({
     report: (threadId: string, signal?: AbortSignal) =>
       request<TextThread>('POST', `/texts/${enc(threadId)}/report`, { signal }),
 
-    /** SSE URL with the ID token in the query (EventSource can't send headers). Build a fresh one per connection. */
+    /**
+     * SSE URL with the ID token in the query (EventSource can't send headers).
+     * Build a fresh one per connection.
+     */
     streamUrl: async (threadId: string) =>
       `${base}/texts/${enc(threadId)}/stream?access_token=${enc(await getToken(false))}`,
 
-    /** Call scenarios are server-owned: the body is `{ scenarioId }` and nothing else. */
+    /**
+     * Call scenarios are server-owned: the body is `{ scenarioId }` and
+     * nothing else.
+     */
     startCall: (scenarioId: string, signal?: AbortSignal) =>
       request<StartCallResponse>('POST', '/calls', {
         body: { scenarioId },
@@ -188,11 +199,17 @@ export function createCommsClient({
         signal,
       }),
 
-    /** Ringing only: gives the call up (caption practice, leaving the page). The server closes it unscored and never saves it. */
+    /**
+     * Ringing only: gives the call up (caption practice, leaving the page).
+     * The server closes it unscored and never saves it.
+     */
     abandonCall: (callId: string, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/abandon`, { signal }),
 
-    /** Binds the voice session's conversation id; a different id than the bound one is `409 conversation_mismatch`. */
+    /**
+     * Binds the voice session's conversation id; a different id than the bound
+     * one is `409 conversation_mismatch`.
+     */
     callConnected: (
       callId: string,
       conversationId: string,
@@ -220,6 +237,8 @@ export type CommsClient = ReturnType<typeof createCommsClient>
 export const isAbortError = (error: unknown) =>
   error instanceof DOMException && error.name === 'AbortError'
 
-/** Stable error code for UI copy: the server's `error` code, or `network_error`. */
+/**
+ * Stable error code for UI copy: the server's `error` code, or `network_error`.
+ */
 export const describeError = (error: unknown) =>
   error instanceof CommsError ? error.code : 'network_error'

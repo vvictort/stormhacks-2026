@@ -18,7 +18,8 @@ export const confidenceLabels: Record<Confidence, string> = {
 }
 
 /**
- * Normalizes text for resilient phrase comparison: lowercase, remove punctuation, collapse whitespace.
+ * Normalizes text for resilient phrase comparison: lowercase, remove
+ * punctuation, collapse whitespace.
  */
 export function normalize(text: string): string {
   return text
@@ -29,12 +30,12 @@ export function normalize(text: string): string {
 }
 
 /**
- * Splits text into naturally tappable phrases/clauses (punctuation boundaries and clauses)
- * so learners can easily tap phrases on the simulated phone.
+ * Splits text into naturally tappable phrases/clauses (punctuation boundaries
+ * and clauses) so learners can easily tap phrases on the simulated phone.
  */
 export function splitIntoPhrases(text: string): string[] {
   if (!text) return []
-  // Split on sentence terminators (. ! ?) and clause boundaries (, ; - —) while keeping meaningful phrases
+  // Split on sentence terminators (. ! ?) and clause boundaries (, ; - – —)
   const rawParts = text
     .split(/(?<=[.!?])\s+|(?<=[,;—–-])\s+|\n+/)
     .map((s) => s.trim())
@@ -46,7 +47,8 @@ export function splitIntoPhrases(text: string): string[] {
 
 /**
  * Compares user-flagged phrases against validated scenario red-flag quotes.
- * Uses substring and token overlap matching so minor selection boundary differences match cleanly.
+ * Uses substring and token overlap matching so minor selection boundary
+ * differences match cleanly.
  */
 export function scoreFlags(
   userFlags: string[],
@@ -77,11 +79,10 @@ export function scoreFlags(
     normUserFlags.forEach((uf, flagIdx) => {
       if (!uf.normalized || !normQuote) return
 
-      // Direct substring match either way
       const substringMatch =
         uf.normalized.includes(normQuote) || normQuote.includes(uf.normalized)
 
-      // Or significant token overlap (>= 60% of either token set)
+      // Significant token overlap (>= 60% of either token set)
       const commonTokens = uf.tokens.filter((tok) => quoteTokens.includes(tok))
       const tokenOverlap =
         quoteTokens.length > 0 &&

@@ -9,7 +9,8 @@ import {
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
-// Unknown keys are stripped, so only the redacted summary and transcript ever reach metadata.
+// Unknown keys are stripped, so only the redacted summary and transcript ever
+// reach metadata.
 export const attemptSchema = z.object({
   attemptId: text(128),
   firebaseUid: text(128),

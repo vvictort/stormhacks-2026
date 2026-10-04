@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import type { TextThread } from "../shared/types.ts";
 
-// Server-sent events for simulated text threads.
-// Events: `message` (TextMessage, SSE id = message id), `typing` ({ on }), `ended` ({ outcome, reason }).
+// Events: `message` (TextMessage, SSE id = message id), `typing` ({ on }),
+// `ended` ({ outcome, reason }).
 
 const subscribers = new Map<string, Set<Response>>();
 
@@ -13,8 +13,9 @@ function write(res: Response, event: string, data: unknown, id?: string) {
 }
 
 /**
- * Opens the stream, replays messages (only those after `Last-Event-ID` on reconnect),
- * then delivers live events. Clients should close the EventSource on `ended`.
+ * Opens the stream, replays messages (only those after `Last-Event-ID` on
+ * reconnect), then delivers live events. Clients should close the EventSource
+ * on `ended`.
  */
 export function subscribe(thread: TextThread, req: Request, res: Response) {
   res.writeHead(200, {
@@ -53,7 +54,6 @@ export function publish(
   }
 }
 
-/** Ends every open stream (shutdown). */
 export function closeAll() {
   for (const set of subscribers.values()) for (const res of set) res.end();
 }

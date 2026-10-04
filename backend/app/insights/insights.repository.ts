@@ -20,11 +20,15 @@ export interface InsightsState {
 
 export class InsightsRepository {
   private readonly db: Database;
+
   constructor(db: Database) {
     this.db = db;
   }
 
-  /** The user's scored attempts (newest HISTORY_LIMIT), each with its behaviour events from TigerData folded in. */
+  /**
+   * The user's scored attempts (newest HISTORY_LIMIT), each with its behaviour
+   * events from TigerData folded in.
+   */
   async attemptRows(uid: string): Promise<AttemptRow[]> {
     const { rows } = await this.db.query(
       `SELECT a.channel, a.scenario_id, a.scenario_title, a.scam_category, a.difficulty, a.outcome, a.success,
@@ -80,8 +84,9 @@ export class InsightsRepository {
     await this.db.query(
       `INSERT INTO vulnerability_insights(firebase_uid, analysis, source, last_attempt_at, computed_at) VALUES($1, $2, $3, $4, now())
       ON CONFLICT (firebase_uid) DO UPDATE SET analysis = $2, source = $3, last_attempt_at = $4, computed_at = now()`,
-      // The column predates Cortex attribution (migration 008 allows snowflake | fallback): Cortex text is still a Snowflake
-      // analysis there, and the analysis JSON keeps the exact source.
+      // The column predates Cortex attribution (migration 008 allows
+      // snowflake | fallback): Cortex text is still a Snowflake analysis there,
+      // and the analysis JSON keeps the exact source.
       [
         uid,
         JSON.stringify(insights),
@@ -92,8 +97,9 @@ export class InsightsRepository {
   }
 
   /**
-   * What to train next, for the scenario generators: never calls Snowflake. The cached analysis when it covers the
-   * newest attempt, otherwise the built-in analysis of the current history; [] for a new user.
+   * What to train next, for the scenario generators: never calls Snowflake. The
+   * cached analysis when it covers the newest attempt, otherwise the built-in
+   * analysis of the current history; [] for a new user.
    */
   async latestFocus(uid: string): Promise<ScamCategory[]> {
     const { cached, lastAttemptAt } = await this.state(uid);

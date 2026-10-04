@@ -14,6 +14,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     error: string | null
   }>({ profile: null, loading: true, error: null })
   const [retryCount, setRetryCount] = useState(0)
+
   useEffect(() => {
     if (!uid || initializing) return
     const controller = new AbortController()
@@ -33,8 +34,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           })
         }
       })
+
     return () => controller.abort()
   }, [uid, initializing, retryCount])
+
   const matches = state.uid === uid
   return (
     <ProfileContext.Provider

@@ -36,6 +36,7 @@ function routes(repos: Repositories = fakeRepos()) {
     origin,
     verifyToken,
   });
+
   return {
     generate: (user = "alex", body: object = {}) =>
       supertest(app)
@@ -72,14 +73,10 @@ test("POST /api/training/sms-scenarios creates a scenario and only the owner can
   assert.equal(scenario.type, "sms");
   assert.equal(SmsScenario.safeParse(scenario).success, true);
 
-  // Owner reads it successfully
   const fetched = await read(scenario.id, "alex").expect(200);
   assert.equal(fetched.body.id, scenario.id);
 
-  // Another user gets 404
   await read(scenario.id, "sam").expect(404);
-
-  // Non-uuid or malformed id gets 404
   await read("gen-sms-not-a-uuid", "alex").expect(404);
 });
 

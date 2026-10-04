@@ -1,4 +1,5 @@
 /* The mascot keeps its own colors; the beacon borrows the semantic ones. */
+
 .mascot {
   display: block;
   overflow: visible;

@@ -1,13 +1,15 @@
 import { CommsError, isAbortError } from './client'
 import type { CallRecord } from './types'
 
-// Waiting for a call's post-call analysis. The fetcher is injected so this stays
-// framework-free and testable in Node.
+// Waiting for a call's post-call analysis. The fetcher is injected so this
+// stays framework-free and testable in Node.
 
 export const ANALYSIS_POLL_DELAYS_MS = [1500, 2000, 3000, 5000]
 export const ANALYSIS_TIMEOUT_MS = 150_000
 
-/** Resolves after `ms`, or rejects with `signal.reason` once the signal aborts. */
+/**
+ * Resolves after `ms`, or rejects with `signal.reason` once the signal aborts.
+ */
 export function sleep(ms: number, signal?: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
     if (signal?.aborted) {
@@ -38,9 +40,9 @@ export interface PollOptions {
 }
 
 /**
- * Re-fetches a call (waiting before each fetch; the last delay repeats) until it is
- * `completed`, passing every record to `onRecord`. Throws `CommsError(504, 'analysis_timeout')`
- * once `timeoutMs` has passed.
+ * Re-fetches a call (waiting before each fetch; the last delay repeats) until
+ * it is `completed`, passing every record to `onRecord`. Throws
+ * `CommsError(504, 'analysis_timeout')` once `timeoutMs` has passed.
  */
 export async function pollUntilCompleted(
   getCall: (callId: string, signal?: AbortSignal) => Promise<CallRecord>,

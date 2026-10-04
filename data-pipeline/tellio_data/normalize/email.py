@@ -19,7 +19,7 @@ def read(directory: Path, files=SRC['files']):
             label = (getattr(r, 'label', '') or '').strip()
             body = getattr(r, 'body', '') or ''
             if label not in ('0', '1') or not body.strip():
-                continue  # malformed or empty row
+                continue
             yield {
                 'channel': 'email',
                 'dataset': SRC['dataset'],

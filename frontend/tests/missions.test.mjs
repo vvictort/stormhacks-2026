@@ -25,6 +25,7 @@ function fixture(id = 'mission-test') {
   }
   return prepareMission(state, id)
 }
+
 function finish(state, extra = {}) {
   const scenarioId = missionNext(state.mission)
   const scenario = scenarios.find((s) => s.id === scenarioId)
@@ -46,6 +47,7 @@ test('missions include an email, a text and a call, with one genuine message, at
     const selected = m.scenarioIds.map((id) =>
       scenarios.find((s) => s.id === id),
     )
+
     assert.equal(selected.length, 3)
     assert.equal(new Set(m.scenarioIds).size, 3)
     assert(selected.some((s) => s.type === 'sms'))
@@ -54,6 +56,7 @@ test('missions include an email, a text and a call, with one genuine message, at
     assert.equal(selected.filter((s) => s.correctAction === 'safe').length, 1)
   }
 })
+
 test('the genuine message varies between text and email and is never replaced during preparation', () => {
   const genuineChannels = new Set()
   for (const id of ['a', 'b', 'c']) {
@@ -62,6 +65,7 @@ test('the genuine message varies between text and email and is never replaced du
       .map((id) => scenarios.find((s) => s.id === id))
       .find((s) => s.correctAction === 'safe')
     genuineChannels.add(genuine.type)
+
     const original = scenarios.find(
       (s) => s.type === 'email' && s.correctAction === 'report',
     )
@@ -74,8 +78,10 @@ test('the genuine message varies between text and email and is never replaced du
       assert.equal(prepared.mission.generated, undefined)
     }
   }
+
   assert.deepEqual(genuineChannels, new Set(['sms', 'email']))
 })
+
 test('mission calls prefer an untried call near the learner’s difficulty', () => {
   const calls = scenarios.filter(
     (s) => s.type === 'call' && s.difficulty === 'medium',
@@ -85,6 +91,7 @@ test('mission calls prefer an untried call near the learner’s difficulty', () 
   const mission = createMission(progress, 'medium', 'call-ranking')
   assert(mission.scenarioIds.includes(calls[1].id))
 })
+
 test('a generated genuine email keeps a mixed-channel mission balanced and restores through reload', () => {
   for (const difficulty of ['easy', 'medium', 'hard']) {
     const mission = createMission({}, difficulty, 'b')
@@ -97,6 +104,7 @@ test('a generated genuine email keeps a mixed-channel mission balanced and resto
       mission.id,
       generated,
     )
+
     const selected = state.mission.scenarioIds.map((id) =>
       id === generated.id ? generated : scenarios.find((s) => s.id === id),
     )
@@ -107,6 +115,7 @@ test('a generated genuine email keeps a mixed-channel mission balanced and resto
     assert.equal(selected.filter((s) => s.correctAction === 'safe').length, 1)
     assert.equal(selected.find((s) => s.type === 'sms').difficulty, difficulty)
     assert.deepEqual(readAdventure(JSON.stringify(state)), state)
+
     while (!missionComplete(state.mission)) {
       const scenarioId = missionNext(state.mission)
       state = completeAdventure(state, {
@@ -121,6 +130,7 @@ test('a generated genuine email keeps a mixed-channel mission balanced and resto
       assert.deepEqual(readAdventure(JSON.stringify(state)), state)
     }
     assert.equal(state.completedMissions, 1)
+
     const corrupt = {
       ...state,
       mission: {
@@ -131,10 +141,12 @@ test('a generated genuine email keeps a mixed-channel mission balanced and resto
     assert.equal(readAdventure(JSON.stringify(corrupt)), null)
   }
 })
+
 test('incorrect decisions still complete all three steps and earn First Steps once', () => {
   let state = fixture()
   const first = state.mission.scenarioIds[0]
   state = finish(state)
+
   const duplicate = completeAdventure(state, {
     attemptId: 'another-try',
     scenarioId: first,
@@ -144,10 +156,12 @@ test('incorrect decisions still complete all three steps and earn First Steps on
     at: 110,
   })
   assert.equal(duplicate.mission.completed.length, 1)
+
   state = finish(finish(state))
   assert(missionComplete(state.mission))
   assert.equal(state.completedMissions, 1)
   assert.deepEqual(state.earned, { 'first-steps': 100 })
+
   const repeat = completeAdventure(state, {
     attemptId: 'reload',
     scenarioId: first,
@@ -158,6 +172,7 @@ test('incorrect decisions still complete all three steps and earn First Steps on
   })
   assert.equal(repeat.completedMissions, 1)
 })
+
 test('badges require the correct behavior, are never revoked, and retain the original earning time', () => {
   let state = emptyAdventure()
   const result = {
@@ -169,8 +184,10 @@ test('badges require the correct behavior, are never revoked, and retain the ori
     missionId: null,
     at: 1,
   }
+
   state = completeAdventure(state, result)
   assert.deepEqual(state.earned, {})
+
   state = completeAdventure(state, {
     ...result,
     attemptId: 'recovery',
@@ -179,10 +196,12 @@ test('badges require the correct behavior, are never revoked, and retain the ori
     at: 2,
   })
   assert.deepEqual(state.earned, { 'good-catch': 2, comeback: 2 })
+
   assert.equal(
     completeAdventure(state, { ...result, attemptId: 'recovery', at: 3 }),
     state,
   )
+
   state = completeAdventure(state, {
     ...result,
     attemptId: 'again',
@@ -191,6 +210,7 @@ test('badges require the correct behavior, are never revoked, and retain the ori
     at: 4,
   })
   assert.deepEqual(state.earned, { 'good-catch': 2, comeback: 2 })
+
   const safe = completeAdventure(emptyAdventure(), {
     ...result,
     attemptId: 'safe',
@@ -199,6 +219,7 @@ test('badges require the correct behavior, are never revoked, and retain the ori
   })
   assert.equal(safe.earned['good-catch'], undefined)
 })
+
 test('standalone and out-of-order attempts do not advance a mission', () => {
   const state = fixture()
   assert.equal(finish(state, { missionId: null }).mission.completed.length, 0)
@@ -212,6 +233,7 @@ test('standalone and out-of-order attempts do not advance a mission', () => {
     0,
   )
 })
+
 test('scored call outcomes advance once, including a mistake; errors and pending results do not advance', () => {
   const selected = fixture()
   const callIndex = selected.mission.scenarioIds.findIndex(
@@ -219,6 +241,7 @@ test('scored call outcomes advance once, including a mistake; errors and pending
   )
   let state = selected
   for (let i = 0; i < callIndex; i++) state = finish(state)
+
   const base = {
     attemptId: 'live-call',
     scenarioId: missionNext(state.mission),
@@ -226,6 +249,7 @@ test('scored call outcomes advance once, including a mistake; errors and pending
     missionId: state.mission.id,
     at: 200,
   }
+
   for (const outcome of ['resisted', 'compromised', 'declined', 'missed']) {
     const finished = completeCallAdventure(state, {
       ...base,
@@ -244,6 +268,7 @@ test('scored call outcomes advance once, including a mistake; errors and pending
       outcome === 'resisted' ? 200 : undefined,
     )
   }
+
   assert.equal(
     completeCallAdventure(state, { ...base, result: OUTCOME_TABLE.error }),
     state,
@@ -258,11 +283,13 @@ test('scored call outcomes advance once, including a mistake; errors and pending
     callIndex,
   )
 })
+
 test('a call finishing the mission earns First Steps, and a successful call revisit earns Comeback', () => {
   let state = fixture('call-last')
   const callId = state.mission.scenarioIds.find(
     (id) => scenarios.find((s) => s.id === id).type === 'call',
   )
+
   state = {
     ...state,
     mission: {
@@ -273,6 +300,7 @@ test('a call finishing the mission earns First Steps, and a successful call revi
       ],
     },
   }
+
   state = finish(finish(state))
   state = completeCallAdventure(state, {
     attemptId: 'caption-call',
@@ -282,6 +310,7 @@ test('a call finishing the mission earns First Steps, and a successful call revi
     at: 300,
     result: OUTCOME_TABLE.resisted,
   })
+
   assert(missionComplete(state.mission))
   assert.equal(state.completedMissions, 1)
   assert.deepEqual(state.earned, {
@@ -291,6 +320,7 @@ test('a call finishing the mission earns First Steps, and a successful call revi
   })
   assert.deepEqual(readAdventure(JSON.stringify(state)), state)
 })
+
 test('older text/email missions still restore without discarding their selection or progress', () => {
   const ids = [
     scenarios.find((s) => s.type === 'email' && s.correctAction === 'report')
@@ -307,14 +337,17 @@ test('older text/email missions still restore without discarding their selection
       ready: true,
     },
   }
+
   assert.deepEqual(readAdventure(JSON.stringify(state)), state)
 })
+
 test('failed generation retains selection through reload; fallback and success both preserve the genuine message', () => {
   const mission = createMission({}, 'easy', 'generation')
   let selected = { ...emptyAdventure(), mission }
   const restored = readAdventure(JSON.stringify(selected))
   assert.deepEqual(restored.mission.scenarioIds, mission.scenarioIds)
   assert.equal(restored.mission.ready, false)
+
   const original = scenarios.find(
     (s) => s.type === 'email' && s.correctAction === 'report',
   )
@@ -323,14 +356,17 @@ test('failed generation retains selection through reload; fallback and success b
   assert(selected.mission.scenarioIds.includes(generated.id))
   assert.deepEqual(readAdventure(JSON.stringify(selected)), selected)
   assert.equal(prepareMission(selected, mission.id), selected)
+
   const fallback = prepareMission(restored, mission.id)
   assert.deepEqual(fallback.mission.scenarioIds, mission.scenarioIds)
   assert.equal(fallback.mission.ready, true)
   assert.equal(prepareMission(restored, 'stale', generated), restored)
 })
+
 test('completed steps and rewards survive serialization; corrupt or unknown saves are rejected', () => {
   const state = finish(fixture(), { correct: true })
   assert.deepEqual(readAdventure(JSON.stringify(state)), state)
+
   for (const raw of [
     null,
     'garbage',
@@ -345,6 +381,7 @@ test('completed steps and rewards survive serialization; corrupt or unknown save
     assert.equal(readAdventure(raw), null)
   }
 })
+
 test('blocked storage falls back to memory and accounts stay isolated', () => {
   const previous = globalThis.localStorage
   globalThis.localStorage = {
@@ -355,6 +392,7 @@ test('blocked storage falls back to memory and accounts stay isolated', () => {
       throw new Error('blocked')
     },
   }
+
   try {
     const a = updateAdventure('mission-account-a', () =>
       finish(fixture(), { correct: true }),

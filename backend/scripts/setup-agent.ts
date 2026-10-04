@@ -1,4 +1,5 @@
-// Creates (or, when ELEVENLABS_AGENT_ID is set, updates) the scam-caller ElevenLabs agent.
+// Creates (or, when ELEVENLABS_AGENT_ID is set, updates) the scam-caller
+// ElevenLabs agent.
 // Usage: npm run setup:agent (reads backend/.env like the API)
 
 import { createElevenLabs } from "../app/calls/elevenlabs.ts";
@@ -21,7 +22,8 @@ const agent = {
   tags: ["stormhacks", "scam-sim"],
   conversation_config: {
     agent: {
-      // Placeholders: every simulated call overrides the prompt and first message per scenario.
+      // Placeholders: every simulated call overrides the prompt and first
+      // message per scenario.
       first_message: "Hello, am I speaking with the account holder?",
       language: "en",
       prompt: {
@@ -45,7 +47,8 @@ const agent = {
     conversation: { max_duration_seconds: config.CALL_MAX_SECONDS },
   },
   platform_settings: {
-    // Private agent: the browser needs a token from our backend to start a session.
+    // Private agent: the browser needs a token from our backend to start a
+    // session.
     auth: { enable_auth: true },
     overrides: {
       conversation_config_override: {

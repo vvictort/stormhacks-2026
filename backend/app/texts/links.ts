@@ -13,8 +13,9 @@ export function caughtUrl(appOrigin: string, threadId: string) {
 }
 
 /**
- * Replaces `{{link}}` in a scammer text with the fake display URL and returns the tappable mapping.
- * The display text is what the user sees; the href is our tracked redirect.
+ * Replaces `{{link}}` in a scammer text with the fake display URL and returns
+ * the tappable mapping. The display text is what the user sees; the href is our
+ * tracked redirect.
  */
 export function renderScammerText(
   raw: string,

@@ -7,7 +7,8 @@ import {
 } from '../callOutcome.ts'
 import type { CallScenario } from '../scenarios.ts'
 
-// Pure view logic for the call screen and the call debrief; no React, tested in Node.
+// Pure view logic for the call screen and the call debrief; no React, tested
+// in Node.
 
 export type CallScreen =
   | 'idle'
@@ -27,11 +28,16 @@ export type CallScreen =
   | 'not_connected'
   | 'failed'
 
-// The API unreachable or broken: fetch failed, a 5xx without a JSON body (a dev proxy with the API down answers 500),
-// or the API's own 503 SERVICE_UNAVAILABLE (e.g. the database is down while looking up a generated scenario).
+// The API unreachable or broken: fetch failed, a 5xx without a JSON body (a dev
+// proxy with the API down answers 500), or the API's own 503
+// SERVICE_UNAVAILABLE (e.g. the database is down while looking up a generated
+// scenario).
 const COMMS_DOWN = /^(network_error|SERVICE_UNAVAILABLE|http_5\d\d)$/
 
-/** Which screen the phone shows for a call-hook state. `result` comes from callOutcome only. */
+/**
+ * Which screen the phone shows for a call-hook state. `result` comes from
+ * callOutcome only.
+ */
 export function callScreen({
   phase,
   callId,
@@ -68,7 +74,8 @@ export function callScreen({
       return 'ringing'
     case 'error':
       if (error?.startsWith('elevenlabs_')) return 'voice_unavailable'
-      // The user cancelled a call stuck connecting, or it timed out (useSimulatedCall).
+      // The user cancelled a call stuck connecting, or it timed out
+      // (useSimulatedCall).
       if (error === 'connect_cancelled' || error === 'connect_timeout') {
         return 'not_connected'
       }
@@ -77,7 +84,10 @@ export function callScreen({
   }
 }
 
-/** Live voice can't happen (or just failed): offer the caption-only practice mode instead. */
+/**
+ * Live voice can't happen (or just failed): offer the caption-only practice
+ * mode instead.
+ */
 export const offersPractice = (screen: CallScreen) =>
   [
     'mic_denied',
@@ -89,7 +99,9 @@ export const offersPractice = (screen: CallScreen) =>
     'failed',
   ].includes(screen)
 
-/** A practice-mode choice, scored with the same contract table as a live call. */
+/**
+ * A practice-mode choice, scored with the same contract table as a live call.
+ */
 export function practiceResult(
   action: 'hang_up' | 'comply' | 'decline',
 ): CallResult {
@@ -100,8 +112,6 @@ export function practiceResult(
 
 export const formatDuration = (secs: number) =>
   `${Math.floor(Math.max(0, secs) / 60)}:${String(Math.floor(Math.max(0, secs) % 60)).padStart(2, '0')}`
-
-// ---------- Debrief ----------
 
 export const tacticLabels: Record<string, string> = {
   urgency: 'Rushing you',
@@ -117,9 +127,15 @@ export interface DebriefSource {
   result: CallResult | null
   signals?: string[]
   tactics?: string[]
-  /** Redacted, from the backend attempt or the comms record. Never live captions. */
+  /**
+   * Redacted, from the backend attempt or the comms record. Never live
+   * captions.
+   */
   transcript?: CallTranscriptTurn[]
-  /** Where the result came from: the backend attempt, the comms call record, or local practice mode. */
+  /**
+   * Where the result came from: the backend attempt, the comms call record, or
+   * local practice mode.
+   */
   from: 'attempt' | 'record' | 'practice'
 }
 
@@ -132,7 +148,10 @@ export interface Moment {
 const PRESSURE =
   /\b(codes?|pay|payment|password|card|account|access|transfer|gift|minutes?|now|today|immediately|urgent|arrest|warrant|fee|download|install|scam|verify|call (you )?back)\b/i
 
-/** A few turns worth replaying: the opener, then lines about codes, money, access or pressure, in call order. */
+/**
+ * A few turns worth replaying: the opener, then lines about codes, money,
+ * access or pressure, in call order.
+ */
 export function importantMoments(
   transcript: CallTranscriptTurn[] = [],
   max = 4,
@@ -175,7 +194,10 @@ const outcomeCopy = {
   },
 } as const
 
-/** What each tactic asked for, said as something the user held back on (a resisted call). */
+/**
+ * What each tactic asked for, said as something the user held back on (a
+ * resisted call).
+ */
 const heldBack: Partial<Record<string, string>> = {
   otp_request: 'You kept the code to yourself.',
   info_request: "You didn't confirm your personal or card details.",
@@ -209,7 +231,8 @@ const fixes: [signal: string, slip: string, advice: string][] = [
   ],
 ]
 
-// A request for something the caller shouldn't get, and a reply that was starting to go along with it.
+// A request for something the caller shouldn't get, and a reply that was
+// starting to go along with it.
 const ASK =
   /\b(codes?|pin|password|card|cvv|expiry|account (number|details)|date of birth|address|sin\b|social insurance|username|pay|payment|fee|transfer|gift cards?|install|link|remote|confirm)\b/i
 const GIVING =
@@ -227,8 +250,9 @@ const moment = (turn: CallTranscriptTurn): Moment => ({
 })
 
 /**
- * The caller's ask, and the user's reply when it was going along: for a compromised call, where it got through; for a
- * resisted one, where it nearly did. From the redacted transcript only.
+ * The caller's ask, and the user's reply when it was going along: for a
+ * compromised call, where it got through; for a resisted one, where it nearly
+ * did. From the redacted transcript only.
  */
 export function riskyExchange(transcript: CallTranscriptTurn[] = []) {
   let ask: CallTranscriptTurn | undefined
@@ -298,7 +322,8 @@ export function buildCallDebrief(
     }
   }
 
-  // What you nearly fell for (resisted), or where the caller got through (compromised).
+  // What you nearly fell for (resisted), or where the caller got through
+  // (compromised).
   const slips = fixes.filter(([signal]) => has(signal)).map(([, slip]) => slip)
   let nearMiss: { line: string; exchange: typeof exchange } | null = null
   if (result?.outcome === 'compromised') {
@@ -341,7 +366,10 @@ export function buildCallDebrief(
           ? ('alert' as const)
           : ('curious' as const),
     explanation: scenario.explanation,
-    /** What the caller tried: the pretext, their tactics, and their ask from the transcript when there is one. */
+    /**
+     * What the caller tried: the pretext, their tactics, and their ask from
+     * the transcript when there is one.
+     */
     pretext: scenario.summary,
     answered,
     tactics: allTactics.map((tactic) => tacticLabels[tactic]).filter(Boolean),
@@ -365,10 +393,12 @@ export type CallDebriefView = ReturnType<typeof buildCallDebrief>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
+
 const strings = (value: unknown) =>
   Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : []
+
 const turns = (value: unknown) =>
   Array.isArray(value)
     ? value.filter(
@@ -379,7 +409,10 @@ const turns = (value: unknown) =>
       )
     : []
 
-/** Debrief data from the backend attempt when there is one, else from the comms call record. */
+/**
+ * Debrief data from the backend attempt when there is one, else from the comms
+ * call record.
+ */
 export function debriefSource(
   attempt: unknown,
   record: unknown,
@@ -393,6 +426,7 @@ export function debriefSource(
       transcript: turns(attempt.transcript),
     }
   }
+
   const scenario =
     isRecord(record) && isRecord(record.scenario) ? record.scenario : {}
   return {

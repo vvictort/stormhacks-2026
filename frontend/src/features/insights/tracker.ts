@@ -6,8 +6,9 @@ import type {
   ScamCategory,
 } from '../training/scenarios.ts'
 
-// Behaviour events for texts and emails, batched to POST /api/training/events (docs/mvp-contracts.md). The backend
-// stores them in TigerData; calls are recorded server-side from the call lifecycle. Tracking never affects the UI.
+// Behaviour events for texts and emails, batched to POST /api/training/events
+// (docs/mvp-contracts.md). The backend stores them in TigerData; calls are
+// recorded server-side from the call lifecycle. Tracking never affects the UI.
 
 export type TrackedType =
   | 'scenario_started'
@@ -17,6 +18,7 @@ export type TrackedType =
   | 'message_marked_safe'
   | 'scenario_completed'
   | 'debrief_viewed'
+
 export type MessageOutcome =
   'reported_correct' | 'reported_incorrect' | 'safe_correct' | 'safe_incorrect'
 
@@ -29,11 +31,17 @@ export interface TrackedEvent {
   difficulty: Difficulty
   scamCategory?: ScamCategory
   outcome?: MessageOutcome
-  /** `scenario_completed` only: the scenario's tactics, stored with the attempt so missed tactics shape the profile. */
+  /**
+   * `scenario_completed` only: the scenario's tactics, stored with the attempt
+   * so missed tactics shape the profile.
+   */
   tactics?: Tactic[]
   /** Since the run started. */
   responseTimeMs: number
-  /** Small facts only (e.g. the practice link's site), never anything the user typed. */
+  /**
+   * Small facts only (e.g. the practice link's site), never anything the user
+   * typed.
+   */
   metadata?: Record<string, string | number | boolean>
   at: string
 }
@@ -64,7 +72,8 @@ export function runEvent(
     scenarioTitle: scenario.title,
     attemptId: run.attemptId,
     difficulty: scenario.difficulty,
-    // Built-in scenarios have none; the backend infers it from the id and title.
+    // Built-in scenarios have none; the backend infers it from the id and
+    // title.
     ...(scenario.scamCategory ? { scamCategory: scenario.scamCategory } : {}),
     ...(type === 'scenario_completed'
       ? { tactics: scenario.tactics ?? [] }
@@ -75,7 +84,10 @@ export function runEvent(
   }
 }
 
-/** Queues events and sends them in batches after a short pause; `flush` sends now and resolves once everything sent has settled. */
+/**
+ * Queues events and sends them in batches after a short pause; `flush` sends
+ * now and resolves once everything sent has settled.
+ */
 export function createTracker(
   send: (events: TrackedEvent[], keepalive: boolean) => Promise<unknown>,
   { delayMs = 1500, max = 50 } = {},

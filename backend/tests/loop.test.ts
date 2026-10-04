@@ -8,7 +8,10 @@ import { createRepositories, type Repositories } from "../app/repositories.ts";
 import { createApp } from "../app/server.ts";
 import { fakeRepos, fakeVerify, origin, testServices } from "./harness.ts";
 
-/** The app as the browser sees it: every request as `valid:<uid>`, POSTs from the app origin. */
+/**
+ * The app as the browser sees it: every request as `valid:<uid>`, POSTs from
+ * the app origin.
+ */
 function client(repos: Repositories, uid = "jo") {
   const app = createApp({
     repos,
@@ -17,6 +20,7 @@ function client(repos: Repositories, uid = "jo") {
     verifyToken: fakeVerify,
   });
   const auth = `Bearer valid:${uid}`;
+
   const get = async (path: string) =>
     (
       await supertest(app)
@@ -24,12 +28,14 @@ function client(repos: Repositories, uid = "jo") {
         .set("Authorization", auth)
         .expect(200)
     ).body;
+
   const send = (method: "post" | "put", path: string, body: object) =>
     supertest(app)
       [method](`/api${path}`)
       .set("Origin", origin)
       .set("Authorization", auth)
       .send(body);
+
   let clock = Date.now() - 5 * 60_000;
   /** One finished text/email run, as the browser's tracker reports it. */
   const finish = async (
@@ -50,6 +56,7 @@ function client(repos: Repositories, uid = "jo") {
       difficulty: scenario.difficulty,
       ...(scenario.scamCategory ? { scamCategory: scenario.scamCategory } : {}),
     };
+
     clock += 10_000;
     await send("post", "/training/events", {
       events: [
@@ -68,8 +75,10 @@ function client(repos: Repositories, uid = "jo") {
         },
       ],
     }).expect(202);
+
     return attemptId;
   };
+
   return { get, send, finish };
 }
 
@@ -112,6 +121,7 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
       profession: "teacher",
       interests: ["cycling"],
     }).expect(200);
+
     assert.deepEqual(
       [
         (await get("/training/progress")).difficulty,
@@ -120,7 +130,8 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
       ["easy", []],
     );
 
-    // Three right calls on built-in delivery texts: difficulty steps up, and both sides agree on it.
+    // Three right calls on built-in delivery texts: difficulty steps up, and
+    // both sides agree on it.
     for (let i = 0; i < 3; i++) {
       await finish(
         {
@@ -159,6 +170,7 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
     const insights = await get("/training/insights");
     assert.equal(insights.basedOn.attempts, 4);
     assert.equal(insights.nextTrainingFocus[0], category);
+
     const metrics = await get("/training/metrics");
     assert.deepEqual([metrics.attempts, metrics.accuracy], [4, 75]);
     assert.equal(
@@ -167,12 +179,14 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
       ).accuracy,
       0,
     );
+
     const progress = await get("/training/progress");
     assert.equal(progress.attempts[0].id, fooled);
     assert.equal(progress.focus[0], category);
     assert.deepEqual(progress.vulnerability.weakCategories, [category]);
 
-    // The next email and call come back to that category; a second miss eases the difficulty.
+    // The next email and call come back to that category; a second miss eases
+    // the difficulty.
     const second = (
       await send("post", "/training/email-scenarios", {}).expect(201)
     ).body.scenario;
@@ -181,9 +195,11 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
       [category, "medium"],
     );
     assert.match(second.generated.reason, /recent results/);
+
     await finish(second, "safe_incorrect");
     const eased = await get("/training/progress");
     assert.equal(eased.difficulty, "easy");
+
     const call = (
       await send("post", "/training/call-scenarios", {}).expect(201)
     ).body;
@@ -192,6 +208,7 @@ describe("the adaptive loop on Postgres", { skip: !url }, () => {
       (await get(`/training/call-scenarios/${call.scenarioId}`)).scamCategory,
       eased.focus[0],
     );
+
     const third = (
       await send("post", "/training/email-scenarios", {}).expect(201)
     ).body.scenario;

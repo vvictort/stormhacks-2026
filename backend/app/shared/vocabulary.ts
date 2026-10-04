@@ -1,9 +1,13 @@
 import { z } from "zod";
 
-// The canonical words shared with the frontend and the database; see docs/call-integration.md and docs/mvp-contracts.md.
+// The canonical words shared with the frontend and the database; see
+// docs/call-integration.md and docs/mvp-contracts.md.
+
 export const Channel = z.enum(["sms", "email", "call"]);
 export const Difficulty = z.enum(["easy", "medium", "hard"]);
-// Calls: resisted, compromised, declined, missed, error. Texts and emails: what the user chose, and whether it was right.
+
+// Calls: resisted, compromised, declined, missed, error. Texts and emails: what
+// the user chose, and whether it was right.
 export const Outcome = z.enum([
   "resisted",
   "compromised",
@@ -15,6 +19,7 @@ export const Outcome = z.enum([
   "safe_correct",
   "safe_incorrect",
 ]);
+
 export const Tactic = z.enum([
   "urgency",
   "authority",
@@ -24,6 +29,7 @@ export const Tactic = z.enum([
   "reward",
   "fear",
 ]);
+
 export const ScamCategory = z.enum([
   "banking",
   "government",
@@ -66,6 +72,9 @@ export const outcomeSuccess = (outcome: Outcome): boolean | null =>
         outcome,
       );
 
-/** The user fell for the scam: shared details on a call, or trusted a scam message. */
+/**
+ * The user fell for the scam: shared details on a call, or trusted a scam
+ * message.
+ */
 export const fellForScam = (outcome: string) =>
   outcome === "compromised" || outcome === "safe_incorrect";

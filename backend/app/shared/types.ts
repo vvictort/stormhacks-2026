@@ -8,7 +8,10 @@ import {
 
 // Simulation (text and call) shapes. Canonical words live in vocabulary.ts.
 
-/** Observed user behaviours. Rule-based hints from the texts service, authoritative ones from the provider / ElevenLabs analysis. */
+/**
+ * Observed user behaviours. Rule-based hints from the texts service,
+ * authoritative ones from the provider / ElevenLabs analysis.
+ */
 export type Signal =
   | "clicked_link"
   | "shared_code"
@@ -30,7 +33,10 @@ export const COMPROMISING_SIGNALS: readonly Signal[] = [
   "agreed_to_action",
 ];
 
-/** A simulation's raw outcome; calls map it to the canonical `Outcome` (calls/outcome.ts). */
+/**
+ * A simulation's raw outcome; calls map it to the canonical `Outcome`
+ * (calls/outcome.ts).
+ */
 export type SimOutcome =
   | "compromised"
   | "resisted"
@@ -52,13 +58,21 @@ const scenarioBase = {
 export const TextScenario = z
   .object({
     ...scenarioBase,
-    /** Shown as the sender in the fake messaging UI (a name or a fake number). */
+    /**
+     * Shown as the sender in the fake messaging UI (a name or a fake number).
+     */
     senderLabel: z.string().min(1),
-    /** First scam text. `{{link}}` is replaced with `linkDisplayUrl` and made tappable. */
+    /**
+     * First scam text. `{{link}}` is replaced with `linkDisplayUrl` and made
+     * tappable.
+     */
     openingMessage: z.string().min(1),
     /** Fake domain shown to the user, e.g. "postnorth-redelivery.info/pay". */
     linkDisplayUrl: z.string().min(1).optional(),
-    /** How the scammer should behave in follow-up replies (for the reply provider). */
+    /**
+     * How the scammer should behave in follow-up replies (for the reply
+     * provider).
+     */
     persona: z.string().min(1),
     /** Max scammer replies after the opening message before the thread ends. */
     maxTurns: z.number().int().min(1).max(20),
@@ -73,11 +87,17 @@ export const CallScenario = z.object({
   ...scenarioBase,
   /** Shown on the ringing screen (a name or a fake number). */
   callerLabel: z.string().min(1),
-  /** Scam persona/instructions for the ElevenLabs agent; the safety preamble is prepended server-side. */
+  /**
+   * Scam persona/instructions for the ElevenLabs agent; the safety preamble is
+   * prepended server-side.
+   */
   systemPrompt: z.string().min(1),
   firstMessage: z.string().min(1),
   voiceId: z.string().min(1).optional(),
-  /** Known for generated calls; fixtures leave it out and the backend infers it (training/progress.ts). */
+  /**
+   * Known for generated calls; fixtures leave it out and the backend infers it
+   * (training/progress.ts).
+   */
   scamCategory: ScamCategory.optional(),
 });
 export type CallScenario = z.infer<typeof CallScenario>;
@@ -120,7 +140,9 @@ export interface TextThread {
   endReason?: ThreadEndReason;
   messages: TextMessage[];
   signals: Signal[];
-  /** Scammer replies sent after the opening message (follow-up nudges excluded). */
+  /**
+   * Scammer replies sent after the opening message (follow-up nudges excluded).
+   */
   scammerTurns: number;
   /** How many user messages have been passed to the reply provider. */
   userMessagesHandled: number;
@@ -141,7 +163,10 @@ export interface CallTranscriptTurn {
   timeInCallSecs: number;
 }
 
-/** Canonical training result (see docs/call-integration.md); the browser and progress code never reinterpret it. */
+/**
+ * Canonical training result (see docs/call-integration.md); the browser and
+ * progress code never reinterpret it.
+ */
 export interface CallTraining {
   outcome: Outcome;
   /** Null when the attempt isn't scored (errors). */
@@ -157,7 +182,10 @@ export interface CallRecord {
   outcome?: SimOutcome;
   /** Set together with `outcome` once the call is completed. */
   training?: CallTraining;
-  /** ElevenLabs conversation bound to this call; analysis only ever uses this id. */
+  /**
+   * ElevenLabs conversation bound to this call; analysis only ever uses this
+   * id.
+   */
   conversationId?: string;
   createdAt: string;
   acceptedAt?: string;

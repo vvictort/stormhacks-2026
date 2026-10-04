@@ -7,7 +7,10 @@ export type ScamProfileState =
   | { status: 'ready'; view: ScamProfileView }
   | { status: 'error' }
 
-/** The account's vulnerability analysis; refetched whenever a page using it mounts. */
+/**
+ * The account's vulnerability analysis; refetched whenever a page using it
+ * mounts.
+ */
 export function useScamProfile(
   uid: string | null | undefined,
 ): ScamProfileState {
@@ -15,6 +18,7 @@ export function useScamProfile(
     uid?: string | null
     value: ScamProfileState
   }>({ value: { status: 'loading' } })
+
   useEffect(() => {
     if (!uid) return
     const controller = new AbortController()
@@ -33,7 +37,9 @@ export function useScamProfile(
           setState({ uid, value: { status: 'error' } })
         }
       })
+
     return () => controller.abort()
   }, [uid])
+
   return state.uid === uid ? state.value : { status: 'loading' }
 }

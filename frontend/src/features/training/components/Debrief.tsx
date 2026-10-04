@@ -49,6 +49,7 @@ export function Debrief({
   const correct = choice === scenario.correctAction
   const isScam = scenario.correctAction === 'report'
   const complete = mission && missionComplete(mission)
+
   const habits = [
     inspectedLink &&
       hasLink(scenario) &&
@@ -69,6 +70,7 @@ export function Debrief({
     : isScam
       ? "Not quite. Here's what gave it away."
       : 'Not quite. This one was genuine.'
+
   useEffect(() => heading.current?.focus(), [])
 
   return (

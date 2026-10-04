@@ -10,7 +10,10 @@ import {
 import { tracker } from './track'
 import './instincts.css'
 
-/** "Speed and trend": how fast and how well the user decides, then against now. Hidden if the metrics can't load. */
+/**
+ * "Speed and trend": how fast and how well the user decides, then against now.
+ * Hidden if the metrics can't load.
+ */
 export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
   const [state, setState] = useState<{
     uid?: string | null
@@ -32,6 +35,7 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
       .catch(() => {
         if (!controller.signal.aborted) setState({ uid, metrics: null })
       })
+
     return () => controller.abort()
   }, [uid])
 
@@ -40,9 +44,11 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
   const chart = instinctsChart(state.metrics)
 
   return (
-    // Part of Insights' numbers, right after the results: a sub-block, not a card of its own.
+    // Part of Insights' numbers, right after the results: a sub-block, not a
+    // card of its own.
     <section className="home-instincts" aria-labelledby="instincts-title">
-      {/* What's compared sits by the heading, so the then → now numbers read right. */}
+      {/* What's compared sits by the heading, so the then → now numbers read
+          right. */}
       <div className="home-stat-head">
         <h2 id="instincts-title">Speed and trend</h2>
         {view && <span>{view.note}</span>}
@@ -99,7 +105,10 @@ const BAR = 10
 const GAP = 4
 const HEIGHT = 44
 
-/** A few inline SVG bars; each bar's label is its tooltip, and the whole series is the image's accessible name. */
+/**
+ * A few inline SVG bars; each bar's label is its tooltip, and the whole series
+ * is the image's accessible name.
+ */
 function MiniBars({
   chart,
 }: {

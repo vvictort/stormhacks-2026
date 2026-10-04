@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
 import { AppError } from "./errors.ts";
+
 declare global {
   namespace Express {
     interface Request {
@@ -8,9 +9,13 @@ declare global {
     }
   }
 }
+
 export type VerifyToken = (idToken: string) => Promise<DecodedIdToken>;
 
-/** `queryToken` also accepts `?access_token=`; only for SSE, because EventSource can't send headers. */
+/**
+ * `queryToken` also accepts `?access_token=`; only for SSE, because EventSource
+ * can't send headers.
+ */
 export const requireAuth =
   (
     verify: VerifyToken = (token) => getAuth().verifyIdToken(token),
@@ -27,6 +32,7 @@ export const requireAuth =
     if (!token) {
       throw new AppError(401, "UNAUTHENTICATED", "Please sign in to continue.");
     }
+
     try {
       req.user = await verify(token);
     } catch (error) {

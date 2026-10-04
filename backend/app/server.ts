@@ -35,9 +35,15 @@ export interface AppOptions {
   origin: string;
   verifyToken?: VerifyToken;
   geminiApiKey?: string;
-  /** Tests inject a fake structured-output model; otherwise Gemini when a key is set. */
+  /**
+   * Tests inject a fake structured-output model; otherwise Gemini when a key is
+   * set.
+   */
   jsonModel?: JsonModel;
-  /** Grounding examples for generated emails and calls; unset loads backend/fixtures/scam-library.json (missing: none). */
+  /**
+   * Grounding examples for generated emails and calls; unset loads
+   * backend/fixtures/scam-library.json (missing: none).
+   */
   library?: ScamLibrary;
   /** Unset: the vulnerability analysis is computed in the backend. */
   snowflake?: Snowflake | null;
@@ -71,6 +77,7 @@ export function createApp({
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
   });
+
   const auth = requireAuth(verifyToken);
   app.use("/api/users", auth, usersRouter(repos.users));
   app.use(
@@ -95,7 +102,8 @@ export function createApp({
   app.use("/api/training", auth, trainingRouter(repos));
   app.use("/api/training", auth, behaviorRouter(repos));
 
-  // Simulated texts and calls. The scenario list and tracked links are public; the SSE stream alone takes ?access_token=.
+  // Simulated texts and calls. The scenario list and tracked links are public;
+  // the SSE stream alone takes ?access_token=.
   app.use("/api/comms/scenarios", scenarioListRouter(catalog));
   app.use("/api/comms/l", linkRouter(texts));
   app.get(

@@ -45,6 +45,7 @@ export function RequireAuth() {
   if (!profile?.onboardingComplete && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />
   }
+
   return <Outlet />
 }
 
@@ -55,7 +56,8 @@ export function SessionLoading({ label = 'Loading' }: { label?: string }) {
       className="grid min-h-dvh place-items-center bg-background"
       aria-busy="true"
     >
-      {/* .session-loading stays hidden for 350ms, so fast session checks never flash a loader. */}
+      {/* .session-loading stays hidden for 350ms, so fast session checks never
+          flash a loader. */}
       <div className="session-loading" role="status">
         <LoaderCircle
           className="spinner text-primary"

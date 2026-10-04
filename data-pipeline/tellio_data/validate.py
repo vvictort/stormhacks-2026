@@ -1,4 +1,6 @@
-"""Schema check for scam-library.json (the contract shared with backend/app library loader)."""
+"""Schema check for scam-library.json (the contract shared with backend/app
+library loader).
+"""
 
 import hashlib
 
@@ -71,9 +73,8 @@ def validate(doc: dict) -> list[str]:
             err('more than 6 cues')
         allowed = set(ex.get('tactics', [])) | set(ex.get('signals', []))
         pos = 0
-        for c in (
-            cues
-        ):  # cues are in text order, so each must be found after the previous one ends
+        # cues are in text order, so each must be found after the previous one ends
+        for c in cues:
             q = c.get('quote', '')
             if c.get('tag') not in allowed:
                 err(f'cue tag {c.get("tag")} not in tactics/signals')

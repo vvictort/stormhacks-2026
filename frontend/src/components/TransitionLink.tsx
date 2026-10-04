@@ -4,7 +4,10 @@ import { preloadPages } from '../lib/lazyPage'
 import { confirmNavigation, navigationGuarded } from '../lib/navigationGuard'
 import { withViewTransition, type NavDirection } from '../lib/viewTransition'
 
-/** A Link that animates the route change like a phone app (push forward, pop back). During a live call it asks first. */
+/**
+ * A Link that animates the route change like a phone app (push forward, pop
+ * back). During a live call it asks first.
+ */
 export function TransitionLink({
   direction = 'forward',
   onClick,
@@ -14,7 +17,8 @@ export function TransitionLink({
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     onClick?.(event)
-    // Leave modified clicks (new tab, etc.) and non-primary buttons to the browser.
+    // Leave modified clicks (new tab, etc.) and non-primary buttons to the
+    // browser.
     if (
       event.defaultPrevented ||
       event.button !== 0 ||
@@ -25,9 +29,12 @@ export function TransitionLink({
     ) {
       return
     }
+
     event.preventDefault()
-    // The target page's chunk must be loaded before the transition's synchronous update, or it would animate to a
-    // loading screen. Already loaded (the usual case, see App) this resolves at once; a failed load still navigates.
+    // The target page's chunk must be loaded before the transition's
+    // synchronous update, or it would animate to a loading screen. Already
+    // loaded (the usual case, see App) this resolves at once; a failed load
+    // still navigates.
     const go = () =>
       void preloadPages()
         .catch(() => {})

@@ -20,7 +20,10 @@ import type { CallCaption } from '../../../comms/callState'
 import type { CallScenario } from '../scenarios'
 import { formatDuration, offersPractice, type CallScreen } from './callModel'
 
-/** Call time since this mounted (the moment the call connected), ticking once a second. */
+/**
+ * Call time since this mounted (the moment the call connected), ticking once
+ * a second.
+ */
 function Elapsed() {
   const [since] = useState(() => Date.now())
   const [now, setNow] = useState(since)
@@ -28,6 +31,7 @@ function Elapsed() {
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
     return () => window.clearInterval(timer)
   }, [])
+
   return (
     <span className="call-timer">
       <span className="sr-only">Call time </span>
@@ -36,7 +40,10 @@ function Elapsed() {
   )
 }
 
-/** `live`: announce status changes. Off for a ticking call timer, which would otherwise be read out every second. */
+/**
+ * `live`: announce status changes. Off for a ticking call timer, which would
+ * otherwise be read out every second.
+ */
 function Caller({
   label,
   number,
@@ -101,7 +108,10 @@ function RoundButton({
   )
 }
 
-/** Captions, newest last; only the latest few stay on screen. A polite live region reads each new line once. */
+/**
+ * Captions, newest last; only the latest few stay on screen. A polite live
+ * region reads each new line once.
+ */
 function CaptionLog({
   captions,
   callerLabel,
@@ -111,10 +121,12 @@ function CaptionLog({
 }) {
   const log = useRef<HTMLDivElement>(null)
   const latest = captions.at(-1)?.message
-  // Keep the newest line in view as lines arrive or grow, without yanking back on unrelated re-renders.
+  // Keep the newest line in view as lines arrive or grow, without yanking back
+  // on unrelated re-renders.
   useEffect(() => {
     log.current?.scrollTo({ top: log.current.scrollHeight })
   }, [captions.length, latest])
+
   return (
     <div
       ref={log}
@@ -206,7 +218,10 @@ const problem: Partial<
   },
 }
 
-/** The phone's call app for a live (voiced) call. One screen per call state; see callModel.callScreen. */
+/**
+ * The phone's call app for a live (voiced) call. One screen per call state;
+ * see callModel.callScreen.
+ */
 export function LiveCallScreen(props: LiveProps) {
   const { scenario, screen, callerLabel } = props
   const info = problem[screen]
@@ -225,7 +240,8 @@ export function LiveCallScreen(props: LiveProps) {
           </p>
         )}
         <div className="call-problem-actions">
-          {/* The focused button (Answer) is gone with the old screen: put focus on the way forward. */}
+          {/* The focused button (Answer) is gone with the old screen: put focus
+              on the way forward. */}
           {info.retry && (
             <button
               type="button"
@@ -405,7 +421,10 @@ export function LiveCallScreen(props: LiveProps) {
 
 const LINE_MS = 3200
 
-/** Caption-only practice: the local script plays as captions; the user hangs up or does what the caller asks. */
+/**
+ * Caption-only practice: the local script plays as captions; the user hangs up
+ * or does what the caller asks.
+ */
 export function PracticeCallScreen({
   scenario,
   onDone,

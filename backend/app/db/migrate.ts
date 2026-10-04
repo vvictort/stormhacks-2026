@@ -8,7 +8,10 @@ const directory = fileURLToPath(new URL("./migrations", import.meta.url));
 const migrationFiles = async () =>
   (await readdir(directory)).filter((x) => x.endsWith(".sql")).sort();
 
-/** Migration files not yet recorded in schema_migrations (all of them on a fresh database). Read-only. */
+/**
+ * Migration files not yet recorded in schema_migrations (all of them on a fresh
+ * database). Read-only.
+ */
 export async function pendingMigrations(db: Database) {
   const applied = await db.query("SELECT version FROM schema_migrations").then(
     ({ rows }) => new Set(rows.map((row) => row.version as string)),

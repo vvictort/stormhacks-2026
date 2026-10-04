@@ -9,7 +9,10 @@ const SNOWFLAKE_REQUIRED = [
   "SNOWFLAKE_ID_SALT",
 ] as const;
 
-/** One startup line per sponsor integration: what is on and what the app falls back to. Names only, never values. */
+/**
+ * One startup line per sponsor integration: what is on and what the app falls
+ * back to. Names only, never values.
+ */
 export function integrationLines(config: Config): string[] {
   const snowflakeSet = SNOWFLAKE_REQUIRED.filter((key) => config[key]);
   return [

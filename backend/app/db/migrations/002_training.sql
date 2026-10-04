@@ -6,7 +6,9 @@ CREATE TABLE training_attempts (
   scenario_id text NOT NULL,
   scenario_title text NOT NULL,
   difficulty text NOT NULL CHECK (difficulty IN ('easy', 'medium', 'hard')),
-  outcome text NOT NULL CHECK (outcome IN ('resisted', 'compromised', 'declined', 'missed', 'error')),
+  outcome text NOT NULL CHECK (
+    outcome IN ('resisted', 'compromised', 'declined', 'missed', 'error')
+  ),
   success boolean,
   tactics text[] NOT NULL DEFAULT '{}',
   signals text[] NOT NULL DEFAULT '{}',
@@ -17,7 +19,9 @@ CREATE TABLE training_attempts (
   metadata jsonb NOT NULL DEFAULT '{}',
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX training_attempts_uid_completed_idx ON training_attempts (firebase_uid, completed_at DESC);
+
+CREATE INDEX training_attempts_uid_completed_idx
+  ON training_attempts (firebase_uid, completed_at DESC);
 
 CREATE TABLE generated_call_scenarios (
   id text PRIMARY KEY CHECK (id LIKE 'gen-%'),

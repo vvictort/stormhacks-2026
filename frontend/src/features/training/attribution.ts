@@ -1,10 +1,12 @@
 import type { GeneratedInfo } from './scenarios.ts'
 
-// Sponsor credit lines, kept honest: each names a sponsor only when that sponsor really did the work for this run.
+// Sponsor credit lines, kept honest: each names a sponsor only when that
+// sponsor really did the work for this run.
 
 /**
- * A generated scenario's source line: Gemini only when it wrote it, grounding only when it drew on library examples
- * (real scams for a scam, real legitimate emails for a genuine message).
+ * A generated scenario's source line: Gemini only when it wrote it, grounding
+ * only when it drew on library examples (real scams for a scam, real
+ * legitimate emails for a genuine message).
  */
 export function generatedCredit(
   generated: GeneratedInfo | undefined,
@@ -16,7 +18,10 @@ export function generatedCredit(
     : 'Written by Gemini'
 }
 
-/** ElevenLabs voiced the call only when it was answered live: declined, missed and caption-only calls never reach it. */
+/**
+ * ElevenLabs voiced the call only when it was answered live: declined, missed
+ * and caption-only calls never reach it.
+ */
 export const voiceCredit = ({
   practice,
   answered,

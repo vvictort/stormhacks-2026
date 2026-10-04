@@ -8,7 +8,10 @@ export interface AuthFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   trailingAction?: ReactNode
   /** Shown at the right end of the label row, e.g. "Forgot password?". */
   labelAction?: ReactNode
-  /** Set false when something else (e.g. the password checklist) carries this field's feedback. */
+  /**
+   * Set false when something else (e.g. the password checklist) carries this
+   * field's feedback.
+   */
   messages?: boolean
 }
 
@@ -23,7 +26,8 @@ export function AuthField({
   className = '',
   ...inputProps
 }: AuthFieldProps) {
-  // The error takes the hint's place, so describe the field by whichever is showing.
+  // The error takes the hint's place, so describe the field by whichever is
+  // showing.
   const description = error
     ? `${id}-error`
     : hint
@@ -46,7 +50,8 @@ export function AuthField({
         />
         {trailingAction}
       </div>
-      {/* A reserved message line: hint and error share it, so feedback never resizes the form. */}
+      {/* A reserved message line: hint and error share it, so feedback never
+          resizes the form. */}
       {messages && (
         <div className="field-message">
           {hint && (

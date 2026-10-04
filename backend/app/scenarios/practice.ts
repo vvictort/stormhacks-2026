@@ -23,9 +23,11 @@ import {
   type ScamLibrary,
 } from "./library.ts";
 
-// The practice path. Every scam in it comes from the scam library: emails are real phishing emails rewritten with
-// invented names, calls follow real scam-call patterns, and texts were written by Gemini from library examples.
-// scripts/build-practice.ts writes the files; tests check they match what this module builds.
+// The practice path. Every scam in it comes from the scam library: emails are
+// real phishing emails rewritten with invented names, calls follow real
+// scam-call patterns, and texts were written by Gemini from library examples.
+// scripts/build-practice.ts writes the files; tests check they match what this
+// module builds.
 
 export const PRACTICE_FILE = fileURLToPath(
   new URL(
@@ -38,9 +40,11 @@ export const FIXTURE_DIR = fileURLToPath(
 );
 
 /**
- * The library rows behind each practice slot, hand-picked for being clean, on-topic and readable (automatic ranking
- * kept surfacing junk such as pharmacy spam or advance-fee letters filed under the wrong type). Picking is the only
- * human step: every word of each scam still comes from the dataset. A row that stops building fails the tests.
+ * The library rows behind each practice slot, hand-picked for being clean,
+ * on-topic and readable (automatic ranking kept surfacing junk such as pharmacy
+ * spam or advance-fee letters filed under the wrong type). Picking is the only
+ * human step: every word of each scam still comes from the dataset. A row that
+ * stops building fails the tests.
  */
 const EMAILS: [ScamCategory, Difficulty, string][] = [
   ["promotional", "easy", "email-a6b654ddfb30"],
@@ -57,7 +61,11 @@ const CALLS: [ScamCategory, Difficulty, string][] = [
   ["government", "medium", "call-9489cf86c8ae"],
   ["account_security", "hard", "call-279c76aa6092"],
 ];
-/** Practice texts have no source row: Gemini writes each from library examples of its scam type. */
+
+/**
+ * Practice texts have no source row: Gemini writes each from library examples
+ * of its scam type.
+ */
 export const TEXTS: [ScamCategory, Difficulty][] = [
   ["shipping", "easy"],
   ["promotional", "easy"],
@@ -72,7 +80,9 @@ const CALL_CREDIT =
   "Follows a real scam-call pattern summarised from a public dataset (CC BY-NC-ND 4.0).";
 const TEXT_CREDIT = "A practice text Gemini wrote from real scam examples.";
 
-/** A stable clock time for a practice message, so rebuilding changes nothing. */
+/**
+ * A stable clock time for a practice message, so rebuilding changes nothing.
+ */
 function receivedAt(id: string) {
   const n = createHash("sha1").update(id).digest().readUInt32BE(0);
   return `${1 + (n % 12)}:${String((n >> 4) % 60).padStart(2, "0")} ${(n >> 10) % 2 ? "AM" : "PM"}`;
@@ -110,6 +120,7 @@ export function practiceEmails(library: ScamLibrary) {
         `practice: ${rowId} no longer builds a clean email${draft ? `: ${draft.problems[0]}` : ""}`,
       );
     }
+
     return { ...draft.scenario, id };
   });
 }
@@ -121,6 +132,7 @@ export function practiceCalls(library: ScamLibrary) {
     if (!steps) {
       throw new Error(`practice: ${rowId} no longer makes a call pattern`);
     }
+
     const stored = patternCall(
       `lib-${rowId}`,
       category,
@@ -130,14 +142,13 @@ export function practiceCalls(library: ScamLibrary) {
       CALL_CREDIT,
     );
     const { teaching: _teaching, ...voice } = stored;
+
     return {
       fixture: { userId: "dev-user", scenario: CallScenario.parse(voice) },
       teaching: trainingCallScenario(stored),
     };
   });
 }
-
-// --- Practice texts: written by Gemini from library examples at build time, checked like the emails. ---
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
 const httpsUrl = z
@@ -151,6 +162,7 @@ const httpsUrl = z
       return false;
     }
   }, "must be an https URL");
+
 const optional = <T extends z.ZodType>(schema: T) =>
   schema.nullish().transform((value) => value ?? undefined);
 
@@ -191,7 +203,10 @@ const Indicator = z.object({
   detail: text(10, 500),
 });
 
-/** The frontend `SmsScenario` for a practice text (frontend/src/features/training/scenarios.ts). */
+/**
+ * The frontend `SmsScenario` for a practice text
+ * (frontend/src/features/training/scenarios.ts).
+ */
 export const PracticeText = z
   .object({
     id: z.string().regex(/^lib-sms-[a-z_]+$/),
@@ -260,7 +275,10 @@ export const PracticeText = z
   });
 export type PracticeText = z.infer<typeof PracticeText>;
 
-/** The text bubbles as the email checks see them: SmsThread marks each message's text, and a link only as a whole URL. */
+/**
+ * The text bubbles as the email checks see them: SmsThread marks each message's
+ * text, and a link only as a whole URL.
+ */
 const rendered = (
   messages: { text: string; link?: string }[],
   indicators: z.infer<typeof Indicator>[],
@@ -372,7 +390,10 @@ const textLevel: Record<Difficulty, string> = {
   hard: "HARD: calm, polite and personal, no shouting or spelling mistakes; only subtle tells such as a look-alike link or an unusual request.",
 };
 
-/** Up to three library examples for a text: real texts of the category first, then emails and call patterns, which carry the same tricks. */
+/**
+ * Up to three library examples for a text: real texts of the category first,
+ * then emails and call patterns, which carry the same tricks.
+ */
 function textExamples(
   library: ScamLibrary,
   category: ScamCategory,
@@ -401,7 +422,10 @@ RULES:
 ${groundingBlock(examples)}`;
 }
 
-/** One practice text for a slot, or null when Gemini fails twice (the build then keeps the committed one). */
+/**
+ * One practice text for a slot, or null when Gemini fails twice (the build then
+ * keeps the committed one).
+ */
 export async function generatePracticeText(
   model: JsonModel,
   library: ScamLibrary,
@@ -427,7 +451,10 @@ export async function generatePracticeText(
   );
 }
 
-/** Model JSON to a checked practice text, repairing near-miss quotes; otherwise the problems, for a retry. */
+/**
+ * Model JSON to a checked practice text, repairing near-miss quotes; otherwise
+ * the problems, for a retry.
+ */
 export function checkText(
   raw: string,
   meta: {
@@ -451,12 +478,14 @@ export function checkText(
         ),
     };
   }
+
   const sms = parsed.data;
   const messages = sms.messages.map((m) =>
     m.link ? { text: m.text, link: m.link } : { text: m.text },
   );
   const shown = rendered(messages, []);
   const visible: z.infer<typeof Indicator>[] = [];
+
   for (const flag of sms.redFlags) {
     const quote = hiddenIndicators({
       ...shown,
@@ -475,12 +504,14 @@ export function checkText(
       visible.push(candidate[candidate.length - 1]);
     }
   }
+
   const problems: string[] = [];
   if (visible.length < 3) {
     problems.push(
       "At least 3 redFlags quotes must be copied exactly from a message text or be a whole link URL, and must not overlap.",
     );
   }
+
   const scenario = PracticeText.safeParse({
     id: meta.id,
     type: "sms",
@@ -503,6 +534,7 @@ export function checkText(
       grounding: { exampleCount: meta.exampleCount, source: "scam-library" },
     },
   });
+
   if (!scenario.success) {
     problems.push(
       ...scenario.error.issues
@@ -510,14 +542,16 @@ export function checkText(
         .map((issue) => `${issue.path.join(".")}: ${issue.message}`),
     );
   }
+
   return problems.length || !scenario.success
     ? { problems }
     : { value: scenario.data };
 }
 
 /**
- * The live comms text thread's scenario for a practice text (`/api/comms/texts`): its opening message, with the link
- * as the tracked `{{link}}`, and a generic persona for the reply provider.
+ * The live comms text thread's scenario for a practice text
+ * (`/api/comms/texts`): its opening message, with the link as the tracked
+ * `{{link}}`, and a generic persona for the reply provider.
  */
 export function textThreadScenario(sms: PracticeText) {
   const link = sms.messages.find((m) => m.link)?.link;
@@ -534,7 +568,10 @@ export function textThreadScenario(sms: PracticeText) {
   });
 }
 
-/** Everything the practice path ships: the frontend file's contents and the comms fixtures. */
+/**
+ * Everything the practice path ships: the frontend file's contents and the
+ * comms fixtures.
+ */
 export function buildPractice(library: ScamLibrary, texts: PracticeText[]) {
   const calls = practiceCalls(library);
   return {

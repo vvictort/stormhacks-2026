@@ -43,6 +43,7 @@ const identity = (uid: string) =>
     email: `${uid}@example.test`,
     email_verified: true,
   }) as DecodedIdToken;
+
 const verifyToken = async (token: string) => {
   if (token === "alex" || token === "sam") return identity(token);
   throw Object.assign(new Error("invalid"), { code: "auth/invalid-id-token" });
@@ -57,6 +58,7 @@ const event = (overrides: Record<string, unknown> = {}) => ({
   difficulty: "medium",
   ...overrides,
 });
+
 const completed = (overrides: Record<string, unknown> = {}) =>
   event({
     type: "scenario_completed",
@@ -65,7 +67,10 @@ const completed = (overrides: Record<string, unknown> = {}) =>
     ...overrides,
   });
 
-/** Routes over the given repositories; `recorded` collects every behaviour row written. */
+/**
+ * Routes over the given repositories; `recorded` collects every behaviour row
+ * written.
+ */
 function routes(repos: Repositories = fakeRepos()) {
   const recorded: BehaviorEvent[] = [];
   const record = repos.behavior.record.bind(repos.behavior);
@@ -73,12 +78,14 @@ function routes(repos: Repositories = fakeRepos()) {
     recorded.push(...rows);
     return record(rows);
   };
+
   const app = createApp({
     repos,
     services: testServices(repos).services,
     origin,
     verifyToken,
   });
+
   return {
     recorded,
     post: (events: unknown, user: string | null = "alex") => {
@@ -103,14 +110,15 @@ function routes(repos: Repositories = fakeRepos()) {
 test("invalid batches are rejected whole with a 400", async () => {
   const { post, recorded } = routes();
   const bad = [
-    [], // empty
+    [],
     Array.from({ length: 51 }, () => event()), // oversize
     [event({ type: "nope" })],
     [event({ type: "call_answered" })], // call events only come from the server
     [event({ channel: "call" })],
     [event({ attemptId: "call_123" })], // must be a browser UUID
     [event({ scamCategory: "romance" })],
-    [event({ outcome: "reported_correct" })], // outcome only on scenario_completed
+    // outcome only on scenario_completed
+    [event({ outcome: "reported_correct" })],
     [completed({ outcome: "compromised" })], // a call outcome
     [completed({ outcome: undefined })],
     [
@@ -134,6 +142,7 @@ test("invalid batches are rejected whole with a 400", async () => {
     [event({ responseTimeMs: -1 })],
     [event(), event({ type: "nope" })], // one bad event fails the batch
   ];
+
   for (const events of bad) {
     assert.equal(
       (await post(events)).status,
@@ -141,6 +150,7 @@ test("invalid batches are rejected whole with a 400", async () => {
       JSON.stringify(events).slice(0, 120),
     );
   }
+
   assert.equal(recorded.length, 0);
   assert.equal((await post([event()], null)).status, 401);
   assert.equal(
@@ -166,6 +176,7 @@ test("the uid comes from the token; metadata is capped to safe keys and redacted
     },
   ]);
   assert.deepEqual([res.status, res.body], [202, { accepted: 1 }]);
+
   const [row] = recorded;
   assert.equal(row.uid, "alex");
   assert.equal(row.type, "link_clicked");
@@ -174,6 +185,7 @@ test("the uid comes from the token; metadata is capped to safe keys and redacted
     site: "bank-secure.example",
     note: "call [NUMBER:16 digits]",
   });
+
   await post([event({ scamCategory: "government" })]);
   assert.equal(recorded[1].scamCategory, "government", "a given category wins");
 });
@@ -201,6 +213,7 @@ test("timestamps are clamped to the last few minutes; missing means server time"
     event({ at: "2001-01-01T00:00:00+02:00" }),
     event(),
   ]).expect(202);
+
   const [future, old, none] = recorded.map((r) => Date.parse(r.at));
   assert.ok(future >= before && future <= Date.now());
   assert.ok(Math.abs(old - (before - MAX_EVENT_AGE_MS)) < 5000);
@@ -218,6 +231,7 @@ test("a finished text or email is also saved once as a training attempt", async 
   await post([
     completed({ outcome: "safe_incorrect", responseTimeMs: 12_400 }),
   ]).expect(202); // a retried batch
+
   const { attempts, stats, vulnerability } = (await progress().expect(200))
     .body;
   assert.equal(attempts.length, 1);
@@ -241,12 +255,14 @@ test("a finished text or email is also saved once as a training attempt", async 
   );
   assert.deepEqual(stats, { total: 1, successes: 0, compromised: 1 });
   assert.deepEqual(vulnerability.weakCategories, ["banking"]);
+
   const detail = await repos.attempts.get("alex", attempts[0].id);
   assert.equal(detail?.durationSecs, 12);
   assert.equal(
     Date.parse(detail!.completedAt) - Date.parse(detail!.startedAt!),
     12_400,
   );
+
   assert.equal((await progress("sam").expect(200)).body.attempts.length, 0);
 });
 
@@ -258,6 +274,7 @@ test("a finished message stores its tactics on the attempt, so missed tactics re
     400,
     "tactics are the shared vocabulary",
   );
+
   await post([
     completed({
       outcome: "safe_incorrect",
@@ -272,6 +289,7 @@ test("a finished message stores its tactics on the attempt, so missed tactics re
       outcome: "safe_correct",
     }),
   ]).expect(202);
+
   assert.deepEqual(
     (await repos.attempts.get("alex", "6f1c1b1e-8d43-4c55-9a0e-2f5d7c1a9b01"))
       ?.tactics,
@@ -299,6 +317,7 @@ test("most improved needs a real gain: accuracy first, then speed", () => {
     then: { accuracy: then[0], avgDetectionMs: then[1] },
     now: { accuracy: now[0], avgDetectionMs: now[1] },
   });
+
   assert.equal(mostImproved([]), null);
   assert.equal(
     mostImproved([
@@ -328,8 +347,6 @@ test("most improved needs a real gain: accuracy first, then speed", () => {
   );
 });
 
-// ---------- Calls: behaviour derived from the call lifecycle ----------
-
 const scenario: CallScenario = {
   id: "courier-customs-fee-1",
   title: "Courier customs fee",
@@ -354,6 +371,7 @@ function callRig(
       return record(r);
     },
   };
+
   const calls = new CallService(
     store,
     new CallBehaviorSink(inner, behavior, store),
@@ -366,12 +384,14 @@ function callRig(
       callMaxSeconds: 180,
     },
   );
+
   const completedRow = () =>
     new Promise<void>((r) => {
       notify = () => {
         if (rows.some((x) => x.type === "scenario_completed")) r();
       };
     });
+
   return { calls, rows, inner, completedRow };
 }
 
@@ -452,12 +472,14 @@ test("an answered call records answer, end and its analysed outcome", async () =
       },
     });
   });
+
   const { calls, rows, completedRow } = callRig();
   const call = await calls.start("alex", scenario);
   assert.notEqual(await calls.accept(call.id), "wrong_state");
   const done = completedRow();
   await calls.ended(call.id, "conv_1");
   await done;
+
   assert.deepEqual(
     rows.map((r) => [r.type, r.outcome]),
     [
@@ -498,6 +520,7 @@ test("storage is a TimescaleDB hypertable only when the extension and the hypert
     };
     return { repo: new BehaviorRepository(db as never), asked };
   };
+
   const plain = repoOver([false]);
   assert.equal(await plain.repo.storage(), "postgres");
   assert.equal(
@@ -506,17 +529,18 @@ test("storage is a TimescaleDB hypertable only when the extension and the hypert
     "timescaledb_information is never queried without the extension",
   );
   assert.equal(await repoOver([true, false]).repo.storage(), "postgres");
+
   const tiger = repoOver([true, true]);
   assert.equal(await tiger.repo.storage(), "timescale");
   assert.equal(await tiger.repo.storage(), "timescale");
   assert.equal(tiger.asked.length, 2, "cached per process");
+
   const flaky = repoOver([new Error("connection refused"), true, true]);
   await assert.rejects(flaky.repo.storage());
   assert.equal(await flaky.repo.storage(), "timescale");
 });
 
-// ---------- On Postgres (PGlite in tests, a TimescaleDB hypertable on TigerData) ----------
-
+// On Postgres (PGlite in tests, a TimescaleDB hypertable on TigerData)
 const url = process.env.TEST_DATABASE_URL;
 describe("behaviour events and metrics on Postgres", { skip: !url }, () => {
   let db: Database;
@@ -538,7 +562,6 @@ describe("behaviour events and metrics on Postgres", { skip: !url }, () => {
     await db?.end();
   });
 
-  /** A completed attempt `day` days and `minute` minutes into the history. */
   const done = (
     uid: string,
     n: number,
@@ -579,13 +602,18 @@ describe("behaviour events and metrics on Postgres", { skip: !url }, () => {
 
   test("metrics on sample data: accuracy, report rate, detection time, then vs now, categories, timeline", async () => {
     const history = [
-      done("alex", 0, "safe_incorrect", "shipping", 20_000), // fell for it
+      // fell for it
+      done("alex", 0, "safe_incorrect", "shipping", 20_000),
       done("alex", 1, "reported_correct", "banking", 16_000),
-      done("alex", 2, "safe_incorrect", "shipping", 14_000), // fell for it again
-      done("alex", 3, "safe_correct", "banking", 10_000), // genuine, rightly trusted
+      // fell for it again
+      done("alex", 2, "safe_incorrect", "shipping", 14_000),
+      // genuine, rightly trusted
+      done("alex", 3, "safe_correct", "banking", 10_000),
       done("alex", 4, "reported_correct", "shipping", 8000),
-      done("alex", 5, "declined", "shipping", 3000, "call"), // detection: time to decline
-      done("alex", 6, "resisted", "banking", 90_000, "call"), // answered: no detection time
+      // detection: time to decline
+      done("alex", 5, "declined", "shipping", 3000, "call"),
+      // answered: no detection time
+      done("alex", 6, "resisted", "banking", 90_000, "call"),
       done("alex", 7, "reported_correct", "shipping", 6000),
     ];
     const noise = [
@@ -729,6 +757,7 @@ describe("behaviour events and metrics on Postgres", { skip: !url }, () => {
       ).rows[0].tactics,
       ["urgency", "fear"],
     );
+
     const m = (await metrics().expect(200)).body;
     assert.deepEqual(
       [m.attempts, m.accuracy, m.reportRate, m.avgDetectionMs, m.trend],
@@ -748,8 +777,10 @@ describe("behaviour events and metrics on Postgres", { skip: !url }, () => {
         callMaxSeconds: 180,
       },
     );
+
     const call = await calls.start("alex", scenario);
     await calls.decline(call.id, "declined");
+
     const { rows } = await db.query(
       "SELECT event_type, outcome, attempt_id FROM behavior_events ORDER BY event_time, event_type",
     );
@@ -761,6 +792,7 @@ describe("behaviour events and metrics on Postgres", { skip: !url }, () => {
         ["scenario_completed", "declined"],
       ],
     );
+
     const m = (await routes(repo).metrics().expect(200)).body;
     assert.deepEqual(
       [m.attempts, m.accuracy, m.reportRate, m.categories[0].category],

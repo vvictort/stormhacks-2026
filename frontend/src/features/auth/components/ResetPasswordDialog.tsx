@@ -42,12 +42,14 @@ export function ResetPasswordDialog({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (pending) return
+
     const validationError = validateEmail(email)
     setEmailError(validationError)
     if (validationError) {
       document.getElementById('reset-email')?.focus()
       return
     }
+
     rememberFocus()
     if (await recoverPassword(email.trim())) setSent(true)
   }

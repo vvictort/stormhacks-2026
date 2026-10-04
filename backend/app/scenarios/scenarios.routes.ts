@@ -10,8 +10,9 @@ import { generateCallScenario, trainingCallScenario } from "./generator.ts";
 import type { ScamLibrary } from "./library.ts";
 
 /**
- * /api/training/call-scenarios. POST: a personalised call scenario, stored server-side. GET /:id: its teaching copy in
- * the frontend `CallScenario` shape, owner only. The prompt never leaves the server through these routes.
+ * /api/training/call-scenarios. POST: a personalised call scenario, stored
+ * server-side. GET /:id: its teaching copy in the frontend `CallScenario`
+ * shape, owner only. The prompt never leaves the server through these routes.
  */
 export function scenariosRouter(
   { users, attempts, scenarios, insights }: Repositories,
@@ -26,6 +27,7 @@ export function scenariosRouter(
         "You’ve generated a lot of scenarios. Please wait a moment and try again.",
       );
     }
+
     const [profile, history, focus] = await Promise.all([
       users.ensureUser(req.user!),
       attempts.list(req.user!.uid, HISTORY_LIMIT),
@@ -54,6 +56,7 @@ export function scenariosRouter(
       source,
     });
   });
+
   router.get("/:id", async (req, res) => {
     // Another user's id is a 404 like an unknown one, so ids can't be probed.
     const stored = req.params.id.startsWith("gen-")
@@ -64,6 +67,7 @@ export function scenariosRouter(
     }
     res.json(trainingCallScenario(stored));
   });
+
   return router;
 }
 
@@ -71,7 +75,10 @@ const ListScenarios = z.object({
   channel: z.enum(["text", "call"]).optional(),
 });
 
-/** GET /api/comms/scenarios: fixture summaries for a picker (no prompts, no auth). */
+/**
+ * GET /api/comms/scenarios: fixture summaries for a picker (no prompts,
+ * no auth).
+ */
 export function scenarioListRouter(catalog: ScenarioCatalog) {
   const router = Router();
   router.get("/", (req, res) => {

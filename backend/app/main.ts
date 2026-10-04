@@ -21,8 +21,10 @@ const SWEEP_INTERVAL_MS = 15_000;
 const config = loadConfig();
 initializeApp({ projectId: config.FIREBASE_PROJECT_ID });
 const db = createDatabase(config.DATABASE_URL);
-// A schema behind the code breaks progress, saved calls and behaviour events with bare 503s: refuse to start instead.
-// An unreachable database is not checked here; requests report it as they did before.
+
+// A schema behind the code breaks progress, saved calls and behaviour events
+// with bare 503s: refuse to start instead. An unreachable database is not
+// checked here; requests report it.
 const pending = await pendingMigrations(db).catch(() => []);
 if (pending.length) {
   console.error(
@@ -31,9 +33,13 @@ if (pending.length) {
   await db.end();
   process.exit(1);
 }
+
 const repos = createRepositories(db);
-// Grounding examples for generated emails and calls; a malformed file stops startup here, a missing one is logged.
+
+// Grounding examples for generated emails and calls; a malformed file stops
+// startup here, a missing one is logged.
 console.info(defaultLibrary().summary());
+
 const store = new PgSimStore(db);
 const events = new PgEventSink(db);
 const services = {
@@ -57,6 +63,7 @@ const services = {
     },
   ),
 };
+
 const snowflake = snowflakeConfig(config);
 for (const line of integrationLines(config)) console.info(line);
 // Not awaited: an unreachable database shouldn't hold up the listen.
@@ -64,6 +71,7 @@ repos.behavior.storage().then(
   (storage) => console.info(storageLine(storage)),
   () => console.info(storageLine(null)),
 );
+
 const app = createApp({
   repos,
   services,
@@ -102,12 +110,15 @@ function shutdown() {
     process.exit(1);
   }, 10000);
   deadline.unref();
-  // Open SSE streams would hold close() until the deadline; clients reconnect on their own.
+
+  // Open SSE streams would hold close() until the deadline; clients reconnect
+  // on their own.
   closeStreams();
   server.close(async () => {
     await db.end();
     clearTimeout(deadline);
   });
 }
+
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);

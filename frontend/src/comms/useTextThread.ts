@@ -18,21 +18,29 @@ export interface TextThreadHandle {
   typing: boolean
   outcome: Outcome | null
   endReason: ThreadEndReason | null
-  /** A reply is in flight. */
   sending: boolean
   error: string | null
-  /** Resolves with the stored (redacted) copy, or null if it failed (see `error`). */
+  /**
+   * Resolves with the stored (redacted) copy, or null if it failed (see
+   * `error`).
+   */
   send: (body: string) => Promise<TextMessage | null>
   report: () => Promise<boolean>
   /** Retry after a fatal connection error. */
   reconnect: () => void
 }
 
-/** Backoff for reopening the stream after the server refused it (expired token, restart, ...). */
+/**
+ * Backoff for reopening the stream after the server refused it (expired token,
+ * restart, ...).
+ */
 const RETRY_DELAYS_MS = [1000, 2000, 5000, 10_000, 20_000]
 const EVENTS = ['message', 'typing', 'ended'] as const
 
-/** Live view of one simulated text thread over SSE; `threadId` null means no thread. */
+/**
+ * Live view of one simulated text thread over SSE; `threadId` null means no
+ * thread.
+ */
 export function useTextThread(threadId: string | null): TextThreadHandle {
   const [state, dispatch] = useReducer(
     threadReducer,
@@ -42,7 +50,8 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
   const [generation, setGeneration] = useState(0)
   const latestThreadId = useRef(threadId)
 
-  // The reducer only switches threads on an action for the new one, so derive a fresh view until then.
+  // The reducer only switches threads on an action for the new one, so derive
+  // a fresh view until then.
   const view =
     state.threadId === threadId ? state : initialThreadState(threadId)
 
@@ -91,8 +100,10 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
       }
       es.onerror = () => {
         if (disposed) return
-        // CONNECTING: the browser retries by itself and replays from Last-Event-ID (deduped by the reducer).
-        // CLOSED: the server answered with an error (401 expired token in the URL, 404, ...).
+        // CONNECTING: the browser retries by itself and replays from
+        // Last-Event-ID (deduped by the reducer).
+        // CLOSED: the server answered with an error (401 expired token in the
+        // URL, 404, ...).
         if (es.readyState === EventSource.CONNECTING) {
           dispatch({
             type: 'connection',
@@ -116,7 +127,8 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
       dispatch({ type: 'connection', threadId: id, connection: 'reconnecting' })
       timer = setTimeout(async () => {
         try {
-          // Authenticated with a header, so the client refreshes an expired token for us.
+          // Authenticated with a header, so the client refreshes an expired
+          // token for us.
           const thread = await comms.getThread(id, abort.signal)
           if (disposed) return
           dispatch({ type: 'snapshot', threadId: id, thread })
@@ -142,7 +154,8 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
     }
   }, [threadId, generation])
 
-  // Results of sends/reports for a thread we've since left are dropped (the reducer would reset to it).
+  // Results of sends/reports for a thread we've since left are dropped (the
+  // reducer would reset to it).
   const dispatchCurrent = useCallback((action: ThreadAction) => {
     if (action.threadId === latestThreadId.current) dispatch(action)
   }, [])
@@ -153,7 +166,8 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
       const id = threadId
       dispatchCurrent({ type: 'send', threadId: id, phase: 'start' })
       try {
-        // No optimistic copy: the server stores a redacted version. The SSE echo is deduped by id.
+        // No optimistic copy: the server stores a redacted version. The SSE
+        // echo is deduped by id.
         const message = await comms.reply(id, body)
         dispatchCurrent({ type: 'message', threadId: id, message })
         return message

@@ -8,7 +8,9 @@ interface Session {
   authStateReady: () => Promise<void>
 }
 
-/** Keep every request and its response attached to the session that started it. */
+/**
+ * Keep every request and its response attached to the session that started it.
+ */
 export function createAuthenticatedApi(
   session: Session,
   signOut: () => Promise<void>,

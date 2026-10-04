@@ -1,12 +1,16 @@
 import type { CallRecord, TextThread } from "../shared/types.ts";
 
 /**
- * Persistence for in-progress simulations (text threads, calls); `PgSimStore` in production, `MemoryStore` in tests.
- * `update*` applies `fn` to a copy atomically and returns the updated copy plus `fn`'s return value;
- * returned objects are always copies, so mutate only inside `update*`.
+ * Persistence for in-progress simulations (text threads, calls); `PgSimStore`
+ * in production, `MemoryStore` in tests. `update*` applies `fn` to a copy
+ * atomically and returns the updated copy plus `fn`'s return value; returned
+ * objects are always copies, so mutate only inside `update*`.
  */
 export interface SimStore {
-  /** False (nothing stored) when the user already has an active thread: one active thread per user. */
+  /**
+   * False (nothing stored) when the user already has an active thread: one
+   * active thread per user.
+   */
   createThread(thread: TextThread): Promise<boolean>;
   getThread(id: string): Promise<TextThread | null>;
   updateThread<R>(

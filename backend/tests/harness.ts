@@ -31,7 +31,10 @@ export const identity = (uid: string) =>
     email_verified: true,
   }) as DecodedIdToken;
 
-/** Accepts `valid:<uid>`; anything else fails the way firebase-admin does for a bad token. */
+/**
+ * Accepts `valid:<uid>`; anything else fails the way firebase-admin does for a
+ * bad token.
+ */
 export const fakeVerify: VerifyToken = async (token) => {
   if (token.startsWith("valid:")) return identity(token.slice("valid:".length));
   throw Object.assign(new Error("Decoding Firebase ID token failed"), {
@@ -39,7 +42,8 @@ export const fakeVerify: VerifyToken = async (token) => {
   });
 };
 
-// Outbound fetch (ElevenLabs) goes to the current handler; nothing real ever leaves the process.
+// Outbound fetch (ElevenLabs) goes to the current handler; nothing real ever
+// leaves the process.
 export const realFetch = globalThis.fetch;
 type Outbound = (
   url: string,
@@ -59,12 +63,16 @@ export const json = (body: unknown, status = 200) =>
     headers: { "content-type": "application/json" },
   });
 
-/** Same contract as the SQL repositories, kept in memory so route tests run without a database. */
+/**
+ * Same contract as the SQL repositories, kept in memory so route tests run
+ * without a database.
+ */
 export function fakeRepos() {
   const attempts = new Map<string, AttemptInput>();
   const scenarios = new Map<string, { uid: string; scenario: CallScenario }>();
   const generations: { uid: string; at: number }[] = [];
   const messages = new Map<string, { uid: string; scenario: unknown }>();
+
   const summary = (a: AttemptInput) => ({
     id: a.attemptId,
     channel: a.channel,
@@ -77,6 +85,7 @@ export function fakeRepos() {
     tactics: a.tactics,
     completedAt: new Date(a.completedAt).toISOString(),
   });
+
   return {
     users: {
       async ensureUser(token: DecodedIdToken) {
@@ -167,7 +176,8 @@ export function fakeRepos() {
         return true;
       },
     },
-    // Behaviour events need SQL (tests/behavior.test.ts runs them on Postgres); wrap `record` to observe writes.
+    // Behaviour events need SQL (tests/behavior.test.ts runs them on Postgres);
+    // wrap `record` to observe writes.
     behavior: {
       async record() {},
       async metrics(): Promise<never> {
@@ -180,7 +190,10 @@ export function fakeRepos() {
   } satisfies Repositories;
 }
 
-/** The simulation services as main.ts builds them (in memory unless given a store), with a test ElevenLabs key unless `elevenLabs: false`. */
+/**
+ * The simulation services as main.ts builds them (in memory unless given a
+ * store), with a test ElevenLabs key unless `elevenLabs: false`.
+ */
 export function testServices(
   repos: Repositories,
   {
@@ -190,7 +203,8 @@ export function testServices(
   } = {},
 ) {
   const services = {
-    // The hand-written scenarios these tests were written against; the app ships the library-built ones.
+    // The hand-written scenarios these tests were written against; the app
+    // ships the library-built ones.
     catalog: new ScenarioCatalog(
       repos.scenarios,
       fileURLToPath(new URL("./fixtures/scenarios/", import.meta.url)),
@@ -208,10 +222,14 @@ export function testServices(
       callMaxSeconds: 180,
     }),
   };
+
   return { services, store };
 }
 
-/** The whole API with simulation services; `api` calls `/api/comms/*` the way the browser client does. */
+/**
+ * The whole API with simulation services; `api` calls `/api/comms/*` the way
+ * the browser client does.
+ */
 export function startApp({
   verify = fakeVerify,
   repos = fakeRepos() as Repositories,
@@ -220,7 +238,10 @@ export function startApp({
   const { services, store } = testServices(repos, { elevenLabs });
   const app = createApp({ repos, services, origin, verifyToken: verify });
 
-  /** `token: null` sends no Authorization header. POSTs always carry the app Origin and a JSON body. */
+  /**
+   * `token: null` sends no Authorization header. POSTs always carry the app
+   * Origin and a JSON body.
+   */
   const api = async (
     method: "GET" | "POST",
     path: string,
@@ -238,5 +259,6 @@ export function startApp({
       method === "GET" ? await req : await req.send((body ?? {}) as object);
     return { status: res.status, body: res.body, headers: res.headers };
   };
+
   return { app, api, repos, services, store };
 }

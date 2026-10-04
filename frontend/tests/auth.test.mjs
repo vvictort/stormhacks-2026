@@ -110,6 +110,7 @@ test('Firebase errors are translated without leaking internal error messages', (
     assert.ok(message.length > 20)
     assert.ok(!message.includes('INTERNAL_PROVIDER_DETAILS'))
   }
+
   assert.match(getAuthErrorMessage(null), /try again/i)
   assert.match(getAuthErrorMessage({ code: 'unknown' }), /try again/i)
 })
@@ -199,7 +200,8 @@ test('auth pages render while checking or signed out, and redirect signed-in use
 })
 
 test('auth pages wait for signup or sign-in to finish before redirecting', () => {
-  // Firebase signs in before the display name is saved; leaving early would drop the profile warning.
+  // Firebase signs in before the display name is saved; leaving early would
+  // drop the profile warning.
   for (const pending of ['signup', 'login', 'google']) {
     assert.deepEqual(resolveGuestRoute({ ...ready, signedIn: true, pending }), {
       kind: 'render',
@@ -238,6 +240,7 @@ test('the signup password checklist tracks length and matching live', () => {
   assert.deepEqual(state('a long password', ''), [true, false])
   assert.deepEqual(state('a long password', 'a long passwor'), [true, false])
   assert.deepEqual(state('a long password', 'a long password'), [true, true])
+
   // The checklist and submit validation agree on the length rule.
   assert.equal(
     validateAuthForm(

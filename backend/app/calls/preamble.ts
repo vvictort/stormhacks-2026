@@ -1,5 +1,6 @@
-// Fixed rules prepended to every scenario prompt (scenario prompts replace the agent's base prompt
-// via overrides, so this can't live only in the agent config). Wording to be reviewed with Sijing.
+// Fixed rules prepended to every scenario prompt (scenario prompts replace the
+// agent's base prompt via overrides, so this can't live only in the agent
+// config).
 
 export const SAFETY_PREAMBLE = `You are role-playing a scam caller in a scam-awareness training simulation.
 The person you are talking to signed up to practise spotting scams. The call happens inside a training website, not on a real phone line.

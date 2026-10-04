@@ -5,6 +5,7 @@ import {
   toE164,
   validateOnboarding,
 } from '../src/features/profile/validation.ts'
+
 const base = {
   name: 'Alex',
   countryCode: '+1',
@@ -12,6 +13,7 @@ const base = {
   profession: '',
   interests: '',
 }
+
 test('onboarding requires a name, a country code and a phone number', () => {
   assert.deepEqual(
     Object.keys(validateOnboarding({ ...base, name: '', phone: '123' })),
@@ -26,6 +28,7 @@ test('onboarding requires a name, a country code and a phone number', () => {
     {},
   )
 })
+
 test('the phone number is accepted in any format and joined to E.164', () => {
   for (const phone of [
     '6045551234',
@@ -36,6 +39,7 @@ test('the phone number is accepted in any format and joined to E.164', () => {
   ]) {
     assert.equal(toE164('+1', phone), '+16045551234', phone)
   }
+
   assert.equal(toE164('1', '6045551234'), '+16045551234')
   assert.equal(
     toE164('+44', '07700 900123'),
@@ -55,6 +59,7 @@ test('the phone number is accepted in any format and joined to E.164', () => {
   assert.equal(toE164('+1', '555'), null)
   assert.equal(toE164('', '6045551234'), null)
 })
+
 test('stored numbers split back into the two boxes', () => {
   assert.deepEqual(splitPhone('+16045551234'), {
     countryCode: '+1',
@@ -66,6 +71,7 @@ test('stored numbers split back into the two boxes', () => {
   })
   assert.deepEqual(splitPhone(null), { countryCode: '+1', phone: '' })
 })
+
 test('optional personalization fields have bounded sizes', () => {
   assert.ok(
     validateOnboarding({ ...base, profession: 'x'.repeat(201) }).profession,

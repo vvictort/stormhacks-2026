@@ -27,7 +27,8 @@ def example(record: dict, mode: str) -> dict | None:
         )
         text, subject = clean['text'], clean['subject']
     else:
-        # Derived-only: the source text never leaves this function; we keep only our own pattern summary.
+        # Derived-only: the source text never leaves this function; we keep only our own
+        # pattern summary.
         tags = pattern(record['text'], record['kind'], record['channel'])
         text, subject = tags.pop('text'), ''
     ex = {

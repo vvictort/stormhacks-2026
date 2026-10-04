@@ -7,7 +7,10 @@ import type {
   ScamCategory,
 } from "../shared/vocabulary.ts";
 
-/** One row of `behavior_events` (migration 005): a TimescaleDB hypertable on TigerData. */
+/**
+ * One row of `behavior_events` (migration 005): a TimescaleDB hypertable on
+ * TigerData.
+ */
 export interface BehaviorEvent {
   at: string;
   uid: string;
@@ -22,27 +25,38 @@ export interface BehaviorEvent {
   metadata: Record<string, unknown>;
 }
 
-/** Where behaviour events live: a TimescaleDB hypertable (TigerData) or a plain Postgres table. */
+/**
+ * Where behaviour events live: a TimescaleDB hypertable (TigerData) or a plain
+ * Postgres table.
+ */
 export type Storage = "timescale" | "postgres";
 
 export interface Period {
   accuracy: number | null;
   avgDetectionMs: number | null;
 }
+
 export interface CategoryMetrics extends Period {
   category: ScamCategory;
   attempts: number;
 }
+
 export interface Metrics {
   /** Scored, completed attempts (errors and abandoned calls never count). */
   attempts: number;
   /** 0 to 100. */
   accuracy: number | null;
-  /** Scam texts and emails reported, of all scam texts and emails seen; 0 to 100. */
+  /**
+   * Scam texts and emails reported, of all scam texts and emails seen; 0 to
+   * 100.
+   */
   reportRate: number | null;
   /** Decision time on texts and emails, ring time on declined calls. */
   avgDetectionMs: number | null;
-  /** The first `window` completed attempts against the latest `window` (min(5, half the history)); null under 2 attempts. */
+  /**
+   * The first `window` completed attempts against the latest `window` (min(5,
+   * half the history)); null under 2 attempts.
+   */
   trend: { window: number; then: Period; now: Period } | null;
   categories: CategoryMetrics[];
   mostImproved: { category: ScamCategory; then: Period; now: Period } | null;
@@ -53,15 +67,19 @@ export interface Metrics {
     correct: number;
     avgDetectionMs: number | null;
   }[];
-  /** The latest RECENT completed attempts, oldest first: one bar each on Home, since a same-day history is one day. */
+  /**
+   * The latest RECENT completed attempts, oldest first: one bar each on Home,
+   * since a same-day history is one day.
+   */
   recent: { at: string; correct: boolean; detectionMs: number | null }[];
   storage: Storage;
 }
 
 const RECENT = 12;
 
-// Completed, scored attempts, one per attempt id (a retried batch can repeat an event), each numbered overall and within
-// its category so the first and latest halves can be compared. Portable SQL: the same query runs on PGlite in tests.
+// Completed, scored attempts, one per attempt id (a retried batch can repeat an
+// event), each numbered overall and within its category so the first and latest
+// halves can be compared. Portable SQL: the same query runs on PGlite in tests.
 const SCORED = `WITH done AS (
   SELECT DISTINCT ON (attempt_id) event_time, channel, scam_category, outcome, response_time_ms
   FROM behavior_events
@@ -76,13 +94,18 @@ const SCORED = `WITH done AS (
   FROM done
 )`;
 
-/** An average as a 0–100 percentage / whole milliseconds; null over no rows. */
 const where = (filter?: string) => (filter ? ` FILTER (WHERE ${filter})` : "");
+
+/** An average as a 0–100 percentage / whole milliseconds; null over no rows. */
 const pct = (expr: string, filter?: string) =>
   `round(100 * avg(${expr})${where(filter)})::int`;
 const ms = (expr: string, filter?: string) =>
   `round(avg(${expr})${where(filter)})::int`;
-/** The first k and the latest k rows by `n` (numbered 1..total), k = min(5, total / 2). */
+
+/**
+ * The first k and the latest k rows by `n` (numbered 1..total), k = min(5,
+ * total / 2).
+ */
 const halves = (n: string, total: string) => {
   const k = `least(5, ${total} / 2)`;
   const first = `${n} <= ${k}`,
@@ -100,7 +123,10 @@ const period = (
   avgDetectionMs: row[`${side}_detection`] ?? null,
 });
 
-/** Greatest accuracy gain; with equal accuracy, the biggest drop in detection time. Null without a real improvement. */
+/**
+ * Greatest accuracy gain; with equal accuracy, the biggest drop in detection
+ * time. Null without a real improvement.
+ */
 export function mostImproved(
   categories: { category: ScamCategory; then: Period; now: Period }[],
 ) {
@@ -110,9 +136,11 @@ export function mostImproved(
     c.then.avgDetectionMs !== null && c.now.avgDetectionMs !== null
       ? c.then.avgDetectionMs - c.now.avgDetectionMs
       : 0;
+
   return (
     categories
-      // Faster alone counts only when they still get some right: falling for it faster isn't improving.
+      // Faster alone counts only when they still get some right: falling for it
+      // faster isn't improving.
       .filter(
         (c) =>
           gain(c) > 0 ||
@@ -125,11 +153,15 @@ export function mostImproved(
 export class BehaviorRepository {
   private readonly db: Database;
   private storageKind?: Promise<Storage>;
+
   constructor(db: Database) {
     this.db = db;
   }
 
-  /** Whether behavior_events is a hypertable (migration 005 makes it one when timescaledb exists). Cached per process. */
+  /**
+   * Whether behavior_events is a hypertable (migration 005 makes it one when
+   * timescaledb exists). Cached per process.
+   */
   storage(): Promise<Storage> {
     this.storageKind ??= (async (): Promise<Storage> => {
       const {
@@ -138,7 +170,9 @@ export class BehaviorRepository {
         `SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') AS found`,
       );
       if (!ext.found) return "postgres";
-      // timescaledb_information only exists with the extension, so it's queried only after the check above.
+
+      // timescaledb_information only exists with the extension, so it's queried
+      // only after the check above.
       const {
         rows: [hyper],
       } = await this.db
@@ -213,7 +247,8 @@ export class BehaviorRepository {
         `${SCORED} SELECT event_time, correct, detection_ms FROM scored ORDER BY n DESC LIMIT ${RECENT}`,
         [uid],
       ),
-      // Attribution only: an unreadable catalog is reported as plain Postgres rather than failing the metrics.
+      // Attribution only: an unreadable catalog is reported as plain Postgres
+      // rather than failing the metrics.
       this.storage().catch((): Storage => "postgres"),
     ]);
 
@@ -227,6 +262,7 @@ export class BehaviorRepository {
       now: period(r, "now"),
     }));
     const improved = mostImproved(categories.filter((c) => c.k > 0));
+
     return {
       attempts: overall.attempts,
       accuracy: overall.accuracy,

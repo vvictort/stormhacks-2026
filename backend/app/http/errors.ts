@@ -1,10 +1,15 @@
 import type { ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
+
 export class AppError extends Error {
   readonly status: number;
   readonly code: string;
-  /** Extra fields for the error body, e.g. the `threadId` of a conflicting thread. */
+  /**
+   * Extra fields for the error body, e.g. the `threadId` of a conflicting
+   * thread.
+   */
   readonly details?: Record<string, unknown>;
+
   constructor(
     status: number,
     code: string,
@@ -17,6 +22,7 @@ export class AppError extends Error {
     this.details = details;
   }
 }
+
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   if (error instanceof ZodError) {
     res.status(400).json({
