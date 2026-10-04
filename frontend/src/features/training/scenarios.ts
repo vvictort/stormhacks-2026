@@ -1,4 +1,5 @@
 // Local mock scenarios. Later these come from the scenario service; the shape stays the same.
+import { emailScenarios } from './emailScenarios.ts'
 
 export type Channel = 'sms' | 'email' | 'call'
 export type Action = 'report' | 'safe'
@@ -40,12 +41,28 @@ export interface SmsScenario extends BaseScenario {
   messages: SmsMessage[]
 }
 
-// Add EmailScenario / CallScenario here, plus a renderer in PhoneSimulator, when those channels land.
-export type Scenario = SmsScenario
+export interface EmailScenario extends BaseScenario {
+  type: 'email'
+  fromName: string
+  fromAddress: string
+  /** Where replies really go, when it differs from the sender. */
+  replyTo?: string
+  subject: string
+  receivedAt: string
+  /** Paragraphs. */
+  body: string[]
+  /** Shown under the body. Never rendered as working links. */
+  links?: string[]
+  /** File name only; it never opens. */
+  attachment?: string
+}
+
+// Add CallScenario here, plus a renderer in PhoneSimulator, when that channel lands.
+export type Scenario = SmsScenario | EmailScenario
 
 export const channels: { type: Channel; name: string; ready: boolean; blurb: string }[] = [
   { type: 'sms', name: 'Text messages', ready: true, blurb: 'Texts that land on the practice phone.' },
-  { type: 'email', name: 'Email', ready: false, blurb: 'Phishing emails in a practice inbox, with sender details you can inspect.' },
+  { type: 'email', name: 'Email', ready: true, blurb: 'Phishing emails in a practice inbox, with sender details you can inspect.' },
   { type: 'call', name: 'Phone calls', ready: false, blurb: 'Voiced scam calls you can answer or hang up on, with captions.' },
 ]
 
@@ -207,10 +224,16 @@ export const scenarios: Scenario[] = [
     explanation: "This is an account-takeover scam. The sender is signing in to an account linked to your number, and your code is the last thing they need.",
     nextTime: "Never pass on a code sent to your phone, even to someone you know. If the request seems real, check with them another way first.",
   },
+  ...emailScenarios,
 ]
 
 export function getScenario(id: string | undefined) {
   return scenarios.find((scenario) => scenario.id === id)
+}
+
+/** Whether the scenario has a link worth inspecting. */
+export function hasLink(scenario: Scenario) {
+  return scenario.type === 'sms' ? scenario.messages.some((message) => message.link) : Boolean(scenario.links?.length)
 }
 
 export interface Segment {

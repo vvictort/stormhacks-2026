@@ -1,17 +1,29 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { markFor, markText, scenarios, siteOf } from '../src/features/training/scenarios.ts'
+import { hasLink, markFor, markText, scenarios, siteOf } from '../src/features/training/scenarios.ts'
 import { currentLevel, loadProgress, recommend, recordAttempt, saveProgress, summarize, timeline } from '../src/features/training/progress.ts'
 
 test('every quoted indicator appears in its scenario text and ids are unique', () => {
   for (const scenario of scenarios) {
-    const text = scenario.messages.map((message) => `${message.text} ${message.link ?? ''}`).join(' ')
+    const text = scenario.type === 'email'
+      ? [scenario.subject, scenario.fromName, scenario.fromAddress, scenario.replyTo, ...scenario.body, ...(scenario.links ?? []), scenario.attachment].join(' ')
+      : scenario.messages.map((message) => `${message.text} ${message.link ?? ''}`).join(' ')
     for (const indicator of scenario.indicators) {
       if (indicator.quote) assert.ok(text.includes(indicator.quote), `${scenario.id}: "${indicator.quote}"`)
     }
     assert.ok(['report', 'safe'].includes(scenario.correctAction))
   }
   assert.equal(new Set(scenarios.map((scenario) => scenario.id)).size, scenarios.length)
+  const emails = scenarios.filter((scenario) => scenario.type === 'email')
+  assert.ok(emails.some((scenario) => scenario.correctAction === 'safe'), 'at least one genuine email')
+  assert.deepEqual(new Set(emails.map((scenario) => scenario.difficulty)), new Set(['easy', 'medium', 'hard']))
+})
+
+test('hasLink covers both channels', () => {
+  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'parcel-redelivery')), true)
+  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'dental-reminder')), false)
+  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'bank-sign-in')), true)
+  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'contractor-invoice')), false)
 })
 
 test('markText splits text into plain and numbered pieces without losing characters', () => {

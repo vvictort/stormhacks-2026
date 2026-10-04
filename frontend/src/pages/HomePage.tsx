@@ -21,7 +21,7 @@ export function HomePage() {
 
   const heading = done === 0
     ? `Welcome${name}. Let's start with a text.`
-    : next ? `Ready for another scenario${name}?` : `You've tried every text scenario${name}.`
+    : next ? `Ready for another scenario${name}?` : `You've tried every scenario${name}.`
   const cta = done === 0 ? 'Start your first scenario' : !next ? 'Practise again' : progress[next.id] ? 'Try it again' : 'Start next scenario'
   const flagsSeen = [...new Set(scenarios
     .filter((scenario) => progress[scenario.id] && scenario.correctAction === 'report')
@@ -35,7 +35,7 @@ export function HomePage() {
       <main className="home-main">
         <div className="home-intro">
           <h1>{heading}</h1>
-          <p className="home-lede">Tellio sends practice scam texts to a phone in your browser. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
+          <p className="home-lede">Tellio sends practice scam texts and emails to a phone in your browser. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
 
           {profileWarning && (
             <div className="train-notice" role="status">
@@ -56,7 +56,7 @@ export function HomePage() {
               ? <p>Nothing yet. After each scenario, you'll see here what you caught and which red flags you've learned to spot.</p>
               : (
                 <>
-                  <p>You've tried <strong>{done} of {total}</strong> text scenarios and made the right call on <strong>{correct}</strong>.</p>
+                  <p>You've tried <strong>{done} of {total}</strong> scenarios and made the right call on <strong>{correct}</strong>.</p>
                   <p>Practice level: <strong className="home-level">{level}</strong>. Two right calls move you up a level, and a miss eases things back.</p>
                   <h3>Your last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h3>
                   <ol className="home-recent">
