@@ -27,7 +27,7 @@ export interface AuthOptions {
 
 export type GetUserId = (req: Request, opts?: AuthOptions) => Promise<string>;
 
-/** Same verification as `backend/app/core/security.ts`: signature, expiry, audience and issuer. */
+/** Same verification as `backend/app/http/auth.ts`: signature, expiry, audience and issuer. */
 export function firebaseVerifier(projectId: string | undefined): VerifyToken {
   // Dev-user-only setups have no project, so every presented token is rejected rather than trusted.
   if (!projectId) {
