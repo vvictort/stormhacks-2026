@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@elevenlabs/react": "^1.16.0",
     "@tailwindcss/vite": "^4.3.3",
     "firebase": "^12.19.0",
     "lucide-react": "^1.51.0",
