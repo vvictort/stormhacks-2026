@@ -19,11 +19,6 @@ const channelLabels: Record<Channel, string> = {
   call: 'Call',
 }
 
-const channelLabel: Record<Channel, string> = {
-  sms: 'Text message',
-  email: 'Email',
-  call: 'Phone call',
-}
 
 const channelTabs = [
   { id: 'all', label: 'All' },
