@@ -181,7 +181,7 @@ function MissingScenario() {
   return (
     <main className="scenario-missing">
       <h1>We couldn't find that scenario.</h1>
-      <p>It may have been renamed. Your practice path has everything that's available.</p>
+      <p>It may have been renamed. History on Home lists every scenario.</p>
       <TransitionLink direction="back" className="train-primary" to="/home">Back to home</TransitionLink>
     </main>
   )

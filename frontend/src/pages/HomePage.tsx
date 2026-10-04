@@ -1,5 +1,6 @@
 import { ArrowRight, Check, Info, RotateCcw, X } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
 import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
@@ -7,17 +8,23 @@ import { useAuth } from '../features/auth/AuthContext'
 import { InstinctsCard } from '../features/insights/InstinctsCard'
 import { ScamProfileCard } from '../features/insights/ScamProfileCard'
 import { NextForYou } from '../features/training/components/NextForYou'
-import { PracticePath } from '../features/training/components/PracticePath'
+import { PathStop, PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { currentLevel, recommend, timeline } from '../features/training/progress'
 import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
 
+const tabs = [{ id: 'practice', label: 'Practice' }, { id: 'history', label: 'History' }, { id: 'insights', label: 'Insights' }] as const
+type Tab = (typeof tabs)[number]['id']
+
 export function HomePage() {
   const { user, profileWarning, dismissProfileWarning } = useAuth()
   const { profile } = useProfile()
   const { progress, callSync, adaptive } = useProgress(user?.uid)
+  const [params, setParams] = useSearchParams()
+  const tab: Tab = tabs.find((t) => t.id === params.get('tab'))?.id ?? 'practice'
+  const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
   const next = recommend(progress)
   const all = timeline(progress)
   const recent = all.slice(-8)
@@ -25,70 +32,106 @@ export function HomePage() {
   const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
   const name = firstName ? `, ${firstName}` : ''
 
-  const heading = all.length === 0 && !adaptive?.attempts.length ? `Welcome${name}. Let's find your blind spots.` : `Ready for your next scenario${name}?`
+  const heading = all.length === 0 && !adaptive?.attempts.length ? `Welcome${name}. Let's find your blind spots.` : `Ready when you are${name}.`
   const flagsSeen = [...new Set(scenarios
     .filter((scenario) => progress[scenario.id] && isScam(scenario))
     .flatMap((scenario) => scenario.indicators.map((indicator) => indicator.title)))]
 
   useEffect(() => { document.title = 'Home · Tellio' }, [])
 
+  // Tabs live in the URL (Back and reload keep them); filters are dropped when you leave History.
+  function show(id: Tab) {
+    setParams(id === 'practice' ? {} : { tab: id }, { replace: true })
+  }
+
+  // WAI-ARIA tabs: arrow keys move between them, and the panel follows.
+  function onTabKey(event: KeyboardEvent) {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
+    if (!step) return
+    event.preventDefault()
+    const id = tabs[(tabs.findIndex((t) => t.id === tab) + step + tabs.length) % tabs.length].id
+    show(id)
+    tabRefs.current[id]?.focus()
+  }
+
   return (
     <div className="train-shell">
       <TrainingHeader />
       <main className="home-main">
-        <div className="home-intro">
-          <RevealText as="h1" text={heading} />
-          <p className="home-lede">Tellio sends practice scam texts, emails and phone calls to a phone in your browser, and shapes each one around what caught you out before. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
+        <RevealText as="h1" className="home-title" text={heading} />
 
-          {profileWarning && (
-            <div className="train-notice" role="status">
-              <Info size={18} aria-hidden="true" />
-              <p>{profileWarning}</p>
-              <button type="button" className="train-notice-dismiss" onClick={dismissProfileWarning} aria-label="Dismiss this message"><X size={18} aria-hidden="true" /></button>
-            </div>
-          )}
-
-          <NextForYou adaptive={adaptive} localLevel={currentLevel(progress)} loading={callSync === 'loading'} />
-          <ScamProfileCard uid={user?.uid} />
-          <InstinctsCard uid={user?.uid} />
-
-          <section className="home-progress" aria-labelledby="progress-title">
-            <h2 id="progress-title">Your practice so far</h2>
-            {all.length === 0
-              ? <p>Nothing yet. After each scenario, you'll see here what you caught and which red flags you've learned to spot.</p>
-              : (
-                <>
-                  <p>You've practised <strong><CountUp value={all.length} /></strong> {all.length === 1 ? 'time' : 'times'} and made the right call on <strong><CountUp value={right} /></strong>.</p>
-                  <h3>Your last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h3>
-                  <ol className="home-recent">
-                    {recent.map((attempt) => (
-                      <li key={`${attempt.id}-${attempt.at}`} className={attempt.correct ? 'is-right' : 'is-missed'}>
-                        {attempt.correct ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />}
-                        <span className="sr-only">{getScenario(attempt.id)?.title ?? 'A scenario made for you'}: {attempt.correct ? 'right call' : 'missed'}</span>
-                      </li>
-                    ))}
-                  </ol>
-                  <p className="home-recent-note">Right call on {recent.filter((attempt) => attempt.correct).length} of {recent.length}, oldest first.</p>
-                  {flagsSeen.length > 0 && (
-                    <>
-                      <h3>Red flags you've met</h3>
-                      <ul className="home-flags">{flagsSeen.map((flag) => <li key={flag}>{flag}</li>)}</ul>
-                    </>
-                  )}
-                </>
-              )}
-            <p className="home-saved">{callSync === 'unavailable'
-              ? "We couldn't reach your account just now, so this shows what's saved in this browser."
-              : 'Your results are saved to your account.'}</p>
-          </section>
-
-          <section className="profile-summary" aria-label="Your saved profile">
-            <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
-            <TransitionLink className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
-          </section>
+        <div className="home-tabs segmented" role="tablist" aria-label="Home" onKeyDown={onTabKey}>
+          {tabs.map((t) => (
+            <button key={t.id} ref={(node) => { tabRefs.current[t.id] = node }} type="button" role="tab" id={`tab-${t.id}`}
+              aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1} onClick={() => show(t.id)}>
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        <PracticePath progress={progress} upNextId={next?.id} />
+        <div className="home-panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} key={tab}>
+          {tab === 'practice' && (
+            <>
+              {profileWarning && (
+                <div className="train-notice" role="status">
+                  <Info size={18} aria-hidden="true" />
+                  <p>{profileWarning}</p>
+                  <button type="button" className="train-notice-dismiss" onClick={dismissProfileWarning} aria-label="Dismiss this message"><X size={18} aria-hidden="true" /></button>
+                </div>
+              )}
+              <NextForYou adaptive={adaptive} localLevel={currentLevel(progress)} loading={callSync === 'loading'} />
+              {next && (
+                <section className="home-upnext" aria-labelledby="upnext-title">
+                  <div className="home-section-head">
+                    <h2 id="upnext-title">On your path</h2>
+                    <button type="button" className="text-link" onClick={() => show('history')}>See all<ArrowRight size={14} aria-hidden="true" /></button>
+                  </div>
+                  <ol className="path-stops"><PathStop scenario={next} progress={progress} upNext /></ol>
+                </section>
+              )}
+            </>
+          )}
+
+          {tab === 'history' && <PracticePath progress={progress} />}
+
+          {tab === 'insights' && (
+            <>
+              <section className="home-stats" aria-label="Your practice so far">
+                {all.length === 0
+                  ? <p>Nothing yet. Finish a scenario and your results show up here.</p>
+                  : (
+                    <>
+                      <dl className="home-stat-grid">
+                        <div><dt>Practised</dt><dd><CountUp value={all.length} /></dd></div>
+                        <div><dt>Right calls</dt><dd><CountUp value={right} /></dd></div>
+                      </dl>
+                      <ol className="home-recent" aria-label={`Last ${recent.length}, oldest first`}>
+                        {recent.map((attempt) => (
+                          <li key={`${attempt.id}-${attempt.at}`} className={attempt.correct ? 'is-right' : 'is-missed'}>
+                            {attempt.correct ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : <RotateCcw size={11} strokeWidth={3} aria-hidden="true" />}
+                            <span className="sr-only">{getScenario(attempt.id)?.title ?? 'A scenario made for you'}: {attempt.correct ? 'right call' : 'missed'}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </>
+                  )}
+                <p className="home-saved">{callSync === 'unavailable' ? "Couldn't reach your account. Showing this browser's results." : 'Saved to your account.'}</p>
+              </section>
+              <ScamProfileCard uid={user?.uid} />
+              <InstinctsCard uid={user?.uid} />
+              {flagsSeen.length > 0 && (
+                <section className="home-progress" aria-labelledby="flags-title">
+                  <h2 id="flags-title">Red flags you've met</h2>
+                  <ul className="home-flags">{flagsSeen.map((flag) => <li key={flag}>{flag}</li>)}</ul>
+                </section>
+              )}
+              <section className="profile-summary" aria-label="Your saved profile">
+                <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
+                <TransitionLink className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
+              </section>
+            </>
+          )}
+        </div>
       </main>
     </div>
   )

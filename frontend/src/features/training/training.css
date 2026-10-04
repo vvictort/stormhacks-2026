@@ -21,61 +21,73 @@
 .train-notice-dismiss { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; margin: -11px -10px -11px 0; border-radius: 8px; color: inherit; }
 .train-notice-dismiss:hover { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
 
-/* ---------- Home ---------- */
-.home-main { width: min(1180px, calc(100% - 64px)); margin: 24px auto 72px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(48px, 8vw, 120px); align-items: start; }
-.home-intro { padding-top: 24px; }
-.home-intro h1 { margin: 0 0 18px; font-family: var(--font-editorial); font-size: clamp(38px, 3.8vw, 50px); font-weight: 400; line-height: 1.1; letter-spacing: -0.035em; text-wrap: balance; }
-.home-intro h1:focus { outline: none; }
-.home-lede { max-width: 44ch; font-size: 16px; line-height: 1.65; color: var(--color-muted-strong); }
-.home-progress { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--color-border); }
-.home-progress h2 { margin: 0 0 10px; font-family: var(--font-editorial); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+/* ---------- Home: one column, three tabs (Practice, History, Insights) ---------- */
+.home-main { width: min(680px, calc(100% - 48px)); margin: 24px auto 72px; }
+.home-title { margin: 8px 0 22px; font-family: var(--font-editorial); font-size: clamp(32px, 3.4vw, 42px); font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
+.home-title:focus { outline: none; }
+
+/* Segmented control: the home tabs and History's channel filter. */
+.segmented { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); }
+.segmented button { flex: 1; min-height: 40px; padding: 0 12px; border-radius: 9px; color: var(--color-muted-strong); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.segmented button:hover:not([aria-selected="true"], [aria-pressed="true"]) { color: var(--color-foreground); }
+.segmented [aria-selected="true"], .segmented [aria-pressed="true"] { background: var(--color-surface); color: var(--color-foreground); box-shadow: 0 1px 3px #4836261f; }
+.home-tabs { position: sticky; top: 8px; z-index: 2; }
+.home-panel { padding-top: 8px; --rise: 6px; animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
+.home-panel > .next-for-you { margin-top: 20px; }
+.home-panel > .train-notice { margin-top: 20px; }
+
+.home-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.home-section-head h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--color-muted-strong); }
+.home-section-head .text-link { min-height: 44px; font-size: 14px; }
+.home-upnext { margin-top: 24px; }
+.home-upnext .path-stops { margin-top: 2px; }
+
+.home-stats { margin-top: 20px; }
+.home-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+.home-stat-grid div { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.home-stat-grid dt { font-size: 13px; color: var(--color-muted-strong); }
+.home-stat-grid dd { margin: 2px 0 0; font-family: var(--font-editorial); font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.home-stats > p { font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.home-stats .home-saved { margin-top: 10px; font-size: 12px; }
+
+.home-progress { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border); }
+.home-progress h2 { margin: 0 0 10px; font-family: var(--font-editorial); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
 .home-progress h3 { margin: 22px 0 10px; font-size: 14px; font-weight: 600; }
-.home-progress > p { text-wrap: pretty; max-width: 46ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.home-progress > p { text-wrap: pretty; max-width: 52ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
 .home-progress > p strong { color: var(--color-foreground); font-weight: 600; }
+.home-progress > p + p { margin-top: 8px; }
 .home-flags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .home-flags li { padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)); color: var(--color-primary-strong); font-size: 13px; line-height: 1.4; }
-.home-progress .home-saved { margin-top: 18px; font-size: 13px; }
-.home-progress > p + p { margin-top: 8px; }
 .home-recent { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .home-recent li { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--color-surface); }
 .home-recent .is-right { background: var(--color-success-strong); }
 .home-recent .is-missed { background: var(--color-accent-strong); }
-.home-progress .home-recent-note { margin-top: 8px; font-size: 13px; }
 
-/* The practice path: a vertical rail with one node per channel and a stop per scenario. */
-.path { padding: 24px 0 0; }
-.path > h2 { margin: 0 0 26px; font-family: var(--font-editorial); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
-.path-list, .path-stops { margin: 0; padding: 0; list-style: none; }
-/* --path-indent: distance from the rail's node column to the content. */
-.path-channel { --path-indent: 58px; position: relative; padding: 0 0 30px var(--path-indent); }
-.path-channel::before { content: ""; position: absolute; left: 20px; top: 44px; bottom: 4px; border-left: 2px solid var(--color-border); }
-.path-channel:last-child { padding-bottom: 0; }
-.path-channel:last-child::before { display: none; }
-.path-channel.is-soon::before { border-left-style: dashed; }
-/* The head anchors its own node: the scroll reveal animates `translate` here, which would otherwise
-   re-parent an absolutely positioned node and drop it onto the title. */
-.path-channel-head { position: relative; display: flex; align-items: center; gap: 12px; min-height: 42px; flex-wrap: wrap; }
-.path-channel-head h3 { margin: 0; font-size: 17px; font-weight: 600; }
-.path-node { position: absolute; left: calc(-1 * var(--path-indent)); top: 0; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--color-primary-strong); color: var(--color-surface); }
-.is-soon .path-node { background: var(--color-surface); color: var(--color-muted-strong); border: 1.5px dashed var(--color-control); }
-.path-soon { padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface)); color: var(--color-accent-strong); font-size: 12px; font-weight: 500; }
-.path-blurb { margin-top: 4px; max-width: 44ch; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); }
-.path-stops { display: grid; gap: 6px; margin-top: 14px; }
-.path-stop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline; padding: 14px 18px; border: 1px solid transparent; border-radius: 12px; transition: background-color 160ms ease, border-color 160ms ease; }
+/* History: filters, then a flat list of scenario rows (also the Practice tab's "On your path" row). */
+.path { padding-top: 12px; }
+.path-filters { display: grid; gap: 10px; }
+.path-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.path-chips button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-muted-strong); font-size: 13px; font-weight: 500; }
+.path-chips button[aria-pressed="true"] { border-color: var(--color-foreground); background: var(--color-foreground); color: var(--color-surface); }
+.path-chip-count { font-size: 12px; font-variant-numeric: tabular-nums; opacity: .7; }
+.path-empty { margin-top: 24px; font-size: 15px; color: var(--color-muted-strong); }
+.path-more { width: 100%; margin-top: 12px; }
+.path-stops { display: grid; gap: 2px; margin: 14px 0 0; padding: 0; list-style: none; }
+.path-stop { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; transition: background-color 160ms ease, border-color 160ms ease; }
 /* Hover cards only where hover exists: on touch a stuck card would look like a second "Up next". */
 @media (hover: hover) { .path-stop:hover { background: var(--color-surface); border-color: var(--color-border); } }
 .path-stop.is-upnext { background: var(--color-surface); border-color: var(--color-border); box-shadow: 0 6px 20px #4836260d, 0 1px 3px #48362608; }
 .path-stop:has(.path-stop-link:focus-visible) { outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
-.path-dot { position: absolute; left: -46px; top: 19px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--color-background); border: 2px solid var(--color-control); color: var(--color-surface); }
-.is-right .path-dot { background: var(--color-success-strong); border-color: var(--color-success-strong); }
-.is-missed .path-dot { background: var(--color-accent-strong); border-color: var(--color-accent-strong); }
-.is-next .path-dot { border-color: var(--color-primary-strong); box-shadow: inset 0 0 0 3px var(--color-background), inset 0 0 0 9px var(--color-primary); }
+.path-dot { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); color: var(--color-muted-strong); }
+.is-right .path-dot { background: var(--color-success-strong); color: var(--color-surface); }
+.is-missed .path-dot { background: var(--color-accent-strong); color: var(--color-surface); }
+.is-upnext .path-dot { background: var(--color-primary-strong); color: var(--color-surface); }
 .path-stop-body { min-width: 0; }
-.path-stop-link { font-size: 16px; font-weight: 600; color: var(--color-foreground); }
+.path-stop-link { font-size: 15px; font-weight: 600; color: var(--color-foreground); }
 .path-stop-link::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
 .path-stop-link:focus-visible { outline: none; }
-.path-stop-body p { margin-top: 3px; font-size: 14px; line-height: 1.5; color: var(--color-muted-strong); }
-.path-status { font-size: 13px; font-weight: 500; color: var(--color-muted-strong); white-space: nowrap; }
+.path-stop-body p { margin-top: 2px; overflow: hidden; font-size: 13px; line-height: 1.45; color: var(--color-muted-strong); text-overflow: ellipsis; white-space: nowrap; }
+.path-status { font-size: 12px; font-weight: 500; color: var(--color-muted-strong); white-space: nowrap; }
 .is-right .path-status { color: var(--color-success-strong); }
 .is-missed .path-status { color: var(--color-accent-strong); }
 .is-upnext .path-status { color: var(--color-primary-strong); }
@@ -211,15 +223,12 @@
 /* Scroll reveal (rise-in and --motion-scale from index.css): short blocks only, so
    "entry 100%" is reached as soon as each is fully on screen. Not on the phone or dialogs. */
 @supports (animation-timeline: view()) {
-  .home-progress, .path-channel-head, .path-blurb, .path-stop,
-  .debrief-next, .debrief-tip, .debrief-habit, .debrief-actions { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  .home-progress, .debrief-next, .debrief-tip, .debrief-habit, .debrief-actions { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
 }
 @keyframes clue-in { from { background-color: transparent; } }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1023px) {
-  .home-main { grid-template-columns: minmax(0, 1fr); gap: 48px; width: min(640px, calc(100% - 48px)); }
-  .home-intro { padding-top: 8px; }
   .scenario-main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "phone" "panel"; width: min(600px, calc(100% - 48px)); }
   .scenario-intro { text-align: left; }
   .phone-wrap { position: static; margin-top: 28px; }
@@ -231,12 +240,9 @@
   .train-header .brand { font-size: 28px; }
   .train-header .train-ghost { padding-inline: 10px; }
   .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
-  .home-intro h1 { font-size: 34px; }
-  .path-channel { --path-indent: 50px; }
-  .path-channel::before { left: 18px; }
-  .path-node { width: 38px; height: 38px; }
-  .path-dot { left: -40px; }
-  .path-stop { grid-template-columns: minmax(0, 1fr); padding: 12px 14px; }
+  .home-title { font-size: 30px; }
+  .segmented button { padding-inline: 8px; }
+  .path-stop { gap: 12px; padding: 10px 8px; }
   .scenario-intro h1 { font-size: 30px; margin-top: 14px; }
   .scenario-situation { font-size: 14px; }
   .phone-wrap { margin-top: 20px; }
