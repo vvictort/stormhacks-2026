@@ -165,6 +165,11 @@
 /* Clue markers: number + tint + underline, so meaning never rests on colour alone. */
 .clue { padding: 1px 2px; border-radius: 4px; background: color-mix(in srgb, var(--color-primary) 18%, transparent); color: inherit; text-decoration: underline 2px var(--color-primary-strong); text-underline-offset: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .clue-head { white-space: nowrap; }
+.clue[role='button'] { cursor: help; transition: background-color 150ms; }
+.clue[role='button']:hover, .clue[aria-expanded='true'] { background: color-mix(in srgb, var(--color-primary) 32%, transparent); }
+.clue[role='button']:focus-visible { outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
+.clue-tip { position: fixed; inset: auto; margin: 0; width: min(260px, calc(100vw - 16px)); padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); color: var(--color-foreground); box-shadow: 0 8px 24px rgb(37 37 37 / .14); font: 400 13px/1.45 var(--font-sans); text-align: left; white-space: normal; }
+.clue-tip strong { display: flex; align-items: center; gap: 2px; margin-bottom: 4px; font-size: 14px; font-weight: 600; }
 .clue-num { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-right: 3px; padding: 0 4px; border-radius: 9px; background: var(--color-primary-strong); color: var(--color-surface); font-size: 11px; font-weight: 700; line-height: 1; vertical-align: 2px; text-decoration: none; font-variant-numeric: tabular-nums; }
 .sms-link.is-marked { background: color-mix(in srgb, var(--color-primary) 18%, transparent); border-radius: 4px; }
 .is-safe-scenario .clue, .is-safe-scenario .sms-link.is-marked { background: color-mix(in srgb, var(--color-success) 26%, transparent); text-decoration-color: var(--color-success-strong); }

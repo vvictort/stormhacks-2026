@@ -1,6 +1,6 @@
 import { Globe, LockKeyhole } from 'lucide-react'
 import { AnimatePresence, m, useReducedMotion } from 'motion/react'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { spring } from '../../../lib/motion'
 import { markFor, markText, siteOf, type Indicator, type SmsMessage, type SmsScenario } from '../scenarios'
 
@@ -72,19 +72,57 @@ export function MessageBubble({ message, indicators, clueLabel, onInspect }: Bub
 /** Text with any quoted indicators wrapped in numbered clues. */
 export function Marked({ text, indicators, clueLabel }: { text: string; indicators: Indicator[]; clueLabel: string }) {
   return markText(text, indicators).map((segment, i) => segment.mark
-    ? <Clue key={i} n={segment.mark} label={clueLabel}>{segment.text}</Clue>
+    ? <Clue key={i} n={segment.mark} indicator={indicators[segment.mark - 1]} label={clueLabel}>{segment.text}</Clue>
     : segment.text)
 }
 
-function Clue({ n, label, children }: { n: number; label: string; children: string }) {
+/** A marked clue: hover or focus previews what it means, a click pins it open. */
+function Clue({ n, indicator, label, children }: { n: number; indicator: Indicator; label: string; children: string }) {
+  const [open, setOpen] = useState<'peek' | 'pinned' | null>(null)
+  const anchor = useRef<HTMLElement>(null)
+  const tip = useRef<HTMLSpanElement>(null)
+  const id = useId()
+
+  // The tip is a popover so the phone's scroll box can't clip it; it sits under the clue's last line.
+  useLayoutEffect(() => {
+    const el = tip.current
+    const lines = anchor.current?.getClientRects()
+    if (!el || !lines?.length) return
+    if (!open) return void (el.matches(':popover-open') && el.hidePopover())
+    el.showPopover()
+    const line = lines[lines.length - 1]
+    const below = line.bottom + 8 + el.offsetHeight < innerHeight
+    el.style.left = `${Math.max(8, Math.min(line.left, innerWidth - el.offsetWidth - 8))}px`
+    el.style.top = `${below ? line.bottom + 8 : line.top - el.offsetHeight - 8}px`
+    const close = () => setOpen(null)
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const toggle = () => setOpen((o) => (o === 'pinned' ? null : 'pinned'))
   // Glue the number to the first character only: there's no break inside a word anyway, and a long
   // unbroken mark (an email address) can still wrap instead of overflowing the phone.
   const [first = '', ...rest] = Array.from(children)
   return (
-    <mark className="clue">
+    // Not a <button>: buttons can't wrap mid-text, and long marks must.
+    <mark ref={anchor} className="clue" role="button" tabIndex={0} aria-expanded={Boolean(open)} aria-describedby={id}
+      onMouseEnter={() => setOpen((o) => o ?? 'peek')} onMouseLeave={() => setOpen((o) => (o === 'peek' ? null : o))}
+      onFocus={() => setOpen((o) => o ?? 'peek')} onBlur={() => setOpen(null)} onClick={toggle}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle() } }}>
       <span className="clue-head"><span className="clue-num" aria-hidden="true">{n}</span>{first}</span>
       {rest.join('')}
       <span className="sr-only"> ({label} {n})</span>
+      <span ref={tip} id={id} popover="manual" role="tooltip" className="clue-tip">
+        <strong><span className="clue-num" aria-hidden="true">{n}</span>{indicator.title}</strong>
+        {indicator.detail}
+      </span>
     </mark>
   )
 }
