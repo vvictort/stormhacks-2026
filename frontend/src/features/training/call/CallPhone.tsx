@@ -18,13 +18,14 @@ function Elapsed() {
   return <span className="call-timer"><span className="sr-only">Call time </span>{formatDuration((now - since) / 1000)}</span>
 }
 
-function Caller({ label, number, status, ringing = false }: { label: string; number?: string; status: ReactNode; ringing?: boolean }) {
+/** `live`: announce status changes. Off for a ticking call timer, which would otherwise be read out every second. */
+function Caller({ label, number, status, ringing = false, live = true }: { label: string; number?: string; status: ReactNode; ringing?: boolean; live?: boolean }) {
   return (
     <div className="call-caller">
       <span className={`call-avatar${ringing ? ' is-ringing' : ''}`} aria-hidden="true"><UserRound size={34} /></span>
       <h2 className="call-name"><span className="sr-only">Call from </span>{label}</h2>
       {number && <p className="call-number">{number}</p>}
-      <p className="call-status" role="status">{status}</p>
+      <p className="call-status" role={live ? 'status' : undefined}>{status}</p>
     </div>
   )
 }
@@ -91,8 +92,9 @@ export function LiveCallScreen(props: LiveProps) {
         <p className="call-problem-body">{info.body}</p>
         {offersPractice(screen) && <p className="call-problem-body">You can still practise this call with captions instead of a voice.</p>}
         <div className="call-problem-actions">
-          {info.retry && <button type="button" className="call-pill is-light" onClick={props.onRetry}><RotateCcw size={16} aria-hidden="true" />{info.retry}</button>}
-          {offersPractice(screen) && <button type="button" className="call-pill" onClick={props.onPractice}><Captions size={16} aria-hidden="true" />Practise with captions</button>}
+          {/* The focused button (Answer) is gone with the old screen: put focus on the way forward. */}
+          {info.retry && <button type="button" className="call-pill is-light" onClick={props.onRetry} autoFocus><RotateCcw size={16} aria-hidden="true" />{info.retry}</button>}
+          {offersPractice(screen) && <button type="button" className="call-pill" onClick={props.onPractice} autoFocus={!info.retry}><Captions size={16} aria-hidden="true" />Practise with captions</button>}
         </div>
       </div>
     )
@@ -130,13 +132,13 @@ export function LiveCallScreen(props: LiveProps) {
     case 'active':
       return (
         <div className="call-screen is-active">
-          <Caller label={callerLabel} status={<Elapsed />} />
+          <Caller label={callerLabel} status={<Elapsed />} live={false} />
           <p className={`call-speaking${props.agentSpeaking ? ' is-on' : ''}`} aria-hidden="true">
             <span className="call-bars"><i /><i /><i /><i /></span>{props.agentSpeaking ? 'Caller speaking' : 'Listening'}
           </p>
           <CaptionLog captions={props.captions} callerLabel={callerLabel} />
           <div className="call-actions is-single">
-            <RoundButton kind="hangup" label="Hang up" icon={<PhoneOff size={26} />} onClick={props.onHangUp} />
+            <RoundButton kind="hangup" label="Hang up" icon={<PhoneOff size={26} />} onClick={props.onHangUp} autoFocus />
           </div>
         </div>
       )
@@ -186,7 +188,7 @@ export function PracticeCallScreen({ scenario, onDone, done }: { scenario: CallS
   return (
     <div className="call-screen is-active">
       <p className="call-chip">Caption-only practice · no live voice</p>
-      <Caller label={scenario.callerLabel} status={<Elapsed />} />
+      <Caller label={scenario.callerLabel} status={<Elapsed />} live={false} />
       <CaptionLog captions={captions} callerLabel={scenario.callerLabel} />
       <m.div className="call-practice-actions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={spring}>
         <button type="button" className="call-pill is-light" onClick={() => onDone('comply')}>{scenario.practice.complyLabel}</button>
