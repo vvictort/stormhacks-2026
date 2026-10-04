@@ -25,7 +25,8 @@ const Env = z.object({
   FIREBASE_PROJECT_ID: z.string().optional(),
   COMMS_ALLOW_DEV_USER: z.stringbool().default(false),
   BACKEND_INTERNAL_URL: z.url().optional(),
-  INTERNAL_API_TOKEN: z.string().optional(),
+  // Same rule as the backend, which refuses shorter secrets.
+  INTERNAL_API_TOKEN: z.string().min(32, 'must be at least 32 characters (openssl rand -hex 32)').optional(),
 }).superRefine((env, ctx) => {
   if (env.NODE_ENV === 'production' && env.COMMS_ALLOW_DEV_USER) {
     ctx.addIssue({ code: 'custom', path: ['COMMS_ALLOW_DEV_USER'], message: 'must not be true in production' });

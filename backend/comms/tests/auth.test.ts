@@ -25,6 +25,7 @@ test('config refuses the dev user in production and needs a Firebase project oth
   assert.throws(() => parseConfig({ NODE_ENV: 'development' }), /FIREBASE_PROJECT_ID/);
   assert.equal(parseConfig({ FIREBASE_PROJECT_ID: 'p' }).COMMS_ALLOW_DEV_USER, false);
   assert.equal(parseConfig({ COMMS_ALLOW_DEV_USER: 'true' }).COMMS_ALLOW_DEV_USER, true);
+  assert.throws(() => parseConfig({ FIREBASE_PROJECT_ID: 'p', INTERNAL_API_TOKEN: 'short' }), /INTERNAL_API_TOKEN/);
 });
 
 test('config errors name the variable, never its value', () => {
