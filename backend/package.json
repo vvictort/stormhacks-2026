@@ -7,7 +7,7 @@
     "dev": "tsx watch app/main.ts",
     "start": "node --import tsx app/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
     "migrate": "node --import tsx app/db/migrate.ts"
   },
   "dependencies": {
