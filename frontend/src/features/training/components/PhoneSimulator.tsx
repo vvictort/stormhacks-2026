@@ -1,5 +1,6 @@
 import { Check, Flag, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type { Action, Scenario } from '../scenarios'
+import { EmailView } from './EmailView'
 import { AppHeader, PhoneFrame } from './PhoneFrame'
 import { MessageThread } from './SmsThread'
 
@@ -14,26 +15,28 @@ export function PhoneSimulator({ scenario, choice, onChoose, onInspect }: Simula
   return (
     <section className={`phone-wrap${scenario.correctAction === 'safe' ? ' is-safe-scenario' : ''}`} aria-label="Practice phone">
       <PhoneFrame time={scenario.receivedAt}>
-        {/* One renderer per channel; email and call screens slot in here. */}
+        {/* One renderer per channel; the call screen slots in here. */}
         {scenario.type === 'sms' && (
           <>
             <AppHeader label="Text messages from" title={scenario.sender} subtitle="Not in your contacts" />
             <MessageThread scenario={scenario} revealed={choice !== null} onInspect={onInspect} />
           </>
         )}
-        <ResponseControls choice={choice} onChoose={onChoose} />
+        {scenario.type === 'email' && <EmailView scenario={scenario} revealed={choice !== null} onInspect={onInspect} />}
+        <ResponseControls channel={scenario.type} choice={choice} onChoose={onChoose} />
       </PhoneFrame>
     </section>
   )
 }
 
-export function ResponseControls({ choice, onChoose }: { choice: Action | null; onChoose: (action: Action) => void }) {
+export function ResponseControls({ channel, choice, onChoose }: { channel: Scenario['type']; choice: Action | null; onChoose: (action: Action) => void }) {
+  const email = channel === 'email'
   if (choice) {
     return (
       <p className="phone-decided">
         {choice === 'report'
-          ? <><Flag size={15} aria-hidden="true" /> You reported and blocked this number.</>
-          : <><Check size={15} aria-hidden="true" /> You marked this message as safe.</>}
+          ? <><Flag size={15} aria-hidden="true" /> {email ? 'You reported this email and blocked the sender.' : 'You reported and blocked this number.'}</>
+          : <><Check size={15} aria-hidden="true" /> You marked this {email ? 'email' : 'message'} as safe.</>}
       </p>
     )
   }

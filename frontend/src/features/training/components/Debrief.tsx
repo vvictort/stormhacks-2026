@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Mascot } from '../../../components/Mascot'
-import type { Action, Scenario } from '../scenarios'
+import { hasLink, type Action, type Scenario } from '../scenarios'
 
 interface DebriefProps {
   scenario: Scenario
@@ -30,7 +30,7 @@ export function Debrief({ scenario, choice, inspected, next }: DebriefProps) {
       </div>
       <p className="debrief-lede">{scenario.explanation}</p>
 
-      <h3>{isScam ? 'Red flags in this message' : 'Why it checks out'}</h3>
+      <h3>{isScam ? `Red flags in this ${scenario.type === 'email' ? 'email' : 'message'}` : 'Why it checks out'}</h3>
       <p className="debrief-hint">The numbers match the highlights on the phone.</p>
       <ol className="debrief-clues">
         {scenario.indicators.map((indicator, i) => (
@@ -50,7 +50,7 @@ export function Debrief({ scenario, choice, inspected, next }: DebriefProps) {
           <p>{scenario.nextTime}</p>
         </div>
       )}
-      {inspected && scenario.messages.some((message) => message.link) && (
+      {inspected && hasLink(scenario) && (
         <p className="debrief-habit">You checked the link before deciding. That's a habit worth keeping.</p>
       )}
 

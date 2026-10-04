@@ -35,14 +35,17 @@ interface BubbleProps {
 export function MessageBubble({ index, message, indicators, clueLabel, onInspect }: BubbleProps) {
   return (
     <li className="sms-bubble" style={{ '--i': index } as CSSProperties}>
-      <p>
-        {markText(message.text, indicators).map((segment, i) => segment.mark
-          ? <Clue key={i} n={segment.mark} label={clueLabel}>{segment.text}</Clue>
-          : segment.text)}
-      </p>
+      <p><Marked text={message.text} indicators={indicators} clueLabel={clueLabel} /></p>
       {message.link && <LinkPreview url={message.link} mark={markFor(message.link, indicators)} clueLabel={clueLabel} onInspect={onInspect} />}
     </li>
   )
+}
+
+/** Text with any quoted indicators wrapped in numbered clues. */
+export function Marked({ text, indicators, clueLabel }: { text: string; indicators: Indicator[]; clueLabel: string }) {
+  return markText(text, indicators).map((segment, i) => segment.mark
+    ? <Clue key={i} n={segment.mark} label={clueLabel}>{segment.text}</Clue>
+    : segment.text)
 }
 
 function Clue({ n, label, children }: { n: number; label: string; children: string }) {

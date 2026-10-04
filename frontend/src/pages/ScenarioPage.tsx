@@ -1,4 +1,4 @@
-import { ArrowLeft, MessageSquareText } from 'lucide-react'
+import { ArrowLeft, Mail, MessageSquareText } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
@@ -6,7 +6,7 @@ import { Debrief } from '../features/training/components/Debrief'
 import { PhoneSimulator } from '../features/training/components/PhoneSimulator'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { recommend } from '../features/training/progress'
-import { getScenario, type Action, type Scenario } from '../features/training/scenarios'
+import { getScenario, hasLink, type Action, type Scenario } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 
 const difficultyLabel = { easy: 'Gentle start', medium: 'A little trickier', hard: 'Tricky' }
@@ -29,6 +29,7 @@ function ScenarioRun({ scenario }: { scenario: Scenario }) {
   const [choice, setChoice] = useState<Action | null>(null)
   const [inspected, setInspected] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
+  const email = scenario.type === 'email'
 
   useEffect(() => {
     document.title = `${scenario.title} · Tellio`
@@ -47,7 +48,7 @@ function ScenarioRun({ scenario }: { scenario: Scenario }) {
       <div className="scenario-intro">
         <Link className="train-back" to="/home"><ArrowLeft size={16} aria-hidden="true" />All scenarios</Link>
         <h1 ref={heading} tabIndex={-1}>{scenario.title}</h1>
-        <p className="scenario-meta"><MessageSquareText size={15} aria-hidden="true" /> Text message <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
+        <p className="scenario-meta">{email ? <Mail size={15} aria-hidden="true" /> : <MessageSquareText size={15} aria-hidden="true" />} {email ? 'Email' : 'Text message'} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
         <p className="scenario-situation"><strong>What you know:</strong> {scenario.situation}</p>
       </div>
 
@@ -60,8 +61,9 @@ function ScenarioRun({ scenario }: { scenario: Scenario }) {
             <div className="scenario-howto">
               <h2>Treat it like your own phone</h2>
               <ol>
-                <li>Read the message the way you would if it had just arrived.</li>
-                {scenario.messages.some((message) => message.link) && <li>Tap the link to see where it goes. Practice links never open.</li>}
+                <li>Read the {email ? 'email' : 'message'} the way you would if it had just arrived.</li>
+                {email && <li>Tap the sender's name to see the address it really came from.</li>}
+                {hasLink(scenario) && <li>Tap the link to see where it goes. Practice links never open.</li>}
                 <li>Then choose <strong>Looks safe</strong> or <strong>Report &amp; block</strong>.</li>
               </ol>
             </div>
