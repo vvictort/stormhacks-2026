@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import supertest from 'supertest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { createDatabase, type Database } from '../app/db/database.ts';
-import { migrate } from '../app/db/migrate.ts';
+import { migrate, pendingMigrations } from '../app/db/migrate.ts';
 import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
 import { cleanProfileText, generateCallScenario, pickCategory } from '../app/scenarios/generator.ts';
@@ -181,6 +181,10 @@ describe('Postgres training persistence', { skip: !url }, () => {
   });
   beforeEach(async () => { await db.query('TRUNCATE training_attempts, generated_call_scenarios, scenario_generation_requests'); });
   after(async () => { await db?.end(); });
+
+  test('after migrate, the startup check finds nothing pending', async () => {
+    assert.deepEqual(await pendingMigrations(db), []);
+  });
 
   test('saved attempts persist once and only the owner reads them back', async () => {
     const { save, getAttempt, progress } = routes(repo);
