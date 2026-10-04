@@ -176,9 +176,9 @@ export function ChannelSection({
                 aria-busy={pending === 'sms'}
               >
                 {pending === 'sms' ? (
-                  <><LoaderCircle size={16} className="spinner" aria-hidden="true" />Writing text message…</>
+                  <><LoaderCircle size={16} className="spinner" aria-hidden="true" />Writing message…</>
                 ) : (
-                  <><Sparkles size={16} aria-hidden="true" />Generate a text message made for you</>
+                  <><Sparkles size={16} aria-hidden="true" />Generate a message made for you</>
                 )}
               </button>
               <TransitionLink className="train-ghost" to={`/?tab=history&channel=${channel}`}>
