@@ -3,6 +3,7 @@ import { createElevenLabs } from './calls/elevenlabs.ts';
 import { CallService } from './calls/service.ts';
 import { loadConfig } from './config.ts';
 import { createDatabase } from './db/database.ts';
+import { Snowflake, snowflakeConfig } from './insights/snowflake.ts';
 import { createRepositories } from './repositories.ts';
 import { ScenarioCatalog } from './scenarios/catalog.ts';
 import { createApp } from './server.ts';
@@ -30,7 +31,9 @@ const services = {
     callMaxSeconds: config.CALL_MAX_SECONDS,
   }),
 };
-const app = createApp({ repos, services, origin: config.APP_ORIGIN, geminiApiKey: config.GEMINI_API_KEY });
+const snowflake = snowflakeConfig(config);
+console.info(snowflake ? 'Vulnerability analysis: Snowflake' : 'Vulnerability analysis: built-in (Snowflake not configured)');
+const app = createApp({ repos, services, origin: config.APP_ORIGIN, geminiApiKey: config.GEMINI_API_KEY, snowflake: snowflake && new Snowflake(snowflake) });
 const server = app.listen(config.PORT, config.HOST, () => console.info(`Tellio API: http://${config.HOST}:${config.PORT}/api`));
 server.on('error', async (error) => { console.error('API startup failed:', (error as NodeJS.ErrnoException).code); await db.end(); process.exitCode = 1; });
 

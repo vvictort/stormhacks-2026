@@ -4,6 +4,8 @@ import { callsRouter } from './calls/routes.ts';
 import type { CallService } from './calls/service.ts';
 import { requireAppRequest } from './http/app-origin.ts';
 import { requireAuth, type VerifyToken } from './http/auth.ts';
+import { InsightsService } from './insights/service.ts';
+import type { Snowflake } from './insights/snowflake.ts';
 import { AppError, errorHandler } from './http/errors.ts';
 import type { Repositories } from './repositories.ts';
 import type { ScenarioCatalog } from './scenarios/catalog.ts';
@@ -25,12 +27,14 @@ export interface AppOptions {
   origin: string;
   verifyToken?: VerifyToken;
   geminiApiKey?: string;
+  /** Unset: the vulnerability analysis is computed in the backend. */
+  snowflake?: Snowflake | null;
 }
 
 const notFound = () => { throw new AppError(404, 'NOT_FOUND', 'Route not found.'); };
 
 /** HTTP assembly only: shared middleware, then each feature's router. */
-export function createApp({ repos, services, origin, verifyToken, geminiApiKey }: AppOptions) {
+export function createApp({ repos, services, origin, verifyToken, geminiApiKey, snowflake = null }: AppOptions) {
   const { catalog, texts, calls } = services;
   const app = express();
   app.disable('x-powered-by');
@@ -42,6 +46,8 @@ export function createApp({ repos, services, origin, verifyToken, geminiApiKey }
   const auth = requireAuth(verifyToken);
   app.use('/api/users', auth, usersRouter(repos.users));
   app.use('/api/training/call-scenarios', auth, scenariosRouter(repos, { geminiApiKey }));
+  const insights = new InsightsService(repos.insights, snowflake);
+  app.get('/api/training/insights', auth, async (req, res) => { res.json(await insights.get(req.user!.uid)); });
   app.use('/api/training', auth, trainingRouter(repos.attempts));
 
   // Simulated texts and calls. The scenario list and tracked links are public; the SSE stream alone takes ?access_token=.
