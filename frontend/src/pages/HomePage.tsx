@@ -1,8 +1,7 @@
-import { ArrowRight, Check, Info, Mail, MessageSquareText, Phone, RotateCcw, X } from 'lucide-react'
+import { ArrowRight, Check, History, Info, Mail, MessageSquareText, Phone, RotateCcw, X } from 'lucide-react'
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
-import { TellIcon } from '../components/TellIcon'
 import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
@@ -96,8 +95,8 @@ export function HomePage() {
           {tab === 'insights' && (
             <>
               <ResultsSummary progress={progress} saved={callSync !== 'unavailable'} onMissed={() => setParams({ tab: 'history', status: 'missed' }, { replace: true })} />
-              <ScamProfileCard uid={user?.uid} />
               <InstinctsCard uid={user?.uid} />
+              <ScamProfileCard uid={user?.uid} />
               {flagsSeen.length > 0 && (
                 <section className="home-progress" aria-labelledby="flags-title">
                   <h2 id="flags-title">Red flags you've met</h2>
@@ -120,7 +119,7 @@ const channelRows = [
   { key: 'sms', label: 'Texts', Icon: MessageSquareText },
   { key: 'email', label: 'Emails', Icon: Mail },
   { key: 'call', label: 'Calls', Icon: Phone },
-  { key: 'made', label: 'Made for you', Icon: TellIcon },
+  { key: 'other', label: 'Older scenarios', Icon: History },
 ] as const
 const percent = (part: number, whole: number) => whole ? Math.round((part / whole) * 100) : 0
 
@@ -149,7 +148,7 @@ function ResultsSummary({ progress, saved, onMissed }: { progress: Progress; sav
 
       <div className="home-stat-head"><h3>By channel</h3><span>Right-call rate</span></div>
       <ul className="home-channels">
-        {channelRows.filter((row) => row.key !== 'made' || channels.made.attempts).map(({ key, label, Icon }) => {
+        {channelRows.filter((row) => row.key !== 'other' || channels.other.attempts).map(({ key, label, Icon }) => {
           const { attempts, right: ok } = channels[key]
           const rate = percent(ok, attempts)
           return (

@@ -1,4 +1,4 @@
-import { scenarios, type Difficulty, type Scenario } from './scenarios.ts'
+import { scenarios, type Channel, type Difficulty, type Scenario } from './scenarios.ts'
 
 // Texts and emails (and call practice-mode results) are saved in localStorage per account. Live calls are stored
 // by the backend and read from GET /api/training/progress; mergeProgress folds them in, so the rest of this module
@@ -104,11 +104,15 @@ export function summarize(progress: Progress, list: Scenario[] = scenarios) {
   return { total: list.length, done: done.length, correct: done.filter((scenario) => progress[scenario.id].correct).length }
 }
 
-/** Every attempt, repeats included, per channel. Ids outside the list (scenarios made for you) count as `made`. */
+/**
+ * Every attempt, repeats included, per channel. Scenarios made for you count under their channel (`gen-<channel>-…`);
+ * ids no longer in the library count as `other`.
+ */
 export function channelStats(progress: Progress, list: Pick<Scenario, 'id' | 'type'>[] = scenarios) {
-  const stats = { sms: { attempts: 0, right: 0 }, email: { attempts: 0, right: 0 }, call: { attempts: 0, right: 0 }, made: { attempts: 0, right: 0 } }
+  const stats = { sms: { attempts: 0, right: 0 }, email: { attempts: 0, right: 0 }, call: { attempts: 0, right: 0 }, other: { attempts: 0, right: 0 } }
   for (const attempt of timeline(progress)) {
-    const bucket = stats[list.find((scenario) => scenario.id === attempt.id)?.type ?? 'made']
+    const type = list.find((scenario) => scenario.id === attempt.id)?.type ?? /^gen-(sms|email|call)-/.exec(attempt.id)?.[1] as Channel | undefined
+    const bucket = stats[type ?? 'other']
     bucket.attempts++
     if (attempt.correct) bucket.right++
   }

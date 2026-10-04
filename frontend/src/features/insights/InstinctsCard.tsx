@@ -5,7 +5,7 @@ import { instinctsChart, instinctsSource, instinctsView, type Metrics } from './
 import { tracker } from './track'
 import './instincts.css'
 
-/** "Your scam instincts": how fast and how well the user decides, then against now. Hidden if the metrics can't load. */
+/** "Speed and trend": how fast and how well the user decides, then against now. Hidden if the metrics can't load. */
 export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
   const [state, setState] = useState<{ uid?: string | null; metrics?: Metrics | null }>({})
 
@@ -25,14 +25,14 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
   const chart = instinctsChart(state.metrics)
 
   return (
-    <section className="home-progress home-instincts" aria-labelledby="instincts-title">
-      <h2 id="instincts-title">Your scam instincts</h2>
+    // Part of Insights' numbers, right after the results: a sub-block, not a card of its own.
+    <section className="home-instincts" aria-labelledby="instincts-title">
+      {/* What's compared sits by the heading, so the then → now numbers read right. */}
+      <div className="home-stat-head"><h3 id="instincts-title">Speed and trend</h3>{view && <span>{view.note}</span>}</div>
       {!view
         ? <p>Finish a couple of scenarios and Tellio will start timing your instincts.</p>
         : (
           <>
-            {/* What's compared comes first, so the then → now numbers read right. */}
-            <p className="instincts-note">{view.note}</p>
             <dl className="instincts-list">
               {view.rows.map((row) => (
                 <div key={row.label}>

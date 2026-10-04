@@ -66,10 +66,10 @@ test('recommend starts easy and prefers untried after the current one, then miss
   assert.equal(recommend(progress, undefined, list), undefined)
 })
 
-test('channelStats counts every attempt per channel, made-for-you ids apart', () => {
+test('channelStats counts every attempt per channel, made-for-you ones by their id', () => {
   const typed = [{ id: 't1', type: 'sms' }, { id: 'm1', type: 'email' }]
-  const stats = channelStats(play([['t1', false], ['t1', true], ['m1', true], ['gen-x', false]]), typed)
-  assert.deepEqual(stats, { sms: { attempts: 2, right: 1 }, email: { attempts: 1, right: 1 }, call: { attempts: 0, right: 0 }, made: { attempts: 1, right: 0 } })
+  const stats = channelStats(play([['t1', false], ['t1', true], ['m1', true], ['gen-call-x', false], ['gen-email-y', true], ['retired', false]]), typed)
+  assert.deepEqual(stats, { sms: { attempts: 2, right: 1 }, email: { attempts: 2, right: 2 }, call: { attempts: 1, right: 0 }, other: { attempts: 1, right: 0 } })
 })
 
 test('the level steps up after two right calls and back down after a miss', () => {
