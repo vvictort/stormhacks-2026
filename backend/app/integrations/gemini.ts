@@ -1,20 +1,14 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { GoogleGenAI } from '@google/genai';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { CallScenario, type Tactic } from '../../comms/src/types.ts';
+import type { DifficultyLevel, ScamCategory, User } from '../models/user.ts';
 
-// Load .env relative to this file
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+const envFile = fileURLToPath(new URL('../../.env', import.meta.url));
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const apiKey = process.env.GEMINI_API_KEY || '';
 const client = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-import { User, DifficultyLevel, ScamCategory } from '../models/user.js';
-import { CallScenario, Tactic } from '../../comms/src/types.ts';
-export { CallScenario, Tactic };
 
 export interface GeneratedEmail {
     id: string;
@@ -29,7 +23,6 @@ export interface GeneratedEmail {
     explanation: string;
 }
 
-// Structured JSON schema for Gemini response format
 const emailJsonSchema = {
     type: 'object',
     properties: {
@@ -89,9 +82,6 @@ const emailJsonSchema = {
     ],
 };
 
-/**
- * Generate a single email classified as either scam or legitimate
- */
 export async function generateEmail(options?: {
     isScam?: boolean;
     difficulty?: DifficultyLevel;
@@ -112,7 +102,6 @@ export async function generateEmail(options?: {
         isScamDirective = 'Decide randomly whether this email is a SCAM (50% probability) or LEGITIMATE (50% probability).';
     }
 
-    // If no Gemini API key is configured, return a realistic offline mock sample
     if (!client || !apiKey) {
         console.warn(
             '[Gemini] Notice: GEMINI_API_KEY is not set. Returning a sample email. Set GEMINI_API_KEY in backend/.env for live AI generation.'
@@ -189,9 +178,6 @@ RULES:
     }
 }
 
-/**
- * Generate a batch of mixed emails (e.g. for an inbox simulation view)
- */
 export async function generateInboxBatch(count = 4): Promise<GeneratedEmail[]> {
     const promises = Array.from({ length: count }, (_, index) =>
         generateEmail({
@@ -203,7 +189,6 @@ export async function generateInboxBatch(count = 4): Promise<GeneratedEmail[]> {
     return Promise.all(promises);
 }
 
-// Fallback sample generator if API key is not yet set
 function getOfflineSample(isScam: boolean, user?: User): GeneratedEmail {
     const recipientGreeting = user?.name ? `Hi ${user.name}` : 'Hi Customer';
 
@@ -259,10 +244,6 @@ The GitHub Team`,
             'This is a legitimate email. The sender domain is verified (@github.com), links point directly to the authentic github.com domain, there are no panic-inducing threats, and it gives the option to take no action.',
     };
 }
-
-// ============================================================================
-// Phone Call Simulation Scenarios (Comms / ElevenLabs)
-// ============================================================================
 
 export interface GenerateCallScenarioOptions {
     difficulty?: 1 | 2 | 3 | DifficultyLevel;
@@ -322,10 +303,6 @@ function resolveCallDifficulty(diff?: 1 | 2 | 3 | DifficultyLevel): 1 | 2 | 3 {
     return 2;
 }
 
-/**
- * Generate a phone call scenario using Gemini that matches the comms service CallScenario schema.
- * Validates the output with Zod to guarantee schema compliance.
- */
 export async function generateCallScenario(
     options?: GenerateCallScenarioOptions
 ): Promise<CallScenario> {
@@ -419,7 +396,6 @@ SPECIFICATION RULES:
             ...(options?.voiceId || parsed.voiceId ? { voiceId: options?.voiceId || parsed.voiceId } : {}),
         };
 
-        // Validate strictly using Zod against the comms CallScenario schema
         return CallScenario.parse(candidate);
     } catch (err: any) {
         console.warn(
@@ -429,9 +405,6 @@ SPECIFICATION RULES:
     }
 }
 
-/**
- * Fallback realistic call scenarios when Gemini API key is missing or offline
- */
 export function getOfflineCallScenarioSample(options?: GenerateCallScenarioOptions): CallScenario {
     const user = options?.user;
     const category = options?.category || user?.vulnerabilityProfile.weakCategories[0] || 'banking';
@@ -471,7 +444,6 @@ If they hesitate, remind them the parcel will be returned to the international s
         });
     }
 
-    // Default: Banking fraud prevention
     return CallScenario.parse({
         id: `call-bank-${Date.now()}`,
         title: 'Fake fraud department asks for verification code',
@@ -489,9 +461,6 @@ If they offer to hang up and call back, discourage it by explaining that the cen
     });
 }
 
-/**
- * Convenience helper to start a call simulation by sending the generated scenario to the comms service.
- */
 export async function startCommsCallSimulation(
     commsBaseUrl: string,
     userId: string,

@@ -17,6 +17,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["app", "personalization", "tests", "*.ts"],
+  "include": ["app", "tests", "*.ts"],
   "exclude": ["comms", "node_modules"]
 }

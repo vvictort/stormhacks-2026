@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import { createDatabase, transaction, type Database } from './database.ts';
 import { loadConfig } from '../core/config.ts';
 
-// resolve from project root so migrations also work with the compiled CLI.
 export async function migrate(db: Database) {
   await transaction(db, async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('scam-training-migrations'))");

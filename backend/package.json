@@ -9,13 +9,11 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "migrate": "node --import tsx app/db/migrate.ts",
-    "test:email": "tsx test_email.ts",
     "test:call": "tsx test_call.ts",
     "test:report": "tsx test_comms_report.ts"
   },
   "dependencies": {
     "@google/genai": "^2.3.0",
-    "dotenv": "^16.4.7",
     "express": "^5.2.1",
     "firebase-admin": "^14.5.0",
     "helmet": "^8.1.0",

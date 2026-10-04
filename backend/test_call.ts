@@ -7,7 +7,6 @@ async function main() {
   console.log('📞 Testing Gemini Phone Call Scenario Generation');
   console.log('====================================================\n');
 
-  // 1. Create a simulated user profile
   console.log('👤 Creating User Profile...');
   const user = createUser({
     name: 'Jordan Lee',
@@ -19,7 +18,6 @@ async function main() {
   console.log(`   User: ${user.name} (${user.role} at ${user.company})`);
   console.log(`   Target Difficulty: ${user.currentDifficulty}\n`);
 
-  // 2. Generate a Personalized Call Scenario for this user
   console.log('🚨 Generating Call Scenario (Banking / OTP Intercept)...');
   const scenario = await generateCallScenario({
     user,
@@ -38,12 +36,10 @@ async function main() {
   console.log(`[SYSTEM PROMPT]:\n${scenario.systemPrompt}`);
   console.log('----------------------------------------------------\n');
 
-  // 3. Verify Zod Schema validation
   console.log('🔍 Validating Scenario with CallScenario.parse()...');
-  const validated = CallScenario.parse(scenario);
+  CallScenario.parse(scenario);
   console.log('✅ Scenario is 100% Zod-validated and matches comms contract!\n');
 
-  // 4. Test Workplace Scenario
   console.log('🚨 Generating Workplace IT Scenario...');
   const itScenario = await generateCallScenario({
     user,

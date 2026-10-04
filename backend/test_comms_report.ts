@@ -11,7 +11,6 @@ async function testCommsReportProcessing() {
   console.log('🧪 Testing UserVulnerabilityProfile Extensions & Comms Update');
   console.log('====================================================\n');
 
-  // 1. Create a user
   const user = createUser({
     id: 'user-sim-101',
     name: 'Morgan Davis',
@@ -25,7 +24,6 @@ async function testCommsReportProcessing() {
   console.log(`   Email Profile Evaluated: ${user.vulnerabilityProfile.emails.totalEvaluated}`);
   console.log(`   Call Profile Calls:      ${user.vulnerabilityProfile.calls.totalCalls}\n`);
 
-  // 2. Simulate an Email Drill first
   console.log('📧 Simulating 1 Email Drill (User spots scam)...');
   recordUserDecision({
     userId: user.id,
@@ -37,7 +35,6 @@ async function testCommsReportProcessing() {
   console.log(`   Email Profile Correct:   ${user.vulnerabilityProfile.emails.correctIdentifications}`);
   console.log(`   Email Profile Accuracy:  ${user.vulnerabilityProfile.emails.accuracyRate}%\n`);
 
-  // 3. Simulate a Comms Call Report where user was compromised (fell for bank OTP fraud)
   console.log('📞 Simulating Comms Call Report #1: User COMPROMISED (shared OTP code)...');
   const simulatedCall1: CallRecord = {
     id: 'call-bank-test-001',
@@ -67,7 +64,6 @@ async function testCommsReportProcessing() {
   console.log(`   Vulnerable Tactics:    ${user.vulnerabilityProfile.calls.vulnerableTactics.join(', ')}`);
   console.log(`   Compromising Signals:  ${user.vulnerabilityProfile.calls.compromisingSignalsTriggered.join(', ')}\n`);
 
-  // 4. Simulate a Comms Call Report where user resisted and challenged the caller
   console.log('📞 Simulating Comms Call Report #2: User RESISTED (challenged caller)...');
   const simulatedCall2: CallRecord = {
     id: 'call-workplace-test-002',
@@ -96,7 +92,6 @@ async function testCommsReportProcessing() {
   console.log(`   Calls Challenged:      ${user.vulnerabilityProfile.calls.callsReportedOrChallenged}`);
   console.log(`   Average Call Duration: ${user.vulnerabilityProfile.calls.averageDurationSecs}s\n`);
 
-  // 5. Simulate a Comms Text Thread report
   console.log('💬 Simulating Comms Text Report: Link Clicked...');
   const simulatedText: TextThread = {
     id: 'text-delivery-001',

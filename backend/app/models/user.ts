@@ -30,14 +30,6 @@ export interface CategoryAccuracy {
   accuracy: number; // 0 to 100 percentage
 }
 
-export const ALL_SCAM_CATEGORIES: ScamCategory[] = [
-  'banking',
-  'shipping',
-  'account_security',
-  'workplace',
-  'promotional',
-];
-
 export function createInitialCategoryAccuracy(): Record<ScamCategory, CategoryAccuracy> {
   return {
     banking: { attempts: 0, correct: 0, accuracy: 100 },
@@ -48,13 +40,6 @@ export function createInitialCategoryAccuracy(): Record<ScamCategory, CategoryAc
   };
 }
 
-// ============================================================================
-// Channel-Specific Extensions of UserVulnerabilityProfile
-// ============================================================================
-
-/**
- * Vulnerability metrics specific to email phishing drills
- */
 export interface EmailVulnerabilityProfile {
   totalEvaluated: number;
   correctIdentifications: number;
@@ -66,9 +51,6 @@ export interface EmailVulnerabilityProfile {
   categoryAccuracy: Record<ScamCategory, CategoryAccuracy>;
 }
 
-/**
- * Recorded outcome item for individual call simulations
- */
 export interface CallSimulationOutcome {
   callId: string;
   scenarioTitle: string;
@@ -79,9 +61,6 @@ export interface CallSimulationOutcome {
   at: string;
 }
 
-/**
- * Vulnerability metrics specific to voice call (vishing) simulations from comms / ElevenLabs
- */
 export interface CallVulnerabilityProfile {
   totalCalls: number;
   callsResisted: number;
@@ -96,13 +75,9 @@ export interface CallVulnerabilityProfile {
   signalsObserved: Partial<Record<Signal, number>>;
   // Specific compromising signals the user triggered (e.g. 'shared_code', 'shared_payment_info')
   compromisingSignalsTriggered: Signal[];
-  // Log of recent call simulation results
   recentOutcomes: CallSimulationOutcome[];
 }
 
-/**
- * Vulnerability metrics specific to SMS / text simulations
- */
 export interface TextVulnerabilityProfile {
   totalThreads: number;
   threadsResisted: number;
@@ -114,16 +89,11 @@ export interface TextVulnerabilityProfile {
   compromisingSignalsTriggered: Signal[];
 }
 
-/**
- * Unified user vulnerability profile combining cross-channel and channel-specific extensions
- */
 export interface UserVulnerabilityProfile {
-  // Global aggregate metrics
   weakCategories: ScamCategory[];
   frequentBlindSpots: string[];
   categoryAccuracy: Record<ScamCategory, CategoryAccuracy>;
 
-  // Channel-specific extensions
   emails: EmailVulnerabilityProfile;
   calls: CallVulnerabilityProfile;
   texts: TextVulnerabilityProfile;
@@ -176,7 +146,7 @@ export interface User {
   name: string;
   email: string;
   role?: string;                  // e.g. "Finance Analyst", "Software Engineer", "HR Specialist"
-  company?: string;               // e.g. "Acme Corp"
+  company?: string;
   currentDifficulty: DifficultyLevel;
   stats: UserStats;
   vulnerabilityProfile: UserVulnerabilityProfile;
@@ -184,12 +154,9 @@ export interface User {
   updatedAt: string;
 }
 
-// In-memory store for user state
+// ponytail: in-memory, per-process and lost on restart; persist to Postgres (see app/db) once this is wired into the API.
 const usersStore = new Map<string, User>();
 
-/**
- * Create a new user profile with default baseline stats and channel profiles
- */
 export function createUser(params: {
   id?: string;
   name: string;
@@ -211,7 +178,7 @@ export function createUser(params: {
       correctIdentifications: 0,
       timesCompromised: 0,
       falsePositives: 0,
-      overallResilienceScore: 100, // Starts at baseline 100
+      overallResilienceScore: 100,
     },
     vulnerabilityProfile: {
       weakCategories: [],
@@ -229,25 +196,16 @@ export function createUser(params: {
   return user;
 }
 
-/**
- * Retrieve a user by ID
- */
 export function getUser(userId: string): User | undefined {
   return usersStore.get(userId);
 }
 
-/**
- * Save or update a user profile in store
- */
 export function saveUser(user: User): User {
   user.updatedAt = new Date().toISOString();
   usersStore.set(user.id, user);
   return user;
 }
 
-/**
- * Helper to recalculate overall resilience score across all completed drills
- */
 function recalculateResilienceScore(user: User): number {
   if (user.stats.totalDrillsCompleted === 0) return 100;
   const accuracyRate = user.stats.correctIdentifications / user.stats.totalDrillsCompleted;
@@ -257,9 +215,6 @@ function recalculateResilienceScore(user: User): number {
   return Math.max(0, Math.min(100, baseScore - compromisePenalty - falsePositivePenalty));
 }
 
-/**
- * Helper to adaptively tune user difficulty based on performance trends
- */
 function updateAdaptiveDifficulty(user: User) {
   if (user.stats.totalDrillsCompleted >= 3) {
     const accuracyRate = user.stats.correctIdentifications / user.stats.totalDrillsCompleted;
@@ -273,9 +228,6 @@ function updateAdaptiveDifficulty(user: User) {
   }
 }
 
-/**
- * Infer category from a scenario id/title if not explicitly provided
- */
 function inferCategoryFromScenario(scenario: { id: string; title: string }): ScamCategory {
   const text = `${scenario.id} ${scenario.title}`.toLowerCase();
   if (text.includes('bank') || text.includes('card') || text.includes('charge') || text.includes('finance')) {
@@ -293,9 +245,6 @@ function inferCategoryFromScenario(scenario: { id: string; title: string }): Sca
   return 'account_security';
 }
 
-/**
- * Record an email evaluation result and dynamically update the user's score and email profile
- */
 export function recordUserDecision(params: {
   userId: string;
   isScam: boolean;
@@ -311,20 +260,14 @@ export function recordUserDecision(params: {
   const isCorrect = params.isScam === params.userGuessedScam;
   user.stats.totalDrillsCompleted += 1;
 
-  // Ensure email profile exists
-  if (!user.vulnerabilityProfile.emails) {
-    user.vulnerabilityProfile.emails = createInitialEmailProfile();
-  }
   const emailProfile = user.vulnerabilityProfile.emails;
   emailProfile.totalEvaluated += 1;
 
-  // 1. Update overall and email counts
   if (isCorrect) {
     user.stats.correctIdentifications += 1;
     emailProfile.correctIdentifications += 1;
   } else {
     if (params.isScam && !params.userGuessedScam) {
-      // User fell for a scam
       user.stats.timesCompromised += 1;
       emailProfile.timesCompromised += 1;
       if (params.redFlags && params.redFlags.length > 0) {
@@ -337,7 +280,6 @@ export function recordUserDecision(params: {
         }
       }
     } else if (!params.isScam && params.userGuessedScam) {
-      // User falsely flagged a legitimate email
       user.stats.falsePositives += 1;
       emailProfile.falsePositives += 1;
     }
@@ -347,22 +289,12 @@ export function recordUserDecision(params: {
     (emailProfile.correctIdentifications / emailProfile.totalEvaluated) * 100
   );
 
-  // 2. Update category-specific accuracy mapping
-  if (!user.vulnerabilityProfile.categoryAccuracy) {
-    user.vulnerabilityProfile.categoryAccuracy = createInitialCategoryAccuracy();
-  }
-  const catStats = user.vulnerabilityProfile.categoryAccuracy[params.category] || {
-    attempts: 0,
-    correct: 0,
-    accuracy: 100,
-  };
+  const catStats = user.vulnerabilityProfile.categoryAccuracy[params.category];
   catStats.attempts += 1;
   if (isCorrect) catStats.correct += 1;
   catStats.accuracy = Math.round((catStats.correct / catStats.attempts) * 100);
-  user.vulnerabilityProfile.categoryAccuracy[params.category] = catStats;
   emailProfile.categoryAccuracy[params.category] = { ...catStats };
 
-  // 3. Update weakCategories list dynamically
   if (catStats.accuracy < 75 && !user.vulnerabilityProfile.weakCategories.includes(params.category)) {
     user.vulnerabilityProfile.weakCategories.push(params.category);
     if (!emailProfile.weakCategories.includes(params.category)) {
@@ -375,7 +307,6 @@ export function recordUserDecision(params: {
     emailProfile.weakCategories = emailProfile.weakCategories.filter((c) => c !== params.category);
   }
 
-  // Calculate new Resilience Score & adaptive difficulty
   user.stats.overallResilienceScore = recalculateResilienceScore(user);
   updateAdaptiveDifficulty(user);
 
@@ -389,10 +320,6 @@ export function recordUserDecision(params: {
 
   return { user, isCorrect, feedbackMessage };
 }
-
-// ============================================================================
-// Updating User Profile with Reports from Comms
-// ============================================================================
 
 export type CommsReportInput =
   | CallRecord
@@ -412,12 +339,7 @@ export interface CommsReportResult {
   feedbackMessage: string;
 }
 
-/**
- * Updates user profile, vulnerability metrics, and resilience scores
- * using the finalized simulation report from the comms service.
- */
 export function updateUserFromCommsReport(report: CommsReportInput): CommsReportResult {
-  // Normalize input: extract CallRecord or TextThread
   let call: CallRecord | undefined;
   let thread: TextThread | undefined;
 
@@ -437,14 +359,6 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
     throw new Error(`Cannot update comms report: User with ID "${userId}" not found.`);
   }
 
-  // Ensure profiles exist
-  if (!user.vulnerabilityProfile.calls) {
-    user.vulnerabilityProfile.calls = createInitialCallProfile();
-  }
-  if (!user.vulnerabilityProfile.texts) {
-    user.vulnerabilityProfile.texts = createInitialTextProfile();
-  }
-
   let channel: 'call' | 'text';
   let outcome: Outcome;
   let signals: Signal[];
@@ -462,12 +376,10 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
     const callProfile = user.vulnerabilityProfile.calls;
     callProfile.totalCalls += 1;
 
-    // Track signals observed
     signals.forEach((sig) => {
       callProfile.signalsObserved[sig] = (callProfile.signalsObserved[sig] || 0) + 1;
     });
 
-    // Check if user was compromised
     const compromising = signals.filter((s) => COMPROMISING_SIGNALS.includes(s));
     const isCompromised = outcome === 'compromised' || compromising.length > 0;
 
@@ -478,14 +390,12 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
       user.stats.timesCompromised += 1;
       callProfile.callsCompromised += 1;
 
-      // Add compromising signals
       compromising.forEach((sig) => {
         if (!callProfile.compromisingSignalsTriggered.includes(sig)) {
           callProfile.compromisingSignalsTriggered.push(sig);
         }
       });
 
-      // Add exploited tactics to vulnerable lists
       scenario.tactics.forEach((tactic) => {
         if (!callProfile.vulnerableTactics.includes(tactic)) {
           callProfile.vulnerableTactics.push(tactic);
@@ -507,7 +417,6 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
       }
     }
 
-    // Call duration tracking
     if (call.durationSecs !== undefined && call.durationSecs > 0) {
       callProfile.totalDurationSecs += call.durationSecs;
       callProfile.averageDurationSecs = Math.round(
@@ -515,7 +424,6 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
       );
     }
 
-    // Append to outcome history
     callProfile.recentOutcomes.unshift({
       callId: call.id,
       scenarioTitle: scenario.title,
@@ -528,7 +436,6 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
     if (callProfile.recentOutcomes.length > 20) callProfile.recentOutcomes.pop();
 
   } else {
-    // Text simulation thread
     channel = 'text';
     simulationId = thread!.id;
     outcome = thread!.outcome || 'resisted';
@@ -577,11 +484,7 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
     }
   }
 
-  // Update Category Accuracy from scenario context
   const inferredCat = inferCategoryFromScenario(scenario);
-  if (!user.vulnerabilityProfile.categoryAccuracy[inferredCat]) {
-    user.vulnerabilityProfile.categoryAccuracy[inferredCat] = { attempts: 0, correct: 0, accuracy: 100 };
-  }
   const cat = user.vulnerabilityProfile.categoryAccuracy[inferredCat];
   cat.attempts += 1;
   const isCompromised = outcome === 'compromised';
@@ -596,13 +499,11 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
     );
   }
 
-  // Recalculate Resilience Score and adaptive difficulty
   user.stats.overallResilienceScore = recalculateResilienceScore(user);
   updateAdaptiveDifficulty(user);
 
   saveUser(user);
 
-  // Generate actionable educational feedback message
   let feedbackMessage: string;
   if (channel === 'call') {
     if (isCompromised) {
