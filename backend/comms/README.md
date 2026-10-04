@@ -9,14 +9,18 @@ This is a self-contained Express + TypeScript service. All routes live under `/c
 
 ## Run
 
+Comms is an npm workspace of `backend/`: one `npm install` there installs both services, with one lockfile.
+
 ```bash
-cd backend/comms
-npm install
-cp .env.example .env      # set FIREBASE_PROJECT_ID (or COMMS_ALLOW_DEV_USER=true for local-only testing)
-npm run dev               # http://localhost:3001/comms
-npm run typecheck
-npm test                  # node:test; never reads .env or calls ElevenLabs/the backend
+cd backend
+npm install                       # API + comms
+cp comms/.env.example comms/.env  # set FIREBASE_PROJECT_ID (or COMMS_ALLOW_DEV_USER=true for local-only testing)
+npm run dev:comms                 # http://localhost:3001/comms
+npm run typecheck                 # API + comms
+npm test                          # API + comms; comms tests never read .env or call ElevenLabs/the backend
 ```
+
+Comms-only commands run with `-w comms`, e.g. `npm run setup:agent -w comms`.
 
 The server refuses to start without `FIREBASE_PROJECT_ID` unless the dev user is on, and refuses `COMMS_ALLOW_DEV_USER=true` when `NODE_ENV=production`.
 

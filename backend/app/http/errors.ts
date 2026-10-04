@@ -1,7 +1,13 @@
 import type { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 export class AppError extends Error {
-  constructor(public readonly status: number, public readonly code: string, message: string) { super(message); }
+  readonly status: number;
+  readonly code: string;
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
 }
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   if (error instanceof ZodError) {

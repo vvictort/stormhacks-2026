@@ -8,7 +8,8 @@ function mapUser(row: QueryResultRow): User {
   return { id: row.id, uid: row.firebase_uid, email: row.email, emailVerified: row.email_verified, name: row.name, phone: row.phone, profession: row.profession, interests: row.interests, onboardingComplete: Boolean(row.onboarding_completed_at), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() };
 }
 export class UsersRepository {
-  constructor(private readonly db: Database) {}
+  private readonly db: Database;
+  constructor(db: Database) { this.db = db; }
   async ensureUser(identity: DecodedIdToken) {
     if (!identity.email) throw new AppError(401, 'INVALID_TOKEN', 'An account email is required.');
     const name = typeof identity.name === 'string' ? identity.name.trim().slice(0,100) || null : null;

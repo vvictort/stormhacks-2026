@@ -9,7 +9,8 @@ function mapAttempt(row: QueryResultRow): AttemptSummary {
 const summaryColumns = 'id,channel,scenario_id,scenario_title,difficulty,outcome,success,tactics,completed_at';
 
 export class AttemptsRepository {
-  constructor(private readonly db: Database) {}
+  private readonly db: Database;
+  constructor(db: Database) { this.db = db; }
 
   /** Returns false when the attempt id already exists. */
   async insert(a: AttemptInput) {

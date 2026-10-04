@@ -4,7 +4,8 @@ import type { CallScenario } from './call-scenario.ts';
 export type ScenarioSource = 'gemini' | 'fallback';
 
 export class ScenariosRepository {
-  constructor(private readonly db: Database) {}
+  private readonly db: Database;
+  constructor(db: Database) { this.db = db; }
 
   async save(uid: string, scenario: CallScenario, source: ScenarioSource) {
     await this.db.query('INSERT INTO generated_call_scenarios(id,firebase_uid,scenario,source) VALUES($1,$2,$3,$4)',[scenario.id,uid,JSON.stringify(scenario),source]);

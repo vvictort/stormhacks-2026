@@ -9,12 +9,15 @@ It also stores phone-call training attempts posted by the comms service, compute
 Requires Node.js 22.18+ and a TigerData/PostgreSQL database. Run commands from `backend/`:
 
 ```sh
-npm install
+npm install          # installs the API and the comms workspace (one lockfile)
 cp .env.example .env
 # Fill in DATABASE_URL and FIREBASE_PROJECT_ID.
 npm run migrate
-npm run dev
+npm run dev          # API on :3000
+npm run dev:comms    # comms on :3001 (see comms/README.md)
 ```
+
+`backend/` is an npm workspace root with `comms/` as its member. Each package declares its own runtime dependencies (so comms stays separately deployable); shared tooling (`typescript`, `tsx`, `@types/node`, `@types/express`) is declared once here, and both packages extend `tsconfig.base.json`. `npm run typecheck` and `npm test` cover both packages.
 
 Use the same Firebase project as the frontend. The Admin SDK verifies client ID tokens using the configured project and Google's public signing keys; this backend performs no Firebase account administration.
 
