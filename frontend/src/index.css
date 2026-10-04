@@ -66,11 +66,7 @@ h1:focus, #auth-content:focus { outline: none; }
 .editorial-title { margin: 0 0 21px; font-family: var(--font-editorial); font-size: clamp(44px, 4.4vw, 58px); font-weight: 400; line-height: 1.12; letter-spacing: -2.2px; }
 .editorial-title em { color: var(--color-primary-strong); font-weight: 400; }
 .editorial-description { max-width: 420px; font-size: 16px; line-height: 1.7; }
-.security-illustration { width: 100%; max-width: 380px; margin: 20px 0 8px; }
-.security-illustration svg { width: 100%; height: auto; }
-.how-it-works { display: grid; gap: 12px; max-width: 440px; margin: 0; padding: 22px 0 0 20px; list-style: decimal; border-top: 1px solid var(--color-border); font-size: 14px; line-height: 1.6; }
-.how-it-works li::marker { color: var(--color-primary-strong); font-family: var(--font-editorial); font-weight: 600; }
-.how-it-works strong { font-weight: 600; }
+.auth-mascot { width: 200px; height: 200px; margin: 28px 0 0 -14px; }
 .auth-column { width: 100%; min-width: 0; }
 .mobile-tagline { display: none; }
 .auth-card { padding: 34px 35px 30px; border-width: 1px; border-radius: 18px; box-shadow: 0 4px 24px #48362605, 0 1px 3px #48362604; }
@@ -167,7 +163,6 @@ h1:focus, #auth-content:focus { outline: none; }
 .auth-card { animation: rise-in var(--motion-enter) var(--ease-out-quint) 60ms backwards; }
 /* Session checks usually finish in a blink; only show the loader card if it doesn't. */
 .auth-card:has(.session-loading) { animation: fade-in 200ms var(--ease-out-quint) 350ms backwards; }
-.illustration-check { stroke-dasharray: 52; animation: draw-in 300ms var(--ease-out-quint) 260ms backwards; }
 .reset-dialog[open] { --rise: 6px; animation: rise-in 240ms var(--ease-out-quint); }
 .reset-dialog[open]::backdrop { animation: fade-in 200ms var(--ease-out-quint); }
 
@@ -175,7 +170,6 @@ h1:focus, #auth-content:focus { outline: none; }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes rise-in { from { opacity: 0; translate: 0 calc(var(--rise, 8px) * var(--motion-scale)); } }
 @keyframes settle-in { from { opacity: 0; scale: calc(1 - .12 * var(--motion-scale)); } }
-@keyframes draw-in { from { stroke-dashoffset: 52; } }
 @keyframes pulse { to { opacity: .35; } }
 
 @media (min-width: 1500px) {
@@ -209,9 +203,8 @@ h1:focus, #auth-content:focus { outline: none; }
 }
 /* Reduced motion keeps every state change visible but removes travel:
    arrivals become plain fades, presses and nudges stay put, the loader pulses
-   instead of spinning, and the illustration is simply drawn. */
+   instead of spinning, and the mascot stops wobbling. */
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-scale: 0; }
   .spinner { animation: pulse 700ms ease-in-out infinite alternate; }
-  .illustration-check { animation: none; }
 }
