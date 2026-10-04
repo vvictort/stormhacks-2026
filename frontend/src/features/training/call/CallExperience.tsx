@@ -1,4 +1,5 @@
 import { ConversationProvider } from '@elevenlabs/react'
+import { Captions, Mic, PhoneIncoming, PhoneOff, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useSimulatedCall } from '../../../comms/useSimulatedCall'
 import { api } from '../../../lib/api'
@@ -136,24 +137,12 @@ function CallStage({ uid, scenario, progress, record }: Props) {
 
 function CallHowTo({ practice }: { practice: boolean }) {
   return (
-    <div className="scenario-howto">
-      <h2>{practice ? 'Caption-only practice' : 'Treat it like a real call'}</h2>
+    <ul className="scenario-howto" aria-label="Tips">
       {practice
-        ? (
-          <ol>
-            <li>Live voice isn't available, so the caller's lines appear as captions instead.</li>
-            <li>Read them the way you'd listen on a real call.</li>
-            <li>Hang up whenever you like, or do what the caller asks, then see what gave it away.</li>
-          </ol>
-        )
-        : (
-          <ol>
-            <li>When the phone rings, answer it or decline, as you would on your own phone.</li>
-            <li>If you answer, talk out loud. The caller is an AI voice, and captions show what it says.</li>
-            <li>Hang up whenever you like. Nothing real is at risk, and you'll see what gave it away afterwards.</li>
-          </ol>
-        )}
-    </div>
+        ? <><li><Captions size={15} aria-hidden="true" />No voice: read the captions</li><li><PhoneOff size={15} aria-hidden="true" />Hang up anytime</li></>
+        : <><li><PhoneIncoming size={15} aria-hidden="true" />Answer or decline</li><li><Mic size={15} aria-hidden="true" />Talk out loud to the AI caller</li></>}
+      <li><ShieldCheck size={15} aria-hidden="true" />Nothing real is at risk</li>
+    </ul>
   )
 }
 

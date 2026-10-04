@@ -22,9 +22,10 @@ export function TrainingHeader() {
       <Brand to="/home" />
       <div className="train-header-actions">
         {failed && error && <p className="train-header-error" role="alert">{error}</p>}
-        <button type="button" className="train-ghost" onClick={() => void signOut()} disabled={Boolean(pending)} aria-busy={signingOut}>
+        <button type="button" className="train-ghost" onClick={() => void signOut()} disabled={Boolean(pending)} aria-busy={signingOut} title="Sign out">
           {signingOut ? <LoaderCircle size={17} className="spinner" aria-hidden="true" /> : <LogOut size={17} aria-hidden="true" />}
-          {signingOut ? 'Signing out…' : 'Sign out'}
+          {/* Icon-only on small screens; the label stays for screen readers. */}
+          <span className="max-sm:sr-only">{signingOut ? 'Signing out…' : 'Sign out'}</span>
         </button>
       </div>
     </header>
