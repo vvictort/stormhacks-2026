@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { AppError } from '../http/errors.ts';
+import { z } from 'zod';
 import { rateLimitPerUser } from '../http/rate-limit.ts';
 import type { Repositories } from '../repositories.ts';
+import { difficultyName } from '../shared/types.ts';
 import { HISTORY_LIMIT, summarizeAttempts } from '../training/progress.ts';
-import { difficultyName } from './call-scenario.ts';
+import type { ScenarioCatalog } from './catalog.ts';
 import { generateCallScenario } from './generator.ts';
 
 /** POST /api/training/call-scenarios: a personalised call scenario, stored server-side. The prompt never leaves the server. */
@@ -23,14 +24,13 @@ export function scenariosRouter({ users, attempts, scenarios }: Repositories, op
   return router;
 }
 
-/** Comms resolves a gen- id here (behind the internal token); only the owner's scenario is returned. */
-export function scenariosInternalRouter(scenarios: Repositories['scenarios']) {
+const ListScenarios = z.object({ channel: z.enum(['text', 'call']).optional() });
+
+/** GET /api/comms/scenarios: fixture summaries for a picker (no prompts, no auth). */
+export function scenarioListRouter(catalog: ScenarioCatalog) {
   const router = Router();
-  router.get('/:id', async (req, res) => {
-    const uid = typeof req.query.uid === 'string' ? req.query.uid : '';
-    const scenario = uid && await scenarios.get(uid, req.params.id);
-    if (!scenario) throw new AppError(404, 'NOT_FOUND', 'Route not found.');
-    res.json(scenario);
+  router.get('/', (req, res) => {
+    res.json({ scenarios: catalog.list(ListScenarios.parse(req.query).channel) });
   });
   return router;
 }

@@ -1,8 +1,8 @@
+import { fakeRepos, origin, testServices } from './harness.ts';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import supertest from 'supertest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import type { CallScenario } from '../app/scenarios/call-scenario.ts';
 import { createDatabase, type Database } from '../app/db/database.ts';
 import { migrate } from '../app/db/migrate.ts';
 import { createRepositories, type Repositories } from '../app/repositories.ts';
@@ -10,11 +10,8 @@ import { createApp } from '../app/server.ts';
 import { rateLimitPerUser } from '../app/http/rate-limit.ts';
 import { cleanProfileText } from '../app/scenarios/generator.ts';
 import { inferCategory, summarizeAttempts, type ScoredAttempt } from '../app/training/progress.ts';
-import type { AttemptInput } from '../app/training/attempts.schema.ts';
-import type { User } from '../app/users/users.schema.ts';
+import { attemptSchema, type AttemptInput } from '../app/training/attempts.schema.ts';
 
-const origin = 'http://localhost:5173';
-const internalToken = 'test-internal-token-0123456789abcdef';
 const identity = (uid: string) => ({ uid, sub: uid, aud: 'test-project', iss: 'https://securetoken.google.com/test-project', auth_time: 0, iat: 0, exp: 9999999999, firebase: { identities: {}, sign_in_provider: 'password' }, email: `${uid}@example.test`, email_verified: true }) as DecodedIdToken;
 const verifyToken = async (token: string) => {
   if (token === 'alex' || token === 'sam') return identity(token);
@@ -29,83 +26,34 @@ const attempt = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-/** Same contract as the SQL repository, kept in memory so route tests run without a database. */
-function fakeRepo() {
-  const attempts = new Map<string, AttemptInput>();
-  const scenarios = new Map<string, { uid: string; scenario: CallScenario }>();
-  const summary = (a: AttemptInput) => ({ id: a.attemptId, channel: a.channel, scenarioId: a.scenarioId, scenarioTitle: a.scenarioTitle, difficulty: a.difficulty, outcome: a.outcome, success: a.success, tactics: a.tactics, completedAt: new Date(a.completedAt).toISOString() });
-  return {
-    users: {
-      async ensureUser(token: DecodedIdToken) {
-        return { id: token.uid, uid: token.uid, email: token.email!, emailVerified: true, name: null, phone: null, profession: 'accountant', interests: [], onboardingComplete: false, createdAt: '', updatedAt: '' } satisfies User;
-      },
-      async updateProfile(): Promise<User> { throw new Error('unused'); },
-    },
-    attempts: {
-      async insert(a: AttemptInput) {
-        if (attempts.has(a.attemptId)) return false;
-        attempts.set(a.attemptId, a);
-        return true;
-      },
-      async list(uid: string, limit: number) {
-        return [...attempts.values()].filter((a) => a.firebaseUid === uid).map(summary).sort((a, b) => b.completedAt.localeCompare(a.completedAt)).slice(0, limit);
-      },
-      async get(uid: string, id: string) {
-        const a = attempts.get(id);
-        return a && a.firebaseUid === uid ? { ...summary(a), signals: a.signals, startedAt: a.startedAt, durationSecs: a.durationSecs, summary: a.summary, transcript: a.transcript } : null;
-      },
-    },
-    scenarios: {
-      async save(uid: string, scenario: CallScenario) { scenarios.set(scenario.id, { uid, scenario }); },
-      async get(uid: string, id: string) {
-        const stored = scenarios.get(id);
-        return stored?.uid === uid ? stored.scenario : null;
-      },
-    },
-  } satisfies Repositories;
-}
-
-function routes(repos: Repositories = fakeRepo()) {
-  const app = createApp({ repos, origin, verifyToken, internalToken });
+function routes(repos: Repositories = fakeRepos()) {
+  const sims = testServices(repos);
+  after(sims.close);
+  const app = createApp({ repos, services: sims.services, origin, verifyToken });
   return {
     app,
-    postAttempt: (body: object, secret = internalToken) => supertest(app).post('/api/internal/training-attempts').set('X-Internal-Token', secret).send(body),
-    getScenario: (id: string, uid: string) => supertest(app).get(`/api/internal/call-scenarios/${id}?uid=${uid}`).set('X-Internal-Token', internalToken),
+    // What the call service does for a completed call (calls/attempt.ts parses with the same schema).
+    save: (body: object) => repos.attempts.insert(attemptSchema.parse(body)),
+    startCall: (scenarioId: string, user = 'alex') => supertest(app).post('/api/comms/calls').set('Origin', origin).set('Authorization', `Bearer ${user}`).send({ scenarioId }),
     progress: (user = 'alex') => supertest(app).get('/api/training/progress').set('Authorization', `Bearer ${user}`),
     getAttempt: (id: string, user = 'alex') => supertest(app).get(`/api/training/attempts/${id}`).set('Authorization', `Bearer ${user}`),
     generate: (user = 'alex') => supertest(app).post('/api/training/call-scenarios').set('Origin', origin).set('Authorization', `Bearer ${user}`).send({}),
   };
 }
 
-test('internal routes are 404 for every request when INTERNAL_API_TOKEN is unset', async () => {
-  const app = createApp({ repos: fakeRepo(), origin, verifyToken });
-  await supertest(app).post('/api/internal/training-attempts').set('X-Internal-Token', internalToken).send(attempt()).expect(404);
-  await supertest(app).get('/api/internal/call-scenarios/gen-x?uid=alex').expect(404);
-});
-
-test('internal routes reject a missing or wrong secret with 401 and persist nothing', async () => {
-  const { postAttempt, app, progress } = routes();
-  await supertest(app).post('/api/internal/training-attempts').send(attempt()).expect(401);
-  const wrong = await postAttempt(attempt(), `${internalToken}x`).expect(401);
-  assert.equal(wrong.body.error.code, 'INVALID_INTERNAL_TOKEN');
-  assert.equal((await progress().expect(200)).body.stats.total, 0);
-});
-
-test('a completed call is persisted once; repeats are idempotent and invalid payloads rejected', async () => {
-  const { postAttempt } = routes();
-  // No Origin header: the internal route sits in front of the browser checks.
-  assert.deepEqual((await postAttempt(attempt()).expect(201)).body, { id: 'call_1' });
-  assert.deepEqual((await postAttempt(attempt()).expect(200)).body, { id: 'call_1', duplicate: true });
-  await postAttempt(attempt({ attemptId: 'call_2', outcome: 'reported' })).expect(400);
-  await postAttempt(attempt({ attemptId: 'call_2', firebaseUid: undefined })).expect(400);
-  await postAttempt(attempt({ attemptId: 'call_2', transcript: Array(201).fill({ role: 'user', message: 'x', timeInCallSecs: 1 }) })).expect(400);
-  // Bigger than the 16kb browser limit, within the 256kb internal one.
-  await postAttempt(attempt({ attemptId: 'call_3', transcript: Array(200).fill({ role: 'agent', message: 'x'.repeat(500), timeInCallSecs: 1 }) })).expect(201);
+test('a completed call is saved once; repeats are idempotent and invalid attempts rejected', async () => {
+  const { save } = routes();
+  assert.equal(await save(attempt()), true);
+  assert.equal(await save(attempt()), false);
+  assert.equal(attemptSchema.safeParse(attempt({ attemptId: 'call_2', outcome: 'reported' })).success, false);
+  assert.equal(attemptSchema.safeParse(attempt({ attemptId: 'call_2', firebaseUid: undefined })).success, false);
+  assert.equal(attemptSchema.safeParse(attempt({ attemptId: 'call_2', transcript: Array(201).fill({ role: 'user', message: 'x', timeInCallSecs: 1 }) })).success, false);
+  assert.equal(await save(attempt({ attemptId: 'call_3', transcript: Array(200).fill({ role: 'agent', message: 'x'.repeat(500), timeInCallSecs: 1 }) })), true);
 });
 
 test('browsers only read their own attempts, with redacted transcript, signals and summary', async () => {
-  const { postAttempt, getAttempt, progress, app } = routes();
-  await postAttempt(attempt({ rawAudioUrl: 'https://private.example/audio' })).expect(201);
+  const { save, getAttempt, progress, app } = routes();
+  await save(attempt({ rawAudioUrl: 'https://private.example/audio' }));
   const own = (await getAttempt('call_1').expect(200)).body;
   assert.equal(own.summary, 'Caller asked for a [code].');
   assert.deepEqual(own.signals, ['engaged', 'shared_code']);
@@ -117,12 +65,12 @@ test('browsers only read their own attempts, with redacted transcript, signals a
 });
 
 test('progress and the vulnerability profile update after each attempt', async () => {
-  const { postAttempt, progress } = routes();
+  const { save, progress } = routes();
   const empty = (await progress().expect(200)).body;
   assert.deepEqual(empty, { attempts: [], stats: { total: 0, successes: 0, compromised: 0 }, vulnerability: { weakCategories: [], vulnerableTactics: [], categoryAccuracy: {} } });
-  await postAttempt(attempt()).expect(201);
-  await postAttempt(attempt({ attemptId: 'call_2', scenarioId: 'courier-customs-fee-1', scenarioTitle: 'Courier customs fee', tactics: ['urgency'], outcome: 'declined', success: true, signals: [], completedAt: '2026-10-03T11:00:00Z' })).expect(201);
-  await postAttempt(attempt({ attemptId: 'call_3', outcome: 'error', success: null, completedAt: '2026-10-03T12:00:00Z' })).expect(201);
+  await save(attempt());
+  await save(attempt({ attemptId: 'call_2', scenarioId: 'courier-customs-fee-1', scenarioTitle: 'Courier customs fee', tactics: ['urgency'], outcome: 'declined', success: true, signals: [], completedAt: '2026-10-03T11:00:00Z' }));
+  await save(attempt({ attemptId: 'call_3', outcome: 'error', success: null, completedAt: '2026-10-03T12:00:00Z' }));
   const body = (await progress().expect(200)).body;
   assert.deepEqual(body.attempts.map((a: { id: string }) => a.id), ['call_3', 'call_2', 'call_1']);
   assert.deepEqual(Object.keys(body.attempts[0]).sort(), ['channel', 'completedAt', 'difficulty', 'id', 'outcome', 'scenarioId', 'scenarioTitle', 'success']);
@@ -132,20 +80,18 @@ test('progress and the vulnerability profile update after each attempt', async (
   assert.deepEqual(body.vulnerability.categoryAccuracy, { banking: { attempts: 1, correct: 0, accuracy: 0 }, shipping: { attempts: 1, correct: 1, accuracy: 100 } });
 });
 
-test('scenario generation falls back without Gemini, stores the scenario and scopes it to its owner', async () => {
-  const { generate, getScenario } = routes();
+test('scenario generation falls back without Gemini, stores the scenario and only its owner can call it', async () => {
+  const { generate, startCall } = routes();
   const created = (await generate().expect(201)).body;
   assert.equal(created.source, 'fallback');
   assert.match(created.scenarioId, /^gen-/);
   assert.deepEqual(Object.keys(created).sort(), ['callerLabel', 'difficulty', 'scenarioId', 'source', 'tactics', 'title']);
   assert.equal(created.difficulty, 'easy');
-  const stored = (await getScenario(created.scenarioId, 'alex').expect(200)).body;
-  assert.equal(stored.id, created.scenarioId);
-  assert.equal(stored.difficulty, 1);
-  assert.ok(stored.systemPrompt && stored.firstMessage);
-  await getScenario(created.scenarioId, 'sam').expect(404);
-  await getScenario(created.scenarioId, '').expect(404);
-  await getScenario('bank-fraud-dept-otp-1', 'alex').expect(404);
+  const { call } = (await startCall(created.scenarioId).expect(201)).body;
+  assert.equal(call.scenario.id, created.scenarioId);
+  assert.equal(call.scenario.difficulty, 1);
+  assert.ok(call.scenario.systemPrompt && call.scenario.firstMessage);
+  assert.equal((await startCall(created.scenarioId, 'sam').expect(404)).body.error.code, 'scenario_not_found');
 });
 
 test('scenario generation is rate limited per user', async () => {
@@ -203,10 +149,10 @@ describe('Postgres training persistence', { skip: !url }, () => {
   beforeEach(async () => { await db.query('TRUNCATE training_attempts, generated_call_scenarios'); });
   after(async () => { await db?.end(); });
 
-  test('internal posts persist once and only the owner reads them back', async () => {
-    const { postAttempt, getAttempt, progress } = routes(repo);
-    await postAttempt(attempt()).expect(201);
-    await Promise.all([postAttempt(attempt()).expect(200), postAttempt(attempt()).expect(200)]);
+  test('saved attempts persist once and only the owner reads them back', async () => {
+    const { save, getAttempt, progress } = routes(repo);
+    assert.equal(await save(attempt()), true);
+    assert.deepEqual(await Promise.all([save(attempt()), save(attempt())]), [false, false]);
     assert.equal((await db.query('SELECT count(*)::int AS n FROM training_attempts')).rows[0].n, 1);
     const own = (await getAttempt('call_1').expect(200)).body;
     assert.equal(own.startedAt, '2026-10-03T10:00:00.000Z');
@@ -219,10 +165,10 @@ describe('Postgres training persistence', { skip: !url }, () => {
   });
 
   test('progress lists newest first, at most 50, with stats over the whole history', async () => {
-    const { postAttempt, progress } = routes(repo);
+    const { save, progress } = routes(repo);
     for (let i = 0; i < 52; i++) {
       const minute = String(i).padStart(2, '0');
-      await postAttempt(attempt({ attemptId: `call_${i}`, outcome: i ? 'resisted' : 'compromised', success: i > 0, completedAt: `2026-10-03T10:${minute}:00Z` })).expect(201);
+      await save(attempt({ attemptId: `call_${i}`, outcome: i ? 'resisted' : 'compromised', success: i > 0, completedAt: `2026-10-03T10:${minute}:00Z` }));
     }
     const body = (await progress().expect(200)).body;
     assert.equal(body.attempts.length, 50);
@@ -232,12 +178,23 @@ describe('Postgres training persistence', { skip: !url }, () => {
   });
 
   test('generated scenarios are stored as CallScenario JSON and owner-scoped', async () => {
-    const { generate, getScenario } = routes(repo);
+    const { generate, startCall } = routes(repo);
     const created = (await generate().expect(201)).body;
     const row = (await db.query('SELECT firebase_uid, source FROM generated_call_scenarios WHERE id=$1', [created.scenarioId])).rows[0];
     assert.deepEqual(row, { firebase_uid: 'alex', source: 'fallback' });
-    assert.equal((await getScenario(created.scenarioId, 'alex').expect(200)).body.id, created.scenarioId);
-    await getScenario(created.scenarioId, 'sam').expect(404);
+    assert.equal((await startCall(created.scenarioId).expect(201)).body.call.scenario.id, created.scenarioId);
+    await startCall(created.scenarioId, 'sam').expect(404);
+  });
+
+  test('a call finished over HTTP reaches Postgres with its canonical result', async () => {
+    const { app, startCall, getAttempt } = routes(repo);
+    const { callId } = (await startCall('courier-customs-fee-1').expect(201)).body;
+    await supertest(app).post(`/api/comms/calls/${callId}/decline`).set('Origin', origin).set('Authorization', 'Bearer alex').send({ reason: 'declined' }).expect(200);
+    let saved;
+    for (let i = 0; i < 50 && !saved; i++) saved = (await db.query('SELECT outcome, success, difficulty FROM training_attempts WHERE id=$1', [callId])).rows[0] ?? await new Promise((r) => setTimeout(r, 20));
+    assert.deepEqual(saved, { outcome: 'declined', success: true, difficulty: 'easy' });
+    assert.equal((await getAttempt(callId).expect(200)).body.scenarioId, 'courier-customs-fee-1');
+    await getAttempt(callId, 'sam').expect(404);
   });
 
   test('database constraints reject non-canonical values', async () => {

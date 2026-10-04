@@ -1,5 +1,5 @@
 import type { Database } from '../db/database.ts';
-import type { CallScenario } from './call-scenario.ts';
+import type { CallScenario } from '../shared/types.ts';
 
 export type ScenarioSource = 'gemini' | 'fallback';
 

@@ -1,3 +1,4 @@
+import { fakeRepos, testServices } from './harness.ts';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import supertest from 'supertest';
@@ -9,6 +10,10 @@ import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
 
 const origin = 'http://localhost:5173';
+// Profile routes never touch simulations; one shared set keeps createApp's wiring complete.
+const sims = testServices(fakeRepos());
+after(sims.close);
+const services = sims.services;
 const identity = (uid: string) => ({ uid, sub: uid, aud: 'test-project', iss: 'https://securetoken.google.com/test-project', auth_time: 0, iat: 0, exp: 9999999999, firebase: { identities: {}, sign_in_provider: 'password' }, email: `${uid}@example.test`, email_verified: true, name: uid === 'alex' ? 'Alex' : undefined }) as DecodedIdToken;
 const verifyToken = async (token: string) => {
   if (token === 'alex' || token === 'sam') return identity(token);
@@ -20,13 +25,13 @@ test('profile validation normalizes phone and rejects empty fields, credentials 
 });
 test('Firebase rejection is 401 but database/provider failures remain retryable without leaking details', async () => {
   const repo = createRepositories({query:async()=>{throw new Error('DATABASE_PASSWORD_PRIVATE');}} as unknown as Database);
-  const app = createApp({repos:repo,origin,verifyToken});
+  const app = createApp({repos:repo,services,origin,verifyToken});
   await supertest(app).get('/api/users/me').expect(401);
   const invalid = await supertest(app).get('/api/users/me').set('Authorization','Bearer invalid').expect(401);
   assert.equal(invalid.body.error.code,'INVALID_TOKEN');
   const offline = await supertest(app).get('/api/users/me').set('Authorization','Bearer alex').expect(503);
   assert.equal(JSON.stringify(offline.body).includes('PRIVATE'),false);
-  const provider = createApp({repos:repo,origin,verifyToken:async()=>{throw Object.assign(new Error('Provider unavailable'),{code:'auth/internal-error'});}});
+  const provider = createApp({repos:repo,services,origin,verifyToken:async()=>{throw Object.assign(new Error('Provider unavailable'),{code:'auth/internal-error'});}});
   await supertest(provider).get('/api/users/me').set('Authorization','Bearer alex').expect(503);
 });
 
@@ -41,7 +46,7 @@ describe('TigerData-compatible profile persistence', {skip:!url}, () => {
     db=createDatabase(url!);repo=createRepositories(db);
     await migrate(db);await migrate(db);
   });
-  beforeEach(async()=>{await db.query('TRUNCATE user_profiles');app=createApp({repos:repo,origin,verifyToken});});
+  beforeEach(async()=>{await db.query('TRUNCATE user_profiles');app=createApp({repos:repo,services,origin,verifyToken});});
   after(async()=>{await db?.end();});
   const get = (token='alex') => supertest(app).get('/api/users/me').set('Authorization',`Bearer ${token}`);
   const put = (body: object,token='alex') => supertest(app).put('/api/users/me').set('Origin',origin).set('Authorization',`Bearer ${token}`).send(body);
@@ -59,7 +64,7 @@ describe('TigerData-compatible profile persistence', {skip:!url}, () => {
     assert.equal(first.body.onboardingComplete,true);
     assert.equal(first.body.phone,'+16045551234');
     const repeated=await put({...profile,name:'My saved name'}).expect(200);
-    const recreated=createApp({repos:createRepositories(db),origin,verifyToken});
+    const recreated=createApp({repos:createRepositories(db),services,origin,verifyToken});
     const restored=await supertest(recreated).get('/api/users/me').set('Authorization','Bearer alex').expect(200);
     assert.equal(restored.body.id,first.body.id);
     assert.equal(restored.body.name,'My saved name');

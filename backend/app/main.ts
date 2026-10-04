@@ -1,21 +1,61 @@
+import { fileURLToPath } from 'node:url';
 import { initializeApp } from 'firebase-admin/app';
+import { createElevenLabs } from './calls/elevenlabs.ts';
+import { CallService } from './calls/service.ts';
 import { loadConfig } from './config.ts';
 import { createDatabase } from './db/database.ts';
 import { createRepositories } from './repositories.ts';
+import { ScenarioCatalog } from './scenarios/catalog.ts';
 import { createApp } from './server.ts';
+import { JsonlEventSink } from './sim/events.ts';
+import { JsonFileStore } from './sim/store.ts';
+import { StubProvider } from './texts/provider.ts';
+import { closeAll as closeStreams } from './texts/sse.ts';
+import { TextService } from './texts/service.ts';
+
+const SWEEP_INTERVAL_MS = 15_000;
+// In-progress simulations and their event log (gitignored).
+const DATA_DIR = fileURLToPath(new URL('../data', import.meta.url));
 
 const config = loadConfig();
 initializeApp({ projectId: config.FIREBASE_PROJECT_ID });
 const db = createDatabase(config.DATABASE_URL);
-const app = createApp({ repos: createRepositories(db), origin: config.APP_ORIGIN, internalToken: config.INTERNAL_API_TOKEN, geminiApiKey: config.GEMINI_API_KEY });
-const server = app.listen(config.PORT, config.HOST, () => console.info(`Onboarding API: http://${config.HOST}:${config.PORT}/api`));
+const repos = createRepositories(db);
+const store = new JsonFileStore(DATA_DIR);
+const events = new JsonlEventSink(DATA_DIR);
+const services = {
+  catalog: new ScenarioCatalog(repos.scenarios),
+  texts: new TextService(store, events, new StubProvider(), {
+    appOrigin: config.APP_ORIGIN, followUpSec: config.TEXT_FOLLOWUP_SEC, idleEndSec: config.TEXT_IDLE_END_SEC,
+  }),
+  calls: new CallService(store, events, {
+    attempts: repos.attempts,
+    elevenLabs: createElevenLabs({ apiKey: config.ELEVENLABS_API_KEY, agentId: config.ELEVENLABS_AGENT_ID }),
+    callMaxSeconds: config.CALL_MAX_SECONDS,
+  }),
+};
+const app = createApp({ repos, services, origin: config.APP_ORIGIN, geminiApiKey: config.GEMINI_API_KEY });
+const server = app.listen(config.PORT, config.HOST, () => console.info(`Tellio API: http://${config.HOST}:${config.PORT}/api`));
 server.on('error', async (error) => { console.error('API startup failed:', (error as NodeJS.ErrnoException).code); await db.end(); process.exitCode = 1; });
+
+const sweep = () => {
+  services.texts.sweep().catch((err) => console.error('[texts] sweep failed', err));
+  services.calls.sweep().catch((err) => console.error('[calls] sweep failed', err));
+};
+const sweeper = setInterval(sweep, SWEEP_INTERVAL_MS);
+// Resume work interrupted by a restart right away (e.g. call analyses).
+sweep();
+
 let closing = false;
 function shutdown() {
   if (closing) return;
   closing = true;
+  clearInterval(sweeper);
+  store.flush();
   const deadline = setTimeout(() => { server.closeAllConnections(); process.exit(1); }, 10000);
   deadline.unref();
+  // Open SSE streams would hold close() until the deadline; clients reconnect on their own.
+  closeStreams();
   server.close(async () => { await db.end(); clearTimeout(deadline); });
 }
 process.on('SIGINT', shutdown);

@@ -39,3 +39,5 @@ logs/
 # Local database certificate bundles and test artifacts
 backend/.certs/
 backend/.local/
+# In-progress simulations and their event log (backend/app/main.ts)
+backend/data/

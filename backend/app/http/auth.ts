@@ -3,8 +3,12 @@ import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 import { AppError } from './errors.ts';
 declare global { namespace Express { interface Request { user?: DecodedIdToken } } }
 export type VerifyToken = (idToken: string) => Promise<DecodedIdToken>;
-export const requireAuth = (verify: VerifyToken = (token) => getAuth().verifyIdToken(token)): RequestHandler => async (req, _res, next) => {
-  const token = req.get('authorization')?.match(/^Bearer (\S+)$/i)?.[1];
+
+/** `queryToken` also accepts `?access_token=`; only for SSE, because EventSource can't send headers. */
+export const requireAuth = (verify: VerifyToken = (token) => getAuth().verifyIdToken(token), { queryToken = false } = {}): RequestHandler => async (req, _res, next) => {
+  const header = req.get('authorization');
+  const query = req.query.access_token;
+  const token = header ? header.match(/^Bearer (\S+)$/i)?.[1] : queryToken && typeof query === 'string' ? query : undefined;
   if (!token) throw new AppError(401, 'UNAUTHENTICATED', 'Please sign in to continue.');
   try { req.user = await verify(token); }
   catch (error) {
