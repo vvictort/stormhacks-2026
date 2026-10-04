@@ -1,36 +1,40 @@
-import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { Router, type ErrorRequestHandler, type Request } from 'express';
+import cors from 'cors';
+import express, { Router, type ErrorRequestHandler, type Request } from 'express';
 import { z } from 'zod';
-import { AuthError, getUserId, type AuthOptions } from './auth.ts';
+import { AuthError, type AuthOptions, type GetUserId } from './auth.ts';
+import { BackendError, type Backend } from './backend.ts';
 import { ElevenLabsError, ElevenLabsNotConfigured } from './calls/elevenlabs.ts';
 import type { CallService } from './calls/service.ts';
-import { ROOT_DIR, isProduction } from './config.ts';
+import { ROOT_DIR, config } from './config.ts';
 import type { SampleCatalog } from './samples.ts';
-import { CallScenario, TextScenario } from './types.ts';
 import type { TextService } from './texts/service.ts';
 import * as sse from './texts/sse.ts';
 
-// Start a sample by id, a custom scenario, or (neither) a random sample. Not a union, so an
-// invalid `scenario` is a 400 rather than a random pick. Unknown keys (e.g. an old `userId`) are stripped.
-const StartText = z
-  .object({ scenarioId: z.string().min(1).optional(), scenario: TextScenario.optional() })
-  .refine((b) => !(b.scenarioId && b.scenario), { message: 'Send scenarioId or scenario, not both' });
+// Scenarios are server-owned: start one by id, or `{}` for a random sample. Strict, so a client-supplied
+// `scenario` (or any other key) is a 400 instead of being silently ignored.
+const StartSimulation = z.strictObject({ scenarioId: z.string().min(1).max(200).optional() });
 const Reply = z.object({ body: z.string().trim().min(1).max(1000) });
-const StartCall = z
-  .object({ scenarioId: z.string().min(1).optional(), scenario: CallScenario.optional() })
-  .refine((b) => !(b.scenarioId && b.scenario), { message: 'Send scenarioId or scenario, not both' });
 const ListScenarios = z.object({ channel: z.enum(['text', 'call']).optional() });
 const Decline = z.object({ reason: z.enum(['declined', 'missed']).default('declined') });
-const Ended = z.object({ conversationId: z.string().min(1).optional() });
+const ConversationId = z.string().min(1).max(200);
+const Connected = z.object({ conversationId: ConversationId });
+const Ended = z.object({ conversationId: ConversationId.optional() });
+
+/** Prefix of backend-generated (Gemini) call scenarios, resolved through the backend per user. */
+const GENERATED_PREFIX = 'gen-';
 
 export interface Services {
   texts: TextService;
   calls: CallService;
   samples: SampleCatalog;
+  backend: Pick<Backend, 'callScenario'>;
+  getUserId: GetUserId;
+  /** Serve `/dev/*`; only when the dev user is allowed (never in production). */
+  devPages: boolean;
 }
 
-export function createRouter({ texts, calls, samples }: Services) {
+export function createRouter({ texts, calls, samples, backend, getUserId, devPages }: Services) {
   const router = Router();
 
   // The simulation if it belongs to the caller, else null (reported as 404 so ids can't be probed).
@@ -60,8 +64,8 @@ export function createRouter({ texts, calls, samples }: Services) {
 
   router.post('/texts', async (req, res) => {
     const userId = await getUserId(req);
-    const body = StartText.parse(req.body ?? {});
-    const scenario = body.scenario ?? samples.pickText(body.scenarioId);
+    const { scenarioId } = StartSimulation.parse(req.body ?? {});
+    const scenario = samples.pickText(scenarioId);
     if (!scenario) {
       res.status(404).json({ error: 'scenario_not_found' });
       return;
@@ -130,8 +134,10 @@ export function createRouter({ texts, calls, samples }: Services) {
 
   router.post('/calls', async (req, res) => {
     const userId = await getUserId(req);
-    const body = StartCall.parse(req.body ?? {});
-    const scenario = body.scenario ?? samples.pickCall(body.scenarioId);
+    const { scenarioId } = StartSimulation.parse(req.body ?? {});
+    const scenario = scenarioId?.startsWith(GENERATED_PREFIX)
+      ? await backend.callScenario(scenarioId, userId)
+      : samples.pickCall(scenarioId);
     if (!scenario) {
       res.status(404).json({ error: 'scenario_not_found' });
       return;
@@ -169,6 +175,19 @@ export function createRouter({ texts, calls, samples }: Services) {
     else res.json(result);
   });
 
+  router.post('/calls/:id/connected', async (req, res) => {
+    if (!(await ownCall(req, req.params.id))) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
+    const { conversationId } = Connected.parse(req.body ?? {});
+    const result = await calls.connected(req.params.id, conversationId);
+    if (result === 'not_found') res.status(404).json({ error: 'not_found' });
+    else if (result === 'wrong_state') res.status(409).json({ error: 'not_in_call' });
+    else if (result === 'conversation_mismatch') res.status(409).json({ error: 'conversation_mismatch' });
+    else res.json(result);
+  });
+
   router.post('/calls/:id/ended', async (req, res) => {
     if (!(await ownCall(req, req.params.id))) {
       res.status(404).json({ error: 'not_found' });
@@ -178,26 +197,32 @@ export function createRouter({ texts, calls, samples }: Services) {
     const result = await calls.ended(req.params.id, conversationId);
     if (result === 'not_found') res.status(404).json({ error: 'not_found' });
     else if (result === 'wrong_state') res.status(409).json({ error: 'not_in_call' });
+    else if (result === 'conversation_mismatch') res.status(409).json({ error: 'conversation_mismatch' });
     else res.status(202).json(result);
   });
 
-  // --- Dev-only call test page ---
+  // --- Dev-only call test page (runs as the dev user, so never in production) ---
 
-  if (!isProduction) {
+  if (devPages) {
     router.get('/dev/call', (_req, res) => {
       res.sendFile(join(ROOT_DIR, 'src/dev/call.html'));
-    });
-    router.get('/dev/fixtures/:name', (req, res) => {
-      const file = join(ROOT_DIR, 'fixtures/scenarios', `${req.params.name}.json`);
-      if (!/^[\w-]+$/.test(req.params.name) || !existsSync(file)) res.status(404).json({ error: 'not_found' });
-      else res.sendFile(file);
     });
   }
 
   return router;
 }
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+/** The whole HTTP app, separate from listening so tests can run it on a random port. */
+export function createApp(services: Services) {
+  const app = express();
+  app.use(cors({ origin: config.FRONTEND_BASE_URL }));
+  app.use(express.json({ limit: '100kb' }));
+  app.use('/comms', createRouter(services));
+  app.use(errorHandler);
+  return app;
+}
+
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AuthError) {
     res.status(401).set('WWW-Authenticate', 'Bearer').json({ error: 'unauthorized', reason: err.code });
     return;
@@ -208,6 +233,11 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   }
   if (err instanceof ElevenLabsNotConfigured) {
     res.status(503).json({ error: 'elevenlabs_not_configured', message: err.message });
+    return;
+  }
+  if (err instanceof BackendError) {
+    console.error(`[backend] ${err.message}`);
+    res.status(502).json({ error: 'backend_unavailable' });
     return;
   }
   if (err instanceof ElevenLabsError) {

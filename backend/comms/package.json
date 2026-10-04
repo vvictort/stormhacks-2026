@@ -7,11 +7,13 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
-    "setup:agent": "tsx scripts/setup-agent.ts"
+    "setup:agent": "tsx scripts/setup-agent.ts",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "firebase-admin": "^14.5.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
