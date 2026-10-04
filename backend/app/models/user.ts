@@ -339,92 +339,66 @@ export interface CommsReportResult {
   feedbackMessage: string;
 }
 
+function addUnique<T>(list: T[], item: T): boolean {
+  if (list.includes(item)) return false;
+  list.push(item);
+  return true;
+}
+
 export function updateUserFromCommsReport(report: CommsReportInput): CommsReportResult {
-  let call: CallRecord | undefined;
-  let thread: TextThread | undefined;
+  const call = 'call' in report ? report.call
+    : 'thread' in report ? undefined
+    : 'callerLabel' in report.scenario || 'transcript' in report ? (report as CallRecord) : undefined;
+  const sim: CallRecord | TextThread = call ?? ('thread' in report ? report.thread : (report as TextThread));
+  const channel = call ? 'call' : 'text';
 
-  if ('call' in report) {
-    call = report.call;
-  } else if ('thread' in report) {
-    thread = report.thread;
-  } else if ('callerLabel' in report.scenario || 'transcript' in report) {
-    call = report as CallRecord;
-  } else {
-    thread = report as TextThread;
-  }
-
-  const userId = call ? call.userId : thread!.userId;
-  const user = usersStore.get(userId);
+  const user = usersStore.get(sim.userId);
   if (!user) {
-    throw new Error(`Cannot update comms report: User with ID "${userId}" not found.`);
+    throw new Error(`Cannot update comms report: User with ID "${sim.userId}" not found.`);
   }
 
-  let channel: 'call' | 'text';
-  let outcome: Outcome;
-  let signals: Signal[];
-  let scenario: { id: string; title: string; tactics: Tactic[] };
-  let simulationId: string;
+  const { calls, texts } = user.vulnerabilityProfile;
+  const profile = call ? calls : texts;
+  const scenario = sim.scenario;
+  const signals = sim.signals || [];
+  const compromising = signals.filter((s) => COMPROMISING_SIGNALS.includes(s));
+  const isCompromised = sim.outcome === 'compromised' || compromising.length > 0;
+  const outcome: Outcome = isCompromised ? 'compromised' : sim.outcome || 'resisted';
   const newlyAddedTactics: (Tactic | string)[] = [];
 
+  if (call) calls.totalCalls += 1;
+  else texts.totalThreads += 1;
+  for (const sig of signals) profile.signalsObserved[sig] = (profile.signalsObserved[sig] || 0) + 1;
+  user.stats.totalDrillsCompleted += 1;
+
+  if (isCompromised) {
+    user.stats.timesCompromised += 1;
+    for (const tactic of scenario.tactics) {
+      if (addUnique(profile.vulnerableTactics, tactic)) newlyAddedTactics.push(tactic);
+      addUnique(user.vulnerabilityProfile.frequentBlindSpots, tactic);
+    }
+  }
+
   if (call) {
-    channel = 'call';
-    simulationId = call.id;
-    outcome = call.outcome || 'resisted';
-    signals = call.signals || [];
-    scenario = call.scenario;
-
-    const callProfile = user.vulnerabilityProfile.calls;
-    callProfile.totalCalls += 1;
-
-    signals.forEach((sig) => {
-      callProfile.signalsObserved[sig] = (callProfile.signalsObserved[sig] || 0) + 1;
-    });
-
-    const compromising = signals.filter((s) => COMPROMISING_SIGNALS.includes(s));
-    const isCompromised = outcome === 'compromised' || compromising.length > 0;
-
-    user.stats.totalDrillsCompleted += 1;
-
     if (isCompromised) {
-      outcome = 'compromised';
-      user.stats.timesCompromised += 1;
-      callProfile.callsCompromised += 1;
-
-      compromising.forEach((sig) => {
-        if (!callProfile.compromisingSignalsTriggered.includes(sig)) {
-          callProfile.compromisingSignalsTriggered.push(sig);
-        }
-      });
-
-      scenario.tactics.forEach((tactic) => {
-        if (!callProfile.vulnerableTactics.includes(tactic)) {
-          callProfile.vulnerableTactics.push(tactic);
-          newlyAddedTactics.push(tactic);
-        }
-        if (!user.vulnerabilityProfile.frequentBlindSpots.includes(tactic)) {
-          user.vulnerabilityProfile.frequentBlindSpots.push(tactic);
-        }
-      });
-    } else {
-      if (outcome === 'resisted') {
-        callProfile.callsResisted += 1;
-        user.stats.correctIdentifications += 1;
-      } else if (outcome === 'reported' || signals.includes('challenged') || signals.includes('asked_to_verify')) {
-        callProfile.callsReportedOrChallenged += 1;
-        user.stats.correctIdentifications += 1;
-      } else if (outcome === 'declined' || outcome === 'missed' || outcome === 'ignored') {
-        callProfile.callsDeclinedOrMissed += 1;
-      }
+      calls.callsCompromised += 1;
+      for (const sig of compromising) addUnique(calls.compromisingSignalsTriggered, sig);
+    } else if (outcome === 'resisted') {
+      calls.callsResisted += 1;
+      user.stats.correctIdentifications += 1;
+    } else if (outcome === 'reported' || signals.includes('challenged') || signals.includes('asked_to_verify')) {
+      calls.callsReportedOrChallenged += 1;
+      user.stats.correctIdentifications += 1;
+    } else if (outcome === 'declined' || outcome === 'missed' || outcome === 'ignored') {
+      calls.callsDeclinedOrMissed += 1;
     }
 
     if (call.durationSecs !== undefined && call.durationSecs > 0) {
-      callProfile.totalDurationSecs += call.durationSecs;
-      callProfile.averageDurationSecs = Math.round(
-        callProfile.totalDurationSecs / callProfile.totalCalls
-      );
+      calls.totalDurationSecs += call.durationSecs;
+      calls.averageDurationSecs = Math.round(calls.totalDurationSecs / calls.totalCalls);
     }
 
-    callProfile.recentOutcomes.unshift({
+    calls.recentOutcomes.unshift({
       callId: call.id,
       scenarioTitle: scenario.title,
       scenarioId: scenario.id,
@@ -433,61 +407,19 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
       durationSecs: call.durationSecs,
       at: call.completedAt || call.endedAt || new Date().toISOString(),
     });
-    if (callProfile.recentOutcomes.length > 20) callProfile.recentOutcomes.pop();
-
+    if (calls.recentOutcomes.length > 20) calls.recentOutcomes.pop();
+  } else if (isCompromised) {
+    texts.threadsCompromised += 1;
+    if (signals.includes('clicked_link')) texts.linkClicks += 1;
   } else {
-    channel = 'text';
-    simulationId = thread!.id;
-    outcome = thread!.outcome || 'resisted';
-    signals = thread!.signals || [];
-    scenario = thread!.scenario;
-
-    const textProfile = user.vulnerabilityProfile.texts;
-    textProfile.totalThreads += 1;
-
-    signals.forEach((sig) => {
-      textProfile.signalsObserved[sig] = (textProfile.signalsObserved[sig] || 0) + 1;
-    });
-
-    const isLinkOrCodeCompromise =
-      signals.includes('clicked_link') ||
-      signals.includes('shared_code') ||
-      signals.some((s) => COMPROMISING_SIGNALS.includes(s));
-    const isCompromised = outcome === 'compromised' || isLinkOrCodeCompromise;
-
-    user.stats.totalDrillsCompleted += 1;
-
-    if (isCompromised) {
-      outcome = 'compromised';
-      user.stats.timesCompromised += 1;
-      textProfile.threadsCompromised += 1;
-
-      if (signals.includes('clicked_link')) textProfile.linkClicks += 1;
-
-      scenario.tactics.forEach((tactic) => {
-        if (!textProfile.vulnerableTactics.includes(tactic)) {
-          textProfile.vulnerableTactics.push(tactic);
-          newlyAddedTactics.push(tactic);
-        }
-        if (!user.vulnerabilityProfile.frequentBlindSpots.includes(tactic)) {
-          user.vulnerabilityProfile.frequentBlindSpots.push(tactic);
-        }
-      });
-    } else {
-      if (outcome === 'reported') {
-        textProfile.reported += 1;
-        user.stats.correctIdentifications += 1;
-      } else {
-        textProfile.threadsResisted += 1;
-        user.stats.correctIdentifications += 1;
-      }
-    }
+    if (outcome === 'reported') texts.reported += 1;
+    else texts.threadsResisted += 1;
+    user.stats.correctIdentifications += 1;
   }
 
   const inferredCat = inferCategoryFromScenario(scenario);
   const cat = user.vulnerabilityProfile.categoryAccuracy[inferredCat];
   cat.attempts += 1;
-  const isCompromised = outcome === 'compromised';
   if (!isCompromised) cat.correct += 1;
   cat.accuracy = Math.round((cat.correct / cat.attempts) * 100);
 
@@ -527,7 +459,7 @@ export function updateUserFromCommsReport(report: CommsReportInput): CommsReport
   return {
     user,
     channel,
-    simulationId,
+    simulationId: sim.id,
     outcome,
     isCompromised,
     signals,
