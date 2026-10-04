@@ -11,7 +11,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Start the backend separately from `backend/` after configuring its `.env` and running `npm run migrate`. Vite uses port 5173 and proxies `/api` to `localhost:3000`, and `/comms` (including SSE) to the comms service at `localhost:3001`. Point the proxy elsewhere with the `COMMS_URL` shell variable (`COMMS_URL=http://localhost:4001 npm run dev`); Vite reads it from the environment, not from `.env`. Open **http://localhost:5173**; localhost is authorized in the existing Firebase project. The strict development port keeps the backend's `APP_ORIGIN` consistent.
+Start the backend separately from `backend/` after configuring its `.env` and running `npm run migrate`. Vite uses port 5173 and proxies `/api` to `localhost:3000`; that one server also serves the simulated texts and calls (`/api/comms`, including SSE). Open **http://localhost:5173**; localhost is authorized in the existing Firebase project. The strict development port keeps the backend's `APP_ORIGIN` consistent.
 
 ## Flow
 
@@ -28,16 +28,16 @@ The profile provider clears displayed data when account identities differ and ig
 
 ## Phone calls
 
-Call scenarios ring on the practice phone. Answering asks for the microphone and starts an ElevenLabs voice session through the comms service; captions show what the caller says, and after hanging up the comms service analyses the call. The debrief prefers the stored backend attempt and falls back to the comms call record, and only ever shows the redacted transcript.
+Call scenarios ring on the practice phone. Answering asks for the microphone and starts an ElevenLabs voice session through the backend; captions show what the caller says, and after hanging up the backend analyses the call and saves the attempt. The debrief prefers the saved attempt and falls back to the call record, and only ever shows the redacted transcript.
 
 - Microphone access needs a secure context: `https://` or `localhost`. Over plain HTTP on a LAN address, calls explain why they can't connect.
-- Without ElevenLabs keys on the comms service (`503 elevenlabs_not_configured`), or when comms is unreachable, the call shows that live voice is unavailable and offers a caption-only practice mode. Its results are saved in this browser only.
+- Without ElevenLabs keys on the backend (`503 elevenlabs_not_configured`), or when the backend is unreachable, the call shows that live voice is unavailable and offers a caption-only practice mode. Its results are saved in this browser only.
 - The voice SDK is lazy-loaded with the call screen, so it never weighs on the rest of the app.
 - Live-call progress comes from `GET /api/training/progress`; text and email progress stays in localStorage.
 
 ## Configuration
 
-`src/lib/firebase.ts` reads the public `VITE_FIREBASE_*` settings. `VITE_COMMS_BASE_URL` (optional) sets where the browser calls the comms service; it defaults to `/comms`, the same-origin path the Vite proxy serves. The backend's `FIREBASE_PROJECT_ID` must match that project. Firebase Email/Password must be enabled; retain the existing Google provider configuration if using Google login. No Firebase service-account private key is needed for the backend's token-verification-only use.
+`src/lib/firebase.ts` reads the public `VITE_FIREBASE_*` settings. `VITE_COMMS_BASE_URL` (optional) sets where the browser calls the simulated text and call routes; it defaults to `/api/comms`, served through the same `/api` proxy. The backend's `FIREBASE_PROJECT_ID` must match that project. Firebase Email/Password must be enabled; retain the existing Google provider configuration if using Google login. No Firebase service-account private key is needed for the backend's token-verification-only use.
 
 Production should expose frontend and `/api` under the same HTTPS origin and rewrite app navigation routes to `index.html`. Set backend `APP_ORIGIN` to that origin. See `backend/README.md` for TigerData connection and certificate setup.
 
