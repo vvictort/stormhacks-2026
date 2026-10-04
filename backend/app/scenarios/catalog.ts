@@ -31,6 +31,11 @@ const pickRandom = <T>(list: T[]): T | null =>
 /** Prefix of generated (Gemini) call scenarios, stored per user in Postgres. */
 const GENERATED_PREFIX = "gen-";
 
+function errorText(err: unknown) {
+  if (err instanceof z.ZodError) return z.prettifyError(err);
+  return err instanceof Error ? err.message : String(err);
+}
+
 /**
  * Every scenario a simulation can start from: the fixtures, loaded once at
  * startup from `text-*.json` / `call-*.json` files shaped
@@ -74,13 +79,9 @@ export class ScenarioCatalog {
         if (ids.has(id)) throw new Error(`duplicate scenario id "${id}"`);
         ids.add(id);
       } catch (err) {
-        const message =
-          err instanceof z.ZodError
-            ? z.prettifyError(err)
-            : err instanceof Error
-              ? err.message
-              : String(err);
-        throw new Error(`[scenarios] ${file}: ${message}`, { cause: err });
+        throw new Error(`[scenarios] ${file}: ${errorText(err)}`, {
+          cause: err,
+        });
       }
     }
   }

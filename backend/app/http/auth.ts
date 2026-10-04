@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { Request, RequestHandler } from "express";
 import { getAuth, type DecodedIdToken } from "firebase-admin/auth";
 import { AppError } from "./errors.ts";
 
@@ -12,6 +12,15 @@ declare global {
 
 export type VerifyToken = (idToken: string) => Promise<DecodedIdToken>;
 
+/** The header always wins: the query is only read when there is no header. */
+function tokenFrom(req: Request, queryToken: boolean) {
+  const header = req.get("authorization");
+  if (header) return header.match(/^Bearer (\S+)$/i)?.[1];
+
+  const query = req.query.access_token;
+  return queryToken && typeof query === "string" ? query : undefined;
+}
+
 /**
  * `queryToken` also accepts `?access_token=`; only for SSE, because EventSource
  * can't send headers.
@@ -22,13 +31,7 @@ export const requireAuth =
     { queryToken = false } = {},
   ): RequestHandler =>
   async (req, _res, next) => {
-    const header = req.get("authorization");
-    const query = req.query.access_token;
-    const token = header
-      ? header.match(/^Bearer (\S+)$/i)?.[1]
-      : queryToken && typeof query === "string"
-        ? query
-        : undefined;
+    const token = tokenFrom(req, queryToken);
     if (!token) {
       throw new AppError(401, "UNAUTHENTICATED", "Please sign in to continue.");
     }

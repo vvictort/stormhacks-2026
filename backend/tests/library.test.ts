@@ -698,12 +698,13 @@ test("blockedBrand catches the courier, not hyphenated words like pop-ups", () =
 // Built-in scenarios from the real library (backend/fixtures/scam-library.json)
 const real = ScamLibrary.load();
 
-const strings = (value: unknown): string[] =>
-  typeof value === "string"
-    ? [value]
-    : value && typeof value === "object"
-      ? Object.values(value).flatMap(strings)
-      : [];
+const strings = (value: unknown): string[] => {
+  if (typeof value === "string") return [value];
+  if (value && typeof value === "object") {
+    return Object.values(value).flatMap(strings);
+  }
+  return [];
+};
 
 /**
  * No placeholder (or any other bracket) left in any text the scenario carries.

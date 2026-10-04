@@ -602,24 +602,27 @@ function plan(input: EmailGenerationInput) {
   const tactics = (input.vulnerableTactics ?? [])
     .filter((tactic) => /^[a-z_]{2,20}$/.test(tactic))
     .slice(0, 3);
-  const why = focus
-    ? `focused on ${categoryNoun[category]}, which your recent results point to`
-    : weak
-      ? `focused on ${categoryNoun[category]}, where you slipped before`
-      : `with ${categoryNoun[category]} to widen your practice`;
+  const why = focusReason(categoryNoun[category], focus, weak);
 
   return { profession, interests, category, tactics, why };
 }
 
-function reason(why: string, profession: string, interest: string | undefined) {
-  const matched = profession
-    ? `Matched to your work (${profession})`
-    : interest
-      ? `Matched to your interest in ${interest}`
-      : "";
-  return matched
-    ? `${matched}, and ${why}.`
-    : `${why[0].toUpperCase()}${why.slice(1)}.`;
+/** Why this category was picked, to finish the sentence in `reason`. */
+export function focusReason(noun: string, focus: unknown, weak: unknown) {
+  if (focus) return `focused on ${noun}, which your recent results point to`;
+  if (weak) return `focused on ${noun}, where you slipped before`;
+  return `with ${noun} to widen your practice`;
+}
+
+/** The line shown with a generated scenario: what it was matched to and why. */
+export function reason(
+  why: string,
+  profession: string,
+  interest: string | undefined,
+) {
+  if (profession) return `Matched to your work (${profession}), and ${why}.`;
+  if (interest) return `Matched to your interest in ${interest}, and ${why}.`;
+  return `${why[0].toUpperCase()}${why.slice(1)}.`;
 }
 
 function promptFor(

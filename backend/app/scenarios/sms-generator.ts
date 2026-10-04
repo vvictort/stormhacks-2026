@@ -4,7 +4,9 @@ import { z } from "zod";
 import { Difficulty, ScamCategory, Tactic } from "../shared/vocabulary.ts";
 import {
   categoryBrief,
+  focusReason,
   hiddenIndicators,
+  reason,
   repairQuote,
 } from "./email-generator.ts";
 import { generateChecked, parseModelJson, type JsonModel } from "./gemini.ts";
@@ -262,24 +264,9 @@ function plan(input: SmsGenerationInput) {
   const tactics = (input.vulnerableTactics ?? [])
     .filter((tactic) => /^[a-z_]{2,20}$/.test(tactic))
     .slice(0, 3);
-  const why = focus
-    ? `focused on ${categoryNoun[category]}, which your recent results point to`
-    : weak
-      ? `focused on ${categoryNoun[category]}, where you slipped before`
-      : `with ${categoryNoun[category]} to widen your practice`;
+  const why = focusReason(categoryNoun[category], focus, weak);
 
   return { profession, interests, category, tactics, why };
-}
-
-function reason(why: string, profession: string, interest: string | undefined) {
-  const matched = profession
-    ? `Matched to your work (${profession})`
-    : interest
-      ? `Matched to your interest in ${interest}`
-      : "";
-  return matched
-    ? `${matched}, and ${why}.`
-    : `${why[0].toUpperCase()}${why.slice(1)}.`;
 }
 
 function promptFor(input: SmsGenerationInput, p: ReturnType<typeof plan>) {
