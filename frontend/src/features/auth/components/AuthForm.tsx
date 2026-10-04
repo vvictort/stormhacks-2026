@@ -182,8 +182,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           <Check size={30} aria-hidden="true" />
         </div>
         <p className="signed-in-message text-muted-strong">
-          Your training experience is coming soon. Your account is ready when
-          you are.
+          Your account is ready when you are.
         </p>
         <p className="signed-in-email">{user.email}</p>
         {profileWarning && (

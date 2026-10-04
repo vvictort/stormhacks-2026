@@ -13,7 +13,7 @@ import {
   type MessageScenario,
   type Scenario,
 } from '../scenarios'
-import { NewBadges } from './MissionCard'
+import { MissionAccomplished, NewBadges } from './MissionCard'
 
 interface DebriefProps {
   scenario: MessageScenario
@@ -187,12 +187,7 @@ export function Debrief({
         </div>
       )}
       <NewBadges ids={earnedNow} />
-      {complete && (
-        <p className="debrief-mission-complete" role="status">
-          <strong>Mission accomplished.</strong>Three scenarios completed. Ready
-          for your next adventure?
-        </p>
-      )}
+      {complete && <MissionAccomplished />}
       <p className="debrief-tip">
         <strong>For next time</strong>
         {scenario.nextTime}

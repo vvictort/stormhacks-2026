@@ -6,7 +6,7 @@ import { TransitionLink } from '../../../components/TransitionLink'
 import { spring } from '../../../lib/motion'
 import { debriefActions } from '../adaptive'
 import { voiceCredit } from '../attribution'
-import { NewBadges } from '../components/MissionCard'
+import { MissionAccomplished, NewBadges } from '../components/MissionCard'
 import { missionComplete, type BadgeId, type Mission } from '../missions'
 import type { Scenario } from '../scenarios'
 import type { CallDebriefView, Moment } from './callModel'
@@ -127,12 +127,7 @@ export function CallDebrief({
         <strong>{view.outcomeLine}</strong> {view.explanation}
       </p>
       <NewBadges ids={earnedNow} />
-      {complete && (
-        <p className="debrief-mission-complete" role="status">
-          <strong>Mission accomplished.</strong>Three scenarios completed. Ready
-          for your next adventure?
-        </p>
-      )}
+      {complete && <MissionAccomplished />}
       {mission && (
         <div className="debrief-actions">
           <MissionStep

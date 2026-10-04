@@ -41,7 +41,7 @@ export function validateAuthForm(
   if (!values.password) {
     errors.password = 'Please enter your password.'
   } else if (isSignup && values.password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = 'Use at least 8 characters.'
+    errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`
   }
   if (isSignup) {
     if (!values.confirmPassword) {

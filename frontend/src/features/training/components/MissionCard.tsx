@@ -173,6 +173,15 @@ function BadgeEmblem({ id }: { id: BadgeId }) {
   )
 }
 
+export function MissionAccomplished() {
+  return (
+    <p className="debrief-mission-complete" role="status">
+      <strong>Mission accomplished.</strong> Three scenarios completed. Ready
+      for your next adventure?
+    </p>
+  )
+}
+
 export function NewBadges({ ids }: { ids: BadgeId[] }) {
   if (!ids.length) return null
   return (
