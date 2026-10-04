@@ -32,7 +32,8 @@ function ScenarioRun({ scenario }: { scenario: Scenario }) {
 
   useEffect(() => {
     document.title = `${scenario.title} · Tellio`
-    window.scrollTo(0, 0)
+    // A new scenario is a new page: jump, don't glide, past the global smooth scroll.
+    window.scrollTo({ top: 0, behavior: 'instant' })
     heading.current?.focus({ preventScroll: true })
   }, [scenario.title])
 
