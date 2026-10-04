@@ -619,7 +619,8 @@ const identity = (uid: string) =>
   }) as DecodedIdToken;
 const verifyToken = async (token: string) => identity(token);
 
-test("grounding survives storage: GET returns it for generated emails and calls, never a library row", async () => {
+test("grounding survives storage: GET returns it for generated emails and calls, never a library row", async (t) => {
+  t.mock.method(Math, "random", () => 0.9); // the draw for a scam, not a genuine email
   const repos: Repositories = fakeRepos();
   repos.insights.latestFocus = async () => ["banking"];
   const { model } = fakeModel(
