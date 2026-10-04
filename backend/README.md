@@ -1,8 +1,34 @@
-# Backend scaffold
+# Backend
 
-This directory contains the planned backend structure only. Application files,
-dependency manifests, and configuration placeholders are intentionally empty.
-There is no runnable server or implemented provider integration yet.
+TypeScript API (Express 5, run with `tsx`). Every `/api` route except
+`/api/health` requires a signed-in Firebase user.
+
+```bash
+cd backend
+npm install
+cp .env.example .env   # set FIREBASE_PROJECT_ID
+npm run dev            # http://localhost:3000/api
+npm test
+npm run typecheck
+```
+
+## Auth
+
+- **Authentication** (`requireAuth` in `app/core/security.ts`): the frontend sends
+  `Authorization: Bearer <Firebase ID token>`. The token is verified with Firebase
+  Admin and the decoded token is available as `req.user` (`uid`, `email`, ...).
+  Missing or invalid tokens get `401`, and the frontend signs the user out.
+- **Authorization** (`requireSelf`): routes with a `:uid` parameter only serve the
+  caller's own records; anyone else gets `403`. For per-user data, scope every query
+  by `req.user.uid` rather than trusting ids in the request body.
+- Public routes (for example provider webhooks) must be mounted above
+  `app.use('/api', requireAuth())` in `app/main.ts`.
+
+| Route | Returns |
+| --- | --- |
+| `GET /api/health` | `{ ok: true }` (public) |
+| `GET /api/users/me` | the caller's profile from their token |
+| `GET /api/users/:uid` | the same, `403` unless `:uid` is the caller |
 
 ## Directory responsibilities
 
@@ -29,8 +55,8 @@ There is no runnable server or implemented provider integration yet.
 
 Use `backend/.env` for local environment values. The root `.gitignore` excludes
 environment files throughout the repository while allowing `.env.example`
-templates to be committed. The example is currently empty; add variable names
-and safe placeholder values as integrations are implemented.
+templates to be committed. Add variable names and safe placeholder values to the
+example as integrations are implemented.
 
 Keep real credentials out of templates. Dependencies, build output, Python
 virtual environments, caches, logs, and test coverage output are also ignored.

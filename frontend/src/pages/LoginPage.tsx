@@ -1,4 +1,4 @@
-import { AuthForm } from '../components/auth/AuthForm'
+import { AuthForm } from '../features/auth/components/AuthForm'
 
 export function LoginPage() {
   return <AuthForm mode="login" />

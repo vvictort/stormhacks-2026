@@ -6,8 +6,13 @@ A responsive authentication experience for Tellio, a scam-awareness training web
 
 ```sh
 npm install
+cp .env.example .env
 npm run dev
 ```
+
+Pages that load data also need the backend running (`cd ../backend && npm run dev`, see `backend/README.md`). Vite proxies `/api` to it on port 3000.
+
+Fill in `.env` with the values from the Firebase console (Project settings → Your apps → Web app). `.env` is git-ignored; never commit it. For a deployed build, set the same `VITE_FIREBASE_*` variables in the host's build environment. The app throws on startup, naming any missing variable.
 
 Open the Vite URL using **localhost**. The configured Firebase project's authorized domains currently include `localhost`, `stormhacks-2026.firebaseapp.com`, and `stormhacks-2026.web.app`. The IP address `127.0.0.1` is not currently authorized for Google sign-in.
 
@@ -23,17 +28,23 @@ The dependency-free unit tests use Node's built-in test runner and TypeScript st
 
 - `/login`: email/password login, Google sign-in, and an accessible password-reset dialog.
 - `/signup`: name, email, password, confirmation, and Google sign-up.
-- `/` and unknown routes redirect to `/login`.
-- Existing or newly authenticated users see a signed-in confirmation with sign-out. There is no dashboard or onboarding yet.
+- `/home` and `/train/:scenarioId` require a signed-in user (`RequireAuth` in `src/features/auth/RouteGuards.tsx`). Logged-out visitors go to `/login`, which remembers the destination in `location.state.from` and returns there after login. An explicit sign-out lands on a plain `/login`.
+- Signed-in users who open `/login` or `/signup` go to `/home` (or the remembered destination), once any auth operation has finished.
+- `/` and unknown routes go to `/home`, so they end up at `/home` or `/login` depending on the session.
+- While Firebase restores the session, protected routes show only a neutral "Checking your session…" status and the auth pages show their own session check, so neither protected content nor the login form flashes.
 - The layout uses two columns on desktop and a single auth card below 960px. The original semantic palette is preserved, with darker companion tokens for accessible text and controls.
 
 ## Authentication integration
 
-`src/firebase.ts` owns the existing Firebase app and Auth instance. `src/auth.ts` owns provider operations, and `src/auth/AuthProvider.tsx` exposes session state and pending/error states to the forms. The auth-state subscription is cleaned up on unmount; Firebase manages session persistence.
+`src/lib/firebase.ts` owns the Firebase app and Auth instance, configured from `VITE_FIREBASE_*` environment variables. `src/features/auth/service.ts` owns provider operations, and `src/features/auth/AuthProvider.tsx` exposes session state and pending/error states to the forms. The auth-state subscription is cleaned up on unmount; Firebase manages session persistence.
 
 Email/password registration checks Firebase's current password policy, creates the account, and saves the supplied name with `updateProfile`. The interface requires at least eight characters; a stricter Firebase policy is also enforced and explained inline. Login accepts existing passwords without imposing the new-account minimum. Password whitespace is preserved.
 
-Account creation and display-name saving have separate outcomes. If the account is created but saving the name fails, the user remains signed in and sees a warning. Retrying account creation is not offered.
+Account creation and display-name saving have separate outcomes. Firebase signs the user in before the name is saved, so the redirect off `/signup` waits until the whole operation settles (`pending` is null). If the name can't be saved, the user stays signed in and `profileWarning` stays in the auth context after the redirect, for `/home` to show. `dismissProfileWarning()` clears it, and so does signing out (including from another tab). Retrying account creation is not offered.
+
+Backend calls go through `api()` in `src/lib/api.ts`, which sends the user's Firebase ID token as `Authorization: Bearer <token>`. The backend verifies it on every `/api` route except `/api/health` and only serves the caller's own records. If the backend answers 401, `api()` signs the user out and `RequireAuth` sends them to `/login`. `AuthProvider` has the backend confirm each restored or new session this way (`GET /api/users/me`). An unreachable backend only logs a warning, so the UI never locks anyone out. The route guards control what the UI shows. The backend is what actually protects the data.
+
+Redirect decisions are pure functions in `src/features/auth/redirect.ts`. `safeReturnPath` accepts only in-app paths and never sends users back to an auth page.
 
 Google authentication uses `GoogleAuthProvider` and `signInWithPopup` from the same Firebase instance. Both Google buttons share the same flow. Blocked/cancelled popups and provider errors receive friendly messages.
 
@@ -58,7 +69,9 @@ When deploying to a static host, rewrite application routes to `index.html` so d
 
 ## Verification
 
-The unit suite covers required fields, email format, signup password requirements, significant password whitespace, credential-error privacy, and friendly provider/password-policy messages.
+The unit suite covers required fields, email format, signup password requirements, significant password whitespace, credential-error privacy, friendly provider/password-policy and Google popup messages, every route-guard decision (loading, redirect, waiting on pending operations, sign-out), and return-path safety.
+
+Route protection was checked in a browser against mocked Firebase Auth REST responses (no live accounts or emails). The checks covered: logged-out access to `/home`, `/train/:id`, `/` and unknown paths; returning to a deep link after login; sessions surviving a reload with no login flash; signed-in visits to `/login`, `/signup`, `/` and unknown paths; sign-out and its reload; signup holding on `/signup` until the name is saved; the profile warning reaching `/home`; duplicate accounts; matching wrong-password and unknown-account messages; password-reset success, unknown-account and rate-limit cases; and Google popups that are blocked or closed.
 
 Browser checks cover:
 
@@ -69,42 +82,19 @@ Browser checks cover:
 - Google success/cancelled/blocked states using a test double; the real OAuth popup remains a live smoke test.
 - Login and signup at 320, 390, 768, 1024, and 1440px, 200% zoom, and automated WCAG A/AA accessibility scans.
 
-## Change inventory
+## Project structure
 
-Removed:
+```
+src/
+  main.tsx, App.tsx, index.css   entry, routes, global styles and tokens
+  lib/firebase.ts                Firebase app, Auth instance, lazy Analytics
+  pages/                         one component per route
+  features/
+    auth/
+      service.ts                 Firebase Auth operations
+      AuthContext.ts, AuthProvider.tsx   session state for the UI
+      errors.ts, validation.ts   pure helpers (covered by tests/auth.test.mjs)
+      components/                auth layout, card, fields, dialogs
+```
 
-- `src/App.css`
-- `src/assets/hero.png`
-- `src/assets/react.svg`
-- `src/assets/vite.svg`
-- `public/icons.svg`
-
-Created:
-
-- `src/auth/AuthContext.ts`
-- `src/auth/AuthProvider.tsx`
-- `src/auth/errors.ts`
-- `src/auth/validation.ts`
-- `src/components/auth/AuthLayout.tsx`
-- `src/components/auth/AuthCard.tsx`
-- `src/components/auth/AuthField.tsx`
-- `src/components/auth/AuthForm.tsx`
-- `src/components/auth/AuthNotice.tsx`
-- `src/components/auth/PasswordInput.tsx`
-- `src/components/auth/ResetPasswordDialog.tsx`
-- `src/components/auth/SecurityIllustration.tsx`
-- `src/components/auth/SocialLoginButton.tsx`
-- `src/pages/LoginPage.tsx`
-- `src/pages/SignupPage.tsx`
-- `tests/auth.test.mjs`
-
-Modified:
-
-- `src/App.tsx`
-- `src/auth.ts`
-- `src/index.css`
-- `src/main.tsx`
-- `public/favicon.svg`
-- `index.html`
-- `package.json` (test command only)
-- `README.md`
+New product areas (for example the simulated phone) go in their own `features/<name>/` folder with the same shape.
