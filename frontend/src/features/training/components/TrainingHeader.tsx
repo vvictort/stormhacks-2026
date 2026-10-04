@@ -2,6 +2,7 @@ import { LoaderCircle, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { Brand } from '../../../components/Brand'
 import { useAuth } from '../../auth/AuthContext'
+import { confirmNavigation } from '../../../lib/navigationGuard'
 import '../training.css'
 
 export function TrainingHeader() {
@@ -11,6 +12,8 @@ export function TrainingHeader() {
 
   // No navigation here: the route guard sends signed-out users to /login.
   async function signOut() {
+    // Mid-call, ask first; leaving hangs up and reports the call before the session goes.
+    if (!(await confirmNavigation())) return
     setFailed(!(await logout()))
   }
 

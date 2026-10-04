@@ -113,6 +113,16 @@ export interface CallTranscriptTurn {
   timeInCallSecs: number
 }
 
+/** Canonical training result vocabulary (docs/call-integration.md). */
+export type TrainingOutcome = 'resisted' | 'compromised' | 'declined' | 'missed' | 'error'
+
+/** Comms' normalised result on a completed call: `success` is null when the call isn't scored. */
+export interface CallTraining {
+  outcome: TrainingOutcome
+  success: boolean | null
+  difficulty: 'easy' | 'medium' | 'hard'
+}
+
 export interface CallRecord {
   id: string
   userId: string
@@ -132,6 +142,8 @@ export interface CallRecord {
   /** ElevenLabs `user_resisted` evaluation result. */
   resisted?: string
   signals: Signal[]
+  /** Canonical outcome, set once the call is completed. The UI reads results from here, never from `outcome`. */
+  training?: CallTraining
   error?: string
 }
 
@@ -141,10 +153,9 @@ export interface CallOverrides {
   tts?: { voiceId: string }
 }
 
-/** Body of `POST /comms/texts` and `POST /comms/calls`; an empty pick means a random scenario. */
-export interface ScenarioPick<S> {
+/** Body of `POST /comms/texts`; an empty pick means a random scenario. Scenarios are server-owned: ids only. */
+export interface ScenarioPick {
   scenarioId?: string
-  scenario?: S
 }
 
 /** `POST /comms/texts` 201 response. */

@@ -1,6 +1,8 @@
 import { scenarios, type Difficulty, type Scenario } from './scenarios.ts'
 
-// ponytail: progress is mocked in localStorage per account; move to the backend once attempts are stored server-side.
+// Texts and emails (and call practice-mode results) are saved in localStorage per account. Live calls are stored
+// by the backend and read from GET /api/training/progress; mergeProgress folds them in, so the rest of this module
+// never cares where an attempt came from. Moving texts/emails server-side means dropping the local half here.
 
 export interface Attempt { correct: boolean; at: number }
 /** Per scenario id: the latest attempt, plus every attempt oldest first. Old saves have no `history`; their one attempt stands in. */
@@ -36,6 +38,36 @@ export function saveProgress(uid: string | null | undefined, progress: Progress)
 export function recordAttempt(progress: Progress, id: string, correct: boolean, at = Date.now()): Progress {
   const history = [...(progress[id] ? progress[id].history ?? [progress[id]] : []), { correct, at }]
   return { ...progress, [id]: { correct, at, history } }
+}
+
+/** One attempt from `GET /api/training/progress` (docs/call-integration.md). */
+export interface ServerAttempt {
+  id: string
+  channel: string
+  scenarioId: string
+  scenarioTitle?: string
+  difficulty?: Difficulty
+  outcome: string
+  /** null: not scored. */
+  success: boolean | null
+  completedAt: string
+}
+
+/** Local progress plus the server's scored call attempts, each scenario's history re-sorted oldest first. */
+export function mergeProgress(local: Progress, attempts: ServerAttempt[]): Progress {
+  const extra = new Map<string, Attempt[]>()
+  for (const attempt of attempts) {
+    const at = Date.parse(attempt.completedAt)
+    if (attempt.channel !== 'call' || typeof attempt.success !== 'boolean' || Number.isNaN(at)) continue
+    extra.set(attempt.scenarioId, [...(extra.get(attempt.scenarioId) ?? []), { correct: attempt.success, at }])
+  }
+  if (extra.size === 0) return local
+  const merged = { ...local }
+  for (const [id, added] of extra) {
+    const history = [...(merged[id] ? merged[id].history ?? [merged[id]] : []), ...added].sort((a, b) => a.at - b.at)
+    merged[id] = { ...history[history.length - 1], history }
+  }
+  return merged
 }
 
 /** Every attempt across scenarios, oldest first. */

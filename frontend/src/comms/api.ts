@@ -9,6 +9,6 @@ async function firebaseIdToken(forceRefresh: boolean) {
 }
 
 export const comms = createCommsClient({
-  baseUrl: import.meta.env.VITE_COMMS_BASE_URL ?? '/comms',
+  baseUrl: import.meta.env.VITE_COMMS_BASE_URL || '/comms',
   getToken: firebaseIdToken,
 })

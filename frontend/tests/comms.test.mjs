@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { initialThreadState, parseThreadEvent, threadReducer, threadStatus } from '../src/comms/threadState.ts'
-import { callReducer, INITIAL_CALL_STATE } from '../src/comms/callState.ts'
+import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode } from '../src/comms/callState.ts'
 import { CommsError, createCommsClient, describeError } from '../src/comms/client.ts'
 
 const T = 'thread-1'
@@ -275,7 +275,7 @@ test('non-ok responses throw CommsError with the code from the body', async () =
     json(404, { error: 'scenario_not_found' }),
     new Response('<html>Bad gateway</html>', { status: 502 }),
   ])
-  await assert.rejects(client.startCall({ scenarioId: 'missing' }), (error) => {
+  await assert.rejects(client.startCall('missing'), (error) => {
     assert.ok(error instanceof CommsError)
     assert.equal(error.status, 404)
     assert.equal(error.code, 'scenario_not_found')
@@ -294,4 +294,35 @@ test('listScenarios is unauthenticated and streamUrl carries the token in the qu
   assert.equal(calls[0].headers.authorization, undefined)
   assert.deepEqual(tokens, [])
   assert.equal(await client.streamUrl('t/1'), '/comms/texts/t%2F1/stream?access_token=cached-token')
+})
+
+test('startCall sends only the scenario id; callConnected binds the conversation id', async () => {
+  const { client, calls } = fakeClient([
+    json(201, { callId: 'call-1', callerLabel: 'Bank', call: callRecord('ringing') }),
+    json(200, callRecord('in_call')),
+  ])
+  await client.startCall('bank-fraud-dept-otp-1')
+  assert.equal(calls[0].url, '/comms/calls')
+  assert.deepEqual(JSON.parse(calls[0].body), { scenarioId: 'bank-fraud-dept-otp-1' })
+  await client.callConnected('call-1', 'conv_9')
+  assert.equal(calls[1].url, '/comms/calls/call-1/connected')
+  assert.equal(calls[1].method, 'POST')
+  assert.deepEqual(JSON.parse(calls[1].body), { conversationId: 'conv_9' })
+})
+
+test('409 conversation_mismatch surfaces as a CommsError code', async () => {
+  const { client } = fakeClient([json(409, { error: 'conversation_mismatch' })])
+  await assert.rejects(client.callEnded('call-1', 'conv_other'), (error) => describeError(error) === 'conversation_mismatch' && error.status === 409)
+})
+
+test('microphone checks: insecure context and missing API are caught before asking', () => {
+  assert.equal(microphoneBlocker({ secureContext: false, getUserMedia: true }), 'insecure_context')
+  assert.equal(microphoneBlocker({ secureContext: true, getUserMedia: false }), 'microphone_unavailable')
+  assert.equal(microphoneBlocker({ secureContext: true, getUserMedia: true }), null)
+  const named = (name) => Object.assign(new Error(name), { name })
+  assert.equal(microphoneErrorCode(named('NotAllowedError')), 'microphone_denied')
+  assert.equal(microphoneErrorCode(named('SecurityError')), 'microphone_denied')
+  assert.equal(microphoneErrorCode(named('NotFoundError')), 'microphone_unavailable')
+  assert.equal(microphoneErrorCode(named('NotReadableError')), 'microphone_unavailable')
+  assert.equal(microphoneErrorCode('weird'), 'microphone_denied')
 })

@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { AuthLayout } from './features/auth/components/AuthLayout'
 import { RedirectIfAuthed, RequireAuth } from './features/auth/RouteGuards'
+import { CaughtPage } from './pages/CaughtPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
@@ -29,6 +30,8 @@ function App() {
               <Route path="/signup" element={<SignupPage />} />
             </Route>
           </Route>
+          {/* Public: tracked practice links land here, signed in or not. */}
+          <Route path="/caught" element={<CaughtPage />} />
           {/* `/` and unknown paths go home; RequireAuth sends logged-out visitors on to /login. */}
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>

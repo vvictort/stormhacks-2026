@@ -5,10 +5,10 @@ import { Mascot } from '../../../components/Mascot'
 import { RevealText } from '../../../components/RevealText'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { spring } from '../../../lib/motion'
-import { hasLink, type Action, type Scenario } from '../scenarios'
+import { hasLink, type Action, type MessageScenario, type Scenario } from '../scenarios'
 
 interface DebriefProps {
-  scenario: Scenario
+  scenario: MessageScenario
   choice: Action
   inspected: boolean
   next?: Scenario

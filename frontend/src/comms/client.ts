@@ -1,7 +1,6 @@
 import type {
   AcceptCallResponse,
   CallRecord,
-  CallScenario,
   Channel,
   DeclineReason,
   ScenarioPick,
@@ -10,7 +9,6 @@ import type {
   StartTextResponse,
   StartTextResult,
   TextMessage,
-  TextScenario,
   TextThread,
 } from './types'
 
@@ -100,7 +98,7 @@ export function createCommsClient({
     },
 
     /** Starts a text thread, or resumes the user's active one (`resumed: true`). */
-    async startText(pick: ScenarioPick<TextScenario> = {}, signal?: AbortSignal): Promise<StartTextResult> {
+    async startText(pick: ScenarioPick = {}, signal?: AbortSignal): Promise<StartTextResult> {
       try {
         const { threadId } = await request<StartTextResponse>('POST', '/texts', { body: pick, signal })
         return { threadId, resumed: false }
@@ -129,8 +127,9 @@ export function createCommsClient({
     streamUrl: async (threadId: string) =>
       `${base}/texts/${enc(threadId)}/stream?access_token=${enc(await getToken(false))}`,
 
-    startCall: (pick: ScenarioPick<CallScenario> = {}, signal?: AbortSignal) =>
-      request<StartCallResponse>('POST', '/calls', { body: pick, signal }),
+    /** Call scenarios are server-owned: the body is `{ scenarioId }` and nothing else. */
+    startCall: (scenarioId: string, signal?: AbortSignal) =>
+      request<StartCallResponse>('POST', '/calls', { body: { scenarioId }, signal }),
 
     getCall: (callId: string, signal?: AbortSignal) =>
       request<CallRecord>('GET', `/calls/${enc(callId)}`, { signal }),
@@ -140,6 +139,10 @@ export function createCommsClient({
 
     declineCall: (callId: string, reason: DeclineReason, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/decline`, { body: { reason }, signal }),
+
+    /** Binds the voice session's conversation id; a different id than the bound one is `409 conversation_mismatch`. */
+    callConnected: (callId: string, conversationId: string, signal?: AbortSignal) =>
+      request<CallRecord>('POST', `/calls/${enc(callId)}/connected`, { body: { conversationId }, signal }),
 
     callEnded: (callId: string, conversationId?: string, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/ended`, {

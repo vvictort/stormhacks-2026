@@ -7,14 +7,14 @@ import { useAuth } from '../features/auth/AuthContext'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { currentLevel, recommend, summarize, timeline } from '../features/training/progress'
-import { getScenario, scenarios } from '../features/training/scenarios'
+import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
 
 export function HomePage() {
   const { user, profileWarning, dismissProfileWarning } = useAuth()
   const { profile } = useProfile()
-  const { progress } = useProgress(user?.uid)
+  const { progress, callSync } = useProgress(user?.uid)
   const { done, total, correct } = summarize(progress)
   const next = recommend(progress)
   const level = currentLevel(progress)
@@ -28,7 +28,7 @@ export function HomePage() {
     : next ? `Ready for another scenario${name}?` : `You've tried every scenario${name}.`
   const cta = done === 0 ? 'Start your first scenario' : !next ? 'Practise again' : progress[next.id] ? 'Try it again' : 'Start next scenario'
   const flagsSeen = [...new Set(scenarios
-    .filter((scenario) => progress[scenario.id] && scenario.correctAction === 'report')
+    .filter((scenario) => progress[scenario.id] && isScam(scenario))
     .flatMap((scenario) => scenario.indicators.map((indicator) => indicator.title)))]
 
   useEffect(() => { document.title = 'Home · Tellio' }, [])
@@ -39,7 +39,7 @@ export function HomePage() {
       <main className="home-main">
         <div className="home-intro">
           <RevealText as="h1" text={heading} />
-          <p className="home-lede">Tellio sends practice scam texts and emails to a phone in your browser. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
+          <p className="home-lede">Tellio sends practice scam texts, emails and phone calls to a phone in your browser. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
 
           <section className="profile-summary" aria-label="Your saved profile">
             <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
@@ -85,7 +85,11 @@ export function HomePage() {
                   )}
                 </>
               )}
-            <p className="home-saved">Saved in this browser for now.</p>
+            <p className="home-saved">{callSync === 'synced'
+              ? 'Texts and emails are saved in this browser. Phone calls are saved to your account.'
+              : callSync === 'unavailable'
+                ? "Saved in this browser. We couldn't load your phone-call results just now."
+                : 'Saved in this browser for now.'}</p>
           </section>
         </div>
 
