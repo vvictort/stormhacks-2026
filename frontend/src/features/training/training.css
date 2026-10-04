@@ -90,15 +90,16 @@
 .path-empty { margin-top: 24px; font-size: 15px; color: var(--color-muted-strong); }
 .path-more { width: 100%; margin-top: 12px; }
 .path-stops { display: grid; margin: 16px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--color-border); }
-.path-stop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 18px 4px; border-bottom: 1px solid var(--color-border); transition: background-color 160ms ease; }
+.path-stop { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 18px 4px; border-bottom: 1px solid var(--color-border); }
+.path-stop::before { content: ""; position: absolute; z-index: -1; inset: 4px -8px; border-radius: 12px; background: var(--color-surface); opacity: 0; pointer-events: none; transition: opacity var(--motion-quick) var(--ease-out-quint); }
 /* Whole rows are clickable, with the same visible focus treatment as links. */
-@media (hover: hover) { .path-stop:hover { background: var(--color-surface); } }
+@media (hover: hover) { .path-stop:hover::before { opacity: 1; } }
 .path-stop.is-upnext { background: transparent; }
-.path-stop:has(.path-stop-link:focus-visible) { outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
+.path-stop:has(.path-stop-link:focus-visible)::before { opacity: 1; outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
 .path-channel { grid-column: 1; grid-row: 1; font-size: 12px; color: var(--color-muted-strong); }
 .path-stop-body { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
 .path-stop-link { font-size: 15px; font-weight: 600; line-height: 1.5; color: var(--color-foreground); }
-.path-stop-link::after { content: ""; position: absolute; inset: 0; }
+.path-stop-link::after { content: ""; position: absolute; inset: 0 -8px; border-radius: 12px; }
 .path-stop-link:focus-visible { outline: none; }
 .path-stop-body p { margin-top: 2px; overflow: hidden; font-size: 13px; line-height: 1.45; color: var(--color-muted-strong); text-overflow: ellipsis; white-space: nowrap; }
 .path-status { grid-column: 2; grid-row: 1; font-size: 12px; font-weight: 500; color: var(--color-muted-strong); white-space: nowrap; }
