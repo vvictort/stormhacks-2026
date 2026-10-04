@@ -2,8 +2,9 @@ import { randomInt } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { ROOT_DIR } from './config.ts';
-import { CallScenario, TextScenario, type Tactic } from './types.ts';
+import type { Backend } from '../backend.ts';
+import { ROOT_DIR } from '../config.ts';
+import { CallScenario, TextScenario, type Tactic } from '../types.ts';
 
 export type Channel = 'text' | 'call';
 
@@ -76,3 +77,14 @@ export class SampleCatalog {
 function summary({ id, title, tactics, difficulty }: TextScenario | CallScenario, channel: Channel, label: string): ScenarioSummary {
   return { id, channel, title, tactics: [...tactics], difficulty, label };
 }
+
+// Scenarios are server-owned: start one by id, or `{}` for a random sample. Strict, so a client-supplied
+// `scenario` (or any other key) is a 400 instead of being silently ignored.
+export const StartSimulation = z.strictObject({ scenarioId: z.string().min(1).max(200).optional() });
+
+/** Prefix of backend-generated (Gemini) call scenarios, resolved through the backend per user. */
+const GENERATED_PREFIX = 'gen-';
+
+/** A fixture by id (or a random one), or the caller's own generated scenario; null when unknown. */
+export const resolveCallScenario = async (samples: SampleCatalog, backend: Pick<Backend, 'callScenario'>, id: string | undefined, userId: string) =>
+  id?.startsWith(GENERATED_PREFIX) ? backend.callScenario(id, userId) : samples.pickCall(id);

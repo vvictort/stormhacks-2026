@@ -126,12 +126,23 @@ export interface CallTranscriptTurn {
   timeInCallSecs: number;
 }
 
+/** Canonical training result (see docs/call-integration.md); the browser and backend never reinterpret it. */
+export interface CallTraining {
+  outcome: 'resisted' | 'compromised' | 'declined' | 'missed' | 'error';
+  /** Null when the attempt isn't scored (errors). */
+  success: boolean | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
 export interface CallRecord {
   id: string;
   userId: string;
   scenario: CallScenario;
   status: CallStatus;
   outcome?: Outcome;
+  /** Set together with `outcome` once the call is completed. */
+  training?: CallTraining;
+  /** ElevenLabs conversation bound to this call; analysis only ever uses this id. */
   conversationId?: string;
   createdAt: string;
   acceptedAt?: string;
@@ -162,6 +173,7 @@ export type CommsEventType =
   | 'call.accepted'
   | 'call.declined'
   | 'call.missed'
+  | 'call.abandoned'
   | 'call.ended'
   | 'call.analyzed'
   | 'call.failed';

@@ -3,13 +3,13 @@ import { AnimatePresence, m } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { spring } from '../../../lib/motion'
 import { haptic } from '../../../lib/viewTransition'
-import type { Action, Scenario } from '../scenarios'
+import type { Action, MessageScenario } from '../scenarios'
 import { EmailView } from './EmailView'
 import { AppHeader, PhoneFrame } from './PhoneFrame'
 import { MessageThread } from './SmsThread'
 
 interface SimulatorProps {
-  scenario: Scenario
+  scenario: MessageScenario
   choice: Action | null
   onChoose: (action: Action) => void
   onInspect: () => void
@@ -28,7 +28,7 @@ export function PhoneSimulator({ scenario, choice, onChoose, onInspect }: Simula
   return (
     <section className={`phone-wrap${scenario.correctAction === 'safe' ? ' is-safe-scenario' : ''}`} aria-label="Practice phone">
       <PhoneFrame time={scenario.receivedAt}>
-        {/* One renderer per channel; the call screen slots in here. */}
+        {/* One renderer per channel. Calls have their own lazily loaded screen (features/training/call). */}
         {scenario.type === 'sms' && (
           <>
             <AppHeader label="Text messages from" title={scenario.sender} subtitle="Not in your contacts" />
@@ -54,7 +54,7 @@ export function PhoneSimulator({ scenario, choice, onChoose, onInspect }: Simula
   )
 }
 
-export function ResponseControls({ channel, choice, onChoose }: { channel: Scenario['type']; choice: Action | null; onChoose: (action: Action) => void }) {
+export function ResponseControls({ channel, choice, onChoose }: { channel: MessageScenario['type']; choice: Action | null; onChoose: (action: Action) => void }) {
   const email = channel === 'email'
   if (choice) {
     return (

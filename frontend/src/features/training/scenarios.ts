@@ -1,4 +1,6 @@
 // Local mock scenarios. Later these come from the scenario service; the shape stays the same.
+import type { Tactic } from '../../comms/types.ts'
+import { callScenarios } from './callScenarios.ts'
 import { emailScenarios } from './emailScenarios.ts'
 
 export type Channel = 'sms' | 'email' | 'call'
@@ -18,7 +20,7 @@ export interface SmsMessage {
   link?: string
 }
 
-interface BaseScenario {
+interface ScenarioCore {
   id: string
   title: string
   /** One line for the home path. */
@@ -26,12 +28,15 @@ interface BaseScenario {
   /** What the learner knows going in. */
   situation: string
   difficulty: Difficulty
-  correctAction: Action
   /** Red flags for a scam, reassuring signs for a genuine message. */
   indicators: Indicator[]
   explanation: string
   /** What to check next time, shown when the call was wrong. */
   nextTime: string
+}
+
+interface BaseScenario extends ScenarioCore {
+  correctAction: Action
 }
 
 export interface SmsScenario extends BaseScenario {
@@ -57,13 +62,29 @@ export interface EmailScenario extends BaseScenario {
   attachment?: string
 }
 
-// Add CallScenario here, plus a renderer in PhoneSimulator, when that channel lands.
-export type Scenario = SmsScenario | EmailScenario
+/**
+ * A voiced scam call. Teaching metadata only: the caller's script is server-owned (comms), and every call is a scam.
+ * Indicators here have no `quote`: there is no fixed text to mark.
+ */
+export interface CallScenario extends ScenarioCore {
+  type: 'call'
+  /** Shown before the call starts and in practice mode; the live call shows the server's label. */
+  callerLabel: string
+  /** Fictional number for the ringing screen. */
+  callerNumber?: string
+  tactics: Tactic[]
+  /** Caption-only practice mode, used when live voice is unavailable. */
+  practice: { lines: string[]; complyLabel: string }
+}
+
+/** Texts and emails: one message to judge with Looks safe / Report & block. */
+export type MessageScenario = SmsScenario | EmailScenario
+export type Scenario = MessageScenario | CallScenario
 
 export const channels: { type: Channel; name: string; ready: boolean; blurb: string }[] = [
   { type: 'sms', name: 'Text messages', ready: true, blurb: 'Texts that land on the practice phone.' },
   { type: 'email', name: 'Email', ready: true, blurb: 'Phishing emails in a practice inbox, with sender details you can inspect.' },
-  { type: 'call', name: 'Phone calls', ready: false, blurb: 'Voiced scam calls you can answer or hang up on, with captions.' },
+  { type: 'call', name: 'Phone calls', ready: true, blurb: 'Voiced scam calls you can answer or hang up on, with captions.' },
 ]
 
 export const scenarios: Scenario[] = [
@@ -225,16 +246,27 @@ export const scenarios: Scenario[] = [
     nextTime: "Never pass on a code sent to your phone, even to someone you know. If the request seems real, check with them another way first.",
   },
   ...emailScenarios,
+  ...callScenarios,
 ]
 
 export function getScenario(id: string | undefined) {
   return scenarios.find((scenario) => scenario.id === id)
 }
 
-/** Whether the scenario has a link worth inspecting. */
+/** Whether the scenario has a link worth inspecting. Calls never do. */
 export function hasLink(scenario: Scenario) {
+  if (scenario.type === 'call') return false
   return scenario.type === 'sms' ? scenario.messages.some((message) => message.link) : Boolean(scenario.links?.length)
 }
+
+/** Every call is a scam; texts and emails say so with `correctAction`. */
+export const isScam = (scenario: Scenario) => scenario.type === 'call' || scenario.correctAction === 'report'
+
+/** Whether a channel's scenarios can be practised. */
+export const channelReady = (channel: Channel) => channels.some((item) => item.type === channel && item.ready)
+
+/** How the channel is named in copy: "text message", "email", "phone call". */
+export const channelNoun: Record<Channel, string> = { sms: 'text message', email: 'email', call: 'phone call' }
 
 export interface Segment {
   text: string

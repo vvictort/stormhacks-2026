@@ -12,10 +12,13 @@ This is a self-contained Express + TypeScript service. All routes live under `/c
 ```bash
 cd backend/comms
 npm install
-cp .env.example .env      # texts work as-is; calls need the ElevenLabs keys
+cp .env.example .env      # set FIREBASE_PROJECT_ID (or COMMS_ALLOW_DEV_USER=true for local-only testing)
 npm run dev               # http://localhost:3001/comms
 npm run typecheck
+npm test                  # node:test; never reads .env or calls ElevenLabs/the backend
 ```
+
+The server refuses to start without `FIREBASE_PROJECT_ID` unless the dev user is on, and refuses `COMMS_ALLOW_DEV_USER=true` when `NODE_ENV=production`.
 
 **Getting an ElevenLabs API key:**
 1. Sign up or log in at [elevenlabs.io](https://elevenlabs.io). The free plan is enough for testing.
@@ -28,7 +31,9 @@ npm run typecheck
 2. Run `npm run setup:agent`.
 3. Paste the printed `ELEVENLABS_AGENT_ID` into `.env`.
 
-Re-running `setup:agent` updates the existing agent. Then open **http://localhost:3001/comms/dev/call** (dev-only test page) to ring, talk and see the analyzed result.
+Re-running `setup:agent` updates the existing agent. Then, with `COMMS_ALLOW_DEV_USER=true`, open **http://localhost:3001/comms/dev/call** (dev-only test page, runs as `dev-user`) to ring, talk and see the analyzed result.
+
+**Without ElevenLabs keys** everything else still works: scenarios list, calls ring, decline/missed complete and are scored and posted. Only `POST /comms/calls/:id/accept` fails, with `503 { error: 'elevenlabs_not_configured' }`; the frontend falls back to its caption-only practice mode.
 
 **State:**
 - Threads, calls and links are kept in memory and snapshotted to `data/store.json`, which survives restarts.
@@ -36,17 +41,33 @@ Re-running `setup:agent` updates the existing agent. Then open **http://localhos
 
 Both files are gitignored.
 
+## Structure
+
+```
+src/
+  server.ts          composition root: store, events, services, auth → createApp → listen, sweeps
+  app.ts             HTTP assembly: CORS, JSON, feature routers, error mapping
+  auth.ts            verified Firebase identity (and the opt-in dev user)
+  backend.ts         client for the backend API's internal routes (results, generated scenarios)
+  scenarios/         catalog.ts (fixtures, id-only start schema, gen- resolution), routes.ts
+  texts/             service.ts, routes.ts (+ tracked-link redirect), sse.ts, links.ts, provider.ts
+  calls/             service.ts, routes.ts, elevenlabs.ts, outcome.ts, preamble.ts
+  store.ts events.ts types.ts config.ts lib/
+```
+
+Each feature owns its routes and service; `app.ts` only mounts them, and `server.ts` is the only place that builds them.
+
 ## Auth
 
 Browser requests carry the signed-in user's Firebase ID token:
 - `Authorization: Bearer <token>` on every route except `/health`, `/scenarios`, `/l/:token` and `/dev/*`.
 - The SSE stream takes it as `?access_token=<token>` instead, because `EventSource` can't send headers.
 
-Comms takes the user id from the token (`getUserId` in `src/auth.ts`). **The token is decoded but its signature is not verified yet**, so any client can claim any uid. Swap in firebase-admin `verifyIdToken` there before real users.
+Tokens are verified with firebase-admin `verifyIdToken` against `FIREBASE_PROJECT_ID` (signature, expiry, audience, issuer), the same as `backend/app/http/auth.ts`. The uid comes only from the verified token (`createAuth` in `src/auth.ts`, with an injectable verifier for tests).
 
-- A missing (in production), expired or malformed token returns `401 { error: 'unauthorized', reason }`.
+- A missing, expired, malformed, unsigned or forged token returns `401 { error: 'unauthorized', reason }`, with `reason` one of `missing_token`, `malformed_token`, `invalid_token`, `token_expired`.
 - Another user's thread or call returns `404`, so results pages only work for the signed-in owner.
-- Outside production, a request with **no** token runs as `dev-user`, so the dev call page and the curl fixtures keep working.
+- **Dev user:** only when `NODE_ENV !== 'production'` **and** `COMMS_ALLOW_DEV_USER=true` (default off). Then a request with **no** token runs as `dev-user` and `/comms/dev/*` is served. A request that does send a token is still verified; a bad one is a 401, never the dev user. Production with the flag refuses to start.
 
 ## For Victor: frontend contract
 
@@ -83,7 +104,7 @@ Simulation ids are unguessable, so they're safe to put in results URLs.
 | Method & path | Body | Returns |
 |---|---|---|
 | `GET /comms/scenarios?channel=text\|call` | – | `{ scenarios: [{ id, channel, title, tactics, difficulty, label }] }`. No auth, and no prompt text. |
-| `POST /comms/texts` | `{ scenarioId }`, `{ scenario }`, or `{}` for a random sample | `201 { threadId, streamUrl, thread }`. `409 { threadId }` if the user already has an active thread; `404 scenario_not_found` for an unknown id. |
+| `POST /comms/texts` | `{ scenarioId }`, or `{}` for a random sample | `201 { threadId, streamUrl, thread }`. `409 { threadId }` if the user already has an active thread; `404 scenario_not_found` for an unknown id; `400` for any other key (e.g. `scenario`). |
 | `GET /comms/texts/:id/stream?access_token=` | – | SSE stream (see below) |
 | `POST /comms/texts/:id/replies` | `{ body }` | `202 { message }` (redacted copy of the user's message), or `409` if the thread ended |
 | `POST /comms/texts/:id/report` | – | Thread, ended with outcome `reported` (wire this to a "Report / block" button) |
@@ -103,13 +124,43 @@ SSE events:
 
 | Method & path | Body | Returns |
 |---|---|---|
-| `POST /comms/calls` | `{ scenarioId }`, `{ scenario }`, or `{}` for a random sample | `201 { callId, callerLabel, call }`. Start ringing. |
-| `POST /comms/calls/:id/accept` | – | `{ conversationToken, conversationId, overrides }`. Returns `503` if ElevenLabs isn't configured. |
+| `POST /comms/calls` | `{ scenarioId }`, or `{}` for a random sample | `201 { callId, callerLabel, call }`. Start ringing. `404 scenario_not_found` for an unknown id, `400` for any other key (e.g. `scenario`), `502 backend_unavailable` if a `gen-` lookup fails. |
+| `POST /comms/calls/:id/accept` | – | `{ conversationToken, conversationId, overrides }`. Returns `503 elevenlabs_not_configured` if ElevenLabs isn't configured. |
+| `POST /comms/calls/:id/abandon` | – | Call record, completed as an unscored `error` (`error: 'abandoned'`) and **not** posted to the backend. Send it when you drop a call that is still ringing (switching to caption practice, leaving the page). `409 not_ringing` otherwise. |
+| `POST /comms/calls/:id/connected` | `{ conversationId }` | Call record. Send from `onConnect`. `409 conversation_mismatch` if a different id is already bound, `409 not_in_call` before accept. |
 | `POST /comms/calls/:id/decline` | `{ reason: 'declined' \| 'missed' }` | Call record. Send `missed` when your ring timeout expires. |
-| `POST /comms/calls/:id/ended` | `{ conversationId? }` | `202`. Analysis runs in the background. |
+| `POST /comms/calls/:id/ended` | `{ conversationId? }` | `202`. Analysis runs in the background. `409 conversation_mismatch` if the id differs from the bound one (the call stays `in_call`). |
 | `GET /comms/calls/:id` | – | Call record. Poll every ~2 s while `status === 'analyzing'`. |
 
-`status` moves through `ringing` → `in_call` → `analyzing` → `completed`, or straight from `ringing` to `completed` if declined or missed. The `outcome` is set once the status is `completed`.
+`status` moves through `ringing` → `in_call` → `analyzing` → `completed`, or straight from `ringing` to `completed` if declined, missed or abandoned. A call still ringing after 2 minutes (tab closed, or stuck on a voice/mic error) is abandoned by the sweeper, not missed: only your ring timer reports a real miss. `outcome` and `training` are set once the status is `completed`.
+
+**Scenarios are server-owned.** Fixed ones (`fixtures/scenarios/call-*.json`):
+
+| id | difficulty | theme |
+|---|---|---|
+| `bank-fraud-dept-otp-1` | 2 / medium | Bank fraud department asks for a verification code |
+| `cra-tax-arrears-1` | 2 / medium | CRA impersonator demands payment for tax arrears |
+| `courier-customs-fee-1` | 1 / easy | Courier asks for a small customs fee by card |
+| `tech-support-remote-1` | 2 / medium | Tech support wants remote access |
+| `exec-vendor-payment-1` | 3 / hard | Executive asks for an urgent payment to a new vendor account |
+
+`gen-…` ids are backend-generated: comms resolves them with `GET ${BACKEND_INTERNAL_URL}/api/internal/call-scenarios/:id?uid=<verified uid>` (header `X-Internal-Token`). Without both env vars set, every `gen-` id is a 404.
+
+**Conversation binding.** The ElevenLabs `conversation_id` from the token is bound on accept when present. Otherwise the first id reported via `/connected` or `/ended` is bound. Any different id later is `409 conversation_mismatch`; a mismatched `/ended` leaves the call `in_call`, so the correct `/ended` (or the sweeper after max duration) can still finish it. Only the bound id is ever analysed; a call with none ends as `error`.
+
+**Training result.** Every completed call (declined, missed, analysed or error) carries `training: { outcome, success, difficulty }`, the canonical result from the table in [`docs/call-integration.md`](../../docs/call-integration.md#call-outcome-normalisation-owned-by-comms-frontend-and-backend-never-reinterpret) (`src/calls/outcome.ts`). Use it as-is; never derive success from `outcome`.
+
+| comms `outcome` | `training.outcome` | `training.success` |
+|---|---|---|
+| `compromised` | `compromised` | `false` |
+| `resisted`, `reported` | `resisted` | `true` |
+| `declined` | `declined` | `true` |
+| `ignored`, `missed` | `missed` | `true` |
+| `error` | `error` | `null` (not scored) |
+
+`difficulty` is `easy` / `medium` / `hard` for 1 / 2 / 3.
+
+**Results to the backend.** When a call reaches `completed`, comms posts the contract's `training-attempts` body to `${BACKEND_INTERNAL_URL}/api/internal/training-attempts` with `X-Internal-Token`: uid from the verified token, the redacted transcript only (max 200 turns), canonical outcome/success/difficulty. Text is clipped to the backend's limits first (summary and each turn ≤ 4000 characters, title ≤ 200). Abandoned calls are never posted. It's fire-and-forget with one retry on a network error or 5xx and never affects the call. `INTERNAL_API_TOKEN` must match the backend's and be at least 32 characters (`openssl rand -hex 32`); the backend answers `201 { id }`, or `200 { id, duplicate: true }` for a repeat, and both count as success. If either env var is unset, comms logs once and keeps results local; the JSONL events below are written either way.
 
 If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two things:
 - `useConversation` must be rendered inside `<ConversationProvider>`.
@@ -120,8 +171,8 @@ If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two 
 ## For Sijing: scenario content and reply generation
 
 - **Scenario shapes:** `TextScenario` and `CallScenario` in `src/types.ts` (zod-validated). Use `{{link}}` in text messages; comms swaps it for the fake display URL plus our tracked link.
-- **Sample scenarios:** `fixtures/scenarios/text-*.json` and `call-*.json` (each shaped `{ userId, scenario }`) are loaded at startup and served by `GET /comms/scenarios`. Drop new samples there; an invalid file stops the server with the file name.
-- **Text replies:** implement `ScenarioProvider` in `src/provider.ts`:
+- **Sample scenarios:** `fixtures/scenarios/text-*.json` and `call-*.json` (each shaped `{ userId, scenario }`) are loaded at startup and served by `GET /comms/scenarios`. Drop new samples there; an invalid file stops the server with the file name. Clients can only start these by id (plus backend-generated `gen-` call scenarios); custom scenarios in request bodies are rejected.
+- **Text replies:** implement `ScenarioProvider` in `src/texts/provider.ts`:
   - `nextTextTurn({ scenario, messages, preSignals })` → `{ reply, signals, done }`
   - `followUp(...)` → a nudge, or `null`
 
@@ -147,7 +198,7 @@ If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two 
 | `text.reported` | – |
 | `text.thread_ended` | `outcome, reason, signals, scammerTurns, userReplies, durationMs` |
 | `call.ringing` | `callerLabel, difficulty` |
-| `call.accepted` / `call.declined` / `call.missed` | `ringMs` |
+| `call.accepted` / `call.declined` / `call.missed` / `call.abandoned` | `ringMs` |
 | `call.ended` | `conversationId` |
 | `call.analyzed` | `outcome, signals, resisted, durationSecs, terminationReason, dataCollection, summary, transcript` |
 | `call.failed` | `error` |

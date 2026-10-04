@@ -4,7 +4,7 @@ import { hasLink, markFor, markText, scenarios, siteOf } from '../src/features/t
 import { currentLevel, loadProgress, recommend, recordAttempt, saveProgress, summarize, timeline } from '../src/features/training/progress.ts'
 
 test('every quoted indicator appears in its scenario text and ids are unique', () => {
-  for (const scenario of scenarios) {
+  for (const scenario of scenarios.filter((item) => item.type !== 'call')) {
     const text = scenario.type === 'email'
       ? [scenario.subject, scenario.fromName, scenario.fromAddress, scenario.replyTo, ...scenario.body, ...(scenario.links ?? []), scenario.attachment].join(' ')
       : scenario.messages.map((message) => `${message.text} ${message.link ?? ''}`).join(' ')

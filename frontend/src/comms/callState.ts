@@ -75,3 +75,24 @@ export function callReducer(state: CallState, action: CallAction): CallState {
       return state
   }
 }
+
+/** Why the microphone can't be used before even asking: getUserMedia needs a secure context (HTTPS or localhost). */
+export function microphoneBlocker(env: { secureContext: boolean; getUserMedia: boolean }) {
+  if (!env.secureContext) return 'insecure_context'
+  if (!env.getUserMedia) return 'microphone_unavailable'
+  return null
+}
+
+/** Maps a getUserMedia rejection to an error code: a refusal, or no usable microphone. */
+export function microphoneErrorCode(error: unknown) {
+  const name = error instanceof Error || error instanceof DOMException ? error.name : ''
+  return name === 'NotFoundError' || name === 'NotReadableError' || name === 'OverconstrainedError' || name === 'AbortError'
+    ? 'microphone_unavailable'
+    : 'microphone_denied'
+}
+
+/**
+ * Hook stages in which the server-side call is still ringing: dropping the call there (caption practice, leaving the
+ * page, a new call) must abandon it, or comms would later sweep it into a result nobody earned.
+ */
+export const ringsOnServer = (stage: string) => stage === 'ringing' || stage === 'answering'

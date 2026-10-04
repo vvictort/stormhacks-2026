@@ -3,7 +3,7 @@ import { textEvent, type EventSink } from '../events.ts';
 import { classifyReply } from '../lib/classify.ts';
 import { newId, newLinkToken, nowIso } from '../lib/ids.ts';
 import { redact } from '../lib/redact.ts';
-import type { ScenarioProvider, TextTurnResult } from '../provider.ts';
+import type { ScenarioProvider, TextTurnResult } from './provider.ts';
 import type { CommsStore } from '../store.ts';
 import {
   COMPROMISING_SIGNALS,

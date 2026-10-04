@@ -2,7 +2,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { createDatabase, transaction, type Database } from './database.ts';
-import { loadConfig } from '../core/config.ts';
+import { loadConfig } from '../config.ts';
 
 export async function migrate(db: Database) {
   await transaction(db, async (client) => {

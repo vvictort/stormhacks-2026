@@ -1,8 +1,8 @@
 import type { Request } from 'express';
-import { z } from 'zod';
-import { isProduction } from './config.ts';
+import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
-export type AuthErrorCode = 'missing_token' | 'malformed_token' | 'token_expired';
+export type AuthErrorCode = 'missing_token' | 'malformed_token' | 'invalid_token' | 'token_expired';
 
 /** Thrown by `getUserId`; the error handler turns it into a 401. */
 export class AuthError extends Error {
@@ -14,39 +14,61 @@ export class AuthError extends Error {
   }
 }
 
-/** Requests without a token resolve to this user outside production (dev page, curl fixtures). */
+/** Token-less requests resolve to this user only when the dev user is allowed (dev page, curl fixtures). */
 export const DEV_USER_ID = 'dev-user';
 
-const CLOCK_SKEW_SEC = 60;
+/** Verifies a Firebase ID token and returns its claims; throws (like firebase-admin) when it isn't valid. */
+export type VerifyToken = (idToken: string) => Promise<{ uid: string }>;
 
 export interface AuthOptions {
   /** Also accept `?access_token=` (EventSource can't send headers). */
   allowQueryToken?: boolean;
 }
 
-/** The Firebase ID token claims we read. Firebase sets both `sub` and `user_id` to the uid. */
-const Claims = z.object({
-  sub: z.string().min(1).max(128).optional(),
-  user_id: z.string().min(1).max(128).optional(),
-  exp: z.number(),
-});
+export type GetUserId = (req: Request, opts?: AuthOptions) => Promise<string>;
 
-/**
- * Resolves the Firebase uid for a request from `Authorization: Bearer <Firebase ID token>`.
- * TEMPORARY: decodes the ID token WITHOUT verifying its signature, so any client can claim any uid.
- * Replace `decodeUnverified` + the exp check with firebase-admin `verifyIdToken` before real users.
- */
-export async function getUserId(req: Request, { allowQueryToken = false }: AuthOptions = {}): Promise<string> {
-  const token = readToken(req, allowQueryToken);
-  if (!token) {
-    if (!isProduction) return DEV_USER_ID;
-    throw new AuthError('missing_token');
+/** Same verification as `backend/app/http/auth.ts`: signature, expiry, audience and issuer. */
+export function firebaseVerifier(projectId: string | undefined): VerifyToken {
+  // Dev-user-only setups have no project, so every presented token is rejected rather than trusted.
+  if (!projectId) {
+    return async () => {
+      throw new AuthError('invalid_token');
+    };
   }
-  const claims = decodeUnverified(token);
-  if (claims.exp + CLOCK_SKEW_SEC < Date.now() / 1000) throw new AuthError('token_expired');
-  const uid = claims.sub ?? claims.user_id;
-  if (!uid) throw new AuthError('malformed_token');
-  return uid;
+  const auth = getAuth(initializeApp({ projectId }));
+  return (token) => auth.verifyIdToken(token);
+}
+
+// firebase-admin error codes that mean "bad token" (401) rather than "verification broke" (500).
+const INVALID_TOKEN_CODES = new Set([
+  'auth/argument-error',
+  'auth/id-token-revoked',
+  'auth/invalid-id-token',
+  'auth/user-disabled',
+  'auth/user-not-found',
+]);
+
+/** Resolves the Firebase uid for a request, only ever from a verified `Authorization: Bearer` token. */
+export function createAuth({ verify, allowDevUser }: { verify: VerifyToken; allowDevUser: boolean }): GetUserId {
+  return async (req, { allowQueryToken = false } = {}) => {
+    const token = readToken(req, allowQueryToken);
+    if (!token) {
+      if (allowDevUser) return DEV_USER_ID;
+      throw new AuthError('missing_token');
+    }
+    let uid: unknown;
+    try {
+      ({ uid } = await verify(token));
+    } catch (err) {
+      if (err instanceof AuthError) throw err;
+      const code = (err as { code?: string }).code;
+      if (code === 'auth/id-token-expired') throw new AuthError('token_expired');
+      if (code && INVALID_TOKEN_CODES.has(code)) throw new AuthError('invalid_token');
+      throw err;
+    }
+    if (typeof uid !== 'string' || !uid) throw new AuthError('invalid_token');
+    return uid;
+  };
 }
 
 function readToken(req: Request, allowQueryToken: boolean): string | null {
@@ -59,14 +81,4 @@ function readToken(req: Request, allowQueryToken: boolean): string | null {
   }
   const query = req.query.access_token;
   return allowQueryToken && typeof query === 'string' && query ? query : null;
-}
-
-function decodeUnverified(token: string) {
-  const parts = token.split('.');
-  if (parts.length !== 3) throw new AuthError('malformed_token');
-  try {
-    return Claims.parse(JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf8')));
-  } catch {
-    throw new AuthError('malformed_token');
-  }
 }

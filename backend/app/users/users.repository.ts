@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import type { QueryResultRow } from 'pg';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import type { Database } from './database.ts';
-import type { ProfileInput, User } from '../schemas/user.ts';
-import { AppError } from '../core/errors.ts';
+import type { Database } from '../db/database.ts';
+import { AppError } from '../http/errors.ts';
+import type { ProfileInput, User } from './users.schema.ts';
 function mapUser(row: QueryResultRow): User {
   return { id: row.id, uid: row.firebase_uid, email: row.email, emailVerified: row.email_verified, name: row.name, phone: row.phone, profession: row.profession, interests: row.interests, onboardingComplete: Boolean(row.onboarding_completed_at), createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() };
 }
-export class Repositories {
-  constructor(public readonly db: Database) {}
+export class UsersRepository {
+  constructor(private readonly db: Database) {}
   async ensureUser(identity: DecodedIdToken) {
     if (!identity.email) throw new AppError(401, 'INVALID_TOKEN', 'An account email is required.');
     const name = typeof identity.name === 'string' ? identity.name.trim().slice(0,100) || null : null;

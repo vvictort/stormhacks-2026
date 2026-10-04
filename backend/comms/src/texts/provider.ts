@@ -1,4 +1,4 @@
-import type { Signal, TextMessage, TextScenario } from './types.ts';
+import type { Signal, TextMessage, TextScenario } from '../types.ts';
 
 export interface TextTurnInput {
   scenario: TextScenario;

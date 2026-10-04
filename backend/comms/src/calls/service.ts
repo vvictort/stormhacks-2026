@@ -1,3 +1,4 @@
+import type { Backend } from '../backend.ts';
 import { config } from '../config.ts';
 import { callEvent, type EventSink } from '../events.ts';
 import { newId, nowIso } from '../lib/ids.ts';
@@ -5,12 +6,16 @@ import { redact } from '../lib/redact.ts';
 import type { CommsStore } from '../store.ts';
 import { COMPROMISING_SIGNALS, type CallRecord, type CallScenario, type Outcome, type Signal } from '../types.ts';
 import { getConversation, getConversationToken, requireAgentId, type ElevenLabsConversation } from './elevenlabs.ts';
+import { toTraining } from './outcome.ts';
 import { withPreamble } from './preamble.ts';
 
 /** Give up waiting for ElevenLabs' post-call analysis after this long. */
 const ANALYSIS_TIMEOUT_MS = 90_000;
 const POLL_DELAYS_MS = [2000, 3000, 5000, 5000, 10_000];
-/** A call still ringing after this long (tab closed) is marked missed. */
+/**
+ * A call still ringing after this long was given up by the browser (tab closed, or stuck on a voice/mic error), not
+ * missed: the browser's own ring timer reports real misses. It is abandoned, so it never becomes a scored attempt.
+ */
 const RING_ABANDON_MS = 2 * 60_000;
 /** An accepted call never reported as ended (tab closed) is analyzed after max duration + this grace. */
 const IN_CALL_GRACE_MS = 60_000;
@@ -37,14 +42,29 @@ function buildOverrides(scenario: CallScenario) {
 
 export type CallAccept = { call: CallRecord; conversationToken: string; overrides: ReturnType<typeof buildOverrides> };
 
+/** Binds the first conversation id reported for a call; a different id later is a mismatch. */
+function bindConversation(c: CallRecord, conversationId: string) {
+  c.conversationId ??= conversationId;
+  return c.conversationId === conversationId;
+}
+
+function completeAs(c: CallRecord, outcome: Outcome) {
+  c.status = 'completed';
+  c.outcome = outcome;
+  c.training = toTraining(outcome, c.scenario.difficulty);
+  c.completedAt = nowIso();
+}
+
 export class CallService {
   private analyzing = new Set<string>();
   private readonly store: CommsStore;
   private readonly events: EventSink;
+  private readonly backend?: Pick<Backend, 'postAttempt'>;
 
-  constructor(store: CommsStore, events: EventSink) {
+  constructor(store: CommsStore, events: EventSink, backend?: Pick<Backend, 'postAttempt'>) {
     this.store = store;
     this.events = events;
+    this.backend = backend;
   }
 
   async start(userId: string, scenario: CallScenario): Promise<CallRecord> {
@@ -70,7 +90,7 @@ export class CallService {
       if (c.status !== 'ringing') return false;
       c.status = 'in_call';
       c.acceptedAt = new Date(now).toISOString();
-      c.conversationId = conversation_id;
+      if (conversation_id) c.conversationId = conversation_id;
       return true;
     });
     if (!accepted) return 'wrong_state';
@@ -84,30 +104,57 @@ export class CallService {
     const now = Date.now();
     const { call, result: declined } = await this.store.updateCall(callId, (c) => {
       if (c.status !== 'ringing') return false;
-      c.status = 'completed';
-      c.outcome = reason;
-      c.completedAt = new Date(now).toISOString();
+      completeAs(c, reason);
       return true;
     });
     if (!declined) return 'wrong_state';
     await this.events.emit(callEvent(reason === 'declined' ? 'call.declined' : 'call.missed', call, { ringMs: now - Date.parse(call.createdAt) }));
+    this.report(call);
     return call;
   }
 
-  /** Browser hung up (or the agent ended the call). Analysis continues in the background. */
-  async ended(callId: string, conversationId?: string): Promise<CallRecord | 'not_found' | 'wrong_state'> {
-    const current = await this.store.getCall(callId);
-    if (!current) return 'not_found';
-    if (current.status !== 'in_call') return 'wrong_state';
-    if (conversationId && current.conversationId && conversationId !== current.conversationId) {
-      console.warn(`[calls] ${callId}: browser conversation id ${conversationId} != token's ${current.conversationId}; using the browser's`);
-    }
+  /**
+   * The browser gave up on a ringing call (switched to caption practice after a voice or microphone failure, or left
+   * the page). It completes as an unscored `error` and is not posted to the backend: nothing was practised.
+   */
+  async abandon(callId: string): Promise<CallRecord | 'not_found' | 'wrong_state'> {
+    if (!(await this.store.getCall(callId))) return 'not_found';
+    const { call, result: abandoned } = await this.store.updateCall(callId, (c) => {
+      if (c.status !== 'ringing') return false;
+      completeAs(c, 'error');
+      c.error = 'abandoned';
+      return true;
+    });
+    if (!abandoned) return 'wrong_state';
+    await this.events.emit(callEvent('call.abandoned', call, { ringMs: Date.now() - Date.parse(call.createdAt) }));
+    return call;
+  }
 
-    const { call } = await this.store.updateCall(callId, (c) => {
+  /** The browser's voice session connected: bind its conversation id if the token didn't provide one. */
+  async connected(callId: string, conversationId: string): Promise<CallRecord | 'not_found' | 'wrong_state' | 'conversation_mismatch'> {
+    if (!(await this.store.getCall(callId))) return 'not_found';
+    const { call, result } = await this.store.updateCall(callId, (c) => {
+      if (c.conversationId === conversationId) return null;
+      if (c.status !== 'in_call') return 'wrong_state' as const;
+      return bindConversation(c, conversationId) ? null : ('conversation_mismatch' as const);
+    });
+    return result ?? call;
+  }
+
+  /**
+   * Browser hung up (or the agent ended the call). Analysis continues in the background.
+   * A mismatched conversation id leaves the call in_call, so the right `/ended` (or the sweeper) can still finish it.
+   */
+  async ended(callId: string, conversationId?: string): Promise<CallRecord | 'not_found' | 'wrong_state' | 'conversation_mismatch'> {
+    if (!(await this.store.getCall(callId))) return 'not_found';
+    const { call, result } = await this.store.updateCall(callId, (c) => {
+      if (c.status !== 'in_call') return 'wrong_state' as const;
+      if (conversationId && !bindConversation(c, conversationId)) return 'conversation_mismatch' as const;
       c.status = 'analyzing';
       c.endedAt = nowIso();
-      c.conversationId = conversationId ?? c.conversationId;
+      return null;
     });
+    if (result) return result;
     await this.events.emit(callEvent('call.ended', call, { conversationId: call.conversationId }));
     void this.analyze(callId);
     return call;
@@ -117,7 +164,7 @@ export class CallService {
   async sweep() {
     const now = Date.now();
     for (const c of await this.store.listCallsByStatus('ringing')) {
-      if (now - Date.parse(c.createdAt) >= RING_ABANDON_MS) await this.decline(c.id, 'missed');
+      if (now - Date.parse(c.createdAt) >= RING_ABANDON_MS) await this.abandon(c.id);
     }
     for (const c of await this.store.listCallsByStatus('in_call')) {
       if (now - Date.parse(c.acceptedAt!) >= config.CALL_MAX_SECONDS * 1000 + IN_CALL_GRACE_MS) await this.ended(c.id);
@@ -171,9 +218,7 @@ export class CallService {
     );
 
     const { call } = await this.store.updateCall(callId, (c) => {
-      c.status = 'completed';
-      c.outcome = outcome;
-      c.completedAt = nowIso();
+      completeAs(c, outcome);
       c.signals = [...signals];
       c.transcript = transcript;
       c.dataCollection = dataCollection;
@@ -193,15 +238,20 @@ export class CallService {
         transcript,
       }),
     );
+    this.report(call);
   }
 
   private async fail(callId: string, error: string) {
     const { call } = await this.store.updateCall(callId, (c) => {
-      c.status = 'completed';
-      c.outcome = 'error';
-      c.completedAt = nowIso();
+      completeAs(c, 'error');
       c.error = error;
     });
     await this.events.emit(callEvent('call.failed', call, { error }));
+    this.report(call);
+  }
+
+  /** Fire-and-forget: the backend post never holds up or breaks the call flow. */
+  private report(call: CallRecord) {
+    void this.backend?.postAttempt(call);
   }
 }

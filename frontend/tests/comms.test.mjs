@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { initialThreadState, parseThreadEvent, threadReducer, threadStatus } from '../src/comms/threadState.ts'
-import { callReducer, INITIAL_CALL_STATE } from '../src/comms/callState.ts'
+import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer } from '../src/comms/callState.ts'
 import { CommsError, createCommsClient, describeError } from '../src/comms/client.ts'
 
 const T = 'thread-1'
@@ -275,7 +275,7 @@ test('non-ok responses throw CommsError with the code from the body', async () =
     json(404, { error: 'scenario_not_found' }),
     new Response('<html>Bad gateway</html>', { status: 502 }),
   ])
-  await assert.rejects(client.startCall({ scenarioId: 'missing' }), (error) => {
+  await assert.rejects(client.startCall('missing'), (error) => {
     assert.ok(error instanceof CommsError)
     assert.equal(error.status, 404)
     assert.equal(error.code, 'scenario_not_found')
@@ -294,4 +294,52 @@ test('listScenarios is unauthenticated and streamUrl carries the token in the qu
   assert.equal(calls[0].headers.authorization, undefined)
   assert.deepEqual(tokens, [])
   assert.equal(await client.streamUrl('t/1'), '/comms/texts/t%2F1/stream?access_token=cached-token')
+})
+
+test('startCall sends only the scenario id; callConnected binds the conversation id', async () => {
+  const { client, calls } = fakeClient([
+    json(201, { callId: 'call-1', callerLabel: 'Bank', call: callRecord('ringing') }),
+    json(200, callRecord('in_call')),
+  ])
+  await client.startCall('bank-fraud-dept-otp-1')
+  assert.equal(calls[0].url, '/comms/calls')
+  assert.deepEqual(JSON.parse(calls[0].body), { scenarioId: 'bank-fraud-dept-otp-1' })
+  await client.callConnected('call-1', 'conv_9')
+  assert.equal(calls[1].url, '/comms/calls/call-1/connected')
+  assert.equal(calls[1].method, 'POST')
+  assert.deepEqual(JSON.parse(calls[1].body), { conversationId: 'conv_9' })
+})
+
+test('409 conversation_mismatch surfaces as a CommsError code', async () => {
+  const { client } = fakeClient([json(409, { error: 'conversation_mismatch' })])
+  await assert.rejects(client.callEnded('call-1', 'conv_other'), (error) => describeError(error) === 'conversation_mismatch' && error.status === 409)
+})
+
+test('microphone checks: insecure context and missing API are caught before asking', () => {
+  assert.equal(microphoneBlocker({ secureContext: false, getUserMedia: true }), 'insecure_context')
+  assert.equal(microphoneBlocker({ secureContext: true, getUserMedia: false }), 'microphone_unavailable')
+  assert.equal(microphoneBlocker({ secureContext: true, getUserMedia: true }), null)
+  const named = (name) => Object.assign(new Error(name), { name })
+  assert.equal(microphoneErrorCode(named('NotAllowedError')), 'microphone_denied')
+  assert.equal(microphoneErrorCode(named('SecurityError')), 'microphone_denied')
+  assert.equal(microphoneErrorCode(named('NotFoundError')), 'microphone_unavailable')
+  assert.equal(microphoneErrorCode(named('NotReadableError')), 'microphone_unavailable')
+  assert.equal(microphoneErrorCode('weird'), 'microphone_denied')
+})
+
+test('abandonCall gives up a ringing call with an authenticated, body-less POST', async () => {
+  const abandoned = { ...callRecord('completed'), error: 'abandoned', training: { outcome: 'error', success: null, difficulty: 'medium' } }
+  const { client, calls } = fakeClient([json(200, abandoned), json(409, { error: 'not_ringing' })])
+  assert.deepEqual((await client.abandonCall('call 1')).training, { outcome: 'error', success: null, difficulty: 'medium' })
+  assert.equal(calls[0].url, '/comms/calls/call%201/abandon')
+  assert.equal(calls[0].method, 'POST')
+  assert.equal(calls[0].headers.authorization, 'Bearer cached-token')
+  assert.equal(calls[0].body, undefined)
+  await assert.rejects(client.abandonCall('call-1'), (error) => describeError(error) === 'not_ringing')
+})
+
+test('only stages where the server call still rings are abandoned when the call is dropped', () => {
+  for (const stage of ['ringing', 'answering']) assert.equal(ringsOnServer(stage), true, stage)
+  // starting: no call yet; in_call/analyzing: reported via /ended; done: already settled.
+  for (const stage of ['starting', 'in_call', 'analyzing', 'done']) assert.equal(ringsOnServer(stage), false, stage)
 })

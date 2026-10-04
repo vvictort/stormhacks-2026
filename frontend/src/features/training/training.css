@@ -250,3 +250,16 @@
 .debrief-clues > li { animation: rise-in 380ms var(--ease-out-quint) backwards; animation-delay: calc(320ms + var(--n, 0) * 70ms); }
 .debrief-mascot-pop { display: inline-flex; }
 .email-view { animation: rise-in 380ms var(--ease-out-quint) 120ms backwards; --rise: 14px; }
+
+/* Placeholder while the call screen's code loads (call.css arrives with it). */
+.call-loading { margin: auto; padding: 0 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; font-size: 14px; line-height: 1.5; color: #6E6253; text-align: center; }
+p.call-loading { flex-direction: row; gap: 8px; }
+
+/* ---------- /caught: where practice links land ---------- */
+.caught-main { width: min(620px, calc(100% - 32px)); margin: 24px auto 72px; }
+.caught-verdict { display: flex; align-items: center; gap: 14px; }
+.caught-mascot { flex-shrink: 0; width: 72px; height: 72px; }
+.caught-verdict h1 { margin: 0; font-family: var(--font-editorial); font-size: clamp(30px, 4vw, 42px); font-weight: 400; line-height: 1.12; letter-spacing: -.03em; text-wrap: balance; }
+.caught-lede { margin-top: 18px; font-size: 16px; line-height: 1.65; color: var(--color-muted-strong); }
+.caught-main h2 { margin: 32px 0 0; font-size: 16px; font-weight: 600; }
+@media (max-width: 540px) { .caught-mascot { width: 56px; height: 56px; } }
