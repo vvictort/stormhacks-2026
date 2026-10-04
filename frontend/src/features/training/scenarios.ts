@@ -14,6 +14,8 @@ export interface GeneratedInfo {
   source: 'gemini' | 'fallback'
   /** Why this scenario, in plain words, e.g. "Matched to your work in software and a weak spot: account security". */
   reason: string
+  /** Gemini wrote it from a prompt grounded in this many real-world scam-library examples. Never on built-in fallbacks. */
+  grounding?: { exampleCount: number; source: 'scam-library' }
 }
 
 /** Something worth noticing. `quote` is the exact text it points at, so the debrief can mark it in the message. */
@@ -44,6 +46,8 @@ interface ScenarioCore {
   nextTime: string
   /** Built-in scenarios leave it out; the backend infers it from the id and title. */
   scamCategory?: ScamCategory
+  /** Social-engineering tactics it uses; a genuine message has none. Sent with the finished attempt. */
+  tactics?: Tactic[]
   generated?: GeneratedInfo
 }
 
@@ -103,6 +107,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'parcel-redelivery',
     type: 'sms',
+    tactics: ['urgency', 'suspicious_link', 'info_request'],
     title: 'Parcel redelivery fee',
     summary: 'A courier says your parcel is stuck until you pay a small fee.',
     situation: "You've ordered a couple of things online this week.",
@@ -126,6 +131,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'dental-reminder',
     type: 'sms',
+    tactics: [],
     title: 'Appointment reminder',
     summary: "A clinic texts about tomorrow's appointment.",
     situation: 'You booked a cleaning at Maple Grove Dental last month.',
@@ -147,6 +153,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'new-number',
     type: 'sms',
+    tactics: ['urgency'],
     title: '"Hi Mum, new number"',
     summary: 'Someone says they are family, texting from a new phone.',
     situation: 'Your daughter is away for work this week.',
@@ -170,6 +177,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'bank-code',
     type: 'sms',
+    tactics: [],
     title: 'Sign-in code from your bank',
     summary: 'Your bank texts a code while you sign in.',
     situation: "You're signing in to Harbourline Bank on your laptop, and the site says it has texted you a code.",
@@ -191,6 +199,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'wrong-number',
     type: 'sms',
+    tactics: ['reward'],
     title: 'A friendly wrong number',
     summary: 'A stranger texts the wrong person, then keeps chatting.',
     situation: "You don't recognise the number, and you don't know anyone called Linda.",
@@ -215,6 +224,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'fraud-alert',
     type: 'sms',
+    tactics: ['authority', 'fear', 'info_request'],
     title: 'Card fraud alert',
     summary: 'Your bank asks about a large purchase you never made.',
     situation: 'You bank with Harbourline Bank and use its credit card most days.',
@@ -238,6 +248,7 @@ export const scenarios: Scenario[] = [
   {
     id: 'share-code',
     type: 'sms',
+    tactics: ['otp_request'],
     title: '"Can you send me that code?"',
     summary: 'Someone from a group chat asks for a code sent to your phone.',
     situation: "You play in a casual Thursday soccer group. You don't have everyone's number saved.",

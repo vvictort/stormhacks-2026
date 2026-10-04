@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { Repositories } from '../repositories.ts';
 import { redact } from '../shared/redact.ts';
-import { BehaviorEventType, Difficulty, Outcome, outcomeSuccess, ScamCategory } from '../shared/vocabulary.ts';
+import { BehaviorEventType, Difficulty, Outcome, outcomeSuccess, ScamCategory, Tactic } from '../shared/vocabulary.ts';
 import { inferCategory } from '../training/progress.ts';
 import type { BehaviorEvent } from './behavior.repository.ts';
 
@@ -27,6 +27,8 @@ const browserEvent = z.object({
   scamCategory: ScamCategory.optional(),
   difficulty: Difficulty,
   outcome: MessageOutcome.optional(),
+  /** The scenario's tactics; a finished run stores them with its training attempt. */
+  tactics: z.array(Tactic).max(Tactic.options.length).transform((tactics) => [...new Set(tactics)]).optional(),
   responseTimeMs: z.number().int().nonnegative().max(86_400_000).optional(),
   metadata: z.record(z.string().regex(/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/), z.union([z.string().max(200), z.number(), z.boolean()]))
     .refine((m) => Object.keys(m).length <= 8 && JSON.stringify(m).length <= MAX_METADATA_BYTES, 'metadata is too large')
@@ -68,7 +70,7 @@ export function behaviorRouter(repos: Pick<Repositories, 'behavior' | 'attempts'
       const startedAt = e.responseTimeMs === undefined ? null : new Date(Date.parse(e.at) - e.responseTimeMs).toISOString();
       await repos.attempts.insert({
         attemptId: e.attemptId, firebaseUid: uid, channel: e.channel, scenarioId: e.scenarioId, scenarioTitle: e.scenarioTitle,
-        difficulty: e.difficulty, scamCategory: e.scamCategory, tactics: [], outcome: e.outcome, success: outcomeSuccess(e.outcome),
+        difficulty: e.difficulty, scamCategory: e.scamCategory, tactics: e.tactics ?? [], outcome: e.outcome, success: outcomeSuccess(e.outcome),
         signals: [], startedAt, completedAt: e.at, durationSecs: e.responseTimeMs === undefined ? null : Math.round(e.responseTimeMs / 1000),
         summary: null, transcript: [],
       });

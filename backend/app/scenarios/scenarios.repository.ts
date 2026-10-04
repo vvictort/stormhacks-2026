@@ -1,11 +1,12 @@
 import { transaction, type Database } from '../db/database.ts';
 import type { CallScenario } from '../shared/types.ts';
 import type { CallTeaching } from './callContent.ts';
+import type { Grounding } from './library.ts';
 
 export type ScenarioSource = 'gemini' | 'fallback';
 
 /** A generated call as stored: the caller (server-only) plus the teaching copy the browser may see. */
-export type StoredCallScenario = CallScenario & { teaching?: CallTeaching & { generated: { source: ScenarioSource; reason: string } } };
+export type StoredCallScenario = CallScenario & { teaching?: CallTeaching & { generated: { source: ScenarioSource; reason: string; grounding?: Grounding } } };
 
 export class ScenariosRepository {
   private readonly db: Database;

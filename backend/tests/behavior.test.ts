@@ -119,6 +119,17 @@ test('a finished text or email is also saved once as a training attempt', async 
   assert.equal((await progress('sam').expect(200)).body.attempts.length, 0);
 });
 
+test('a finished message stores its tactics on the attempt, so missed tactics reach the vulnerability profile', async () => {
+  const repos = fakeRepos();
+  const { post, progress } = routes(repos);
+  assert.equal((await post([completed({ tactics: ['bribery'] })])).status, 400, 'tactics are the shared vocabulary');
+  await post([completed({ outcome: 'safe_incorrect', tactics: ['urgency', 'suspicious_link', 'urgency'] })]).expect(202);
+  await post([completed({ attemptId: '6f1c1b1e-8d43-4c55-9a0e-2f5d7c1a9b02', scenarioId: 'book-order', scenarioTitle: 'Order confirmation', outcome: 'safe_correct' })]).expect(202);
+  assert.deepEqual((await repos.attempts.get('alex', '6f1c1b1e-8d43-4c55-9a0e-2f5d7c1a9b01'))?.tactics, ['urgency', 'suspicious_link']);
+  assert.deepEqual((await repos.attempts.get('alex', '6f1c1b1e-8d43-4c55-9a0e-2f5d7c1a9b02'))?.tactics, [], 'no tactics: none stored');
+  assert.deepEqual((await progress().expect(200)).body.vulnerability.vulnerableTactics, ['urgency', 'suspicious_link']);
+});
+
 test('most improved needs a real gain: accuracy first, then speed', () => {
   const c = (category: string, then: [number, number | null], now: [number, number | null]) =>
     ({ category: category as 'banking', then: { accuracy: then[0], avgDetectionMs: then[1] }, now: { accuracy: now[0], avgDetectionMs: now[1] } });
@@ -261,13 +272,14 @@ describe('behaviour events and metrics on Postgres', { skip: !url }, () => {
     const { post, metrics } = routes(repo);
     const attemptId = randomUUID();
     await post([event({ attemptId }), event({ attemptId, type: 'sender_inspected' }), event({ attemptId, type: 'link_clicked', metadata: { site: 'x.example' } })]).expect(202);
-    await Promise.all([post([completed({ attemptId })]).expect(202), post([completed({ attemptId })]).expect(202)]);
+    await Promise.all([post([completed({ attemptId, tactics: ['urgency', 'fear'] })]).expect(202), post([completed({ attemptId, tactics: ['urgency', 'fear'] })]).expect(202)]);
     await post([event({ attemptId, type: 'debrief_viewed' })], 'sam').expect(202);
 
     const { rows } = await db.query('SELECT firebase_uid, event_type, scam_category, metadata FROM behavior_events ORDER BY event_time, event_type');
     assert.equal(rows.length, 6);
     assert.deepEqual(rows.filter((r) => r.event_type === 'link_clicked')[0].metadata, { site: 'x.example' });
     assert.equal((await db.query('SELECT count(*)::int AS n FROM training_attempts WHERE id=$1', [attemptId])).rows[0].n, 1);
+    assert.deepEqual((await db.query('SELECT tactics FROM training_attempts WHERE id=$1', [attemptId])).rows[0].tactics, ['urgency', 'fear']);
     const m = (await metrics().expect(200)).body;
     assert.deepEqual([m.attempts, m.accuracy, m.reportRate, m.avgDetectionMs, m.trend], [1, 100, 100, 9000, null]);
     assert.equal((await metrics('sam').expect(200)).body.attempts, 0);

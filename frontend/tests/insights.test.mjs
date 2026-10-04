@@ -11,8 +11,11 @@ test('run events carry the scenario, attempt and decision time; category only wh
   const event = runEvent(email, run, 'scenario_completed', { outcome: 'reported_correct' }, 9400)
   assert.deepEqual({ ...event, at: undefined }, {
     type: 'scenario_completed', channel: 'email', scenarioId: 'bank-sign-in', scenarioTitle: email.title, attemptId: 'a1',
-    difficulty: email.difficulty, responseTimeMs: 8400, outcome: 'reported_correct', at: undefined,
+    difficulty: email.difficulty, responseTimeMs: 8400, outcome: 'reported_correct', tactics: email.tactics, at: undefined,
   })
+  assert.ok(email.tactics.length > 0)
+  assert.equal('tactics' in runEvent(email, run, 'scenario_started', {}, 1000), false, 'tactics ride on the finished attempt only')
+  assert.deepEqual(runEvent({ ...email, tactics: undefined }, run, 'scenario_completed', { outcome: 'reported_correct' }, 1000).tactics, [])
   assert.ok(!Number.isNaN(Date.parse(event.at)))
   assert.equal(runEvent({ ...email, scamCategory: 'banking' }, run, 'scenario_started', {}, 1000).scamCategory, 'banking')
   assert.equal(runEvent(email, run, 'scenario_started', {}, 500).responseTimeMs, 0)

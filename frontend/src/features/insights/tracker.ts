@@ -1,3 +1,4 @@
+import type { Tactic } from '../../comms/types.ts'
 import type { Action, Difficulty, MessageScenario, ScamCategory } from '../training/scenarios.ts'
 
 // Behaviour events for texts and emails, batched to POST /api/training/events (docs/mvp-contracts.md). The backend
@@ -15,6 +16,8 @@ export interface TrackedEvent {
   difficulty: Difficulty
   scamCategory?: ScamCategory
   outcome?: MessageOutcome
+  /** `scenario_completed` only: the scenario's tactics, stored with the attempt so missed tactics shape the profile. */
+  tactics?: Tactic[]
   /** Since the run started. */
   responseTimeMs: number
   /** Small facts only (e.g. the practice link's site), never anything the user typed. */
@@ -38,6 +41,7 @@ export function runEvent(scenario: MessageScenario, run: Run, type: TrackedType,
     difficulty: scenario.difficulty,
     // Built-in scenarios have none; the backend infers it from the id and title.
     ...(scenario.scamCategory ? { scamCategory: scenario.scamCategory } : {}),
+    ...(type === 'scenario_completed' ? { tactics: scenario.tactics ?? [] } : {}),
     responseTimeMs: Math.max(0, Math.round(now - run.startedAt)),
     ...extra,
     at: new Date().toISOString(),

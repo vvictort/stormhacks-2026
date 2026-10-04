@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { Difficulty, ScamCategory } from '../shared/vocabulary.ts';
-import type { JsonModel } from './gemini.ts';
+import { Difficulty, ScamCategory, Tactic } from '../shared/vocabulary.ts';
+import { generateChecked, parseModelJson, type JsonModel } from './gemini.ts';
 import { cleanProfileText } from './generator.ts';
+import { blockedBrand, Grounding, groundingBlock, type ScamLibrary } from './library.ts';
 
 // Generated practice emails: Gemini writes one for the user's profile and weak spots, the server checks every word the
 // debrief will highlight, and a built-in email stands in whenever the model is missing, slow or wrong.
@@ -30,6 +31,7 @@ const ModelEmail = z.object({
   expectedAction: z.enum(['report', 'safe']),
   scamCategory: ScamCategory,
   difficulty: Difficulty,
+  tactics: z.array(Tactic).min(1).max(4).transform((tactics) => [...new Set(tactics)]),
   redFlags: z.array(z.object({ quote: text(2, 200), title: text(3, 80), reason: text(10, 500) })).min(3).max(8),
   explanation: text(20, 700),
   nextTime: text(10, 400),
@@ -59,8 +61,10 @@ export const EmailScenario = z.object({
   explanation: text(20, 700),
   nextTime: text(10, 400),
   scamCategory: ScamCategory,
-  generated: z.object({ source: z.enum(['gemini', 'fallback']), reason: text(5, 300) }),
+  tactics: z.array(Tactic).min(1).max(4),
+  generated: z.object({ source: z.enum(['gemini', 'fallback']), reason: text(5, 300), grounding: Grounding.optional() }),
 }).strict().superRefine((scenario, ctx) => {
+  if (scenario.generated.grounding && scenario.generated.source !== 'gemini') ctx.addIssue({ code: 'custom', path: ['generated', 'grounding'], message: 'only on Gemini scenarios' });
   const hidden = hiddenIndicators(scenario);
   if (hidden.length) ctx.addIssue({ code: 'custom', path: ['indicators'], message: `not highlightable: ${hidden.join(' | ')}` });
   if (new Set(scenario.indicators.map((i) => i.title)).size !== scenario.indicators.length) ctx.addIssue({ code: 'custom', path: ['indicators'], message: 'duplicate titles' });
@@ -110,18 +114,12 @@ export function repairQuote(quote: string, email: Omit<Rendered, 'indicators'>) 
   return email.links?.find((url) => pattern.test(url)) ?? null;
 }
 
-const blockedBrand = /paypal|amazon|apple|google|gmail|microsoft|outlook|netflix|facebook|instagram|whatsapp|canada ?post|postes|interac|\brbc\b|\btd\b|scotia|\bcibc\b|\bbmo\b|desjardins|fedex|\bups\b|purolator|\bdhl\b|\bcra\b|service ?canada|canada\.ca|gc\.ca/i;
-
 type Draft = { scenario: EmailScenario } | { problems: string[] };
 
 /** Model (or built-in) JSON to a checked scenario, repairing near-miss quotes; otherwise the problems, for a retry. */
 export function toScenario(raw: string, meta: { id: string; difficulty: Difficulty; category: ScamCategory; generated: EmailScenario['generated']; receivedAt: string }): Draft {
-  let json: unknown;
-  try {
-    json = JSON.parse(raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
-  } catch {
-    return { problems: ['The answer was not valid JSON.'] };
-  }
+  const json = parseModelJson(raw);
+  if (json === undefined) return { problems: ['The answer was not valid JSON.'] };
   const parsed = ModelEmail.safeParse(json);
   if (!parsed.success) return { problems: parsed.error.issues.slice(0, 8).map((issue) => `${issue.path.join('.') || 'answer'}: ${issue.message}`) };
   const email = parsed.data;
@@ -151,7 +149,7 @@ export function toScenario(raw: string, meta: { id: string; difficulty: Difficul
     fromName: email.senderName, fromAddress: email.senderEmail, replyTo: email.replyTo, subject: email.subject, receivedAt: meta.receivedAt,
     body: email.body, links: email.links?.length ? email.links : undefined, attachment: email.attachment,
     indicators: visible.slice(0, 6), explanation: email.explanation, nextTime: email.nextTime,
-    scamCategory: meta.category, generated: meta.generated,
+    scamCategory: meta.category, tactics: email.tactics, generated: meta.generated,
   });
   return scenario.success ? { scenario: scenario.data } : { problems: scenario.error.issues.slice(0, 8).map((issue) => `${issue.path.join('.')}: ${issue.message}`) };
 }
@@ -172,6 +170,7 @@ const emailJsonSchema = {
     expectedAction: { type: 'string', enum: ['report', 'safe'], description: '"report" for a scam, "safe" for a genuine email.' },
     scamCategory: { type: 'string', enum: ScamCategory.options },
     difficulty: { type: 'string', enum: Difficulty.options },
+    tactics: { type: 'array', items: { type: 'string', enum: Tactic.options }, description: '1 to 4 social-engineering tactics this email uses.' },
     redFlags: {
       type: 'array',
       description: '3 to 6 red flags, in the order they appear in the email.',
@@ -188,7 +187,7 @@ const emailJsonSchema = {
     explanation: { type: 'string', description: 'Two or three sentences for the debrief: what kind of scam this is and how it works.' },
     nextTime: { type: 'string', description: 'One or two sentences: the habit that would catch this next time.' },
   },
-  required: ['title', 'summary', 'situation', 'senderName', 'senderEmail', 'subject', 'body', 'expectedAction', 'scamCategory', 'difficulty', 'redFlags', 'explanation', 'nextTime'],
+  required: ['title', 'summary', 'situation', 'senderName', 'senderEmail', 'subject', 'body', 'expectedAction', 'scamCategory', 'difficulty', 'tactics', 'redFlags', 'explanation', 'nextTime'],
 };
 
 const categoryNoun: Record<ScamCategory, string> = {
@@ -221,6 +220,8 @@ export interface EmailGenerationInput {
   focus?: ScamCategory[];
   /** Unset uses the built-in emails. */
   model?: JsonModel;
+  /** Real-world examples to ground the prompt; none (or no library) runs the prompt ungrounded. */
+  library?: ScamLibrary;
   budgetMs?: number;
 }
 
@@ -267,8 +268,6 @@ RULES:
 - Titles, reasons, explanation and nextTime are for the trainee: short, kind, plain words.`;
 }
 
-const RETRY_MIN_MS = 6000;
-
 /** A personalised scam email: Gemini when configured, checked and repaired, else a built-in one; says which. */
 export async function generateEmailScenario(input: EmailGenerationInput): Promise<{ scenario: EmailScenario; source: 'gemini' | 'fallback' }> {
   const p = plan(input);
@@ -277,22 +276,16 @@ export async function generateEmailScenario(input: EmailGenerationInput): Promis
   const base = { id, difficulty: input.difficulty, category: p.category, receivedAt };
 
   if (input.model) {
-    const deadline = Date.now() + (input.budgetMs ?? 20_000);
-    const prompt = promptFor(input, p);
-    let feedback = '';
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const remaining = deadline - Date.now();
-      if (attempt && remaining < RETRY_MIN_MS) break;
-      try {
-        const raw = await input.model(prompt + feedback, emailJsonSchema, remaining);
-        const draft = toScenario(raw, { ...base, generated: { source: 'gemini', reason: reason(p.why, p.profession, p.interests[0]) } });
-        if ('scenario' in draft) return { scenario: draft.scenario, source: 'gemini' };
-        console.warn('[Gemini] Email rejected:', draft.problems.length, 'problem(s)');
-        feedback = `\n\nYOUR PREVIOUS ANSWER WAS REJECTED. Fix these and answer again:\n- ${draft.problems.join('\n- ')}`;
-      } catch (error) {
-        console.warn('[Gemini] Email generation failed:', (error as Error).name);
-      }
-    }
+    const examples = input.library?.examplesFor({ channel: 'email', category: p.category, tactics: p.tactics, difficulty: input.difficulty }) ?? [];
+    const generated: EmailScenario['generated'] = {
+      source: 'gemini', reason: reason(p.why, p.profession, p.interests[0]),
+      ...(examples.length ? { grounding: { exampleCount: examples.length, source: 'scam-library' as const } } : {}),
+    };
+    const scenario = await generateChecked(input.model, promptFor(input, p) + groundingBlock(examples), emailJsonSchema, input.budgetMs ?? 20_000, (raw) => {
+      const draft = toScenario(raw, { ...base, generated });
+      return 'scenario' in draft ? { value: draft.scenario } : draft;
+    }, 'Email');
+    if (scenario) return { scenario, source: 'gemini' };
   }
 
   const template = fallbackEmail(p.category, input.difficulty, p.profession, p.interests[0]);
@@ -302,6 +295,15 @@ export async function generateEmailScenario(input: EmailGenerationInput): Promis
   return { scenario: draft.scenario, source: 'fallback' };
 }
 
+const fallbackTactics: Record<ScamCategory, Tactic[]> = {
+  workplace: ['authority', 'urgency', 'info_request', 'suspicious_link'],
+  banking: ['fear', 'urgency', 'info_request', 'suspicious_link'],
+  shipping: ['urgency', 'info_request', 'suspicious_link'],
+  government: ['authority', 'reward', 'urgency', 'info_request'],
+  promotional: ['reward', 'urgency', 'info_request', 'suspicious_link'],
+  account_security: ['fear', 'urgency', 'otp_request', 'suspicious_link'],
+};
+
 /** Built-in emails, one per category, written to pass the same checks as the model's. Every name and domain is invented. */
 export function fallbackEmail(category: ScamCategory, difficulty: Difficulty, profession = '', interest?: string): ModelEmail {
   const by = <T>(easy: T, medium: T, hard: T) => ({ easy, medium, hard })[difficulty];
@@ -309,7 +311,9 @@ export function fallbackEmail(category: ScamCategory, difficulty: Difficulty, pr
   const greetingFlag = (generic: string) => by([{ quote: generic, title: "It doesn't know your name", reason: 'A real organisation you deal with knows who you are. A greeting that fits anyone means the same email went to thousands of people.' }], [], []);
   const deadline = (quote: string) => difficulty === 'hard' ? [] : [{ quote, title: 'A deadline to rush you', reason: 'A countdown is there to make you act before you stop and check.' }];
   const urgent = (easy: string, medium: string, hard: string) => by(easy, medium, hard);
-  const common = { expectedAction: 'report' as const, scamCategory: category, difficulty };
+  // Hard emails drop the deadline, so they drop urgency too.
+  const tactics = fallbackTactics[category].filter((tactic) => difficulty !== 'hard' || tactic !== 'urgency');
+  const common = { expectedAction: 'report' as const, scamCategory: category, difficulty, tactics };
 
   switch (category) {
     case 'workplace': {

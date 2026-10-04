@@ -4,12 +4,13 @@ import type { Repositories } from '../repositories.ts';
 import { HISTORY_LIMIT, summarizeAttempts } from '../training/progress.ts';
 import { generateEmailScenario } from './email-generator.ts';
 import type { JsonModel } from './gemini.ts';
+import type { ScamLibrary } from './library.ts';
 
 /**
  * POST /api/training/email-scenarios → 201 { scenario }: a scam email written for this user from their saved profile, history
  * and current training focus (the request body is ignored). GET /:id → the scenario, owner only.
  */
-export function emailScenariosRouter({ users, attempts, scenarios, insights }: Repositories, options: { model?: JsonModel }) {
+export function emailScenariosRouter({ users, attempts, scenarios, insights }: Repositories, options: { model?: JsonModel; library?: ScamLibrary }) {
   const router = Router();
   router.post('/', async (req, res) => {
     const uid = req.user!.uid;
@@ -20,7 +21,7 @@ export function emailScenariosRouter({ users, attempts, scenarios, insights }: R
     const [profile, history, focus] = await Promise.all([users.ensureUser(req.user!), attempts.list(uid, HISTORY_LIMIT), insights.latestFocus(uid)]);
     const { vulnerability, difficulty } = summarizeAttempts(history);
     const { scenario, source } = await generateEmailScenario({
-      model: options.model, difficulty, focus, profession: profile.profession, interests: profile.interests,
+      model: options.model, library: options.library, difficulty, focus, profession: profile.profession, interests: profile.interests,
       weakCategories: vulnerability.weakCategories, vulnerableTactics: vulnerability.vulnerableTactics,
     });
     await scenarios.saveMessage(uid, scenario, source);

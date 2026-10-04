@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "channel": "email",
+      "dataset": "synthetic-test",
+      "url": "https://example.test/synthetic",
+      "license": "CC0-1.0",
+      "redistribution": "excerpts"
+    }
+  ],
+  "examples": [
+    {
+      "id": "syn-email-work-1",
+      "channel": "email",
+      "kind": "scam",
+      "category": "workplace",
+      "tactics": [
+        "authority",
+        "urgency"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [
+        {
+          "tag": "deadline",
+          "quote": "closes today"
+        },
+        {
+          "tag": "credentials",
+          "quote": "Re-enter your staff password"
+        }
+      ],
+      "difficulty": "medium",
+      "text": "SYNTHETIC: Your mailbox quota review closes today. Re-enter your staff password at the review page.",
+      "textKind": "excerpt",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-email-work-1",
+        "label": "phishing"
+      },
+      "subject": "SYNTHETIC quota review"
+    },
+    {
+      "id": "syn-email-work-2",
+      "channel": "email",
+      "kind": "scam",
+      "category": "workplace",
+      "tactics": [
+        "urgency"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "hard",
+      "text": "SYNTHETIC PATTERN: a polite note from 'payroll' asking to confirm direct deposit details before the next run.",
+      "textKind": "pattern",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-email-work-2",
+        "label": "phishing"
+      }
+    },
+    {
+      "id": "syn-email-work-3",
+      "channel": "email",
+      "kind": "scam",
+      "category": "workplace",
+      "tactics": [
+        "reward"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "easy",
+      "text": "SYNTHETIC: Staff appreciation gift card waiting, claim with your ID number.",
+      "textKind": "excerpt",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-email-work-3",
+        "label": "phishing"
+      }
+    },
+    {
+      "id": "syn-email-work-brand",
+      "channel": "email",
+      "kind": "scam",
+      "category": "workplace",
+      "tactics": [
+        "authority",
+        "urgency"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "medium",
+      "text": "SYNTHETIC: Your PayPal business account is limited until you confirm.",
+      "textKind": "excerpt",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-email-work-brand",
+        "label": "phishing"
+      }
+    },
+    {
+      "id": "syn-email-work-legit",
+      "channel": "email",
+      "kind": "legitimate",
+      "category": "workplace",
+      "tactics": [],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "medium",
+      "text": "SYNTHETIC: The team lunch moved to Thursday at noon.",
+      "textKind": "excerpt",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-email-work-legit",
+        "label": "phishing"
+      }
+    },
+    {
+      "id": "syn-email-nocat",
+      "channel": "email",
+      "kind": "scam",
+      "category": null,
+      "tactics": [
+        "authority",
+        "urgency"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "medium",
+      "text": "SYNTHETIC: Generic account notice with no clear category.",
+      "textKind": "excerpt",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-email-nocat",
+        "label": "phishing"
+      }
+    },
+    {
+      "id": "syn-email-bank-1",
+      "channel": "email",
+      "kind": "scam",
+      "category": "banking",
+      "tactics": [
+        "fear"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "easy",
+      "text": "SYNTHETIC: Unusual card activity. Reply with your card number to unlock it.\u0007 Use `this` code.",
+      "textKind": "excerpt",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-email-bank-1",
+        "label": "phishing"
+      }
+    },
+    {
+      "id": "syn-call-bank-1",
+      "channel": "call",
+      "kind": "scam",
+      "category": "banking",
+      "tactics": [
+        "authority",
+        "otp_request"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "medium",
+      "text": "SYNTHETIC CALL: Caller claims to be card security and asks the victim to read back the code just texted.",
+      "textKind": "pattern",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-call-bank-1",
+        "label": "phishing"
+      }
+    },
+    {
+      "id": "syn-sms-ship-1",
+      "channel": "sms",
+      "kind": "scam",
+      "category": "shipping",
+      "tactics": [
+        "urgency",
+        "suspicious_link"
+      ],
+      "signals": [
+        "synthetic"
+      ],
+      "cues": [],
+      "difficulty": "easy",
+      "text": "SYNTHETIC: Parcel held, pay the small fee within 24h at the link.",
+      "textKind": "excerpt",
+      "source": {
+        "dataset": "synthetic-test",
+        "license": "CC0-1.0",
+        "row": "syn-sms-ship-1",
+        "label": "phishing"
+      }
+    }
+  ]
+}

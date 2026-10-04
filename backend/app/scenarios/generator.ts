@@ -2,16 +2,22 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { CallScenario, difficultyName } from '../shared/types.ts';
 import type { Difficulty, ScamCategory, Tactic } from '../shared/vocabulary.ts';
-import { geminiJson } from './gemini.ts';
+import { generateChecked, parseModelJson, type JsonModel } from './gemini.ts';
+import { blockedBrand, groundingBlock, type Grounding, type ScamLibrary } from './library.ts';
 import { CALLER_ID_INDICATOR, CATEGORY_NAMES, COMPLY_LABELS, DIFFICULTY_STYLE, FALLBACK_CALLS, TACTIC_INDICATORS, TACTIC_LINES } from './callContent.ts';
 import type { ScenarioSource, StoredCallScenario } from './scenarios.repository.ts';
 
 export interface CallScenarioRequest {
-  apiKey?: string;
+  /** Unset uses the built-in calls. */
+  model?: JsonModel;
+  /** Real-world examples to ground the prompt; none (or no library) runs the prompt ungrounded. */
+  library?: ScamLibrary;
   difficulty: Difficulty;
   /** Preferred categories, e.g. the latest insights' `nextTrainingFocus`; the first one wins. */
   focus?: ScamCategory[];
   weakCategories?: ScamCategory[];
+  /** Tactics the user has fallen for; they rank the grounding examples. */
+  vulnerableTactics?: string[];
   name?: string | null;
   profession?: string | null;
   interests?: string[];
@@ -128,7 +134,7 @@ export async function generateCallScenario(request: CallScenarioRequest): Promis
   const { category, why } = pickCategory(request);
   const difficulty = difficultyNumber[request.difficulty];
   const reason = reasonFor(why, difficulty);
-  if (!request.apiKey) return { scenario: fallbackCallScenario(id, category, request, reason), source: 'fallback' };
+  if (!request.model) return { scenario: fallbackCallScenario(id, category, request, reason), source: 'fallback' };
 
   const { first, profession, interests } = persona(request);
   const prompt = `
@@ -157,27 +163,31 @@ SPECIFICATION RULES:
    - Array of 1 to 4 applicable tactics from: ['urgency', 'authority', 'suspicious_link', 'otp_request', 'info_request', 'reward', 'fear'].
 5. "summary", "situation", "explanation", "nextTime": short, plain, warm sentences for the trainee (no jargon, no fearmongering).
 `;
+  const examples = request.library?.examplesFor({ channel: 'call', category, tactics: request.vulnerableTactics, difficulty: request.difficulty }) ?? [];
+  const grounding: Grounding | undefined = examples.length ? { exampleCount: examples.length, source: 'scam-library' } : undefined;
 
-  try {
-    const output = await geminiJson(request.apiKey)(prompt, callScenarioJsonSchema, 15_000);
-    const raw = (output || '{}').replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-    const parsed = JSON.parse(raw);
-    const scenario = CallScenario.parse({
+  const scenario = await generateChecked(request.model, prompt + groundingBlock(examples), callScenarioJsonSchema, 15_000, (raw): { value: StoredCallScenario } | { problems: string[] } => {
+    const parsed = parseModelJson(raw) as Record<string, unknown> | undefined;
+    if (!parsed || typeof parsed !== 'object') return { problems: ['The answer was not valid JSON.'] };
+    const call = CallScenario.safeParse({
       id,
       title: parsed.title,
-      tactics: [...new Set(parsed.tactics as Tactic[])].slice(0, 4),
+      tactics: Array.isArray(parsed.tactics) ? [...new Set(parsed.tactics as Tactic[])].slice(0, 4) : parsed.tactics,
       difficulty,
       scamCategory: category,
       callerLabel: parsed.callerLabel,
-      systemPrompt: `${parsed.systemPrompt}\n\n${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first}; use it once or twice, naturally.` : ''}`,
+      systemPrompt: typeof parsed.systemPrompt === 'string' && parsed.systemPrompt.trim()
+        ? `${parsed.systemPrompt}\n\n${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first}; use it once or twice, naturally.` : ''}` : undefined,
       firstMessage: parsed.firstMessage,
     });
-    const teaching = teachingFor(scenario.tactics, scenario.firstMessage, Written.parse(parsed), category);
-    return { scenario: { ...scenario, teaching: { ...teaching, generated: { source: 'gemini', reason } } }, source: 'gemini' };
-  } catch (error) {
-    console.warn('[Gemini] Call scenario generation failed, using a built-in scenario:', (error as Error).name);
-    return { scenario: fallbackCallScenario(id, category, request, reason), source: 'fallback' };
-  }
+    if (!call.success) return { problems: call.error.issues.slice(0, 8).map((issue) => `${issue.path.join('.') || 'answer'}: ${issue.message}`) };
+    if ([call.data.callerLabel, call.data.systemPrompt, call.data.firstMessage].some((value) => blockedBrand.test(value))) {
+      return { problems: ['Use an invented organisation, people and numbers, never a real company, bank, courier or government body.'] };
+    }
+    const teaching = teachingFor(call.data.tactics, call.data.firstMessage, Written.parse(parsed), category);
+    return { value: { ...call.data, teaching: { ...teaching, generated: { source: 'gemini', reason, ...(grounding ? { grounding } : {}) } } } };
+  }, 'Call');
+  return scenario ? { scenario, source: 'gemini' } : { scenario: fallbackCallScenario(id, category, request, reason), source: 'fallback' };
 }
 
 function fallbackCallScenario(id: string, category: ScamCategory, request: CallScenarioRequest, reason: string): StoredCallScenario {

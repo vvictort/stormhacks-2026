@@ -5,13 +5,15 @@ import type { Repositories } from '../repositories.ts';
 import { difficultyName } from '../shared/types.ts';
 import { HISTORY_LIMIT, summarizeAttempts } from '../training/progress.ts';
 import type { ScenarioCatalog } from './catalog.ts';
+import type { JsonModel } from './gemini.ts';
 import { generateCallScenario, trainingCallScenario } from './generator.ts';
+import type { ScamLibrary } from './library.ts';
 
 /**
  * /api/training/call-scenarios. POST: a personalised call scenario, stored server-side. GET /:id: its teaching copy in
  * the frontend `CallScenario` shape, owner only. The prompt never leaves the server through these routes.
  */
-export function scenariosRouter({ users, attempts, scenarios, insights }: Repositories, options: { geminiApiKey?: string }) {
+export function scenariosRouter({ users, attempts, scenarios, insights }: Repositories, options: { model?: JsonModel; library?: ScamLibrary }) {
   const router = Router();
   router.post('/', async (req, res) => {
     if (!(await scenarios.claimGeneration(req.user!.uid, 5, 30))) {
@@ -20,7 +22,7 @@ export function scenariosRouter({ users, attempts, scenarios, insights }: Reposi
     const [profile, history, focus] = await Promise.all([users.ensureUser(req.user!), attempts.list(req.user!.uid, HISTORY_LIMIT), insights.latestFocus(req.user!.uid)]);
     const { vulnerability, difficulty } = summarizeAttempts(history);
     const { scenario, source } = await generateCallScenario({
-      apiKey: options.geminiApiKey, difficulty, focus, weakCategories: vulnerability.weakCategories,
+      model: options.model, library: options.library, difficulty, focus, weakCategories: vulnerability.weakCategories, vulnerableTactics: vulnerability.vulnerableTactics,
       name: profile.name, profession: profile.profession, interests: profile.interests,
     });
     await scenarios.save(req.user!.uid, scenario, source);

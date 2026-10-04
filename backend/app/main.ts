@@ -8,6 +8,7 @@ import { pendingMigrations } from './db/migrate.ts';
 import { Snowflake, snowflakeConfig } from './insights/snowflake.ts';
 import { createRepositories } from './repositories.ts';
 import { ScenarioCatalog } from './scenarios/catalog.ts';
+import { defaultLibrary } from './scenarios/library.ts';
 import { createApp } from './server.ts';
 import { PgEventSink, PgSimStore } from './sim/sim.repository.ts';
 import { StubProvider } from './texts/provider.ts';
@@ -28,6 +29,8 @@ if (pending.length) {
   process.exit(1);
 }
 const repos = createRepositories(db);
+// Grounding examples for generated emails and calls; a malformed file stops startup here, a missing one is logged.
+console.info(defaultLibrary().summary());
 const store = new PgSimStore(db);
 const events = new PgEventSink(db);
 const services = {

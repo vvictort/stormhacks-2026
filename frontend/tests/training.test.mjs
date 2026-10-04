@@ -19,6 +19,15 @@ test('every quoted indicator appears in its scenario text and ids are unique', (
   assert.deepEqual(new Set(emails.map((scenario) => scenario.difficulty)), new Set(['easy', 'medium', 'hard']))
 })
 
+test('every built-in text and email names its tactics; genuine ones have none', () => {
+  const vocabulary = ['urgency', 'authority', 'suspicious_link', 'otp_request', 'info_request', 'reward', 'fear']
+  for (const scenario of scenarios.filter((item) => item.type !== 'call')) {
+    assert.ok(Array.isArray(scenario.tactics), scenario.id)
+    assert.ok(scenario.tactics.every((tactic) => vocabulary.includes(tactic)) && scenario.tactics.length <= 4, scenario.id)
+    assert.equal(scenario.tactics.length > 0, scenario.correctAction === 'report', scenario.id)
+  }
+})
+
 test('hasLink covers both channels', () => {
   assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'parcel-redelivery')), true)
   assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'dental-reminder')), false)

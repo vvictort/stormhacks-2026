@@ -36,6 +36,7 @@ const modelEmail = (overrides: Record<string, unknown> = {}) => ({
   expectedAction: 'report',
   scamCategory: 'workplace',
   difficulty: 'medium',
+  tactics: ['authority', 'urgency', 'info_request', 'urgency'],
   redFlags: [
     { quote: 'ledgerline-payroll-hr.com', title: 'A look-alike sender', reason: 'Payroll writes from your organisation’s own domain.' },
     { quote: 'by Thursday', title: 'A deadline to rush you', reason: 'A deadline tied to your pay is there to stop you checking.' },

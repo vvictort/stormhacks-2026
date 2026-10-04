@@ -5,6 +5,7 @@ export const emailScenarios: EmailScenario[] = [
   {
     id: 'bank-sign-in',
     type: 'email',
+    tactics: ['fear', 'urgency', 'info_request', 'suspicious_link'],
     title: 'Unusual sign-in alert',
     summary: 'Your bank says someone tried to sign in to your account.',
     situation: 'You bank with Maplewood Bank and use its app most weeks.',
@@ -34,6 +35,7 @@ export const emailScenarios: EmailScenario[] = [
   {
     id: 'book-order',
     type: 'email',
+    tactics: [],
     title: 'Order confirmation',
     summary: 'A bookshop confirms the order you placed yesterday.',
     situation: 'Yesterday you ordered two books from Fernleaf Books, a shop whose website is fernleafbooks.ca.',
@@ -63,6 +65,7 @@ export const emailScenarios: EmailScenario[] = [
   {
     id: 'tax-refund',
     type: 'email',
+    tactics: ['authority', 'reward', 'urgency', 'info_request'],
     title: 'Tax refund waiting',
     summary: 'The tax agency says you have a refund to claim online.',
     situation: 'You filed your taxes in April and got your notice of assessment in May.',
@@ -92,6 +95,7 @@ export const emailScenarios: EmailScenario[] = [
   {
     id: 'contractor-invoice',
     type: 'email',
+    tactics: ['authority'],
     title: 'Updated invoice from your contractor',
     summary: "Your contractor's final invoice arrives with new bank details.",
     situation: 'Cedar & Sons Contracting is finishing your new deck. You expect their final invoice this week.',
