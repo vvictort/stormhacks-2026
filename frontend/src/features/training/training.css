@@ -259,14 +259,6 @@
   font-size: 14px;
 }
 
-.home-upnext {
-  margin-top: 24px;
-}
-
-.home-upnext .path-stops {
-  margin-top: 2px;
-}
-
 /* Progress: one headline rate with its counts in a sentence, then the
    breakdowns. No boxes. */
 
@@ -418,6 +410,53 @@
   background: var(--color-accent-strong);
 }
 
+.home-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-flags li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-foreground) 6%, transparent);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.home-more {
+  margin-top: var(--space-section);
+  border-top: 1px solid var(--color-border);
+}
+
+.home-more summary {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.home-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.home-more summary span {
+  margin-left: 8px;
+  font-weight: 400;
+  color: var(--color-muted-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-more .home-flags {
+  padding-bottom: 20px;
+}
+
 /* Library: filters followed by a flat list of readable scenario rows. */
 
 .path {
@@ -517,21 +556,10 @@
   }
 }
 
-.path-stop.is-upnext {
-  background: transparent;
-}
-
 .path-stop:has(.path-stop-link:focus-visible)::before {
   opacity: 1;
   outline: 2px solid var(--color-primary-strong);
   outline-offset: 2px;
-}
-
-.path-channel {
-  grid-column: 1;
-  grid-row: 1;
-  font-size: 12px;
-  color: var(--color-muted-strong);
 }
 
 .path-stop-body {
@@ -583,10 +611,6 @@
 
 .is-missed .path-status {
   color: var(--color-accent-strong);
-}
-
-.is-upnext .path-status {
-  color: var(--color-primary-strong);
 }
 
 .path-stop-end {
@@ -741,6 +765,7 @@
 
 .scenario-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 7px;
   font-size: 14px;
@@ -871,6 +896,9 @@
 .phone-screen {
   position: relative;
   height: 100%;
+  /* Lets the message area shrink and scroll instead of pushing the decision
+     controls out of view, including at 200% zoom. */
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1268,6 +1296,8 @@
 }
 
 .phone-actions {
+  /* Never squeezed by a long message (see .phone-screen). */
+  flex-shrink: 0;
   padding: 12px 14px 16px;
   border-top: 1px solid #e7e1d7;
 }
@@ -1315,24 +1345,30 @@
   scale: calc(1 - 0.03 * var(--motion-scale));
 }
 
-.phone-actions-hint {
-  text-align: center;
+/* Every row of the controls is a `.phone-actions > div`, so it starts as that
+   rule's two-column grid, which is what the two decision buttons use. The
+   other rows opt out, and need `.phone-actions` in the selector to outrank
+   it. */
+.phone-actions > .phone-actions-hint {
+  display: block;
   margin-bottom: 8px;
+  text-align: center;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-muted-strong);
 }
 
-.phone-decision-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.phone-actions-hint span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.phone-conf-head {
+.phone-actions > .phone-conf-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
@@ -1343,17 +1379,22 @@
   color: #5a4f43;
 }
 
-.phone-change-btn {
+.phone-actions .phone-change-btn {
+  box-shadow: none;
+  padding: 4px 8px;
   font-size: 12px;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
 }
 
-.phone-conf-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+.phone-actions > .phone-conf-buttons {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .phone-conf-buttons button {
+  flex: 1 1 70px;
   min-height: 44px;
   padding: 6px 4px;
   font-size: 13px;
@@ -1371,6 +1412,7 @@
 
 .phone-decided {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: 7px;
@@ -1719,6 +1761,11 @@
 }
 
 @media (max-width: 540px) {
+  .train-primary,
+  .train-ghost {
+    white-space: normal;
+  }
+
   .train-header {
     width: calc(100% - 32px);
     min-height: 72px;
@@ -1745,15 +1792,15 @@
     margin: 0 -12px;
   }
 
-  .home-main,
-  .scenario-main {
-    width: calc(100% - 32px);
-    margin-top: 4px;
-  }
-
   .home-main {
     --space-section: 40px;
+    width: calc(100% - 32px);
     margin-top: 24px;
+  }
+
+  .scenario-main {
+    width: calc(100% - 24px);
+    margin-top: 4px;
   }
 
   .home-title {
@@ -1778,14 +1825,6 @@
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-  }
-
-  .home-stat-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .home-stat-grid > div:first-child {
-    grid-column: 1 / -1;
   }
 
   .home-channels li {
@@ -1818,12 +1857,24 @@
     max-width: 400px;
     aspect-ratio: auto;
     height: clamp(460px, calc(100svh - 120px), 680px);
-    padding: 7px;
-    border-radius: 36px;
+    padding: 5px;
+    border-radius: 28px;
+    box-shadow: 0 10px 26px -16px #3a2a1e59;
   }
 
   .phone-screen {
-    border-radius: 30px;
+    border-radius: 23px;
+  }
+
+  .phone-actions > .phone-decision-buttons {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .phone-decision-buttons button {
+    white-space: normal;
+    min-height: 46px;
+    flex: 1 1 110px;
   }
 
   .debrief-verdict h2 {
@@ -1916,6 +1967,14 @@ p.call-loading {
   gap: 8px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .debrief-clues > li,
+  .email-view,
+  .sms-typing span {
+    animation: none;
+  }
+}
+
 /* /caught: where practice links land */
 
 .caught-main {
@@ -1963,155 +2022,4 @@ p.call-loading {
     width: 56px;
     height: 56px;
   }
-}
-
-/* Keep decision controls visible while the message scrolls, including at 200%
-   zoom. */
-.phone-screen {
-  min-height: 0;
-}
-
-.phone-actions,
-.phone-decided {
-  flex-shrink: 0;
-}
-
-.phone-actions-hint span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.phone-conf-buttons {
-  flex-wrap: wrap;
-}
-
-.phone-conf-buttons > button {
-  min-height: 44px;
-}
-
-.scenario-meta {
-  flex-wrap: wrap;
-}
-
-@media (max-width: 540px) {
-  .scenario-main {
-    width: calc(100% - 24px);
-  }
-
-  .phone {
-    padding: 5px;
-    border-radius: 28px;
-    box-shadow: 0 10px 26px -16px #3a2a1e59;
-  }
-
-  .phone-screen {
-    border-radius: 23px;
-  }
-
-  .phone-decision-buttons {
-    flex-wrap: wrap;
-  }
-
-  .phone-decision-buttons button {
-    white-space: normal;
-    min-height: 46px;
-    flex: 1 1 110px;
-  }
-
-  .train-primary,
-  .train-ghost {
-    white-space: normal;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .debrief-clues > li,
-  .email-view,
-  .sms-typing span {
-    animation: none;
-  }
-}
-
-.phone-actions > .phone-actions-hint {
-  display: block;
-}
-
-.phone-actions > .phone-conf-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.phone-actions > .phone-conf-buttons {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.phone-conf-buttons > button {
-  flex: 1 1 70px;
-}
-
-.phone-actions .phone-change-btn {
-  box-shadow: none;
-  padding: 4px 8px;
-  font-size: 12px;
-  min-height: 44px;
-  background: transparent;
-  border: 0;
-}
-
-@media (max-width: 540px) {
-  .phone-actions > .phone-decision-buttons {
-    display: flex;
-    flex-wrap: wrap;
-  }
-}
-
-.home-flags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home-flags li {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-foreground) 6%, transparent);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.home-more {
-  margin-top: var(--space-section);
-  border-top: 1px solid var(--color-border);
-}
-
-.home-more summary {
-  display: flex;
-  align-items: center;
-  min-height: 52px;
-  cursor: pointer;
-  list-style: none;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.home-more summary::-webkit-details-marker {
-  display: none;
-}
-
-.home-more summary span {
-  margin-left: 8px;
-  font-weight: 400;
-  color: var(--color-muted-strong);
-  font-variant-numeric: tabular-nums;
-}
-
-.home-more .home-flags {
-  padding-bottom: 20px;
 }
