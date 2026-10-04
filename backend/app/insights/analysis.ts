@@ -1,5 +1,11 @@
-import { inferCategory } from '../training/progress.ts';
-import { fellForScam, ScamCategory, Tactic, type Channel, type Difficulty } from '../shared/vocabulary.ts';
+import { inferCategory } from "../training/progress.ts";
+import {
+  fellForScam,
+  ScamCategory,
+  Tactic,
+  type Channel,
+  type Difficulty,
+} from "../shared/vocabulary.ts";
 
 /** One scored attempt with what TigerData's behaviour events add to it. No message text, no transcript. */
 export interface AttemptRow {
@@ -32,8 +38,11 @@ export interface Stats {
   recentAccuracy: number | null;
 }
 
-export type Dimension = 'category' | 'tactic';
-export interface AreaStats extends Stats { dimension: Dimension; area: string }
+export type Dimension = "category" | "tactic";
+export interface AreaStats extends Stats {
+  dimension: Dimension;
+  area: string;
+}
 
 /** The pseudonymous aggregate summary of a user's training: the only thing analysed (and sent to Snowflake). */
 export interface TrainingSummary {
@@ -67,24 +76,29 @@ export interface Insights {
   behavioralPattern: string;
   recommendation: string;
   nextTrainingFocus: ScamCategory[];
-  source: 'snowflake' | 'fallback';
+  source: "snowflake" | "fallback";
   generatedAt: string;
   basedOn: { attempts: number };
 }
 
-const count = <T>(list: T[], test: (item: T) => boolean) => list.filter(test).length;
-const average = (values: number[]) => values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
-const accuracyOf = (list: AttemptRow[]) => count(list, (r) => r.success) / list.length;
+const count = <T>(list: T[], test: (item: T) => boolean) =>
+  list.filter(test).length;
+const average = (values: number[]) =>
+  values.length
+    ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
+    : null;
+const accuracyOf = (list: AttemptRow[]) =>
+  count(list, (r) => r.success) / list.length;
 
 function stats(list: AttemptRow[]): Stats {
-  const messages = list.filter((r) => r.channel !== 'call');
+  const messages = list.filter((r) => r.channel !== "call");
   const half = Math.floor(list.length / 2);
   return {
     attempts: list.length,
     correct: count(list, (r) => r.success),
     fellFor: count(list, (r) => fellForScam(r.outcome)),
     messageAttempts: messages.length,
-    reported: count(messages, (r) => r.outcome.startsWith('reported_')),
+    reported: count(messages, (r) => r.outcome.startsWith("reported_")),
     linkClicks: count(messages, (r) => r.linkClicked),
     senderChecks: count(messages, (r) => r.senderInspected),
     avgResponseMs: average(list.flatMap((r) => r.responseMs ?? [])),
@@ -95,20 +109,31 @@ function stats(list: AttemptRow[]): Stats {
 
 /** Aggregates scored attempts (any order) per scam category and per tactic. */
 export function summarize(rows: AttemptRow[]): TrainingSummary {
-  const ordered = [...rows].sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+  const ordered = [...rows].sort((a, b) =>
+    a.completedAt.localeCompare(b.completedAt),
+  );
   const groups = new Map<string, AttemptRow[]>();
-  const add = (key: string, row: AttemptRow) => { groups.set(key, [...groups.get(key) ?? [], row]); };
+  const add = (key: string, row: AttemptRow) => {
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  };
   const pairs = new Map<string, number>();
   for (const row of ordered) {
-    add(`category:${row.scamCategory ?? inferCategory({ id: row.scenarioId, title: row.scenarioTitle })}`, row);
-    const tactics = [...new Set(row.tactics)].filter((t) => Tactic.safeParse(t).success).sort();
+    add(
+      `category:${row.scamCategory ?? inferCategory({ id: row.scenarioId, title: row.scenarioTitle })}`,
+      row,
+    );
+    const tactics = [...new Set(row.tactics)]
+      .filter((t) => Tactic.safeParse(t).success)
+      .sort();
     for (const tactic of tactics) add(`tactic:${tactic}`, row);
     if (!row.success) {
-      for (const [i, a] of tactics.entries()) for (const b of tactics.slice(i + 1)) pairs.set(`${a}+${b}`, (pairs.get(`${a}+${b}`) ?? 0) + 1);
+      for (const [i, a] of tactics.entries())
+        for (const b of tactics.slice(i + 1))
+          pairs.set(`${a}+${b}`, (pairs.get(`${a}+${b}`) ?? 0) + 1);
     }
   }
   const areas = [...groups].map(([key, list]) => {
-    const [dimension, area] = key.split(':') as [Dimension, string];
+    const [dimension, area] = key.split(":") as [Dimension, string];
     return { dimension, area, ...stats(list) };
   });
   const level = (difficulty: Difficulty) => {
@@ -119,12 +144,22 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
   return {
     overall: stats(ordered),
     areas,
-    byDifficulty: { easy: level('easy'), medium: level('medium'), hard: level('hard') },
-    responseMs: {
-      correct: average(ordered.filter((r) => r.success).flatMap((r) => r.responseMs ?? [])),
-      fellFor: average(ordered.filter((r) => fellForScam(r.outcome)).flatMap((r) => r.responseMs ?? [])),
+    byDifficulty: {
+      easy: level("easy"),
+      medium: level("medium"),
+      hard: level("hard"),
     },
-    missedPair: topPair ? topPair[0].split('+') as [string, string] : null,
+    responseMs: {
+      correct: average(
+        ordered.filter((r) => r.success).flatMap((r) => r.responseMs ?? []),
+      ),
+      fellFor: average(
+        ordered
+          .filter((r) => fellForScam(r.outcome))
+          .flatMap((r) => r.responseMs ?? []),
+      ),
+    },
+    missedPair: topPair ? (topPair[0].split("+") as [string, string]) : null,
     repeatedMistakes: areas.filter((a) => a.fellFor >= 2).map((a) => a.area),
   };
 }
@@ -134,88 +169,188 @@ export function summarize(rows: AttemptRow[]): TrainingSummary {
  * Snowflake computes the same formula in SQL (snowflake.ts), so both sources rank areas alike.
  */
 export const weakness = (s: Stats) =>
-  0.6 * (1 - (s.correct + 1) / (s.attempts + 2)) + 0.3 * (s.fellFor / s.attempts) + 0.1 * (s.messageAttempts ? s.linkClicks / s.messageAttempts : 0);
+  0.6 * (1 - (s.correct + 1) / (s.attempts + 2)) +
+  0.3 * (s.fellFor / s.attempts) +
+  0.1 * (s.messageAttempts ? s.linkClicks / s.messageAttempts : 0);
 
-export const rankLocally = (summary: TrainingSummary): RankedArea[] => summary.areas.map((a) => ({
-  dimension: a.dimension, area: a.area, attempts: a.attempts, accuracy: a.correct / a.attempts, weakness: weakness(a),
-  trend: a.recentAccuracy !== null && a.earlierAccuracy !== null ? a.recentAccuracy - a.earlierAccuracy : null,
-}));
+export const rankLocally = (summary: TrainingSummary): RankedArea[] =>
+  summary.areas.map((a) => ({
+    dimension: a.dimension,
+    area: a.area,
+    attempts: a.attempts,
+    accuracy: a.correct / a.attempts,
+    weakness: weakness(a),
+    trend:
+      a.recentAccuracy !== null && a.earlierAccuracy !== null
+        ? a.recentAccuracy - a.earlierAccuracy
+        : null,
+  }));
 
 const categoryLabels: Record<ScamCategory, string> = {
-  banking: 'bank scams', government: 'government impersonation', shipping: 'delivery scams',
-  account_security: 'account security scams', workplace: 'workplace scams', promotional: 'prize and promo scams',
+  banking: "bank scams",
+  government: "government impersonation",
+  shipping: "delivery scams",
+  account_security: "account security scams",
+  workplace: "workplace scams",
+  promotional: "prize and promo scams",
 };
 const tacticLabels: Record<Tactic, string> = {
-  urgency: 'urgency pressure', authority: 'authority pressure', suspicious_link: 'suspicious links', otp_request: 'requests for a code',
-  info_request: 'requests for personal details', reward: 'promised rewards', fear: 'threats',
+  urgency: "urgency pressure",
+  authority: "authority pressure",
+  suspicious_link: "suspicious links",
+  otp_request: "requests for a code",
+  info_request: "requests for personal details",
+  reward: "promised rewards",
+  fear: "threats",
 };
 const tacticWords: Record<Tactic, string> = {
-  urgency: 'urgency', authority: 'authority', suspicious_link: 'a link', otp_request: 'a code request',
-  info_request: 'a request for details', reward: 'a reward', fear: 'a threat',
+  urgency: "urgency",
+  authority: "authority",
+  suspicious_link: "a link",
+  otp_request: "a code request",
+  info_request: "a request for details",
+  reward: "a reward",
+  fear: "a threat",
 };
 const tips: Record<Tactic, string> = {
-  urgency: 'When a message says you must act now, pause and check through a number or app you already trust.',
-  authority: 'A big title is not proof: confirm "the bank", "the CRA" or "your CEO" through a contact you look up yourself.',
-  suspicious_link: 'Read where a link really goes before you tap, and reach your accounts by typing the address yourself.',
-  otp_request: 'No real bank or service will ever ask you to read back a one-time code.',
-  info_request: 'Treat any unexpected request for personal details as a red flag, however friendly it sounds.',
-  reward: "If you didn't enter, you didn't win: a prize that costs a fee is a scam.",
-  fear: 'Threats of arrest or fines are pressure, not process. Hang up and check independently.',
+  urgency:
+    "When a message says you must act now, pause and check through a number or app you already trust.",
+  authority:
+    'A big title is not proof: confirm "the bank", "the CRA" or "your CEO" through a contact you look up yourself.',
+  suspicious_link:
+    "Read where a link really goes before you tap, and reach your accounts by typing the address yourself.",
+  otp_request:
+    "No real bank or service will ever ask you to read back a one-time code.",
+  info_request:
+    "Treat any unexpected request for personal details as a red flag, however friendly it sounds.",
+  reward:
+    "If you didn't enter, you didn't win: a prize that costs a fee is a scam.",
+  fear: "Threats of arrest or fines are pressure, not process. Hang up and check independently.",
 };
 
 export const areaLabel = (a: { dimension: Dimension; area: string }) =>
-  a.dimension === 'category' ? categoryLabels[a.area as ScamCategory] : tacticLabels[a.area as Tactic];
+  a.dimension === "category"
+    ? categoryLabels[a.area as ScamCategory]
+    : tacticLabels[a.area as Tactic];
 const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-const list = (items: string[]) => items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
-const pct = (n: number, d: number) => d ? n / d : 0;
+const list = (items: string[]) =>
+  items.length < 2
+    ? items.join("")
+    : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+const pct = (n: number, d: number) => (d ? n / d : 0);
 
 const WEAK = 0.4;
 const STRONG = 0.25;
 const COHORT_MIN = 5;
 
 /** The contract's analysis from ranked areas (Snowflake's or local), with backend-written text. */
-export function buildInsights(summary: TrainingSummary, ranked: RankedArea[], source: Insights['source'], now = new Date()): Insights {
-  const weak = ranked.filter((r) => r.weakness >= WEAK).sort((a, b) => b.weakness - a.weakness);
-  const strong = ranked.filter((r) => r.weakness <= STRONG && r.accuracy >= 0.75).sort((a, b) => a.weakness - b.weakness || b.attempts - a.attempts);
+export function buildInsights(
+  summary: TrainingSummary,
+  ranked: RankedArea[],
+  source: Insights["source"],
+  now = new Date(),
+): Insights {
+  const weak = ranked
+    .filter((r) => r.weakness >= WEAK)
+    .sort((a, b) => b.weakness - a.weakness);
+  const strong = ranked
+    .filter((r) => r.weakness <= STRONG && r.accuracy >= 0.75)
+    .sort((a, b) => a.weakness - b.weakness || b.attempts - a.attempts);
   const { overall } = summary;
-  const checksSender = overall.messageAttempts >= 2 && pct(overall.senderChecks, overall.messageAttempts) >= 0.5;
+  const checksSender =
+    overall.messageAttempts >= 2 &&
+    pct(overall.senderChecks, overall.messageAttempts) >= 0.5;
 
-  const categories = ranked.filter((r) => r.dimension === 'category');
-  const weakCategories = weak.filter((r) => r.dimension === 'category').map((r) => r.area as ScamCategory);
-  const untried = ScamCategory.options.filter((c) => !categories.some((r) => r.area === c));
-  const weakest = [...categories].sort((a, b) => b.weakness - a.weakness)[0]?.area as ScamCategory | undefined;
+  const categories = ranked.filter((r) => r.dimension === "category");
+  const weakCategories = weak
+    .filter((r) => r.dimension === "category")
+    .map((r) => r.area as ScamCategory);
+  const untried = ScamCategory.options.filter(
+    (c) => !categories.some((r) => r.area === c),
+  );
+  const weakest = [...categories].sort((a, b) => b.weakness - a.weakness)[0]
+    ?.area as ScamCategory | undefined;
   const focus = [...weakCategories, ...untried].slice(0, 3);
   const nextTrainingFocus = focus.length ? focus : weakest ? [weakest] : [];
 
   const pair = summary.missedPair;
-  const struggle = pair ? `you struggle when ${tacticWords[pair[0] as Tactic]} and ${tacticWords[pair[1] as Tactic]} are combined`
-    : weak[0] ? `you struggle with ${areaLabel(weak[0])}` : null;
+  const struggle = pair
+    ? `you struggle when ${tacticWords[pair[0] as Tactic]} and ${tacticWords[pair[1] as Tactic]} are combined`
+    : weak[0]
+      ? `you struggle with ${areaLabel(weak[0])}`
+      : null;
   const sentences = [
-    strong[0] && struggle ? `You consistently see through ${areaLabel(strong[0])}, but ${struggle}.`
-      : strong[0] ? `You consistently see through ${list(strong.slice(0, 2).map(areaLabel))}.`
-        : struggle ? `${capital(struggle)}.` : 'Your results are mixed so far, with no clear weak spot yet.',
+    strong[0] && struggle
+      ? `You consistently see through ${areaLabel(strong[0])}, but ${struggle}.`
+      : strong[0]
+        ? `You consistently see through ${list(strong.slice(0, 2).map(areaLabel))}.`
+        : struggle
+          ? `${capital(struggle)}.`
+          : "Your results are mixed so far, with no clear weak spot yet.",
   ];
-  const behind = weak.find((r) => (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 0) >= 0.6);
-  const ahead = strong.find((r) => (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 1) <= 0.3);
-  if (behind) sentences.push(`Compared with other trainees, you're weaker than most on ${areaLabel(behind)}.`);
-  else if (ahead) sentences.push(`Compared with other trainees, you're ahead of most on ${areaLabel(ahead)}.`);
+  const behind = weak.find(
+    (r) =>
+      (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 0) >= 0.6,
+  );
+  const ahead = strong.find(
+    (r) =>
+      (r.cohortSize ?? 0) >= COHORT_MIN && (r.cohortPercentile ?? 1) <= 0.3,
+  );
+  if (behind)
+    sentences.push(
+      `Compared with other trainees, you're weaker than most on ${areaLabel(behind)}.`,
+    );
+  else if (ahead)
+    sentences.push(
+      `Compared with other trainees, you're ahead of most on ${areaLabel(ahead)}.`,
+    );
   const { correct: rightMs, fellFor: fooledMs } = summary.responseMs;
   const { easy, hard } = summary.byDifficulty;
-  const trend = overall.recentAccuracy !== null && overall.earlierAccuracy !== null ? overall.recentAccuracy - overall.earlierAccuracy : 0;
-  if (rightMs && fooledMs && fooledMs < 0.7 * rightMs) sentences.push('You decide faster on the ones that fool you, so slowing down is your best defence.');
-  else if (hard.attempts >= 2 && pct(hard.correct, hard.attempts) < 0.5 && easy.attempts && pct(easy.correct, easy.attempts) >= 0.75) sentences.push('You handle the obvious ones well, but the more convincing scams still get through.');
-  else if (trend >= 0.15) sentences.push('Your recent attempts are more accurate than your early ones.');
-  else if (trend <= -0.15) sentences.push('Your recent attempts have slipped a little, so take the next few slowly.');
+  const trend =
+    overall.recentAccuracy !== null && overall.earlierAccuracy !== null
+      ? overall.recentAccuracy - overall.earlierAccuracy
+      : 0;
+  if (rightMs && fooledMs && fooledMs < 0.7 * rightMs)
+    sentences.push(
+      "You decide faster on the ones that fool you, so slowing down is your best defence.",
+    );
+  else if (
+    hard.attempts >= 2 &&
+    pct(hard.correct, hard.attempts) < 0.5 &&
+    easy.attempts &&
+    pct(easy.correct, easy.attempts) >= 0.75
+  )
+    sentences.push(
+      "You handle the obvious ones well, but the more convincing scams still get through.",
+    );
+  else if (trend >= 0.15)
+    sentences.push(
+      "Your recent attempts are more accurate than your early ones.",
+    );
+  else if (trend <= -0.15)
+    sentences.push(
+      "Your recent attempts have slipped a little, so take the next few slowly.",
+    );
 
-  const tip = (weak.find((r) => r.dimension === 'tactic')?.area ?? pair?.[0]) as Tactic | undefined;
-  const plan = weakCategories.length ? `Your next training should focus on ${list(weakCategories.slice(0, 2).map((c) => categoryLabels[c]))}.`
-    : untried.length ? `Next, try ${list(untried.slice(0, 2).map((c) => categoryLabels[c]))}: Tellio hasn't seen you handle those yet.`
-      : weakest ? `Keep practising ${categoryLabels[weakest]} at a harder level.` : '';
+  const tip = (weak.find((r) => r.dimension === "tactic")?.area ??
+    pair?.[0]) as Tactic | undefined;
+  const plan = weakCategories.length
+    ? `Your next training should focus on ${list(weakCategories.slice(0, 2).map((c) => categoryLabels[c]))}.`
+    : untried.length
+      ? `Next, try ${list(untried.slice(0, 2).map((c) => categoryLabels[c]))}: Tellio hasn't seen you handle those yet.`
+      : weakest
+        ? `Keep practising ${categoryLabels[weakest]} at a harder level.`
+        : "";
   return {
-    strongestAreas: [...strong.map(areaLabel), ...checksSender ? ['checking who a message is really from'] : []].slice(0, 3).map(capital),
+    strongestAreas: [
+      ...strong.map(areaLabel),
+      ...(checksSender ? ["checking who a message is really from"] : []),
+    ]
+      .slice(0, 3)
+      .map(capital),
     weakAreas: weak.slice(0, 3).map(areaLabel).map(capital),
-    behavioralPattern: sentences.slice(0, 3).join(' '),
-    recommendation: [plan, tip && tips[tip]].filter(Boolean).join(' '),
+    behavioralPattern: sentences.slice(0, 3).join(" "),
+    recommendation: [plan, tip && tips[tip]].filter(Boolean).join(" "),
     nextTrainingFocus,
     source,
     generatedAt: now.toISOString(),
@@ -224,8 +359,13 @@ export function buildInsights(summary: TrainingSummary, ranked: RankedArea[], so
 }
 
 export const emptyInsights = (now = new Date()): Insights => ({
-  strongestAreas: [], weakAreas: [],
+  strongestAreas: [],
+  weakAreas: [],
   behavioralPattern: "Tellio hasn't seen you handle a scam yet.",
-  recommendation: "Try a few scenarios and you'll see what you catch, and what catches you.",
-  nextTrainingFocus: [], source: 'fallback', generatedAt: now.toISOString(), basedOn: { attempts: 0 },
+  recommendation:
+    "Try a few scenarios and you'll see what you catch, and what catches you.",
+  nextTrainingFocus: [],
+  source: "fallback",
+  generatedAt: now.toISOString(),
+  basedOn: { attempts: 0 },
 });

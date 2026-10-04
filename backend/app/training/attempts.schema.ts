@@ -1,5 +1,11 @@
-import { z } from 'zod';
-import { Channel, Difficulty, Outcome, ScamCategory, Tactic } from '../shared/vocabulary.ts';
+import { z } from "zod";
+import {
+  Channel,
+  Difficulty,
+  Outcome,
+  ScamCategory,
+  Tactic,
+} from "../shared/vocabulary.ts";
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
@@ -18,24 +24,35 @@ export const attemptSchema = z.object({
   signals: z.array(text(40)).max(20),
   startedAt: z.iso.datetime({ offset: true }).nullable().default(null),
   completedAt: z.iso.datetime({ offset: true }),
-  durationSecs: z.number().nonnegative().max(86400).nullable().default(null).transform((v) => v === null ? null : Math.round(v)),
+  durationSecs: z
+    .number()
+    .nonnegative()
+    .max(86400)
+    .nullable()
+    .default(null)
+    .transform((v) => (v === null ? null : Math.round(v))),
   summary: z.string().max(4000).nullable().default(null),
-  transcript: z.array(z.object({
-    role: z.enum(['agent', 'user']),
-    message: z.string().max(4000),
-    timeInCallSecs: z.number().nonnegative(),
-  })).max(200).default([]),
+  transcript: z
+    .array(
+      z.object({
+        role: z.enum(["agent", "user"]),
+        message: z.string().max(4000),
+        timeInCallSecs: z.number().nonnegative(),
+      }),
+    )
+    .max(200)
+    .default([]),
 });
 export type AttemptInput = z.infer<typeof attemptSchema>;
 
 export interface AttemptSummary {
   id: string;
-  channel: AttemptInput['channel'];
+  channel: AttemptInput["channel"];
   scenarioId: string;
   scenarioTitle: string;
-  difficulty: AttemptInput['difficulty'];
-  scamCategory: AttemptInput['scamCategory'];
-  outcome: AttemptInput['outcome'];
+  difficulty: AttemptInput["difficulty"];
+  scamCategory: AttemptInput["scamCategory"];
+  outcome: AttemptInput["outcome"];
   success: boolean | null;
   tactics: string[];
   completedAt: string;
@@ -46,5 +63,5 @@ export interface AttemptDetail extends AttemptSummary {
   startedAt: string | null;
   durationSecs: number | null;
   summary: string | null;
-  transcript: AttemptInput['transcript'];
+  transcript: AttemptInput["transcript"];
 }
