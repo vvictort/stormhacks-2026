@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Check, Lightbulb } from 'lucide-react'
 import { m } from 'motion/react'
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { Mascot } from '../../../components/Mascot'
@@ -43,27 +43,23 @@ export function Debrief({ scenario, choice, inspected, next, learned }: DebriefP
       <p className="debrief-lede">{scenario.explanation}</p>
 
       <h3>{isScam ? `Red flags in this ${scenario.type === 'email' ? 'email' : 'message'}` : 'Why it checks out'}</h3>
-      <p className="debrief-hint">The numbers match the highlights on the phone.</p>
+      {/* Numbers match the highlights on the phone; the detail opens on tap. */}
       <ol className="debrief-clues">
         {scenario.indicators.map((indicator, i) => (
           <li key={indicator.title} style={{ '--n': i } as CSSProperties}>
-            <span className="clue-num" aria-hidden="true">{i + 1}</span>
-            <div>
-              <strong>{indicator.title}</strong>
+            <details>
+              <summary><span className="clue-num" aria-hidden="true">{i + 1}</span><strong>{indicator.title}</strong></summary>
               <p>{indicator.detail}</p>
-            </div>
+            </details>
           </li>
         ))}
       </ol>
 
       {!correct && (
-        <div className="debrief-next">
-          <h3>Next time</h3>
-          <p>{scenario.nextTime}</p>
-        </div>
+        <p className="debrief-tip"><Lightbulb size={16} aria-hidden="true" /><span><span className="sr-only">Next time: </span>{scenario.nextTime}</span></p>
       )}
       {inspected && hasLink(scenario) && (
-        <p className="debrief-habit">You checked the link before deciding. That's a habit worth keeping.</p>
+        <p className="debrief-habit"><Check size={14} aria-hidden="true" />You checked the link first. Good habit.</p>
       )}
 
       {learned}

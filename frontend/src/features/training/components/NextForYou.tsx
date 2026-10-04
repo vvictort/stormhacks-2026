@@ -88,14 +88,14 @@ export function LearnedPanel({ learning, attemptId }: { learning: Learning; atte
 
   return (
     <section className="learned" aria-labelledby="learned-title" aria-live="polite" aria-busy={learning.status === 'waiting'}>
-      <h3 id="learned-title">What Tellio learned from this</h3>
+      <h3 id="learned-title"><Sparkles size={14} aria-hidden="true" />What Tellio learned</h3>
       {learning.status === 'waiting'
-        ? <p className="learned-wait"><LoaderCircle size={16} className="spinner" aria-hidden="true" />Updating your training profile…</p>
+        ? <p className="learned-wait"><LoaderCircle size={16} className="spinner" aria-hidden="true" />Updating your profile…</p>
         : !view
-          ? <p>Tellio couldn't refresh your training profile just now. It'll catch up after your next scenario.</p>
+          ? <p className="learned-wait">Couldn't update your profile. It'll catch up next time.</p>
           : (
             <>
-              <ul className="learned-list">{view.lines.map((line) => <li key={line}>{line}</li>)}</ul>
+              <ul className="learned-list">{view.lines.slice(0, 2).map((line) => <li key={line}>{line}</li>)}</ul>
               {view.insight && (
                 <figure className="learned-insight">
                   <blockquote>{view.insight.pattern}</blockquote>
