@@ -40,6 +40,10 @@
   --motion-scale: 1;
 }
 
+/* Scrolling stays fully live (wheel, touch, keys); only the bar is hidden, here and in every inner scroller. */
+html { scroll-behavior: smooth; }
+* { scrollbar-width: none; }
+::-webkit-scrollbar { display: none; }
 body { margin: 0; min-width: 320px; }
 button, input { font: inherit; }
 button, a, input { -webkit-tap-highlight-color: transparent; }
@@ -165,6 +169,12 @@ h1:focus, #auth-content:focus { outline: none; }
 .auth-card:has(.session-loading) { animation: fade-in 200ms var(--ease-out-quint) 350ms backwards; }
 .reset-dialog[open] { --rise: 6px; animation: rise-in 240ms var(--ease-out-quint); }
 .reset-dialog[open]::backdrop { animation: fade-in 200ms var(--ease-out-quint); }
+/* Scroll reveal: below-the-fold content rises in as it enters the viewport.
+   Ending at "entry 100%" means anything fully on screen is fully shown, even at the
+   bottom of a page that can't scroll further. Unsupported browsers just show it. */
+@supports (animation-timeline: view()) {
+  .how-it-works > li { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+}
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fade-in { from { opacity: 0; } }
@@ -206,5 +216,6 @@ h1:focus, #auth-content:focus { outline: none; }
    instead of spinning, and the mascot stops wobbling. */
 @media (prefers-reduced-motion: reduce) {
   :root { --motion-scale: 0; }
+  html { scroll-behavior: auto; }
   .spinner { animation: pulse 700ms ease-in-out infinite alternate; }
 }
