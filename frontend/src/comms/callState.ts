@@ -90,3 +90,9 @@ export function microphoneErrorCode(error: unknown) {
     ? 'microphone_unavailable'
     : 'microphone_denied'
 }
+
+/**
+ * Hook stages in which the server-side call is still ringing: dropping the call there (caption practice, leaving the
+ * page, a new call) must abandon it, or comms would later sweep it into a result nobody earned.
+ */
+export const ringsOnServer = (stage: string) => stage === 'ringing' || stage === 'answering'

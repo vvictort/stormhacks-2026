@@ -37,6 +37,16 @@ Comms' internal `Outcome` → canonical training outcome, and whether the attemp
 Every completed comms `CallRecord` (declined, missed, analysed or error) carries
 `training: { outcome, success, difficulty }` with the canonical values above (`difficulty` as `easy|medium|hard`).
 
+### Abandoned calls (not scored, not posted)
+
+A call the browser gives up while it is still ringing is **abandoned**, not missed: the user switched to caption-only
+practice after `503 elevenlabs_not_configured` / `502 elevenlabs_error` or a microphone refusal, or left the page while
+it rang. `POST /comms/calls/:id/abandon` (owner only; `409 not_ringing` otherwise) completes it with comms outcome
+`error`, `error: "abandoned"` and `training: { outcome: "error", success: null, … }`, and comms does **not** post it
+to the backend. Comms' sweeper treats a call still ringing after 2 minutes the same way (tab closed, or stuck on a
+voice/mic error with the ring timer paused). Only the browser's ring timer reports a real `missed`
+(`POST /decline { reason: "missed" }`).
+
 Rule: every call scenario is a scam. Declining, missing/ignoring, or ending the call without sharing a code,
 payment, personal info or agreeing to act is a successful (resisted-type) outcome. Any compromising signal makes it
 `compromised` regardless of anything else.
@@ -64,6 +74,8 @@ payment, personal info or agreeing to act is a successful (resisted-type) outcom
 - `/ended` with an id that differs from the bound one → `409 conversation_mismatch`, and the call is not analysed
   with it. The call stays `in_call`, so the correct `/ended` (or comms' sweeper after the max call length) can still
   finish it. A call with no bound id is never analysed; it completes as `error`.
+- `POST /comms/calls/:id/abandon` → `200` call record (unscored, never posted; see above); `409 not_ringing` once the
+  call was answered, declined, missed or already abandoned.
 - `POST /comms/calls/:id/connected { conversationId }` → `200` call record; `409 conversation_mismatch` as above;
   `409 not_in_call` before accept. The browser sends it from `onConnect`.
 
@@ -97,6 +109,8 @@ payment, personal info or agreeing to act is a successful (resisted-type) outcom
 }
 ```
 Response `201 { id }`, or `200 { id, duplicate: true }` for a repeat `attemptId`. Body limit ≥ 256kb on this route.
+Limits: `summary` and each transcript `message` ≤ 4000 characters, `scenarioTitle` ≤ 200, ≤ 200 turns. Comms clips
+longer values (ending in `…`) before posting, so an oversize ElevenLabs summary never loses the attempt.
 
 ### `GET /api/internal/call-scenarios/:id?uid=<firebaseUid>` (comms → backend)
 
@@ -120,3 +134,4 @@ else `404`.
   `training` field or the backend attempt).
 - When ElevenLabs isn't configured (`503 elevenlabs_not_configured`) or comms is unreachable, the call scenario stays
   usable through a clearly labelled caption-only practice mode; those local demo results are stored in localStorage only.
+  Switching to practice from a ringing call, or leaving the page while it rings, abandons the comms call first.

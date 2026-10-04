@@ -1,7 +1,7 @@
 import { useConversation } from '@elevenlabs/react'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { comms } from './api'
-import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, type CallCaption, type CallPhase } from './callState'
+import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer, type CallCaption, type CallPhase } from './callState'
 import { CommsError, describeError, isAbortError } from './client'
 import { pollUntilCompleted } from './poll'
 import type { CallRecord, DeclineReason, Outcome } from './types'
@@ -24,7 +24,7 @@ export interface SimulatedCallHandle {
   decline: () => Promise<void>
   /** In call only. */
   hangUp: () => void
-  /** Not while connecting or in a call. */
+  /** Not while connecting or in a call. A call still ringing on the server is abandoned (unscored, never posted). */
   reset: () => void
   /** Leaving the page mid-call: ends the voice session and resolves once the server has been told (best effort). */
   leave: () => Promise<void>
@@ -45,6 +45,13 @@ interface Session {
 }
 
 const BUSY: Stage[] = ['starting', 'answering', 'in_call', 'analyzing']
+
+/** Drops a session whose call still rings on the server: comms closes it unscored (best effort, not tied to the session signal). */
+function abandonRinging(s: Session | null) {
+  if (!s?.callId || !ringsOnServer(s.stage)) return
+  s.stage = 'done'
+  comms.abandonCall(s.callId).catch(() => {})
+}
 
 /**
  * One simulated scam call: ring → accept/decline → voice session → post-call analysis.
@@ -133,6 +140,7 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
       const s = session.current
       if (!s) return
       s.abort.abort()
+      abandonRinging(s)
       if (s.callId && s.stage === 'in_call') {
         // Unmounted mid-call: our callbacks are gone, so hang up and report it here (best effort).
         s.stage = 'done'
@@ -146,6 +154,7 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     const prev = session.current
     if (prev && BUSY.includes(prev.stage)) return
     prev?.abort.abort()
+    abandonRinging(prev)
     const abort = new AbortController()
     const s: Session = {
       abort,
@@ -241,6 +250,8 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     const s = session.current
     if (s?.stage === 'answering' || s?.stage === 'in_call') return
     s?.abort.abort()
+    // Switching to caption practice from a ringing call (voice or microphone unavailable).
+    abandonRinging(s)
     session.current = null
     dispatch({ type: 'reset' })
   }, [])
@@ -249,6 +260,7 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     const s = session.current
     if (!s) return
     s.abort.abort()
+    abandonRinging(s)
     if (!s.callId || s.stage !== 'in_call') return
     s.stage = 'done'
     endSession()

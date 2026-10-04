@@ -140,6 +140,10 @@ export function createCommsClient({
     declineCall: (callId: string, reason: DeclineReason, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/decline`, { body: { reason }, signal }),
 
+    /** Ringing only: gives the call up (caption practice, leaving the page). Comms closes it unscored and never posts it. */
+    abandonCall: (callId: string, signal?: AbortSignal) =>
+      request<CallRecord>('POST', `/calls/${enc(callId)}/abandon`, { signal }),
+
     /** Binds the voice session's conversation id; a different id than the bound one is `409 conversation_mismatch`. */
     callConnected: (callId: string, conversationId: string, signal?: AbortSignal) =>
       request<CallRecord>('POST', `/calls/${enc(callId)}/connected`, { body: { conversationId }, signal }),

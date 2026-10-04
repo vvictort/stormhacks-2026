@@ -126,12 +126,13 @@ SSE events:
 |---|---|---|
 | `POST /comms/calls` | `{ scenarioId }`, or `{}` for a random sample | `201 { callId, callerLabel, call }`. Start ringing. `404 scenario_not_found` for an unknown id, `400` for any other key (e.g. `scenario`), `502 backend_unavailable` if a `gen-` lookup fails. |
 | `POST /comms/calls/:id/accept` | – | `{ conversationToken, conversationId, overrides }`. Returns `503 elevenlabs_not_configured` if ElevenLabs isn't configured. |
+| `POST /comms/calls/:id/abandon` | – | Call record, completed as an unscored `error` (`error: 'abandoned'`) and **not** posted to the backend. Send it when you drop a call that is still ringing (switching to caption practice, leaving the page). `409 not_ringing` otherwise. |
 | `POST /comms/calls/:id/connected` | `{ conversationId }` | Call record. Send from `onConnect`. `409 conversation_mismatch` if a different id is already bound, `409 not_in_call` before accept. |
 | `POST /comms/calls/:id/decline` | `{ reason: 'declined' \| 'missed' }` | Call record. Send `missed` when your ring timeout expires. |
 | `POST /comms/calls/:id/ended` | `{ conversationId? }` | `202`. Analysis runs in the background. `409 conversation_mismatch` if the id differs from the bound one (the call stays `in_call`). |
 | `GET /comms/calls/:id` | – | Call record. Poll every ~2 s while `status === 'analyzing'`. |
 
-`status` moves through `ringing` → `in_call` → `analyzing` → `completed`, or straight from `ringing` to `completed` if declined or missed. `outcome` and `training` are set once the status is `completed`.
+`status` moves through `ringing` → `in_call` → `analyzing` → `completed`, or straight from `ringing` to `completed` if declined, missed or abandoned. A call still ringing after 2 minutes (tab closed, or stuck on a voice/mic error) is abandoned by the sweeper, not missed: only your ring timer reports a real miss. `outcome` and `training` are set once the status is `completed`.
 
 **Scenarios are server-owned.** Fixed ones (`fixtures/scenarios/call-*.json`):
 
@@ -159,7 +160,7 @@ SSE events:
 
 `difficulty` is `easy` / `medium` / `hard` for 1 / 2 / 3.
 
-**Results to the backend.** When a call reaches `completed`, comms posts the contract's `training-attempts` body to `${BACKEND_INTERNAL_URL}/api/internal/training-attempts` with `X-Internal-Token`: uid from the verified token, the redacted transcript only (max 200 turns), canonical outcome/success/difficulty. It's fire-and-forget with one retry on a network error or 5xx and never affects the call. `INTERNAL_API_TOKEN` must match the backend's and be at least 32 characters (`openssl rand -hex 32`); the backend answers `201 { id }`, or `200 { id, duplicate: true }` for a repeat, and both count as success. If either env var is unset, comms logs once and keeps results local; the JSONL events below are written either way.
+**Results to the backend.** When a call reaches `completed`, comms posts the contract's `training-attempts` body to `${BACKEND_INTERNAL_URL}/api/internal/training-attempts` with `X-Internal-Token`: uid from the verified token, the redacted transcript only (max 200 turns), canonical outcome/success/difficulty. Text is clipped to the backend's limits first (summary and each turn ≤ 4000 characters, title ≤ 200). Abandoned calls are never posted. It's fire-and-forget with one retry on a network error or 5xx and never affects the call. `INTERNAL_API_TOKEN` must match the backend's and be at least 32 characters (`openssl rand -hex 32`); the backend answers `201 { id }`, or `200 { id, duplicate: true }` for a repeat, and both count as success. If either env var is unset, comms logs once and keeps results local; the JSONL events below are written either way.
 
 If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two things:
 - `useConversation` must be rendered inside `<ConversationProvider>`.
@@ -197,7 +198,7 @@ If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two 
 | `text.reported` | – |
 | `text.thread_ended` | `outcome, reason, signals, scammerTurns, userReplies, durationMs` |
 | `call.ringing` | `callerLabel, difficulty` |
-| `call.accepted` / `call.declined` / `call.missed` | `ringMs` |
+| `call.accepted` / `call.declined` / `call.missed` / `call.abandoned` | `ringMs` |
 | `call.ended` | `conversationId` |
 | `call.analyzed` | `outcome, signals, resisted, durationSecs, terminationReason, dataCollection, summary, transcript` |
 | `call.failed` | `error` |

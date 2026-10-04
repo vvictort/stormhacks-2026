@@ -15,7 +15,7 @@ The contract between the frontend, the comms service and the backend is `docs/ca
 - `CallExperience` mounts `<ConversationProvider>` once per call run (keyed by scenario id), around `useSimulatedCall()`. The provider must not unmount mid-call.
 - Results: components never decide success. Read it through `features/training/callOutcome.ts` (`readCallResult`), which takes comms' `training` field or the backend attempt and holds the contract table as a safety net.
 - Screens: `call/callModel.ts` maps the hook state to a screen (`callScreen`), decides when to offer caption-only practice (`offersPractice`) and builds the debrief view model. Keep that logic there, pure and tested.
-- When live voice is unavailable (`503 elevenlabs_not_configured`, comms unreachable, no microphone), the call stays playable in caption-only practice mode. Those results go to localStorage only.
+- When live voice is unavailable (`503 elevenlabs_not_configured`, comms unreachable, no microphone), the call stays playable in caption-only practice mode. Those results go to localStorage only. Dropping a call that still rings on the server (practice mode, leaving the page, a new call) abandons it (`comms.abandonCall`, done inside `useSimulatedCall`), so comms never turns it into a scored "missed" attempt.
 - Live captions are never stored or shown after the call; the debrief uses the redacted transcript from the backend attempt (`GET /api/training/attempts/:callId`) or the comms record.
 - Navigation: while a call is connecting or live, `lib/navigationGuard.ts` makes `TransitionLink`, `Brand` and Sign out ask first. Use `TransitionLink` (not a bare `Link`) for in-app links so they're guarded.
 

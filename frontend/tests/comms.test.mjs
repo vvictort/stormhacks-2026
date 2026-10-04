@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { initialThreadState, parseThreadEvent, threadReducer, threadStatus } from '../src/comms/threadState.ts'
-import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode } from '../src/comms/callState.ts'
+import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer } from '../src/comms/callState.ts'
 import { CommsError, createCommsClient, describeError } from '../src/comms/client.ts'
 
 const T = 'thread-1'
@@ -325,4 +325,21 @@ test('microphone checks: insecure context and missing API are caught before aski
   assert.equal(microphoneErrorCode(named('NotFoundError')), 'microphone_unavailable')
   assert.equal(microphoneErrorCode(named('NotReadableError')), 'microphone_unavailable')
   assert.equal(microphoneErrorCode('weird'), 'microphone_denied')
+})
+
+test('abandonCall gives up a ringing call with an authenticated, body-less POST', async () => {
+  const abandoned = { ...callRecord('completed'), error: 'abandoned', training: { outcome: 'error', success: null, difficulty: 'medium' } }
+  const { client, calls } = fakeClient([json(200, abandoned), json(409, { error: 'not_ringing' })])
+  assert.deepEqual((await client.abandonCall('call 1')).training, { outcome: 'error', success: null, difficulty: 'medium' })
+  assert.equal(calls[0].url, '/comms/calls/call%201/abandon')
+  assert.equal(calls[0].method, 'POST')
+  assert.equal(calls[0].headers.authorization, 'Bearer cached-token')
+  assert.equal(calls[0].body, undefined)
+  await assert.rejects(client.abandonCall('call-1'), (error) => describeError(error) === 'not_ringing')
+})
+
+test('only stages where the server call still rings are abandoned when the call is dropped', () => {
+  for (const stage of ['ringing', 'answering']) assert.equal(ringsOnServer(stage), true, stage)
+  // starting: no call yet; in_call/analyzing: reported via /ended; done: already settled.
+  for (const stage of ['starting', 'in_call', 'analyzing', 'done']) assert.equal(ringsOnServer(stage), false, stage)
 })
