@@ -17,6 +17,12 @@ npm run dev               # http://localhost:3001/comms
 npm run typecheck
 ```
 
+**Getting an ElevenLabs API key:**
+1. Sign up or log in at [elevenlabs.io](https://elevenlabs.io). The free plan is enough for testing.
+2. Open [Settings → API Keys](https://elevenlabs.io/app/settings/api-keys) and click **Create API Key**.
+3. Name the key (e.g. `comms-dev`). Leaving **Restrict Key** off is simplest. If you turn it on, give the key **Write** access to **ElevenLabs Agents** (called **Conversational AI** on older dashboards). That access is needed to create and update the agent, issue call tokens, and read conversations. You can also set a credit limit so testing can't use up the account's credits.
+4. Copy the key right away, because the dashboard only shows it once. It is server-only: keep it in `.env` (gitignored) and never put it in frontend code.
+
 **Calls, one-time setup:**
 1. Put `ELEVENLABS_API_KEY` in `.env`.
 2. Run `npm run setup:agent`.
