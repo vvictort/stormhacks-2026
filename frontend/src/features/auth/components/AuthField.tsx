@@ -6,15 +6,20 @@ export interface AuthFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string
   hint?: string
   trailingAction?: ReactNode
+  /** Shown at the right end of the label row, e.g. "Forgot password?". */
+  labelAction?: ReactNode
 }
 
-export function AuthField({ id, label, error, hint, trailingAction, className = '', ...inputProps }: AuthFieldProps) {
+export function AuthField({ id, label, error, hint, trailingAction, labelAction, className = '', ...inputProps }: AuthFieldProps) {
   // The error takes the hint's place, so describe the field by whichever is showing.
   const description = error ? `${id}-error` : hint ? `${id}-hint` : undefined
 
   return (
     <div className="form-field">
-      <label htmlFor={id}>{label}</label>
+      <div className="field-label-row">
+        <label htmlFor={id}>{label}</label>
+        {labelAction}
+      </div>
       <div className="input-wrap">
         <input
           {...inputProps}
