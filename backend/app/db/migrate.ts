@@ -1,8 +1,8 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
-import { createDatabase, transaction, type Database } from './database.js';
-import 'dotenv/config';
+import { createDatabase, transaction, type Database } from './database.ts';
+import { loadConfig } from '../core/config.ts';
 
 // resolve from project root so migrations also work with the compiled CLI.
 export async function migrate(db: Database) {
@@ -21,7 +21,6 @@ export async function migrate(db: Database) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
-  const db = createDatabase(process.env.DATABASE_URL);
+  const db = createDatabase(loadConfig().DATABASE_URL);
   try { await migrate(db); console.info('Migrations applied.'); } finally { await db.end(); }
 }

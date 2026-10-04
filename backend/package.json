@@ -5,17 +5,24 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch app/main.ts",
-    "start": "tsx app/main.ts",
+    "start": "node --import tsx app/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test \"tests/**/*.test.ts\""
+    "test": "node --import tsx --test tests/*.test.ts",
+    "migrate": "node --import tsx app/db/migrate.ts"
   },
   "dependencies": {
     "express": "^5.2.1",
-    "firebase-admin": "^14.5.0"
+    "firebase-admin": "^14.5.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.0",
+    "zod": "^4.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^24.19.1",
+    "@types/pg": "^8.15.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.2"
   }
