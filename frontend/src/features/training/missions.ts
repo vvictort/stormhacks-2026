@@ -46,7 +46,7 @@ export function createMission(progress: Progress, difficulty: Difficulty, id: st
   return { id, scenarioIds: [...ids.slice(rotation), ...ids.slice(0, rotation)], completed: [], ready: false }
 }
 
-/** Replaces only the email scam; never discards the selected mission or its completed steps. */
+/** Personalizes the selected email; a genuine result keeps mixed-channel missions balanced. */
 export function prepareMission(state: Adventure, missionId: string, generated?: EmailScenario): Adventure {
   const mission = state.mission
   if (!mission || mission.id !== missionId || mission.ready) return state
@@ -57,6 +57,16 @@ export function prepareMission(state: Adventure, missionId: string, generated?: 
     if (index >= 0) {
       scenarioIds[index] = generated.id
       selectedEmail = generated
+      if (generated.correctAction === 'safe' && scenarioIds.some(id => scenarios.some(s => s.id === id && s.type === 'call'))) {
+        const textIndex = scenarioIds.findIndex(id => scenarios.some(s => s.id === id && s.type === 'sms' && s.correctAction === 'safe'))
+        if (textIndex >= 0) {
+          const text = scenarios.find(s => s.id === scenarioIds[textIndex])!
+          const levels = ['easy', 'medium', 'hard']
+          const candidates = scenarios.filter(s => s.type === 'sms' && s.correctAction === 'report')
+          candidates.sort((a, b) => Math.abs(levels.indexOf(a.difficulty) - levels.indexOf(text.difficulty)) - Math.abs(levels.indexOf(b.difficulty) - levels.indexOf(text.difficulty)))
+          if (candidates.length) scenarioIds[textIndex] = candidates[0].id
+        }
+      }
     }
   }
   return { ...state, mission: { ...mission, scenarioIds, ready: true, ...(selectedEmail ? { generated: selectedEmail } : {}) } }
@@ -108,7 +118,7 @@ export function readAdventure(raw: string | null): Adventure | null {
       const g = m.generated
       if (g) {
         const fields = ['title', 'summary', 'situation', 'fromName', 'fromAddress', 'subject', 'receivedAt', 'explanation', 'nextTime']
-        if (g.type !== 'email' || typeof g.id !== 'string' || !g.id.startsWith('gen-email-') || g.correctAction !== 'report' || !['easy', 'medium', 'hard'].includes(g.difficulty) || !strings(g.body) || !g.body.length || fields.some(key => typeof g[key] !== 'string') || !Array.isArray(g.indicators) || g.indicators.some((i: { title?: unknown; detail?: unknown; quote?: unknown } | null) => !i || typeof i.title !== 'string' || typeof i.detail !== 'string' || (i.quote !== undefined && typeof i.quote !== 'string')) || (g.links !== undefined && !strings(g.links))) return null
+        if (g.type !== 'email' || typeof g.id !== 'string' || !g.id.startsWith('gen-email-') || !['report', 'safe'].includes(g.correctAction) || !['easy', 'medium', 'hard'].includes(g.difficulty) || !strings(g.body) || !g.body.length || fields.some(key => typeof g[key] !== 'string') || !Array.isArray(g.indicators) || g.indicators.some((i: { title?: unknown; detail?: unknown; quote?: unknown } | null) => !i || typeof i.title !== 'string' || typeof i.detail !== 'string' || (i.quote !== undefined && typeof i.quote !== 'string')) || (g.links !== undefined && !strings(g.links))) return null
       }
       if (m.scenarioIds.some((id: string) => id !== m.generated?.id && !scenarios.some(s => s.id === id))) return null
     }

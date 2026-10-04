@@ -47,6 +47,27 @@ test('mission calls prefer an untried call near the learner’s difficulty', () 
   const mission = createMission(progress, 'medium', 'call-ranking')
   assert(mission.scenarioIds.includes(calls[1].id))
 })
+test('a generated genuine email keeps a mixed-channel mission balanced and restores through reload', () => {
+  for (const difficulty of ['easy', 'medium', 'hard']) {
+    const mission = createMission({}, difficulty, 'b')
+    const original = scenarios.find(s => s.type === 'email' && s.correctAction === 'safe')
+    const generated = { ...original, id: 'gen-email-genuine' }
+    let state = prepareMission({ ...emptyAdventure(), mission }, mission.id, generated)
+    const selected = state.mission.scenarioIds.map(id => id === generated.id ? generated : scenarios.find(s => s.id === id))
+    assert.deepEqual(new Set(selected.map(s => s.type)), new Set(['sms', 'email', 'call']))
+    assert.equal(selected.filter(s => s.correctAction === 'safe').length, 1)
+    assert.equal(selected.find(s => s.type === 'sms').difficulty, difficulty)
+    assert.deepEqual(readAdventure(JSON.stringify(state)), state)
+    while (!missionComplete(state.mission)) {
+      const scenarioId = missionNext(state.mission)
+      state = completeAdventure(state, { attemptId: `genuine-${scenarioId}`, scenarioId, correct: true, scam: scenarioId !== generated.id, previouslyMissed: false, missionId: mission.id, at: 400 })
+      assert.deepEqual(readAdventure(JSON.stringify(state)), state)
+    }
+    assert.equal(state.completedMissions, 1)
+    const corrupt = { ...state, mission: { ...state.mission, generated: { ...generated, correctAction: 'unknown' } } }
+    assert.equal(readAdventure(JSON.stringify(corrupt)), null)
+  }
+})
 test('incorrect decisions still complete all three steps and earn First Steps once', () => {
   let state = fixture()
   const first = state.mission.scenarioIds[0]

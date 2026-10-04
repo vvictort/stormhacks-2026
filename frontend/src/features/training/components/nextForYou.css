@@ -3,13 +3,18 @@
 .next-for-you h2 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--color-primary-strong); }
 .next-for-you .next-title { margin: 0 0 6px; font-family: var(--font-editorial); font-size: 24px; line-height: 1.25; letter-spacing: -0.02em; color: var(--color-foreground); text-wrap: balance; }
 .next-for-you p { max-width: 46ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); text-wrap: pretty; }
-.next-for-you .next-level { margin-top: 6px; font-size: 14px; }
+.next-for-you .next-level { margin-top: 8px; font-size: 14px; }
 .next-for-you .next-level strong { color: var(--color-foreground); font-weight: 600; }
-.next-for-you .scam-profile-skeleton { margin: 6px 0 4px; }
+/* Holds the text's height while it loads, so the Start button doesn't jump under the pointer. */
+.next-for-you .scam-profile-skeleton { align-content: start; min-height: 122px; padding: 8px 56px 0 0; max-width: 46ch; }
+.next-for-you .train-primary { min-height: 52px; padding: 14px 28px; font-size: 16px; }
 
-.made-for-you { margin-top: 18px; }
-.made-for-you-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.made-for-you { margin-top: 24px; }
+.made-for-you-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
 .made-for-you button:disabled { cursor: progress; }
+/* The quiet alternative: ink instead of the accent, with a standing underline so it still reads as a link. */
+.made-for-you-call { gap: 7px; min-height: 44px; font-size: 14px; font-weight: 500; color: var(--color-foreground); text-decoration-color: var(--color-control); }
+.made-for-you-call:active:not(:disabled) { color: var(--color-foreground); }
 .made-for-you-error { margin-top: 12px; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--color-accent-strong); }
 .made-for-you-error .text-link { display: inline-flex; align-items: center; gap: 4px; }
 .made-for-you-status:not(:empty) { margin-top: 12px; font-size: 13px; line-height: 1.6; color: var(--color-muted-strong); }

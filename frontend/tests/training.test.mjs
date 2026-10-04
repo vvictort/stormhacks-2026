@@ -101,7 +101,14 @@ test('history keeps every attempt and old saves without history still load', () 
 
 test('the real scenarios cover every difficulty and both answers', () => {
   for (const difficulty of ['easy', 'medium', 'hard']) assert.ok(scenarios.some((scenario) => scenario.difficulty === difficulty), difficulty)
-  assert.ok(scenarios.filter((scenario) => scenario.correctAction === 'safe').length >= 2)
+  // "Report" must not be the right answer nearly every time, or the path teaches a habit instead of a judgment.
+  const messages = scenarios.filter((scenario) => scenario.type !== 'call')
+  for (const type of ['sms', 'email']) {
+    const ofType = messages.filter((scenario) => scenario.type === type)
+    assert.ok(ofType.filter((scenario) => scenario.correctAction === 'safe').length / ofType.length >= 0.4, `${type}: at least 40% genuine`)
+  }
+  const answers = messages.map((scenario) => scenario.correctAction).join(' ')
+  assert.doesNotMatch(answers, /(report ?){3}|(safe ?){3}/, 'never three of the same answer in a row')
   assert.equal(recommend({})?.difficulty, 'easy')
 })
 

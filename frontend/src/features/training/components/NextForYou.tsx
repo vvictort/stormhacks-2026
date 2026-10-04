@@ -95,18 +95,17 @@ export function MadeForYouActions({ difficulty, label, withCall = false, variant
 export function NextForYou({ adaptive, localLevel, loading }: { adaptive: Adaptive | null; localLevel: Difficulty; loading: boolean }) {
   const next = nextForYou(adaptive, localLevel)
   return (
-    <section className="next-for-you" aria-labelledby="next-title" aria-busy={loading}>
-      <h2 id="next-title">Next for you</h2>
+    <section className="next-for-you" aria-label="Next for you" aria-busy={loading}>
       {loading
         ? <div className="scam-profile-skeleton" aria-hidden="true"><span /><span /><span /></div>
         : (
           <>
-            <p className="next-title">{next.title}</p>
+            <h2 className="next-title">{next.title}</h2>
             <p>{next.reason}</p>
             <p className="next-level">Difficulty: <strong>{levelName(next.difficulty)}</strong></p>
           </>
         )}
-      <MadeForYouActions difficulty={next.difficulty} label="Start it" withCall />
+      <MadeForYouActions difficulty={next.difficulty} label="Start practice" withCall />
     </section>
   )
 }
