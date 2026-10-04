@@ -34,6 +34,9 @@ Comms' internal `Outcome` → canonical training outcome, and whether the attemp
 | `missed`       | `missed`     | true    |
 | `error`        | `error`      | null (not scored) |
 
+Every completed comms `CallRecord` (declined, missed, analysed or error) carries
+`training: { outcome, success, difficulty }` with the canonical values above (`difficulty` as `easy|medium|hard`).
+
 Rule: every call scenario is a scam. Declining, missing/ignoring, or ending the call without sharing a code,
 payment, personal info or agreeing to act is a successful (resisted-type) outcome. Any compromising signal makes it
 `compromised` regardless of anything else.
@@ -41,7 +44,8 @@ payment, personal info or agreeing to act is a successful (resisted-type) outcom
 ## Call scenarios are server-owned
 
 - Clients start calls with `{ scenarioId }` only. Any `scenario` object in the body is rejected (`400`).
-- Unknown ids → `404 scenario_not_found`.
+- Unknown ids → `404 scenario_not_found`. If the backend lookup for a `gen-` id fails (network, 5xx, invalid
+  shape) comms answers `502 backend_unavailable`.
 - Fixed scenarios live in `backend/comms/fixtures/scenarios/call-*.json`. Ids (frontend metadata uses the same ids):
   - `bank-fraud-dept-otp-1`: bank fraud department asks for a verification code (difficulty 2 / medium)
   - `cra-tax-arrears-1`: CRA impersonation demanding payment (2 / medium)
@@ -58,11 +62,15 @@ payment, personal info or agreeing to act is a successful (resisted-type) outcom
 - If the token has none, the **first** id reported by the browser (`POST /comms/calls/:id/connected` or `/ended`)
   binds it; any later different id is rejected with `409 conversation_mismatch`.
 - `/ended` with an id that differs from the bound one → `409 conversation_mismatch`, and the call is not analysed
-  with it.
+  with it. The call stays `in_call`, so the correct `/ended` (or comms' sweeper after the max call length) can still
+  finish it. A call with no bound id is never analysed; it completes as `error`.
+- `POST /comms/calls/:id/connected { conversationId }` → `200` call record; `409 conversation_mismatch` as above;
+  `409 not_in_call` before accept. The browser sends it from `onConnect`.
 
 ## Internal boundary (comms ↔ backend API)
 
-- Shared secret header `X-Internal-Token: <INTERNAL_API_TOKEN>` (env var on both services, never sent to browsers).
+- Shared secret header `X-Internal-Token: <INTERNAL_API_TOKEN>` (env var on both services, never sent to browsers;
+  at least 32 characters, e.g. `openssl rand -hex 32`, or the service refuses to start).
 - Backend internal routes are mounted under `/api/internal/*`, skip the browser Origin/JSON-from-app checks, use a
   timing-safe secret comparison, and return `404` for every request when `INTERNAL_API_TOKEN` is unset (fail closed).
 - Comms posts results only when both `BACKEND_INTERNAL_URL` and `INTERNAL_API_TOKEN` are set; otherwise it logs once
