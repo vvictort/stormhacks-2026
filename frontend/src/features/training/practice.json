@@ -1,0 +1,828 @@
+{
+  "emails": [
+    {
+      "id": "lib-email-a6b654ddfb30",
+      "type": "email",
+      "title": "Prize and offer email from Northern Lights Giveaways",
+      "summary": "An email from Northern Lights Giveaways that wants you to act.",
+      "situation": "This email from Northern Lights Giveaways lands in your inbox.",
+      "difficulty": "easy",
+      "correctAction": "report",
+      "fromName": "Northern Lights Giveaways",
+      "fromAddress": "winners@nlgiveaways-prize.com",
+      "subject": "Hello rsharp2 ! You're a Winner",
+      "receivedAt": "6:-13 PM",
+      "body": [
+        "**You're Bahama Bound! ** Dear Customer, Congratulations youre a winner! Youve won a chance to receive an all expense paid Florida Vacation. The grand prize will included 5 days and 4 night in Magical Orlando, Florida at a world class resort. But wait there's more!",
+        "You'll also receive a 3 day 2 night round trip cruise to the Bahamas with all of your meals and entertainment included aboard the ship. You'll also receive a 3 day 2 night weekend getaway for 2 in any one of 32 destinations around the world.",
+        "Youll really enjoy your weekend getaway because you can take it any time in the next 18 months. To enter to win your prize just come to our website and register. Click here Thanks for entering our contest and we look forward to seeing you soon. Sincerely, Customer P.S. Youve got to hurry.",
+        "If you claim your weekend getaway in 24 hours you will also be entered to receive 2 round trip airline tickets. So dont wait, Click here today. To be excluded from future prizes Click here",
+        "Northern Lights Giveaways"
+      ],
+      "links": [
+        "https://nlgiveaways-prize.com/verify"
+      ],
+      "indicators": [
+        {
+          "quote": "nlgiveaways-prize.com",
+          "title": "An address that isn't theirs",
+          "detail": "The name says Northern Lights Giveaways, but anyone can register an address like nlgiveaways-prize.com. Check the sender against the organisation's real website."
+        },
+        {
+          "quote": "Congratulations",
+          "title": "Something for nothing",
+          "detail": "A prize, refund or payout out of nowhere is bait. If you didn't enter, you didn't win."
+        },
+        {
+          "quote": "Click here",
+          "title": "A link to click",
+          "detail": "A button or link in a surprise email can lead to a look-alike page. Go to the real site yourself."
+        },
+        {
+          "quote": "https://nlgiveaways-prize.com/verify",
+          "title": "A link to the same fake site",
+          "detail": "The button goes to nlgiveaways-prize.com, the same look-alike address the email came from, not the organisation's real website."
+        }
+      ],
+      "explanation": "This is a prize and offer phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.",
+      "nextTime": "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
+      "scamCategory": "promotional",
+      "tactics": [
+        "suspicious_link",
+        "reward"
+      ],
+      "generated": {
+        "source": "fallback",
+        "reason": "Adapted from a real phishing email in a public dataset (CC BY-SA 4.0), with every name and link swapped for invented ones."
+      }
+    },
+    {
+      "id": "lib-email-335264f4a81e",
+      "type": "email",
+      "title": "Delivery email from Swiftline Courier",
+      "summary": "An email from Swiftline Courier that wants you to act.",
+      "situation": "This email from Swiftline Courier lands in your inbox.",
+      "difficulty": "easy",
+      "correctAction": "report",
+      "fromName": "Swiftline Courier",
+      "fromAddress": "tracking@swiftline-delivery-notice.com",
+      "subject": "A message from Swiftline Courier",
+      "receivedAt": "3:-31 PM",
+      "body": [
+        "DELIVERY NOTIFICATION,Dear Customer, We attempted to deliver your item at 10:10 AM on Jan 17, 2019. The delivery attempt failed because nobody was present at the shipping address, so this notification has been automatically sent.",
+        "If the parcel is not scheduled for redelivery or picked up within 72 hours, it will be returned to the sender.",
+        "Label Number: DHL7567351D Expected Delivery Date: Jan 17, 2019 Recipient Email: user@mail.example Class: Package Services Service(s): Delivery Confirmation Status: eNotification sent Click Here To Confirm Shipping Address Thank You For Helping Us Serve You. 2019 © Swiftline Courier Customer Service.",
+        "Swiftline Courier"
+      ],
+      "links": [
+        "https://swiftline-delivery-notice.com/verify"
+      ],
+      "indicators": [
+        {
+          "quote": "swiftline-delivery-notice.com",
+          "title": "An address that isn't theirs",
+          "detail": "The name says Swiftline Courier, but anyone can register an address like swiftline-delivery-notice.com. Check the sender against the organisation's real website."
+        },
+        {
+          "quote": "within 72 hours",
+          "title": "A deadline to rush you",
+          "detail": "A countdown is there to make you act before you stop and check."
+        },
+        {
+          "quote": "Click Here",
+          "title": "A link to click",
+          "detail": "A button or link in a surprise email can lead to a look-alike page. Go to the real site yourself."
+        },
+        {
+          "quote": "Swiftline Courier Customer Service",
+          "title": "Borrowing a trusted name",
+          "detail": "The email leans on a name you would trust. Check with that organisation yourself, not through this message."
+        },
+        {
+          "quote": "https://swiftline-delivery-notice.com/verify",
+          "title": "A link to the same fake site",
+          "detail": "The button goes to swiftline-delivery-notice.com, the same look-alike address the email came from, not the organisation's real website."
+        }
+      ],
+      "explanation": "This is a delivery phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.",
+      "nextTime": "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
+      "scamCategory": "shipping",
+      "tactics": [
+        "suspicious_link",
+        "urgency"
+      ],
+      "generated": {
+        "source": "fallback",
+        "reason": "Adapted from a real phishing email in a public dataset (CC BY-SA 4.0), with every name and link swapped for invented ones."
+      }
+    },
+    {
+      "id": "lib-email-b2fc6048da88",
+      "type": "email",
+      "title": "Bank and card email from Maple Ridge Credit Union",
+      "summary": "An email from Maple Ridge Credit Union that wants you to act.",
+      "situation": "This email from Maple Ridge Credit Union lands in your inbox.",
+      "difficulty": "medium",
+      "correctAction": "report",
+      "fromName": "Maple Ridge Credit Union",
+      "fromAddress": "alerts@mapleridge-cu-secure.com",
+      "subject": "Your Debit Card Transaction Refunds.",
+      "receivedAt": "6:17 AM",
+      "body": [
+        "Dear Valued Customer We discovered a duplicate charges on your recent transactions and a refund process has been initiated. To begin, Please follow the link below our Electronic proof of notificationand follow as instructed. Click Here to get a refund.",
+        "Maple Ridge Credit Union Security | Terms of Use 2019 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ This service email gives you updates and information about your Maple Ridge Credit Union relationship. Your privacy is important to us. © 2019 Maple Ridge Credit Union Maple Ridge Credit Union & Co.",
+        "Maple Ridge Credit Union"
+      ],
+      "links": [
+        "https://mapleridge-cu-secure.com/verify"
+      ],
+      "indicators": [
+        {
+          "quote": "mapleridge-cu-secure.com",
+          "title": "An address that isn't theirs",
+          "detail": "The name says Maple Ridge Credit Union, but anyone can register an address like mapleridge-cu-secure.com. Check the sender against the organisation's real website."
+        },
+        {
+          "quote": "refund",
+          "title": "Something for nothing",
+          "detail": "A prize, refund or payout out of nowhere is bait. If you didn't enter, you didn't win."
+        },
+        {
+          "quote": "follow the link",
+          "title": "A link to click",
+          "detail": "A button or link in a surprise email can lead to a look-alike page. Go to the real site yourself."
+        },
+        {
+          "quote": "Maple Ridge Credit Union Security",
+          "title": "Borrowing a trusted name",
+          "detail": "The email leans on a name you would trust. Check with that organisation yourself, not through this message."
+        },
+        {
+          "quote": "https://mapleridge-cu-secure.com/verify",
+          "title": "A link to the same fake site",
+          "detail": "The button goes to mapleridge-cu-secure.com, the same look-alike address the email came from, not the organisation's real website."
+        }
+      ],
+      "explanation": "This is a bank and card phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.",
+      "nextTime": "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
+      "scamCategory": "banking",
+      "tactics": [
+        "suspicious_link",
+        "reward"
+      ],
+      "generated": {
+        "source": "fallback",
+        "reason": "Adapted from a real phishing email in a public dataset (CC BY-SA 4.0), with every name and link swapped for invented ones."
+      }
+    },
+    {
+      "id": "lib-email-be303886db31",
+      "type": "email",
+      "title": "Account security email from Northpeak Cloud",
+      "summary": "An email from Northpeak Cloud that wants you to act.",
+      "situation": "This email from Northpeak Cloud lands in your inbox.",
+      "difficulty": "medium",
+      "correctAction": "report",
+      "fromName": "Northpeak Cloud",
+      "fromAddress": "no-reply@northpeak-cloud-support.com",
+      "subject": "Unusual Activity Detected.",
+      "receivedAt": "4:57 AM",
+      "body": [
+        "Unusual Activity Detected We detected something unusual about a recent activity to your email account.",
+        "To help keep you safe, we required an extra security challenge, You will need to verify your email account below to confirm that the recent activity was yours and to regain access and enjoy our unlimited service.",
+        "Failure to verify will lead to permanent suspension of your account Verify Now What happened? Using a shared computer to access your account. Logging in your account from blacklisted IP. Not logging off your account after usage.",
+        "Thanks for using your account to bring the people who matter most together in one place. You can change your connection settings anytime and find more ways to connect. Regards, mail.example",
+        "Northpeak Cloud"
+      ],
+      "links": [
+        "https://northpeak-cloud-support.com/verify"
+      ],
+      "indicators": [
+        {
+          "quote": "northpeak-cloud-support.com",
+          "title": "An address that isn't theirs",
+          "detail": "The name says Northpeak Cloud, but anyone can register an address like northpeak-cloud-support.com. Check the sender against the organisation's real website."
+        },
+        {
+          "quote": "Unusual Activity",
+          "title": "A problem with your account",
+          "detail": "A warning about your account is a classic hook. Check by opening the app or site yourself."
+        },
+        {
+          "quote": "verify your email account",
+          "title": "It asks for your details",
+          "detail": "A real organisation already has your details and will not ask you to confirm them by email."
+        },
+        {
+          "quote": "Verify Now",
+          "title": "A link to click",
+          "detail": "A button or link in a surprise email can lead to a look-alike page. Go to the real site yourself."
+        },
+        {
+          "quote": "https://northpeak-cloud-support.com/verify",
+          "title": "A link to the same fake site",
+          "detail": "The button goes to northpeak-cloud-support.com, the same look-alike address the email came from, not the organisation's real website."
+        }
+      ],
+      "explanation": "This is a account security phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.",
+      "nextTime": "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
+      "scamCategory": "account_security",
+      "tactics": [
+        "info_request",
+        "suspicious_link"
+      ],
+      "generated": {
+        "source": "fallback",
+        "reason": "Adapted from a real phishing email in a public dataset (CC BY-SA 4.0), with every name and link swapped for invented ones."
+      }
+    },
+    {
+      "id": "lib-email-e44c29a7dbec",
+      "type": "email",
+      "title": "Government email from Federal Refund Centre",
+      "summary": "An email from Federal Refund Centre that wants you to act.",
+      "situation": "This email from Federal Refund Centre lands in your inbox.",
+      "difficulty": "hard",
+      "correctAction": "report",
+      "fromName": "Federal Refund Centre",
+      "fromAddress": "refunds@tax-refund-centre-ca.com",
+      "subject": "Federal Refund Centre Notification - Please Read This .",
+      "receivedAt": "12:-9 PM",
+      "body": [
+        "After the last annual calculations of your fiscal activity we have determined that you are eligible to receive a tax refund of $63.80. Please submit the tax refund request and allow us 6-9 days in order to process it. A refund can be delayed for a variety of reasons.",
+        "For example submitting invalid records or applying after the deadline. To access the form for your tax refund, please click here Regards, Customer Service © Copyright 2006, Federal Refund Centre U.S.A.",
+        "Federal Refund Centre"
+      ],
+      "links": [
+        "https://tax-refund-centre-ca.com/verify"
+      ],
+      "indicators": [
+        {
+          "quote": "tax-refund-centre-ca.com",
+          "title": "An address that isn't theirs",
+          "detail": "The name says Federal Refund Centre, but anyone can register an address like tax-refund-centre-ca.com. Check the sender against the organisation's real website."
+        },
+        {
+          "quote": "refund",
+          "title": "Something for nothing",
+          "detail": "A prize, refund or payout out of nowhere is bait. If you didn't enter, you didn't win."
+        },
+        {
+          "quote": "click here",
+          "title": "A link to click",
+          "detail": "A button or link in a surprise email can lead to a look-alike page. Go to the real site yourself."
+        },
+        {
+          "quote": "Federal Refund Centre",
+          "title": "An \"official\" voice",
+          "detail": "Anyone can sign an email as an administrator, a bank or an agency. A title proves nothing."
+        },
+        {
+          "quote": "https://tax-refund-centre-ca.com/verify",
+          "title": "A link to the same fake site",
+          "detail": "The button goes to tax-refund-centre-ca.com, the same look-alike address the email came from, not the organisation's real website."
+        }
+      ],
+      "explanation": "This is a government phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.",
+      "nextTime": "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
+      "scamCategory": "government",
+      "tactics": [
+        "suspicious_link",
+        "authority",
+        "reward"
+      ],
+      "generated": {
+        "source": "fallback",
+        "reason": "Adapted from a real phishing email in a public dataset (CC BY-SA 4.0), with every name and link swapped for invented ones."
+      }
+    },
+    {
+      "id": "lib-email-8ec97af8877d",
+      "type": "email",
+      "title": "Workplace email from IT Service Desk",
+      "summary": "An email from IT Service Desk that wants you to act.",
+      "situation": "This email from IT Service Desk lands in your inbox.",
+      "difficulty": "hard",
+      "correctAction": "report",
+      "fromName": "IT Service Desk",
+      "fromAddress": "it-servicedesk@staff-portal-update.com",
+      "subject": "RE: Payroll Department Update",
+      "receivedAt": "7:-54 AM",
+      "body": [
+        "HRM Announcement This is an automated e-mail. Please do not reply to this e-mail.",
+        "Distribution: New year Payroll review Payroll Review; Human resources would like you to kindly update your information's with the secure link below to receive new payment update and employee payroll deadlines / new year program schedule for the year 2018. Click on : HRM to update now.",
+        "Thank you, HRM -Help Desk.",
+        "IT Service Desk"
+      ],
+      "indicators": [
+        {
+          "quote": "staff-portal-update.com",
+          "title": "An address that isn't theirs",
+          "detail": "The name says IT Service Desk, but anyone can register an address like staff-portal-update.com. Check the sender against the organisation's real website."
+        },
+        {
+          "quote": "update your information",
+          "title": "It asks for your details",
+          "detail": "A real organisation already has your details and will not ask you to confirm them by email."
+        },
+        {
+          "quote": "Help Desk",
+          "title": "Borrowing a trusted name",
+          "detail": "The email leans on a name you would trust. Check with that organisation yourself, not through this message."
+        }
+      ],
+      "explanation": "This is a workplace phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.",
+      "nextTime": "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
+      "scamCategory": "workplace",
+      "tactics": [
+        "info_request"
+      ],
+      "generated": {
+        "source": "fallback",
+        "reason": "Adapted from a real phishing email in a public dataset (CC BY-SA 4.0), with every name and link swapped for invented ones."
+      }
+    }
+  ],
+  "texts": [
+    {
+      "id": "lib-sms-shipping",
+      "type": "sms",
+      "title": "Package held for customs processing fee",
+      "summary": "A delivery service claims your package is on hold until you pay a small fee online.",
+      "situation": "You are waiting for an online order to arrive when a text pops up on your phone regarding a shipment.",
+      "difficulty": "easy",
+      "correctAction": "report",
+      "sender": "+1 (800) 555-0199",
+      "receivedAt": "9:26 AM",
+      "messages": [
+        {
+          "text": "SwiftShip: Your delivery is on hold due to unpaid customs duty of $2.99. Pay immediately to avoid return to sender.",
+          "link": "https://swiftship-tracking-portal.example/pay"
+        }
+      ],
+      "indicators": [
+        {
+          "quote": "unpaid customs duty of $2.99",
+          "title": "Unexpected small fee",
+          "detail": "Couriers rarely ask for random digital payments via text message for customs duties."
+        },
+        {
+          "quote": "Pay immediately",
+          "title": "False urgency",
+          "detail": "Scammers create panic by demanding instant action so you do not pause to think."
+        },
+        {
+          "quote": "https://swiftship-tracking-portal.example/pay",
+          "title": "Unfamiliar web address",
+          "detail": "The URL uses an unofficial domain instead of the official courier's verified website."
+        }
+      ],
+      "explanation": "This is a delivery phishing scam. Scammers send mass texts about held packages, hoping you will click the link and enter your credit card details or personal information on a fake payment page.",
+      "nextTime": "Never click links in delivery texts. Instead, go directly to the official courier website and type in your tracking number manually.",
+      "scamCategory": "shipping",
+      "tactics": [
+        "urgency",
+        "suspicious_link"
+      ],
+      "generated": {
+        "source": "gemini",
+        "reason": "A practice text Gemini wrote from real scam examples.",
+        "grounding": {
+          "exampleCount": 3,
+          "source": "scam-library"
+        }
+      }
+    },
+    {
+      "id": "lib-sms-promotional",
+      "type": "sms",
+      "title": "Unclaimed Loyalty Reward",
+      "summary": "Claims you have won a cash prize in a loyalty draw and demands immediate action.",
+      "situation": "You receive an unexpected text message claiming you won a large cash prize from a shopping rewards program you have never signed up for.",
+      "difficulty": "easy",
+      "correctAction": "report",
+      "sender": "+1 (800) 555-0189",
+      "receivedAt": "7:-42 AM",
+      "messages": [
+        {
+          "text": "Congratulations! Your phone number was selected to win a $1,000 cash reward from Apex Rewards. Claim within 2 hours before it expires!",
+          "link": "https://apex-rewards-claim-win.example/portal"
+        }
+      ],
+      "indicators": [
+        {
+          "quote": "selected to win a $1,000 cash reward",
+          "title": "Unexpected prize",
+          "detail": "You cannot win a prize or sweepstakes that you never entered."
+        },
+        {
+          "quote": "within 2 hours before it expires",
+          "title": "Artificial urgency",
+          "detail": "Scammers create false deadlines to pressure you into acting without thinking."
+        },
+        {
+          "quote": "https://apex-rewards-claim-win.example/portal",
+          "title": "Suspicious web link",
+          "detail": "The URL uses an unfamiliar look-alike domain designed to steal your personal information."
+        }
+      ],
+      "explanation": "This is a classic prize scam designed to lure you in with the promise of easy money. Once you click the link, the scammers will likely ask for personal details or a small shipping fee to release your nonexistent winnings.",
+      "nextTime": "Remember that legitimate sweepstakes and rewards programs never demand immediate payment or rush you to claim a prize via an unsolicited text message.",
+      "scamCategory": "promotional",
+      "tactics": [
+        "reward",
+        "urgency",
+        "suspicious_link"
+      ],
+      "generated": {
+        "source": "gemini",
+        "reason": "A practice text Gemini wrote from real scam examples.",
+        "grounding": {
+          "exampleCount": 3,
+          "source": "scam-library"
+        }
+      }
+    },
+    {
+      "id": "lib-sms-banking",
+      "type": "sms",
+      "title": "Unrecognized transfer flagged on your debit card",
+      "summary": "Claims a large transfer was attempted and asks you to click a link to cancel it.",
+      "situation": "You are sitting at your desk when your phone buzzes with an urgent alert about your primary checking account.",
+      "difficulty": "medium",
+      "correctAction": "report",
+      "sender": "+1 (888) 555-0192",
+      "receivedAt": "7:32 AM",
+      "messages": [
+        {
+          "text": "Apex Trust Alert: We blocked a suspicious $480.00 transfer from your account to CryptoExchange. If you did not authorize this, verify your identity immediately.",
+          "link": "https://apextrust-secure-verify.com/login"
+        }
+      ],
+      "indicators": [
+        {
+          "quote": "blocked a suspicious $480.00 transfer",
+          "title": "Manufactured panic",
+          "detail": "Scammers use a specific, distressing dollar amount to shock you into acting quickly without thinking."
+        },
+        {
+          "quote": "verify your identity immediately",
+          "title": "Urgent call to action",
+          "detail": "Legitimate banks will freeze a card for safety but will never demand immediate online verification through a text link."
+        },
+        {
+          "quote": "https://apextrust-secure-verify.com/login",
+          "title": "Unfamiliar look-alike domain",
+          "detail": "The web address uses hyphenated buzzwords rather than the bank's actual official domain name."
+        }
+      ],
+      "explanation": "This is a phishing attempt designed to mimic your bank's fraud department. By scaring you with a fake unauthorized transaction, the scammer hopes you will click the link and hand over your login credentials and sensitive financial details.",
+      "nextTime": "Never click links in fraud alert texts. Instead, open your banking app directly or call the official customer service number listed on the back of your debit card.",
+      "scamCategory": "banking",
+      "tactics": [
+        "urgency",
+        "suspicious_link",
+        "info_request",
+        "fear"
+      ],
+      "generated": {
+        "source": "gemini",
+        "reason": "A practice text Gemini wrote from real scam examples.",
+        "grounding": {
+          "exampleCount": 3,
+          "source": "scam-library"
+        }
+      }
+    },
+    {
+      "id": "lib-sms-account_security",
+      "type": "sms",
+      "title": "Email storage quota exceeded alert",
+      "summary": "Your webmail storage is almost full and requires immediate verification to prevent account suspension.",
+      "situation": "You receive a text message warning you that your cloud mail account is running out of space and needs action.",
+      "difficulty": "medium",
+      "correctAction": "report",
+      "sender": "+1 (555) 0192",
+      "receivedAt": "6:40 AM",
+      "messages": [
+        {
+          "text": "CloudMail Alert: Your mailbox storage has exceeded 90% capacity. Prevent incoming message suspension by verifying your profile now.",
+          "link": "https://cloudmail-account-update.com/login"
+        }
+      ],
+      "indicators": [
+        {
+          "quote": "exceeded 90% capacity",
+          "title": "Manufactured urgency",
+          "detail": "Scammers exaggerate account limits to panic you into acting quickly without thinking."
+        },
+        {
+          "quote": "Prevent incoming message suspension",
+          "title": "Threat of service loss",
+          "detail": "Legitimate providers will warn you inside the app or portal, not via a sudden threatening text message."
+        },
+        {
+          "quote": "https://cloudmail-account-update.com/login",
+          "title": "Look-alike web address",
+          "detail": "The URL uses an external hyphenated domain instead of the official service domain."
+        }
+      ],
+      "explanation": "This is an account credential harvesting scam. The attackers use the fear of losing access to your emails to trick you into clicking a malicious link and entering your password on a fake login page.",
+      "nextTime": "Never click links in unexpected text messages about account quotas. Open your browser, type the official address of your email provider, and check your account status directly.",
+      "scamCategory": "account_security",
+      "tactics": [
+        "urgency",
+        "fear",
+        "suspicious_link",
+        "info_request"
+      ],
+      "generated": {
+        "source": "gemini",
+        "reason": "A practice text Gemini wrote from real scam examples.",
+        "grounding": {
+          "exampleCount": 3,
+          "source": "scam-library"
+        }
+      }
+    },
+    {
+      "id": "lib-sms-government",
+      "type": "sms",
+      "title": "State Revenue Department tax credit notice",
+      "summary": "A message claims you have an unclaimed annual citizen dividend ready for direct deposit.",
+      "situation": "You receive a text notification out of the blue regarding a government financial credit program you have never heard of.",
+      "difficulty": "hard",
+      "correctAction": "report",
+      "sender": "88402",
+      "receivedAt": "7:-39 PM",
+      "messages": [
+        {
+          "text": "Department of Revenue Notice: Your annual citizen tax credit of $450 has been approved. Please verify your routing details to process the direct transfer before the fiscal cycle ends.",
+          "link": "https://gov-revenue-portal-tax.com/claim"
+        }
+      ],
+      "indicators": [
+        {
+          "quote": "Department of Revenue Notice",
+          "title": "Impersonation of Government Authority",
+          "detail": "Tax agencies generally communicate via official postal mail or secure online portals, not unsolicited SMS text messages."
+        },
+        {
+          "quote": "before the fiscal cycle ends",
+          "title": "Artificial Urgency",
+          "detail": "Scammers create false deadlines to pressure you into acting quickly without verifying the claim."
+        },
+        {
+          "quote": "https://gov-revenue-portal-tax.com/claim",
+          "title": "Unofficial Web Domain",
+          "detail": "Official government services in this jurisdiction operate exclusively on .gov domains, whereas this link uses a commercial or look-alike extension."
+        }
+      ],
+      "explanation": "This is a government impersonation scam designed to harvest your personal banking and identity information. Scammers use professional language and official-sounding department names to build misplaced trust.",
+      "nextTime": "Never click links in unexpected financial messages. Always navigate directly to the official government website by typing the verified address into your browser.",
+      "scamCategory": "government",
+      "tactics": [
+        "authority",
+        "urgency",
+        "suspicious_link",
+        "info_request"
+      ],
+      "generated": {
+        "source": "gemini",
+        "reason": "A practice text Gemini wrote from real scam examples.",
+        "grounding": {
+          "exampleCount": 3,
+          "source": "scam-library"
+        }
+      }
+    }
+  ],
+  "calls": [
+    {
+      "id": "lib-call-0e5cfce002d9",
+      "type": "call",
+      "title": "A delivery is on hold",
+      "summary": "A caller from Apex Express Logistics says a delivery is on hold.",
+      "situation": "A call comes in from a number you don’t know.",
+      "difficulty": "easy",
+      "callerLabel": "Apex Express Logistics",
+      "callerNumber": "+1 (604) 555-0131",
+      "tactics": [
+        "info_request",
+        "suspicious_link"
+      ],
+      "indicators": [
+        {
+          "title": "Asking you to \"confirm\" details",
+          "detail": "A real organisation already has your details. Reading out your card, address or ID number hands them to a stranger."
+        },
+        {
+          "title": "A link or app to open",
+          "detail": "Being told to open a link or install something during the call gives the caller a way into your device or accounts."
+        },
+        {
+          "title": "A name on the screen proves nothing",
+          "detail": "Caller ID can be faked. A familiar name on your phone doesn't mean that organisation is on the line."
+        }
+      ],
+      "explanation": "This call follows a real delivery scam pattern: the caller says a delivery is on hold, then asks for login credentials, then asks for remote access to the device, then asks for a payment up front. Every name and number here is invented.",
+      "nextTime": "Hang up and call the organisation back on a number you already trust, like the one on your card or its official website.",
+      "practice": {
+        "lines": [
+          "Hi, this is Marcus from Apex Express Logistics. I'm calling because a delivery is on hold, and I need to sort it out with you right now.",
+          "Before we go on, can you confirm your full name, date of birth and home address?",
+          "I'm texting you a secure link now. Open it and sign in so we can confirm it's you."
+        ],
+        "complyLabel": "Give your details"
+      },
+      "scamCategory": "shipping",
+      "generated": {
+        "source": "fallback",
+        "reason": "Follows a real scam-call pattern summarised from a public dataset (CC BY-NC-ND 4.0)."
+      }
+    },
+    {
+      "id": "lib-call-d6ff8dcc42ad",
+      "type": "call",
+      "title": "You were picked for a prize or payout",
+      "summary": "A caller from Lumen Rewards Club says you were picked for a prize or payout.",
+      "situation": "A call comes in from a number you don’t know.",
+      "difficulty": "easy",
+      "callerLabel": "Lumen Rewards Club",
+      "callerNumber": "+1 (855) 555-0193",
+      "tactics": [
+        "info_request",
+        "urgency",
+        "reward"
+      ],
+      "indicators": [
+        {
+          "title": "Asking you to \"confirm\" details",
+          "detail": "A real organisation already has your details. Reading out your card, address or ID number hands them to a stranger."
+        },
+        {
+          "title": "A deadline on the phone",
+          "detail": "The caller says it has to happen right now. Real organisations give you time to hang up and check; a rush is there to stop you thinking."
+        },
+        {
+          "title": "A prize out of nowhere",
+          "detail": "If you didn't enter, you didn't win. A small fee or your card details to claim it is the scam."
+        },
+        {
+          "title": "A name on the screen proves nothing",
+          "detail": "Caller ID can be faked. A familiar name on your phone doesn't mean that organisation is on the line."
+        }
+      ],
+      "explanation": "This call follows a real prize and offer scam pattern: the caller says you were picked for a prize or payout, then asks for card details, then asks for a payment up front, then pushes for action right away. Every name and number here is invented.",
+      "nextTime": "Hang up and call the organisation back on a number you already trust, like the one on your card or its official website.",
+      "practice": {
+        "lines": [
+          "Hi, this is Tasha from Lumen Rewards Club. I'm calling because you were picked for a prize or payout, and I need to sort it out with you right now.",
+          "Before we go on, can you confirm your full name, date of birth and home address?",
+          "Please be quick, this has to be done in the next few minutes.",
+          "The good news is you qualify. I just need a card for the small processing fee."
+        ],
+        "complyLabel": "Give your details"
+      },
+      "scamCategory": "promotional",
+      "generated": {
+        "source": "fallback",
+        "reason": "Follows a real scam-call pattern summarised from a public dataset (CC BY-NC-ND 4.0)."
+      }
+    },
+    {
+      "id": "lib-call-b5c8c2ff529a",
+      "type": "call",
+      "title": "A call from Northshore Credit Union",
+      "summary": "A caller from Northshore Credit Union asks for the one-time code.",
+      "situation": "A call comes in from a number you don’t know.",
+      "difficulty": "medium",
+      "callerLabel": "Northshore Credit Union",
+      "callerNumber": "+1 (877) 555-0162",
+      "tactics": [
+        "otp_request",
+        "info_request"
+      ],
+      "indicators": [
+        {
+          "title": "Asking you to read out a code",
+          "detail": "A one-time code is only for typing into a site or app you opened yourself. Anyone who asks you to read one out is trying to get in as you."
+        },
+        {
+          "title": "Asking you to \"confirm\" details",
+          "detail": "A real organisation already has your details. Reading out your card, address or ID number hands them to a stranger."
+        },
+        {
+          "title": "A name on the screen proves nothing",
+          "detail": "Caller ID can be faked. A familiar name on your phone doesn't mean that organisation is on the line."
+        }
+      ],
+      "explanation": "This call follows a real bank and card scam pattern: the caller asks for the one-time code, then asks for bank account details, then asks for card details. Every name and number here is invented.",
+      "nextTime": "Hang up and call the organisation back on a number you already trust, like the one on your card or its official website.",
+      "practice": {
+        "lines": [
+          "Hi, this is Priya from Northshore Credit Union. I'm calling because there is an urgent problem with your account, and I need to sort it out with you right now.",
+          "I've just sent a six-digit code to your phone. Can you read it back to me?",
+          "Before we go on, can you confirm your full name, date of birth and home address?"
+        ],
+        "complyLabel": "Read out the code"
+      },
+      "scamCategory": "banking",
+      "generated": {
+        "source": "fallback",
+        "reason": "Follows a real scam-call pattern summarised from a public dataset (CC BY-NC-ND 4.0)."
+      }
+    },
+    {
+      "id": "lib-call-9489cf86c8ae",
+      "type": "call",
+      "title": "You owe money",
+      "summary": "A caller from Federal Benefits Office threatens arrest or legal action.",
+      "situation": "A call comes in from a number you don’t know.",
+      "difficulty": "medium",
+      "callerLabel": "Federal Benefits Office",
+      "callerNumber": "+1 (613) 555-0119",
+      "tactics": [
+        "info_request",
+        "fear",
+        "authority"
+      ],
+      "indicators": [
+        {
+          "title": "Asking you to \"confirm\" details",
+          "detail": "A real organisation already has your details. Reading out your card, address or ID number hands them to a stranger."
+        },
+        {
+          "title": "Something scary to keep you talking",
+          "detail": "A hacked account, a frozen card, a warrant: fear makes you want to fix it right away, with the caller's help."
+        },
+        {
+          "title": "Someone \"official\" on the line",
+          "detail": "Anyone can say they're from your bank, IT or the government. Authority on a call you didn't make proves nothing."
+        },
+        {
+          "title": "A name on the screen proves nothing",
+          "detail": "Caller ID can be faked. A familiar name on your phone doesn't mean that organisation is on the line."
+        }
+      ],
+      "explanation": "This call follows a real government scam pattern: the caller threatens arrest or legal action, then says you owe money, then asks for card details, then asks for a money transfer. Every name and number here is invented.",
+      "nextTime": "Hang up and call the organisation back on a number you already trust, like the one on your card or its official website.",
+      "practice": {
+        "lines": [
+          "Hi, this is Officer Grant from Federal Benefits Office. I'm calling because you owe money, and I need to sort it out with you right now.",
+          "Before we go on, can you confirm your full name, date of birth and home address?",
+          "If we don’t sort this out now, you could lose access, or the money, for good."
+        ],
+        "complyLabel": "Give your details"
+      },
+      "scamCategory": "government",
+      "generated": {
+        "source": "fallback",
+        "reason": "Follows a real scam-call pattern summarised from a public dataset (CC BY-NC-ND 4.0)."
+      }
+    },
+    {
+      "id": "lib-call-279c76aa6092",
+      "type": "call",
+      "title": "Your account shows suspicious activity",
+      "summary": "A caller from Cloudvault Security says your account shows suspicious activity.",
+      "situation": "A call comes in from a number you don’t know.",
+      "difficulty": "hard",
+      "callerLabel": "Cloudvault Security",
+      "callerNumber": "+1 (888) 555-0174",
+      "tactics": [
+        "info_request",
+        "authority"
+      ],
+      "indicators": [
+        {
+          "title": "Asking you to \"confirm\" details",
+          "detail": "A real organisation already has your details. Reading out your card, address or ID number hands them to a stranger."
+        },
+        {
+          "title": "Someone \"official\" on the line",
+          "detail": "Anyone can say they're from your bank, IT or the government. Authority on a call you didn't make proves nothing."
+        },
+        {
+          "title": "A name on the screen proves nothing",
+          "detail": "Caller ID can be faked. A familiar name on your phone doesn't mean that organisation is on the line."
+        }
+      ],
+      "explanation": "This call follows a real account security scam pattern: the caller says your account shows suspicious activity, then asks for personal information, then leans on official authority. Every name and number here is invented.",
+      "nextTime": "Hang up and call the organisation back on a number you already trust, like the one on your card or its official website.",
+      "practice": {
+        "lines": [
+          "Hi, this is Jordan from Cloudvault Security. I'm calling because your account shows suspicious activity, and I need to sort it out with you right now.",
+          "Before we go on, can you confirm your full name, date of birth and home address?",
+          "Please be quick, this has to be done in the next few minutes."
+        ],
+        "complyLabel": "Give your details"
+      },
+      "scamCategory": "account_security",
+      "generated": {
+        "source": "fallback",
+        "reason": "Follows a real scam-call pattern summarised from a public dataset (CC BY-NC-ND 4.0)."
+      }
+    }
+  ]
+}

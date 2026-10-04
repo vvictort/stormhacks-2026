@@ -1,0 +1,19 @@
+{
+  "userId": "dev-user",
+  "scenario": {
+    "id": "lib-sms-account_security",
+    "title": "Email storage quota exceeded alert",
+    "tactics": [
+      "urgency",
+      "fear",
+      "suspicious_link",
+      "info_request"
+    ],
+    "difficulty": 2,
+    "senderLabel": "+1 (555) 0192",
+    "openingMessage": "CloudMail Alert: Your mailbox storage has exceeded 90% capacity. Prevent incoming message suspension by verifying your profile now. {{link}}",
+    "linkDisplayUrl": "cloudmail-account-update.com/login",
+    "persona": "You sent this scam text: \"CloudMail Alert: Your mailbox storage has exceeded 90% capacity. Prevent incoming message suspension by verifying your profile now.\". Keep replies short, like texts. Stay in character, push the same way (urgency, fear, suspicious_link, info_request), and never name a real company.",
+    "maxTurns": 4
+  }
+}

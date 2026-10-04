@@ -68,16 +68,18 @@ payment, personal info or agreeing to act is a successful (resisted-type) outcom
   the body is rejected (`400`).
 - Unknown ids → `404 scenario_not_found`. A database failure while looking up a `gen-` id is
   `503 SERVICE_UNAVAILABLE`.
-- Fixed scenarios live in `backend/fixtures/scenarios/call-*.json`. Ids (frontend metadata uses the same ids):
-  - `bank-fraud-dept-otp-1`: bank fraud department asks for a verification code (difficulty 2 / medium)
-  - `cra-tax-arrears-1`: CRA impersonation demanding payment (2 / medium)
-  - `courier-customs-fee-1`: delivery company "confirming" account and a customs fee (1 / easy)
-  - `tech-support-remote-1`: tech support wants remote access (2 / medium)
-  - `exec-vendor-payment-1`: executive / vendor urgent payment change (3 / hard)
+- Practice-path calls live in `backend/fixtures/scenarios/call-lib-call-*.json`. They are built from scam-library call
+  patterns by `npm run build:practice` (`backend/scripts/build-practice.ts`), which also writes their frontend teaching
+  copy under the same ids into `frontend/src/features/training/practice.json`. Never edit either by hand:
+  - `lib-call-0e5cfce002d9`: courier says a delivery is on hold, wants a sign-in, remote access and a fee (1 / easy)
+  - `lib-call-d6ff8dcc42ad`: prize win that needs card details and an upfront payment (1 / easy)
+  - `lib-call-b5c8c2ff529a`: bank caller asks for the one-time code, then account and card details (2 / medium)
+  - `lib-call-9489cf86c8ae`: tax office threatens arrest over money owed (2 / medium)
+  - `lib-call-279c76aa6092`: account-security caller leans on authority for personal details (3 / hard)
 - Generated (Gemini) scenarios: created only by `POST /api/training/call-scenarios`, stored in
   `generated_call_scenarios`, ids `gen-call-<uuid>` (older `gen-<uuid>` ids stay valid; everything matches on `gen-`).
-  Without `GEMINI_API_KEY`, or when Gemini fails, one of six built-in personalised calls (one per scam category, each a
-  different pretext from the fixtures) is used. Generated calls carry `scamCategory`, which the saved attempt and the
+  Without `GEMINI_API_KEY`, or when Gemini fails, a built-in call is built from a scam-library call pattern for the
+  category (or one generic last-resort pattern when the library has none). Generated calls carry `scamCategory`, which the saved attempt and the
   `call.ringing` event (`data.scamCategory`) pass on. `ScenarioCatalog` (`backend/app/scenarios/catalog.ts`) resolves any
   id: a fixture, or a `gen-` scenario only if it belongs to the verified caller (another user's id is a 404).
 
@@ -105,7 +107,7 @@ the attempts repository, in-process. The row (`backend/app/calls/attempt.ts`, va
   "attemptId": "call_…",            // the call id; the primary key, so a repeat save is a no-op
   "firebaseUid": "…",              // from the verified token at call start
   "channel": "call",
-  "scenarioId": "bank-fraud-dept-otp-1",
+  "scenarioId": "lib-call-b5c8c2ff529a",
   "scenarioTitle": "…",
   "difficulty": "medium",
   "tactics": ["authority", "urgency"],
@@ -160,5 +162,6 @@ The simulated text and call routes are listed in [`backend/README.md`](../backen
   itself 20 s after the microphone check. Either one abandons the call if the accept hasn't landed (an
   `409 not_ringing` falls back to `/ended`), or sends `/ended` without a connected conversation so the server
   completes it unscored as `error`; then the failure screen offers caption-only practice.
-- Frontend call metadata (`frontend/src/features/training/callScenarios.ts`: title, caller label, difficulty, tactics)
-  matches the fixture with the same id; `frontend/tests/call.test.mjs` fails on drift.
+- Frontend call metadata (`frontend/src/features/training/practice.json`: title, caller label, difficulty, tactics)
+  matches the fixture with the same id; both are written by one build, and `frontend/tests/call.test.mjs` and
+  `backend/tests/practice.test.ts` fail on drift.

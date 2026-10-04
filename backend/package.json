@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
     "migrate": "node --import tsx app/db/migrate.ts",
-    "setup:agent": "node --import tsx scripts/setup-agent.ts"
+    "setup:agent": "node --import tsx scripts/setup-agent.ts",
+    "build:practice": "node --import tsx scripts/build-practice.ts"
   },
   "dependencies": {
     "@google/genai": "^2.3.0",

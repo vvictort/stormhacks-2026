@@ -32,16 +32,15 @@ data-pipeline/
 .venv/bin/python -m unittest                        # tests (synthetic fixtures + the committed JSON)
 ```
 
-The SMS source is a Kaggle **competition**: it needs a Kaggle account that has accepted the competition rules at
-https://www.kaggle.com/competitions/spam-detection-challenge/rules, and credentials in `KAGGLE_USERNAME` /
-`KAGGLE_KEY` or `~/.kaggle/kaggle.json` (kagglehub reads them; never commit them). Then:
-
-```bash
-.venv/bin/python -m tellio_data download --channel sms && .venv/bin/python -m tellio_data build
-```
+All three sources download anonymously. The preferred SMS source, the `spam-detection-challenge` Kaggle competition,
+needs a login and accepted rules, so the public UCI SMS Spam Collection is used instead (`sources.py`); the SMS reader
+finds columns by name, so another labelled SMS CSV can replace it.
 
 A build skips any channel whose raw data is missing and says so; the rest of the library is still written.
-Files dropped by hand into `raw/<slug>/` (e.g. `raw/spam-detection-challenge/train.csv`) are picked up too.
+Files dropped by hand into `raw/<slug>/` are picked up too.
+
+The app's practice path is built from this library by `backend/scripts/build-practice.ts` (`npm run build:practice` in
+`backend/`); run it after rebuilding the library.
 
 ## Licences and what is committed
 
@@ -49,7 +48,7 @@ Files dropped by hand into `raw/<slug>/` (e.g. `raw/spam-detection-challenge/tra
 |---|---|---|---|
 | email | `naserabdullahalam/phishing-email-dataset` | CC BY-SA 4.0 | scrubbed excerpts (`textKind: excerpt`); these excerpts remain CC BY-SA 4.0 with attribution |
 | call | `teeconnie/scam-and-non-scam-call-conversation-dataset` | CC BY-NC-ND 4.0 | **derived-only**: no transcript text, not even edited; `text` is a pattern summary this code writes from tags |
-| sms | competition `spam-detection-challenge` | competition rules (unverified, login needed) | **derived-only**, same as calls, until the rules are confirmed to allow redistribution |
+| sms | `uciml/sms-spam-collection-dataset` (UCI SMS Spam Collection) | CC BY 4.0 (at its origin, the UCI ML Repository; Kaggle lists "Unknown") | scrubbed excerpts with attribution |
 
 Raw downloads never leave `raw/`. Details, dataset inspection notes and coverage: `docs/dataset.md`.
 

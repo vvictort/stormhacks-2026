@@ -56,7 +56,8 @@ function ScenarioIntro({ scenario }: { scenario: Scenario }) {
       <p className="scenario-meta"><Icon size={15} aria-hidden="true" /> {label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
       {scenario.generated && (
         <p className="scenario-generated">
-          <strong>Generated for your training profile.</strong> {scenario.generated.reason}
+          {/* Practice-path scenarios (lib-…) carry a source line too, but weren't made for this user. */}
+          {scenario.id.startsWith('gen-') && <strong>Generated for your training profile. </strong>}{scenario.generated.reason}
           {/* Honest source line: only when Gemini really wrote it (the fallback is a built-in template). */}
           {credit && <span className="scenario-source">{credit}</span>}
         </p>

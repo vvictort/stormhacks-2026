@@ -1,6 +1,6 @@
 # Scam example library (`backend/fixtures/scam-library.json`)
 
-Built offline by `data-pipeline/` (commands in `data-pipeline/README.md`). 496 examples, ~560 KB, rebuilt
+Built offline by `data-pipeline/` (commands in `data-pipeline/README.md`). 603 examples, ~640 KB, rebuilt
 byte-for-byte identically from the same raw data. Inspected 2026-10-04.
 
 ## Sources
@@ -22,8 +22,8 @@ Public; downloads anonymously.
 Quality: no duplicate bodies within files; a few null subjects/receivers; 5 rows with empty body or bad label
 (dropped). Bodies are flattened HTML with layout gaps, embedded raw headers (`Return-Path:`), quoted-printable
 residue, MIME-encoded subjects, HTML+text parts repeated, non-English spam, and real recipient addresses
-(the Nazario honeypot mailbox). 49,855 readable rows -> 18,326 after scrubbing/junk filtering -> **325 kept**
-(250 scam: Nazario 184, Nigerian 32, SpamAssassin 23, CEAS 11; 75 legitimate: CEAS 61, SpamAssassin 14).
+(the Nazario honeypot mailbox). 49,855 readable rows -> 17,338 after scrubbing/junk filtering -> **350 kept**
+(274 scam: Nazario 187, SpamAssassin 32, Nigerian 30, CEAS 25; 76 legitimate: CEAS 60, SpamAssassin 16).
 
 Redistribution: ShareAlike allows committing transformed excerpts with attribution; the excerpts in the JSON stay
 under CC BY-SA 4.0 (attribution is in `sources[]` and every `source`). The compiled set aggregates older public
@@ -39,16 +39,21 @@ partly ChatGPT-augmented per the authors. No speaker turns, so "caller turns" = 
 Redistribution: **NoDerivatives** -> `derived-only`. No transcript text is committed, not even edited. Each
 example's `text` is a `pattern` summary composed by `tagging.pattern()` from fixed phrases chosen by keyword hits
 ("Caller claims to be from your bank -> says your account shows suspicious activity -> asks for the one-time code
--> pushes for action right away."). Checked on all 800 rows: no pattern shares a 5-word run with its source. 800 rows -> 171 unique
-patterns kept (148 scam, 23 legitimate); the rest were exact duplicates of another pattern. (NonCommercial also
+-> pushes for action right away."). Checked on all 800 rows: no pattern shares a 5-word run with its source. 800 rows -> 172 unique
+patterns kept (149 scam, 23 legitimate); the rest were exact duplicates of another pattern. (NonCommercial also
 applies to the derived tags; fine for a hackathon/education demo, revisit before any commercial use.)
 
-### SMS: competition `spam-detection-challenge` (NOT INCLUDED)
-Kaggle competition data: the API returns 401 without credentials and rules must be accepted, so files, columns
-and licence could not be inspected. The reader (`normalize/sms.py`) finds the text/label columns by common names
-and skips unlabeled splits. Until the rules are confirmed to allow redistribution it is `derived-only` (patterns,
-like calls). To add it: accept the rules on kaggle.com, set `KAGGLE_USERNAME`/`KAGGLE_KEY`, then
-`python -m tellio_data download --channel sms && python -m tellio_data build` from `data-pipeline/`.
+### SMS: UCI SMS Spam Collection, `uciml/sms-spam-collection-dataset`
+The preferred source, the `spam-detection-challenge` competition, needs a Kaggle login and accepted rules (the API
+returns 401), so its files and licence could not be inspected. The UCI collection is public, is an input of the same
+notebook as the email data, and is **CC BY 4.0** at its origin (archive.ics.uci.edu/dataset/228; Kaggle lists
+"Unknown"), so scrubbed excerpts are committed with attribution.
+- `spam.csv`: columns `v1` (ham/spam) and `v2` (text); 5,572 rows, 747 spam, 4,825 ham, 403 duplicate texts. Some
+  rows spill text into unnamed extra columns (rejoined). The file is Windows-1252 and double-encodes `£` as `å£`
+  (fixed); rows with other mis-decoded characters are dropped.
+- 5,572 rows -> 1,411 after scrubbing and junk filtering -> **81 kept** (50 scam, 31 legitimate).
+- It is mostly 2003-era UK prize and ringtone spam, so scam texts map almost only to `promotional`. That is why the
+  practice path's texts are written by Gemini from library examples of each scam type (all channels), not copied.
 
 ## What is in each example
 

@@ -197,15 +197,7 @@ SSE events (`Content-Type: text/event-stream`, no compression, a `: ping` commen
 
 `status` moves through `ringing` → `in_call` → `analyzing` → `completed`, or straight from `ringing` to `completed` if declined, missed or abandoned. A call still ringing after 2 minutes (tab closed, or stuck on a voice/mic error) is abandoned by the sweeper, not missed: only your ring timer reports a real miss. `outcome` and `training` are set once the status is `completed`. The sweepers run every 15 s and once at startup, so analyses interrupted by a restart resume.
 
-**Scenarios are server-owned.** Fixed ones (`fixtures/scenarios/call-*.json`):
-
-| id | difficulty | theme |
-| --- | --- | --- |
-| `bank-fraud-dept-otp-1` | 2 / medium | Bank fraud department asks for a verification code |
-| `cra-tax-arrears-1` | 2 / medium | CRA impersonator demands payment for tax arrears |
-| `courier-customs-fee-1` | 1 / easy | Courier asks for a small customs fee by card |
-| `tech-support-remote-1` | 2 / medium | Tech support wants remote access |
-| `exec-vendor-payment-1` | 3 / hard | Executive asks for an urgent payment to a new vendor account |
+**Scenarios are server-owned.** The practice path's calls and texts (`fixtures/scenarios/call-lib-*.json`, `text-lib-*.json`) are built from the scam library by `npm run build:practice`, together with their frontend copy in `frontend/src/features/training/practice.json`; see `scripts/build-practice.ts`. Never edit them by hand: `tests/practice.test.ts` fails when they drift from what the library builds. Backend tests use their own hand-written fixtures in `tests/fixtures/scenarios/`.
 
 `gen-call-…` ids (older `gen-…` ones too) come from `POST /api/training/call-scenarios`; `ScenarioCatalog` resolves them from `generated_call_scenarios` for the verified uid only, so another user's id is a 404.
 

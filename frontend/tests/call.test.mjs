@@ -7,21 +7,16 @@ import { buildCallDebrief, callScreen, debriefSource, formatDuration, importantM
 import { confirmNavigation, guardsNavigation, leaveDecision, navigationGuarded, setNavigationGuard } from '../src/lib/navigationGuard.ts'
 import { mergeProgress, recordAttempt, recommend, summarize, currentLevel } from '../src/features/training/progress.ts'
 
-const CONTRACT_IDS = {
-  'bank-fraud-dept-otp-1': 'medium',
-  'cra-tax-arrears-1': 'medium',
-  'courier-customs-fee-1': 'easy',
-  'tech-support-remote-1': 'medium',
-  'exec-vendor-payment-1': 'hard',
-}
 const calls = scenarios.filter((scenario) => scenario.type === 'call')
 
 // --- Channel and scenarios ---
 
-test('the call channel is ready with exactly the five contract scenarios and difficulties', () => {
+test('the call channel is ready with five library-built calls across every difficulty', () => {
   assert.equal(channelReady('call'), true)
   assert.ok(channels.every((channel) => channel.ready))
-  assert.deepEqual(Object.fromEntries(calls.map((scenario) => [scenario.id, scenario.difficulty])), CONTRACT_IDS)
+  assert.equal(calls.length, 5)
+  assert.ok(calls.every((scenario) => scenario.id.startsWith('lib-call-')), 'built from scam-library call patterns')
+  assert.deepEqual(new Set(calls.map((scenario) => scenario.difficulty)), new Set(['easy', 'medium', 'hard']))
 })
 
 // The live caller is the comms fixture with the same id; the page around it must describe the same call.
@@ -53,7 +48,7 @@ test('call scenarios carry teaching metadata only and work with shared helpers',
     assert.ok(!('systemPrompt' in scenario) && !('firstMessage' in scenario), 'the caller script stays server-side')
   }
   assert.equal(isScam(getScenario('dental-reminder')), false)
-  assert.equal(isScam(getScenario('parcel-redelivery')), true)
+  assert.equal(isScam(getScenario('lib-sms-shipping')), true)
   assert.equal(new Set(scenarios.map((scenario) => scenario.id)).size, scenarios.length)
 })
 
@@ -167,7 +162,7 @@ test('the guard registry: one guard, removed only by its own unregister', async 
 
 // --- Debrief ---
 
-const bank = getScenario('bank-fraud-dept-otp-1')
+const bank = getScenario('lib-call-b5c8c2ff529a')
 const transcript = [
   { role: 'agent', message: "Hi, this is Daniel from the fraud team.", timeInCallSecs: 1 },
   { role: 'user', message: 'Okay, hello.', timeInCallSecs: 4 },
@@ -307,30 +302,30 @@ test('importantMoments keeps the opener and pressure lines in order, capped', ()
 const server = (scenarioId, success, completedAt, channel = 'call') => ({ id: `a-${completedAt}`, channel, scenarioId, outcome: 'resisted', success, completedAt })
 
 test('mergeProgress folds scored server calls into local progress, oldest first', () => {
-  const local = recordAttempt(recordAttempt({}, 'parcel-redelivery', true, 1000), 'courier-customs-fee-1', false, 3000)
+  const local = recordAttempt(recordAttempt({}, 'lib-sms-shipping', true, 1000), 'lib-call-0e5cfce002d9', false, 3000)
   const merged = mergeProgress(local, [
-    server('courier-customs-fee-1', true, new Date(5000).toISOString()),
-    server('courier-customs-fee-1', false, new Date(2000).toISOString()),
-    server('bank-fraud-dept-otp-1', null, new Date(4000).toISOString()), // error: not scored
-    server('parcel-redelivery', false, new Date(6000).toISOString(), 'sms'), // texts stay local
-    server('bank-fraud-dept-otp-1', true, 'not a date'),
+    server('lib-call-0e5cfce002d9', true, new Date(5000).toISOString()),
+    server('lib-call-0e5cfce002d9', false, new Date(2000).toISOString()),
+    server('lib-call-b5c8c2ff529a', null, new Date(4000).toISOString()), // error: not scored
+    server('lib-sms-shipping', false, new Date(6000).toISOString(), 'sms'), // texts stay local
+    server('lib-call-b5c8c2ff529a', true, 'not a date'),
   ])
-  assert.deepEqual(merged['courier-customs-fee-1'].history.map((a) => [a.at, a.correct]), [[2000, false], [3000, false], [5000, true]])
-  assert.equal(merged['courier-customs-fee-1'].correct, true)
-  assert.equal(merged['bank-fraud-dept-otp-1'], undefined)
-  assert.deepEqual(merged['parcel-redelivery'], local['parcel-redelivery'])
+  assert.deepEqual(merged['lib-call-0e5cfce002d9'].history.map((a) => [a.at, a.correct]), [[2000, false], [3000, false], [5000, true]])
+  assert.equal(merged['lib-call-0e5cfce002d9'].correct, true)
+  assert.equal(merged['lib-call-b5c8c2ff529a'], undefined)
+  assert.deepEqual(merged['lib-sms-shipping'], local['lib-sms-shipping'])
   assert.equal(mergeProgress(local, []), local, 'no server data: local unchanged (API unavailable fallback)')
-  assert.equal(local['courier-customs-fee-1'].history.length, 1, 'local progress is not mutated')
+  assert.equal(local['lib-call-0e5cfce002d9'].history.length, 1, 'local progress is not mutated')
 })
 
 test('merged call results feed summary, level and recommendation', () => {
   const merged = mergeProgress({}, [
-    server('courier-customs-fee-1', true, '2026-10-01T10:00:00Z'),
-    server('bank-fraud-dept-otp-1', true, '2026-10-01T11:00:00Z'),
+    server('lib-call-0e5cfce002d9', true, '2026-10-01T10:00:00Z'),
+    server('lib-call-b5c8c2ff529a', true, '2026-10-01T11:00:00Z'),
   ])
   assert.equal(summarize(merged).done, 2)
   const callsOnly = calls
   assert.equal(currentLevel(merged, callsOnly), 'medium')
-  assert.notEqual(recommend(merged, 'bank-fraud-dept-otp-1', callsOnly)?.id, 'bank-fraud-dept-otp-1')
-  assert.equal(recommend(merged, 'bank-fraud-dept-otp-1', callsOnly)?.type, 'call')
+  assert.notEqual(recommend(merged, 'lib-call-b5c8c2ff529a', callsOnly)?.id, 'lib-call-b5c8c2ff529a')
+  assert.equal(recommend(merged, 'lib-call-b5c8c2ff529a', callsOnly)?.type, 'call')
 })

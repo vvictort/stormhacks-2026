@@ -1,0 +1,19 @@
+{
+  "userId": "dev-user",
+  "scenario": {
+    "id": "lib-sms-government",
+    "title": "State Revenue Department tax credit notice",
+    "tactics": [
+      "authority",
+      "urgency",
+      "suspicious_link",
+      "info_request"
+    ],
+    "difficulty": 3,
+    "senderLabel": "88402",
+    "openingMessage": "Department of Revenue Notice: Your annual citizen tax credit of $450 has been approved. Please verify your routing details to process the direct transfer before the fiscal cycle ends. {{link}}",
+    "linkDisplayUrl": "gov-revenue-portal-tax.com/claim",
+    "persona": "You sent this scam text: \"Department of Revenue Notice: Your annual citizen tax credit of $450 has been approved. Please verify your routing details to process the direct transfer before the fiscal cycle ends.\". Keep replies short, like texts. Stay in character, push the same way (authority, urgency, suspicious_link, info_request), and never name a real company.",
+    "maxTurns": 4
+  }
+}

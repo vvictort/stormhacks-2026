@@ -1,4 +1,5 @@
 import type { DecodedIdToken } from 'firebase-admin/auth';
+import { fileURLToPath } from 'node:url';
 import supertest from 'supertest';
 import { createElevenLabs } from '../app/calls/elevenlabs.ts';
 import { CallService } from '../app/calls/service.ts';
@@ -99,7 +100,8 @@ export function fakeRepos() {
 /** The simulation services as main.ts builds them (in memory unless given a store), with a test ElevenLabs key unless `elevenLabs: false`. */
 export function testServices(repos: Repositories, { elevenLabs = true, store = new MemoryStore() as SimStore, events = new MemoryEventSink() as EventSink } = {}) {
   const services = {
-    catalog: new ScenarioCatalog(repos.scenarios),
+    // The hand-written scenarios these tests were written against; the app ships the library-built ones.
+    catalog: new ScenarioCatalog(repos.scenarios, fileURLToPath(new URL('./fixtures/scenarios/', import.meta.url))),
     texts: new TextService(store, events, new StubProvider(), { appOrigin: origin, followUpSec: 120, idleEndSec: 600 }),
     calls: new CallService(store, events, {
       attempts: repos.attempts,

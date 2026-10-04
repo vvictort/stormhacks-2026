@@ -1,0 +1,18 @@
+{
+  "userId": "dev-user",
+  "scenario": {
+    "id": "lib-sms-promotional",
+    "title": "Unclaimed Loyalty Reward",
+    "tactics": [
+      "reward",
+      "urgency",
+      "suspicious_link"
+    ],
+    "difficulty": 1,
+    "senderLabel": "+1 (800) 555-0189",
+    "openingMessage": "Congratulations! Your phone number was selected to win a $1,000 cash reward from Apex Rewards. Claim within 2 hours before it expires! {{link}}",
+    "linkDisplayUrl": "apex-rewards-claim-win.example/portal",
+    "persona": "You sent this scam text: \"Congratulations! Your phone number was selected to win a $1,000 cash reward from Apex Rewards. Claim within 2 hours before it expires!\". Keep replies short, like texts. Stay in character, push the same way (reward, urgency, suspicious_link), and never name a real company.",
+    "maxTurns": 4
+  }
+}

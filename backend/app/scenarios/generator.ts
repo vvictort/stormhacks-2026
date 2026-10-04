@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { CallScenario, difficultyName } from '../shared/types.ts';
 import type { Difficulty, ScamCategory, Tactic } from '../shared/vocabulary.ts';
 import { generateChecked, parseModelJson, type JsonModel } from './gemini.ts';
-import { blockedBrand, fillPlaceholders, groundingBlock, type Grounding, type ScamLibrary } from './library.ts';
+import { blockedBrand, fillPlaceholders, groundingBlock, type Grounding, type LibraryExample, type ScamLibrary } from './library.ts';
 import { CALLER_ID_INDICATOR, CALLERS, CATEGORY_NAMES, COMPLY_LABELS, DIFFICULTY_STYLE, GENERIC_NEXT_TIME, LAST_RESORT_PATTERN, TACTIC_INDICATORS, TACTIC_LINES } from './callContent.ts';
 import type { ScenarioSource, StoredCallScenario } from './scenarios.repository.ts';
 
@@ -198,15 +198,21 @@ SPECIFICATION RULES:
 function fallbackCallScenario(id: string, category: ScamCategory, request: CallScenarioRequest, reason: string): StoredCallScenario {
   const candidates = request.library?.examplesFor({ channel: 'call', category, tactics: request.vulnerableTactics, difficulty: request.difficulty, limit: Infinity }) ?? [];
   for (const example of candidates) {
-    const steps = fillPlaceholders(example.text)?.split('->').map((step) => step.trim().replace(/\.$/, '')).filter((step) => step && !/^Caller\b/.test(step));
-    if (!steps || steps.length < 2 || !example.tactics.length) continue;
+    const steps = patternSteps(example);
+    if (!steps) continue;
     return patternCall(id, category, request, steps, example.tactics, `${reason} Follows a real scam-call pattern summarised from a public dataset (${example.source.license}).`);
   }
   return patternCall(id, category, request, LAST_RESORT_PATTERN.steps, LAST_RESORT_PATTERN.tactics, reason);
 }
 
+/** A library call pattern's steps in the caller's order, without the "Caller claims…" opener; null if it can't make a call. */
+export function patternSteps(example: LibraryExample) {
+  const steps = fillPlaceholders(example.text)?.split('->').map((step) => step.trim().replace(/\.$/, '')).filter((step) => step && !/^Caller\b/.test(step));
+  return steps && steps.length >= 2 && example.tactics.length ? steps : null;
+}
+
 /** A call scenario and its teaching copy from a scam pattern's steps ("says …", "asks for …", in the caller's order). */
-function patternCall(id: string, category: ScamCategory, request: CallScenarioRequest, steps: string[], tactics: Tactic[], reason: string): StoredCallScenario {
+export function patternCall(id: string, category: ScamCategory, request: CallScenarioRequest, steps: string[], tactics: Tactic[], reason: string): StoredCallScenario {
   const difficulty = difficultyNumber[request.difficulty];
   const { first, profession } = persona(request);
   const caller = CALLERS[category];

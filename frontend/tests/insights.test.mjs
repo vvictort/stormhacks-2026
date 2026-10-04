@@ -4,15 +4,16 @@ import { categoryLabel, instinctsChart, instinctsSource, instinctsView, seconds 
 import { createTracker, messageOutcome, runEvent } from '../src/features/insights/tracker.ts'
 import { scenarios } from '../src/features/training/scenarios.ts'
 
-const email = scenarios.find((scenario) => scenario.id === 'bank-sign-in')
+const email = scenarios.find((scenario) => scenario.id === 'lib-email-b2fc6048da88')
 
 test('run events carry the scenario, attempt and decision time; category only when the scenario has one', () => {
   const run = { attemptId: 'a1', startedAt: 1000 }
   const event = runEvent(email, run, 'scenario_completed', { outcome: 'reported_correct' }, 9400)
   assert.deepEqual({ ...event, at: undefined }, {
-    type: 'scenario_completed', channel: 'email', scenarioId: 'bank-sign-in', scenarioTitle: email.title, attemptId: 'a1',
-    difficulty: email.difficulty, responseTimeMs: 8400, outcome: 'reported_correct', tactics: email.tactics, at: undefined,
+    type: 'scenario_completed', channel: 'email', scenarioId: 'lib-email-b2fc6048da88', scenarioTitle: email.title, attemptId: 'a1',
+    difficulty: email.difficulty, responseTimeMs: 8400, outcome: 'reported_correct', tactics: email.tactics, scamCategory: email.scamCategory, at: undefined,
   })
+  assert.equal('scamCategory' in runEvent({ ...email, scamCategory: undefined }, run, 'scenario_started', {}, 1000), false)
   assert.ok(email.tactics.length > 0)
   assert.equal('tactics' in runEvent(email, run, 'scenario_started', {}, 1000), false, 'tactics ride on the finished attempt only')
   assert.deepEqual(runEvent({ ...email, tactics: undefined }, run, 'scenario_completed', { outcome: 'reported_correct' }, 1000).tactics, [])

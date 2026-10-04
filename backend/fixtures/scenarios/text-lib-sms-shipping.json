@@ -1,0 +1,17 @@
+{
+  "userId": "dev-user",
+  "scenario": {
+    "id": "lib-sms-shipping",
+    "title": "Package held for customs processing fee",
+    "tactics": [
+      "urgency",
+      "suspicious_link"
+    ],
+    "difficulty": 1,
+    "senderLabel": "+1 (800) 555-0199",
+    "openingMessage": "SwiftShip: Your delivery is on hold due to unpaid customs duty of $2.99. Pay immediately to avoid return to sender. {{link}}",
+    "linkDisplayUrl": "swiftship-tracking-portal.example/pay",
+    "persona": "You sent this scam text: \"SwiftShip: Your delivery is on hold due to unpaid customs duty of $2.99. Pay immediately to avoid return to sender.\". Keep replies short, like texts. Stay in character, push the same way (urgency, suspicious_link), and never name a real company.",
+    "maxTurns": 4
+  }
+}

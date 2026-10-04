@@ -196,7 +196,7 @@ const categoryNoun: Record<ScamCategory, string> = {
   account_security: 'account-security emails', workplace: 'workplace emails', promotional: 'prize and offer emails',
 };
 
-const categoryBrief: Record<ScamCategory, string> = {
+export const categoryBrief: Record<ScamCategory, string> = {
   banking: 'a bank, credit union or card issuer',
   government: 'a tax, benefits or other government office',
   shipping: 'a courier or delivery service',
@@ -390,6 +390,8 @@ export function emailFromExample(example: LibraryExample, category: ScamCategory
   }
   if (cueFlags.length < 2) return null; // + the sender-domain flag = the 3 visible flags toScenario requires
   const named = CATEGORY_NAMES[category];
+  // The dataset flattened each email's HTML, so its "Click here" lost its address: point it at the sender's look-alike domain.
+  const link = example.tactics.includes('suspicious_link') ? `https://${domain}/verify` : undefined;
   return {
     title: `${named[0].toUpperCase()}${named.slice(1)} email from ${sender.name}`,
     summary: `An email from ${sender.name} that wants you to act.`,
@@ -398,6 +400,7 @@ export function emailFromExample(example: LibraryExample, category: ScamCategory
     senderEmail: sender.address,
     subject,
     body: [...body, sender.name],
+    links: link ? [link] : undefined,
     expectedAction: 'report',
     scamCategory: category,
     difficulty,
@@ -405,7 +408,8 @@ export function emailFromExample(example: LibraryExample, category: ScamCategory
     redFlags: [
       { quote: domain, title: "An address that isn't theirs", reason: `The name says ${sender.name}, but anyone can register an address like ${domain}. Check the sender against the organisation's real website.` },
       ...cueFlags,
-    ].slice(0, 8),
+      ...(link ? [{ quote: link, title: 'A link to the same fake site', reason: `The button goes to ${domain}, the same look-alike address the email came from, not the organisation's real website.` }] : []),
+    ].slice(0, 6),
     explanation: `This is a ${named} phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.`,
     nextTime: "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
   };

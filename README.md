@@ -19,7 +19,7 @@ flowchart LR
 
 | Piece | What it does | Where you see it |
 |---|---|---|
-| **Scam library** | An offline Python pipeline ([`data-pipeline/`](data-pipeline/)) curates ~500 real phishing emails and scam-call patterns from Kaggle datasets into `backend/fixtures/scam-library.json`. Gemini gets 2–3 matching examples (by channel, scam type, tactics and difficulty); without Gemini, built-in scenarios are built from these examples. No embeddings, no runtime Python. | "Grounded in real-world scam patterns" |
+| **Scam library** | An offline Python pipeline ([`data-pipeline/`](data-pipeline/)) curates ~600 real phishing emails, spam texts and scam-call patterns from public datasets into `backend/fixtures/scam-library.json`. Gemini gets 2–3 matching examples (by channel, scam type, tactics and difficulty). The practice path is built from it too: real phishing emails with invented names, real scam-call patterns, and texts Gemini wrote from library examples; only the genuine "looks safe" messages are hand-written. No embeddings, no runtime Python. | "Grounded in real-world scam patterns", and each practice scenario's source line |
 | **Gemini** | Writes a personalised scam email or call script aimed at your current weak spot. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback. | "Written by Gemini" |
 | **ElevenLabs** | Voices the live scam call you answer and talk to, then scores what you gave away (codes, card, personal details). | Call debrief: "powered by ElevenLabs" |
 | **TigerData** | Stores every tap and decision, with the scam tactics involved, in a TimescaleDB hypertable and turns it into metrics over time. | **Your scam instincts** card and chart |
@@ -82,8 +82,8 @@ frontend/   React app: auth, onboarding, home, practice phone (texts, emails, ca
   src/comms/      client and hooks for simulated texts and calls (useSimulatedCall, useTextThread)
 backend/    Express API, one server
   app/            users · training · scenarios · behavior · insights · texts · calls · sim · http · db · shared
-  fixtures/       built-in text and call scenarios; scam-library.json (the curated dataset library)
-  scripts/        setup-agent.ts (creates the ElevenLabs voice agent), snowflake-setup.sql
+  fixtures/       scam-library.json (the curated dataset library) and the practice-path call/text scenarios built from it
+  scripts/        setup-agent.ts (ElevenLabs voice agent), build-practice.ts (practice path from the library), snowflake-setup.sql
 data-pipeline/  offline Python that builds backend/fixtures/scam-library.json from Kaggle datasets (never runs in the app)
 docs/       dataset.md (sources, licences, counts), call-integration.md (calls, outcomes, auth) and mvp-contracts.md (the adaptive loop)
 PRODUCT.md  who Tellio is for and the product principles
@@ -152,7 +152,7 @@ Run `backend/scripts/snowflake-setup.sql` once in Snowflake, create a programmat
 
 ### 6. Optional: rebuild the scam library
 
-The library is committed, so this is only needed to change it. See [`data-pipeline/README.md`](data-pipeline/README.md): `python -m tellio_data download`, then `build`. The email and call datasets download anonymously. The SMS competition data needs Kaggle credentials and accepted competition rules, so the committed library has no SMS rows yet.
+The library is committed, so this is only needed to change it. See [`data-pipeline/README.md`](data-pipeline/README.md): `python -m tellio_data download`, then `build`. All three datasets download anonymously. Then rebuild the practice path from it with `npm run build:practice` in `backend/` (add `-- --texts` to have Gemini write any missing practice texts).
 
 ## Tests and checks
 

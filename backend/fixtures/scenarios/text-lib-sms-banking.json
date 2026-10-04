@@ -1,0 +1,19 @@
+{
+  "userId": "dev-user",
+  "scenario": {
+    "id": "lib-sms-banking",
+    "title": "Unrecognized transfer flagged on your debit card",
+    "tactics": [
+      "urgency",
+      "suspicious_link",
+      "info_request",
+      "fear"
+    ],
+    "difficulty": 2,
+    "senderLabel": "+1 (888) 555-0192",
+    "openingMessage": "Apex Trust Alert: We blocked a suspicious $480.00 transfer from your account to CryptoExchange. If you did not authorize this, verify your identity immediately. {{link}}",
+    "linkDisplayUrl": "apextrust-secure-verify.com/login",
+    "persona": "You sent this scam text: \"Apex Trust Alert: We blocked a suspicious $480.00 transfer from your account to CryptoExchange. If you did not authorize this, verify your identity immediately.\". Keep replies short, like texts. Stay in character, push the same way (urgency, suspicious_link, info_request, fear), and never name a real company.",
+    "maxTurns": 4
+  }
+}

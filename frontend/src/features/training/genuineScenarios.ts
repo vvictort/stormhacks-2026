@@ -1,0 +1,80 @@
+// The genuine messages on the practice path: real-looking notices that are safe, so the path also tests over-reporting.
+// They are the only hand-written practice content. Every scam comes from practice.json (backend/scripts/build-practice.ts).
+import type { MessageScenario } from './scenarios.ts'
+
+export const genuineScenarios: MessageScenario[] = [
+  {
+    id: 'dental-reminder',
+    type: 'sms',
+    tactics: [],
+    title: 'Appointment reminder',
+    summary: "A clinic texts about tomorrow's appointment.",
+    situation: 'You booked a cleaning at Maple Grove Dental last month.',
+    difficulty: 'easy',
+    correctAction: 'safe',
+    sender: '(604) 555-0182',
+    receivedAt: '9:02 AM',
+    messages: [{
+      text: 'Hi, this is Maple Grove Dental. Reminder: your cleaning with Dr. Okafor is tomorrow at 2:30 PM. Reply C to confirm, or call us at 604-555-0182 to reschedule.',
+    }],
+    indicators: [
+      { quote: 'your cleaning with Dr. Okafor is tomorrow at 2:30 PM', title: 'It matches something you did', detail: 'You booked this appointment. A message about something you were expecting is a good sign.' },
+      { quote: 'Reply C to confirm', title: 'Nothing to pay, no link to tap', detail: "It doesn't ask for money, a password or personal details. Replying with one letter gives nothing away." },
+      { quote: '604-555-0182', title: 'A number you can check', detail: "The callback number is the same one the text came from, and you can compare it with the number on the clinic's booking confirmation." },
+    ],
+    explanation: 'Real reminders tend to look like this: you were expecting it, it asks for nothing sensitive, and you can check it on your own.',
+    nextTime: "Being careful is never wrong. To tell real reminders apart, ask: was I expecting this, and does it ask for money, codes or personal details?",
+  },
+  {
+    id: 'bank-code',
+    type: 'sms',
+    tactics: [],
+    title: 'Sign-in code from your bank',
+    summary: 'Your bank texts a code while you sign in.',
+    situation: "You're signing in to Harbourline Bank on your laptop, and the site says it has texted you a code.",
+    difficulty: 'medium',
+    correctAction: 'safe',
+    sender: '55501',
+    receivedAt: '11:26 AM',
+    messages: [{
+      text: 'Harbourline Bank: 482913 is your code to sign in on a new device. It expires in 10 minutes. We will never call or text to ask for this code.',
+    }],
+    indicators: [
+      { quote: 'your code to sign in on a new device', title: 'It matches what you just did', detail: 'You started a sign-in a moment ago and the site said a code was on its way. The text is the expected next step.' },
+      { quote: 'We will never call or text to ask for this code', title: 'It tells you to keep it', detail: 'A real code message warns you not to share it. You type it into the site you opened yourself, and give it to no one.' },
+      { quote: 'It expires in 10 minutes', title: 'A time limit with no threat', detail: "Codes expire quickly by design. Nothing bad happens if it runs out; you'd simply ask for a new one." },
+    ],
+    explanation: "This one is genuine. You asked for the code, it arrived when the site said it would, and it doesn't ask you to reply, tap a link or pass it on.",
+    nextTime: "A code you didn't ask for is a warning sign. A code you did ask for is fine, as long as it only goes into the site you opened yourself.",
+  },
+  {
+    id: 'book-order',
+    type: 'email',
+    tactics: [],
+    title: 'Order confirmation',
+    summary: 'A bookshop confirms the order you placed yesterday.',
+    situation: 'Yesterday you ordered two books from Fernleaf Books, a shop whose website is fernleafbooks.ca.',
+    difficulty: 'medium',
+    correctAction: 'safe',
+    fromName: 'Fernleaf Books',
+    fromAddress: 'orders@fernleafbooks.ca',
+    subject: 'Your Fernleaf Books order #48213',
+    receivedAt: '10:15 AM',
+    body: [
+      'Hi Sam,',
+      'Thanks for your order. Here is what you bought: The Quiet Garden and A Short History of Tea, $41.98 including tax, paid with the card ending in 4417.',
+      "We'll email you again when it ships. You can check your order at any time from your account on our website.",
+      'Happy reading,',
+      'The Fernleaf Books team',
+    ],
+    links: ['https://fernleafbooks.ca/account/orders/48213'],
+    indicators: [
+      { quote: 'The Quiet Garden and A Short History of Tea', title: 'It matches what you did', detail: 'These are the books you ordered, for a price you recognize. An email about something you were expecting is a good sign.' },
+      { quote: 'orders@fernleafbooks.ca', title: "The address is the shop's own", detail: 'Tap the sender name and the address ends in fernleafbooks.ca, the same as the shop\'s website.' },
+      { quote: 'https://fernleafbooks.ca/account/orders/48213', title: 'The link goes to the real site', detail: 'Read the address up to the first single slash: fernleafbooks.ca. That is the shop you ordered from, not a look-alike.' },
+      { quote: "We'll email you again when it ships.", title: 'No pressure, nothing to hand over', detail: "It doesn't ask for a password, a payment or a deadline. It only tells you what happens next." },
+    ],
+    explanation: 'Real receipts tend to look like this: you were expecting it, the details match, the sender and link point to the shop\'s own website, and it asks for nothing.',
+    nextTime: 'Being careful is never wrong. To tell real emails apart, tap the sender name and check the address, check where links really go, and ask whether you were expecting it.',
+  },
+]

@@ -29,10 +29,10 @@ test('every built-in text and email names its tactics; genuine ones have none', 
 })
 
 test('hasLink covers both channels', () => {
-  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'parcel-redelivery')), true)
+  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'lib-sms-shipping')), true)
   assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'dental-reminder')), false)
-  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'bank-sign-in')), true)
-  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'contractor-invoice')), false)
+  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'lib-email-b2fc6048da88')), true)
+  assert.equal(hasLink(scenarios.find((scenario) => scenario.id === 'lib-email-8ec97af8877d')), false)
 })
 
 test('markText splits text into plain and numbered pieces without losing characters', () => {
