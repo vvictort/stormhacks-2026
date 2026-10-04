@@ -3,10 +3,10 @@ import { backendClient } from './backend.ts';
 import { CallService } from './calls/service.ts';
 import { DATA_DIR, allowDevUser, config } from './config.ts';
 import { JsonlEventSink } from './events.ts';
-import { StubProvider } from './provider.ts';
-import { createApp } from './router.ts';
-import { SampleCatalog } from './samples.ts';
+import { createApp } from './app.ts';
+import { SampleCatalog } from './scenarios/catalog.ts';
 import { JsonFileStore } from './store.ts';
+import { StubProvider } from './texts/provider.ts';
 import { TextService } from './texts/service.ts';
 
 const SWEEP_INTERVAL_MS = 15_000;

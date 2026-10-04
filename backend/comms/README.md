@@ -41,6 +41,22 @@ Re-running `setup:agent` updates the existing agent. Then, with `COMMS_ALLOW_DEV
 
 Both files are gitignored.
 
+## Structure
+
+```
+src/
+  server.ts          composition root: store, events, services, auth → createApp → listen, sweeps
+  app.ts             HTTP assembly: CORS, JSON, feature routers, error mapping
+  auth.ts            verified Firebase identity (and the opt-in dev user)
+  backend.ts         client for the backend API's internal routes (results, generated scenarios)
+  scenarios/         catalog.ts (fixtures, id-only start schema, gen- resolution), routes.ts
+  texts/             service.ts, routes.ts (+ tracked-link redirect), sse.ts, links.ts, provider.ts
+  calls/             service.ts, routes.ts, elevenlabs.ts, outcome.ts, preamble.ts
+  store.ts events.ts types.ts config.ts lib/
+```
+
+Each feature owns its routes and service; `app.ts` only mounts them, and `server.ts` is the only place that builds them.
+
 ## Auth
 
 Browser requests carry the signed-in user's Firebase ID token:
@@ -155,7 +171,7 @@ If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two 
 
 - **Scenario shapes:** `TextScenario` and `CallScenario` in `src/types.ts` (zod-validated). Use `{{link}}` in text messages; comms swaps it for the fake display URL plus our tracked link.
 - **Sample scenarios:** `fixtures/scenarios/text-*.json` and `call-*.json` (each shaped `{ userId, scenario }`) are loaded at startup and served by `GET /comms/scenarios`. Drop new samples there; an invalid file stops the server with the file name. Clients can only start these by id (plus backend-generated `gen-` call scenarios); custom scenarios in request bodies are rejected.
-- **Text replies:** implement `ScenarioProvider` in `src/provider.ts`:
+- **Text replies:** implement `ScenarioProvider` in `src/texts/provider.ts`:
   - `nextTextTurn({ scenario, messages, preSignals })` → `{ reply, signals, done }`
   - `followUp(...)` → a nudge, or `null`
 

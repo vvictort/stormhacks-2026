@@ -8,9 +8,9 @@ import { createAuth, type VerifyToken } from '../src/auth.ts';
 import { backendClient, type Backend } from '../src/backend.ts';
 import { CallService } from '../src/calls/service.ts';
 import { JsonlEventSink } from '../src/events.ts';
-import { StubProvider } from '../src/provider.ts';
-import { createApp } from '../src/router.ts';
-import { SampleCatalog } from '../src/samples.ts';
+import { createApp } from '../src/app.ts';
+import { SampleCatalog } from '../src/scenarios/catalog.ts';
+import { StubProvider } from '../src/texts/provider.ts';
 import { JsonFileStore } from '../src/store.ts';
 import { TextService } from '../src/texts/service.ts';
 
