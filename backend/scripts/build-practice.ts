@@ -57,8 +57,9 @@ if (flag) {
       category,
       difficulty,
     );
-    if (written) texts.push(written);
-    else if (kept) {
+    if (written) {
+      texts.push(written);
+    } else if (kept) {
       console.warn(
         `${category} text: Gemini failed twice; keeping the committed one`,
       );

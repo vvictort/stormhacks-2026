@@ -326,8 +326,9 @@ export class TextService {
       }
 
       const latest = await this.store.getThread(threadId);
-      if (result.done) await this.end(threadId, "provider_done");
-      else if (latest && latest.scammerTurns >= latest.scenario.maxTurns) {
+      if (result.done) {
+        await this.end(threadId, "provider_done");
+      } else if (latest && latest.scammerTurns >= latest.scenario.maxTurns) {
         await this.end(threadId, "max_turns");
       }
     } finally {

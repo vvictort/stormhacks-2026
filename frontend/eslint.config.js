@@ -19,7 +19,8 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      curly: ['error', 'multi-line'],
+      curly: ['error', 'multi-line', 'consistent'],
+      'one-var': ['error', 'never'],
     },
   },
 ])

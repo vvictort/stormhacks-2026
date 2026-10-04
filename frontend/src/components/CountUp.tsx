@@ -13,8 +13,8 @@ export function CountUp({ value }: { value: number }) {
       return
     }
 
-    const start = performance.now(),
-      duration = 700
+    const start = performance.now()
+    const duration = 700
     let frame = requestAnimationFrame(function tick(now) {
       const t = Math.min(1, (now - start) / duration)
       // ease-out-quart

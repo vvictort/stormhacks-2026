@@ -140,7 +140,9 @@ export function useTextThread(threadId: string | null): TextThreadHandle {
             (error.status === 404 || error.status === 401)
           ) {
             fail(error.code)
-          } else recover()
+          } else {
+            recover()
+          }
         }
       }, delay)
     }

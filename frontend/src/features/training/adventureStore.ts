@@ -48,10 +48,13 @@ const subscribe = (listener: () => void) => {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
-    if (event.key === null) snapshots.clear()
-    else if (event.key.startsWith('tellio.adventure.v1.')) {
+    if (event.key === null) {
+      snapshots.clear()
+    } else if (event.key.startsWith('tellio.adventure.v1.')) {
       snapshots.delete(event.key)
-    } else return
+    } else {
+      return
+    }
 
     listeners.forEach((listener) => listener())
   })

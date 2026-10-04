@@ -214,7 +214,9 @@ export function useSimulatedCall({
       if (!s?.callId || s.stage !== 'in_call') return
       if (s.connected) {
         dispatch({ type: 'failed', callId: s.callId, error: message })
-      } else failSession(message)
+      } else {
+        failSession(message)
+      }
     },
   })
 
@@ -227,8 +229,9 @@ export function useSimulatedCall({
       if (!s?.callId || !drop) return
       const { callId } = s
       s.abort.abort()
-      if (drop === 'abandon') abandonRinging(s)
-      else {
+      if (drop === 'abandon') {
+        abandonRinging(s)
+      } else {
         s.stage = 'done'
         endSession()
         // Not tied to the aborted signal. Without a connected conversation the

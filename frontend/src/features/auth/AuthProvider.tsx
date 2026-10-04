@@ -21,7 +21,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(nextUser)
           // Covers sign-out from another tab, so a warning never outlives its
           // session.
-          if (!nextUser) setProfileWarning(null)
+          if (!nextUser) {
+            setProfileWarning(null)
+          }
           // Have the backend confirm the session in the background: api() signs
           // out on 401. An unreachable backend shouldn't lock anyone out of the
           // UI, so that only warns.
@@ -58,7 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (actionError) {
       if (actionError instanceof PasswordPolicyError) {
         setPasswordError(actionError.message)
-      } else setError(getAuthErrorMessage(actionError))
+      } else {
+        setError(getAuthErrorMessage(actionError))
+      }
       return false
     } finally {
       busy.current = false

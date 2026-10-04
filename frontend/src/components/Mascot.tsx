@@ -69,12 +69,12 @@ const MOODS: Record<MascotMood, Pose> = {
   },
 }
 
-const CX = 100,
-  CY = 96,
-  RX = 66,
-  RY = 58,
-  POINTS = 22,
-  FOOT = 154
+const CX = 100
+const CY = 96
+const RX = 66
+const RY = 58
+const POINTS = 22
+const FOOT = 154
 
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k
 const superellipse = (c: number) => Math.sign(c) * Math.abs(c) ** 0.78
@@ -85,10 +85,10 @@ function smooth(p: [number, number][]) {
   const n = p.length
   let d = `M${f(p[0][0], 1)} ${f(p[0][1], 1)}`
   for (let i = 0; i < n; i++) {
-    const p0 = p[(i - 1 + n) % n],
-      p1 = p[i],
-      p2 = p[(i + 1) % n],
-      p3 = p[(i + 2) % n]
+    const p0 = p[(i - 1 + n) % n]
+    const p1 = p[i]
+    const p2 = p[(i + 1) % n]
+    const p3 = p[(i + 2) % n]
     d += `C${f(p1[0] + (p2[0] - p0[0]) / 6, 1)} ${f(p1[1] + (p2[1] - p0[1]) / 6, 1)} ${f(p2[0] - (p3[0] - p1[0]) / 6, 1)} ${f(p2[1] - (p3[1] - p1[1]) / 6, 1)} ${f(p2[0], 1)} ${f(p2[1], 1)}`
   }
   return d + 'Z'
@@ -172,7 +172,9 @@ export function Mascot({
       } else if (m === 'alert') {
         if (!reduce) st.shakeAt = t
         impulse(1.2)
-      } else impulse(0.8)
+      } else {
+        impulse(0.8)
+      }
     }
 
     const onMove = (e: PointerEvent) => {
@@ -184,35 +186,36 @@ export function Mascot({
     addEventListener('pointermove', onMove, { passive: true })
     root.addEventListener('pointerdown', onDown)
 
-    let raf = 0,
-      prev = now()
+    let raf = 0
+    let prev = now()
     const frame = () => {
       raf = requestAnimationFrame(frame)
-      const t = now(),
-        dt = Math.min(0.05, t - prev)
+      const t = now()
+      const dt = Math.min(0.05, t - prev)
       prev = t
       const r = root.getBoundingClientRect()
       if (!r.width) return // hidden, e.g. the editorial column on small screens
 
-      const m = MOODS[moodRef.current],
-        k = 1 - Math.exp(-dt * 9)
-      const ox = r.left + r.width / 2,
-        oy = r.top + r.height * 0.47
+      const m = MOODS[moodRef.current]
+      const k = 1 - Math.exp(-dt * 9)
+      const ox = r.left + r.width / 2
+      const oy = r.top + r.height * 0.47
       const tracking = performance.now() - pointer.at < 2600
       // Where to look: the pointer if it moved recently, otherwise glance
       // around.
-      let tx: number, ty: number
+      let tx: number
+      let ty: number
       if (tracking) {
-        const dx = pointer.x - ox,
-          dy = pointer.y - oy,
-          d = Math.hypot(dx, dy) || 1,
-          mag = Math.min(1, d / (r.width * 0.9 + 40))
+        const dx = pointer.x - ox
+        const dy = pointer.y - oy
+        const d = Math.hypot(dx, dy) || 1
+        const mag = Math.min(1, d / (r.width * 0.9 + 40))
         tx = (dx / d) * mag
         ty = (dy / d) * mag
       } else {
         if (t > st.wander.at) {
-          const a = Math.random() * Math.PI * 2,
-            g = Math.random() < 0.3 ? 0 : 0.5 + Math.random() * 0.5
+          const a = Math.random() * Math.PI * 2
+          const g = Math.random() < 0.3 ? 0 : 0.5 + Math.random() * 0.5
           st.wander = {
             x: Math.cos(a) * g,
             y: Math.sin(a) * g * 0.6,
@@ -250,8 +253,8 @@ export function Mascot({
         st.nextBlink =
           t + (Math.random() < 0.2 ? 0.28 : 2 + Math.random() * 3.5)
       }
-      const bp = (t - st.blinkAt) / 0.15,
-        blink = bp < 1 ? 1 - Math.sin(Math.PI * bp) * 0.92 : 1
+      const bp = (t - st.blinkAt) / 0.15
+      const blink = bp < 1 ? 1 - Math.sin(Math.PI * bp) * 0.92 : 1
 
       // Squash spring, hops and shake.
       st.v += (-190 * st.s - 13 * st.v) * dt
@@ -263,22 +266,25 @@ export function Mascot({
           st.hops--
           st.hopAt = t + 0.05
           impulse(2.4)
-        } else hy = -20 * Math.sin(Math.PI * p)
+        } else {
+          hy = -20 * Math.sin(Math.PI * p)
+        }
       }
-      const since = t - st.shakeAt,
-        sx = since < 0.55 ? 3.5 * Math.sin(since * 60) * (1 - since / 0.55) : 0
+      const since = t - st.shakeAt
+      const sx =
+        since < 0.55 ? 3.5 * Math.sin(since * 60) * (1 - since / 0.55) : 0
       const breath = reduce ? 0 : Math.sin(t * 2.1 + seed) * 0.018
-      const scx = 1 + st.s * 0.6 - breath * 0.5,
-        scy = 1 - st.s + breath
+      const scx = 1 + st.s * 0.6 - breath * 0.5
+      const scy = 1 - st.s + breath
 
       // Jelly body: squircle points with a slow wobble and a bulge toward the
       // look direction.
-      const mag = Math.hypot(cur.lx, cur.ly),
-        pts: [number, number][] = []
+      const mag = Math.hypot(cur.lx, cur.ly)
+      const pts: [number, number][] = []
       for (let i = 0; i < POINTS; i++) {
-        const a = (i / POINTS) * Math.PI * 2,
-          c = Math.cos(a),
-          s = Math.sin(a)
+        const a = (i / POINTS) * Math.PI * 2
+        const c = Math.cos(a)
+        const s = Math.sin(a)
         const wob = reduce
           ? 0
           : 1.5 * Math.sin(t * 1.3 + i * 0.9 + seed) +

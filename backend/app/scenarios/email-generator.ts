@@ -941,7 +941,9 @@ export function emailFromExample(
       paragraphs[paragraphs.length - 1].length + sentence.length < 300
     ) {
       paragraphs[paragraphs.length - 1] += ` ${sentence}`;
-    } else paragraphs.push(sentence);
+    } else {
+      paragraphs.push(sentence);
+    }
   }
 
   const body = paragraphs.slice(0, 6);

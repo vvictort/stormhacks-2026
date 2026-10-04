@@ -108,8 +108,8 @@ const ms = (expr: string, filter?: string) =>
  */
 const halves = (n: string, total: string) => {
   const k = `least(5, ${total} / 2)`;
-  const first = `${n} <= ${k}`,
-    latest = `${n} > ${total} - ${k}`;
+  const first = `${n} <= ${k}`;
+  const latest = `${n} > ${total} - ${k}`;
   return `max(${k})::int AS k,
     ${pct("correct", first)} AS then_accuracy, ${ms("detection_ms", first)} AS then_detection,
     ${pct("correct", latest)} AS now_accuracy, ${ms("detection_ms", latest)} AS now_detection`;

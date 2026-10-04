@@ -38,8 +38,9 @@ export function validateAuthForm(
   const emailError = validateEmail(values.email)
   if (emailError) errors.email = emailError
 
-  if (!values.password) errors.password = 'Please enter your password.'
-  else if (isSignup && values.password.length < MIN_PASSWORD_LENGTH) {
+  if (!values.password) {
+    errors.password = 'Please enter your password.'
+  } else if (isSignup && values.password.length < MIN_PASSWORD_LENGTH) {
     errors.password = 'Use at least 8 characters.'
   }
   if (isSignup) {
