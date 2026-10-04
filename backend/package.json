@@ -7,12 +7,9 @@
     "dev": "tsx watch app/main.ts",
     "start": "tsx app/main.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test \"tests/**/*.test.ts\"",
-    "test:email": "tsx test_email.ts"
+    "test": "tsx --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
-    "@google/genai": "^2.3.0",
-    "dotenv": "^16.4.7",
     "express": "^5.2.1",
     "firebase-admin": "^14.5.0"
   },
