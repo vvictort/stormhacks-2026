@@ -75,20 +75,24 @@ export function ScenarioPage() {
   const state = useScenario(scenarioId)
   const scenario = state.status === 'ready' ? state.scenario : undefined
 
+  // Keyed by id: a new scenario is a new run, and a call's voice provider
+  // lives exactly as long as its run.
+  const key = `${user?.uid}:${scenario?.id}`
+  let run: ReactNode
+  if (state.status === 'loading') {
+    run = <ScenarioLoading />
+  } else if (!scenario) {
+    run = <MissingScenario />
+  } else if (scenario.type === 'call') {
+    run = <CallRun key={key} scenario={scenario} />
+  } else {
+    run = <ScenarioRun key={key} scenario={scenario} />
+  }
+
   return (
     <div className="train-shell">
       <TrainingHeader />
-      {/* Keyed by id: a new scenario is a new run, and a call's voice provider
-          lives exactly as long as its run. */}
-      {state.status === 'loading' ? (
-        <ScenarioLoading />
-      ) : !scenario ? (
-        <MissingScenario />
-      ) : scenario.type === 'call' ? (
-        <CallRun key={`${user?.uid}:${scenario.id}`} scenario={scenario} />
-      ) : (
-        <ScenarioRun key={`${user?.uid}:${scenario.id}`} scenario={scenario} />
-      )}
+      {run}
     </div>
   )
 }

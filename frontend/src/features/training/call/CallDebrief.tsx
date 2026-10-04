@@ -11,6 +11,47 @@ import { missionComplete, type BadgeId, type Mission } from '../missions'
 import type { Scenario } from '../scenarios'
 import type { CallDebriefView, Moment } from './callModel'
 
+/** The way forward in a mission: retry an unscored call, or move on. */
+function MissionStep({
+  retry,
+  complete,
+  missionHref,
+}: {
+  retry?: { live: () => void; captions: () => void }
+  complete: boolean
+  missionHref?: string
+}) {
+  if (retry) {
+    return (
+      <>
+        <button type="button" className="train-primary" onClick={retry.live}>
+          Retry call
+        </button>
+        <button type="button" className="train-ghost" onClick={retry.captions}>
+          Use captions
+        </button>
+      </>
+    )
+  }
+  if (complete) {
+    return (
+      <TransitionLink className="train-primary" to="/home">
+        See your mission rewards
+        <ArrowRight size={17} aria-hidden="true" />
+      </TransitionLink>
+    )
+  }
+  if (missionHref) {
+    return (
+      <TransitionLink className="train-primary" to={missionHref}>
+        Continue mission
+        <ArrowRight size={17} aria-hidden="true" />
+      </TransitionLink>
+    )
+  }
+  return null
+}
+
 /**
  * After a call: the result (from callOutcome, never decided here), the warning
  * signs, and moments from the redacted transcript.
@@ -94,34 +135,11 @@ export function CallDebrief({
       )}
       {mission && (
         <div className="debrief-actions">
-          {retry ? (
-            <>
-              <button
-                type="button"
-                className="train-primary"
-                onClick={retry.live}
-              >
-                Retry call
-              </button>
-              <button
-                type="button"
-                className="train-ghost"
-                onClick={retry.captions}
-              >
-                Use captions
-              </button>
-            </>
-          ) : complete ? (
-            <TransitionLink className="train-primary" to="/home">
-              See your mission rewards
-              <ArrowRight size={17} aria-hidden="true" />
-            </TransitionLink>
-          ) : missionHref ? (
-            <TransitionLink className="train-primary" to={missionHref}>
-              Continue mission
-              <ArrowRight size={17} aria-hidden="true" />
-            </TransitionLink>
-          ) : null}
+          <MissionStep
+            retry={retry}
+            complete={Boolean(complete)}
+            missionHref={missionHref}
+          />
           {!complete && (
             <TransitionLink direction="back" className="train-ghost" to="/home">
               Back to home

@@ -1,5 +1,5 @@
 import { ArrowRight, Check, LoaderCircle } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mascot } from '../../../components/Mascot'
 import { TransitionLink } from '../../../components/TransitionLink'
@@ -22,6 +22,13 @@ import type { Progress } from '../progress'
 import { getScenario, type Difficulty } from '../scenarios'
 import './missions.css'
 
+// The class of each step in the progress list, by the status read out for it.
+const stepClass = {
+  completed: 'is-done',
+  current: 'is-current',
+  upcoming: '',
+}
+
 export function MissionProgress({
   mission,
   currentId,
@@ -40,18 +47,21 @@ export function MissionProgress({
             ? mission.scenarioIds[i] === (currentId ?? missionNext(mission))
             : i === 0
 
+          let status: keyof typeof stepClass = 'upcoming'
+          if (done) status = 'completed'
+          else if (current) status = 'current'
+
           return (
             <li
               key={i}
-              className={done ? 'is-done' : current ? 'is-current' : ''}
-              aria-current={!done && current ? 'step' : undefined}
+              className={stepClass[status]}
+              aria-current={status === 'current' ? 'step' : undefined}
             >
               <span aria-hidden="true">
                 {done ? <Check size={15} /> : i + 1}
               </span>
               <span className="sr-only">
-                Scenario {i + 1}:{' '}
-                {done ? 'completed' : current ? 'current' : 'upcoming'}
+                Scenario {i + 1}: {status}
               </span>
             </li>
           )
@@ -104,6 +114,27 @@ export function BadgeCollection({
   )
 }
 
+const badgeMark: Record<BadgeId, ReactNode> = {
+  'first-steps': (
+    <>
+      <path d="M33 51V25m0 1c9-6 13 6 22 0v15c-9 6-13-6-22 0" />
+      <path d="M27 52h13" />
+    </>
+  ),
+  'good-catch': (
+    <>
+      <circle cx="37" cy="35" r="10" />
+      <path d="m44 43 9 10m-20-18 3 3 5-6" />
+    </>
+  ),
+  comeback: (
+    <>
+      <path d="M54 35a14 14 0 1 0-4 14M54 25v10H44" />
+      <path d="m35 39 4 4 7-8" />
+    </>
+  ),
+}
+
 /**
  * Small collectible seals: each achievement has its own mark, with shared
  * ribbon details.
@@ -136,22 +167,7 @@ function BadgeEmblem({ id }: { id: BadgeId }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {id === 'first-steps' ? (
-          <>
-            <path d="M33 51V25m0 1c9-6 13 6 22 0v15c-9 6-13-6-22 0" />
-            <path d="M27 52h13" />
-          </>
-        ) : id === 'good-catch' ? (
-          <>
-            <circle cx="37" cy="35" r="10" />
-            <path d="m44 43 9 10m-20-18 3 3 5-6" />
-          </>
-        ) : (
-          <>
-            <path d="M54 35a14 14 0 1 0-4 14M54 25v10H44" />
-            <path d="m35 39 4 4 7-8" />
-          </>
-        )}
+        {badgeMark[id]}
       </g>
     </svg>
   )
@@ -267,6 +283,24 @@ export function MissionCard({
     if (prepared.mission) open(prepared.mission)
   }
 
+  let title = 'Your next mission'
+  if (complete) title = 'Mission accomplished.'
+  else if (mission?.completed.length) title = 'Pick up where you left off.'
+
+  let objective =
+    'Read the message, check the details, then decide what you’d do.'
+  if (complete) {
+    objective = 'You made time to practise. That’s how good habits stick.'
+  } else if (includesCalls) {
+    objective =
+      'Read a text, investigate an email, and handle a caller. Make the call on what you’d do.'
+  }
+
+  let startLabel = 'Start mission'
+  if (failure) startLabel = 'Retry'
+  else if (complete) startLabel = 'Start another mission'
+  else if (mission) startLabel = 'Continue mission'
+
   return (
     <>
       <section
@@ -278,13 +312,7 @@ export function MissionCard({
             <p className="mission-eyebrow">
               Three scenarios. A few careful decisions.
             </p>
-            <h2 id="mission-title">
-              {complete
-                ? 'Mission accomplished.'
-                : mission?.completed.length
-                  ? 'Pick up where you left off.'
-                  : 'Your next mission'}
-            </h2>
+            <h2 id="mission-title">{title}</h2>
           </div>
           <div
             className={`mission-mascot${complete ? ' is-celebrating' : ' is-waving'}`}
@@ -292,13 +320,7 @@ export function MissionCard({
             <Mascot mood={complete ? 'happy' : 'curious'} />
           </div>
         </div>
-        <p className="mission-objective">
-          {complete
-            ? 'You made time to practise. That’s how good habits stick.'
-            : includesCalls
-              ? 'Read a text, investigate an email, and handle a caller. Make the call on what you’d do.'
-              : 'Read the message, check the details, then decide what you’d do.'}
-        </p>
+        <p className="mission-objective">{objective}</p>
         <MissionProgress mission={mission} />
         <div className="mission-focus">
           <span>
@@ -327,13 +349,7 @@ export function MissionCard({
               </>
             ) : (
               <>
-                {failure
-                  ? 'Retry'
-                  : complete
-                    ? 'Start another mission'
-                    : mission
-                      ? 'Continue mission'
-                      : 'Start mission'}
+                {startLabel}
                 <ArrowRight size={17} aria-hidden="true" />
               </>
             )}

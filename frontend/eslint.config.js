@@ -21,6 +21,7 @@ export default defineConfig([
     rules: {
       curly: ['error', 'multi-line', 'consistent'],
       'one-var': ['error', 'never'],
+      'no-nested-ternary': 'error',
     },
   },
 ])

@@ -30,6 +30,59 @@ interface DebriefProps {
   earnedNow?: BadgeId[]
 }
 
+function verdictTitle(correct: boolean, isScam: boolean) {
+  if (correct) return isScam ? 'Good catch.' : "Right call. This one's genuine."
+  return isScam
+    ? "Not quite. Here's what gave it away."
+    : 'Not quite. This one was genuine.'
+}
+
+function verdictLede(correct: boolean, isScam: boolean) {
+  if (!correct) {
+    return 'This is a safe place to learn. One useful check will help next time.'
+  }
+  return isScam
+    ? 'You spotted the manipulation.'
+    : 'You gave a genuine message the right call.'
+}
+
+/** The way forward: the mission first, otherwise the path's next scenario. */
+function NextStep({
+  missionHref,
+  complete,
+  nextId,
+}: {
+  missionHref?: string
+  complete: boolean
+  nextId?: string
+}) {
+  if (missionHref) {
+    return (
+      <TransitionLink className="train-primary" to={missionHref}>
+        Continue mission
+        <ArrowRight size={17} aria-hidden="true" />
+      </TransitionLink>
+    )
+  }
+  if (complete) {
+    return (
+      <TransitionLink className="train-primary" to="/home">
+        See your mission rewards
+        <ArrowRight size={17} aria-hidden="true" />
+      </TransitionLink>
+    )
+  }
+  if (nextId) {
+    return (
+      <TransitionLink className="train-primary" to={`/train/${nextId}`}>
+        Next scenario
+        <ArrowRight size={17} aria-hidden="true" />
+      </TransitionLink>
+    )
+  }
+  return null
+}
+
 export function Debrief({
   scenario,
   choice,
@@ -63,13 +116,7 @@ export function Debrief({
     hasNext: Boolean(next),
     adaptive: Boolean(learned),
   })
-  const title = correct
-    ? isScam
-      ? 'Good catch.'
-      : "Right call. This one's genuine."
-    : isScam
-      ? "Not quite. Here's what gave it away."
-      : 'Not quite. This one was genuine.'
+  const title = verdictTitle(correct, isScam)
 
   useEffect(() => heading.current?.focus(), [])
 
@@ -98,11 +145,7 @@ export function Debrief({
         </h2>
       </div>
       <p className="debrief-lede">
-        {correct
-          ? isScam
-            ? 'You spotted the manipulation.'
-            : 'You gave a genuine message the right call.'
-          : 'This is a safe place to learn. One useful check will help next time.'}
+        {verdictLede(correct, isScam)}
         {mission && ' Another step completed.'}
       </p>
 
@@ -156,22 +199,11 @@ export function Debrief({
       </p>
 
       <div className="debrief-actions">
-        {missionHref ? (
-          <TransitionLink className="train-primary" to={missionHref}>
-            Continue mission
-            <ArrowRight size={17} aria-hidden="true" />
-          </TransitionLink>
-        ) : complete ? (
-          <TransitionLink className="train-primary" to="/home">
-            See your mission rewards
-            <ArrowRight size={17} aria-hidden="true" />
-          </TransitionLink>
-        ) : actions.pathNext && next ? (
-          <TransitionLink className="train-primary" to={`/train/${next.id}`}>
-            Next scenario
-            <ArrowRight size={17} aria-hidden="true" />
-          </TransitionLink>
-        ) : null}
+        <NextStep
+          missionHref={missionHref}
+          complete={Boolean(complete)}
+          nextId={actions.pathNext ? next?.id : undefined}
+        />
         {!complete && (
           <TransitionLink
             direction="back"

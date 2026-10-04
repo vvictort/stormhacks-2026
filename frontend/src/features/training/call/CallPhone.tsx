@@ -218,6 +218,19 @@ const problem: Partial<
   },
 }
 
+function endedStatus(screen: CallScreen, durationSecs?: number): ReactNode {
+  if (screen === 'declined') return 'Call declined'
+  if (screen === 'missed') {
+    return (
+      <>
+        <PhoneMissed size={15} aria-hidden="true" /> Missed call
+      </>
+    )
+  }
+  const duration = durationSecs ? ` · ${formatDuration(durationSecs)}` : ''
+  return `Call ended${duration}`
+}
+
 /**
  * The phone's call app for a live (voiced) call. One screen per call state;
  * see callModel.callScreen.
@@ -402,17 +415,7 @@ export function LiveCallScreen(props: LiveProps) {
         <div className="call-screen is-ended">
           <Caller
             label={callerLabel}
-            status={
-              screen === 'declined' ? (
-                'Call declined'
-              ) : screen === 'missed' ? (
-                <>
-                  <PhoneMissed size={15} aria-hidden="true" /> Missed call
-                </>
-              ) : (
-                `Call ended${props.durationSecs ? ` · ${formatDuration(props.durationSecs)}` : ''}`
-              )
-            }
+            status={endedStatus(screen, props.durationSecs)}
           />
         </div>
       )

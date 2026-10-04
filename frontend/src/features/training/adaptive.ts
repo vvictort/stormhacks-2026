@@ -98,6 +98,19 @@ export interface NextView {
   difficulty: Difficulty
 }
 
+function focusReason(
+  category: ScamCategory,
+  record: Adaptive['categoryAccuracy'][ScamCategory],
+) {
+  if (!record) {
+    return `You haven't practised ${plural[category]} yet, so that's next.`
+  }
+  if (record.correct < record.attempts) {
+    return `chatisthisreal noticed ${plural[category]} catch you out: you've made the right call on ${record.correct} of ${record.attempts}.`
+  }
+  return `You've caught every one of the ${plural[category]} so far. This one keeps that sharp.`
+}
+
 /**
  * What Tellio trains next and why, from the server's state. Without it (API
  * down), a plain personalised email at the local level.
@@ -117,13 +130,8 @@ export function nextForYou(
     }
   }
 
-  const record = adaptive.categoryAccuracy[category]
   const tactic = tactics[adaptive.vulnerableTactics[0]]
-  const reason = !record
-    ? `You haven't practised ${plural[category]} yet, so that's next.`
-    : record.correct < record.attempts
-      ? `chatisthisreal noticed ${plural[category]} catch you out: you've made the right call on ${record.correct} of ${record.attempts}.`
-      : `You've caught every one of the ${plural[category]} so far. This one keeps that sharp.`
+  const reason = focusReason(category, adaptive.categoryAccuracy[category])
 
   return {
     title: `${capital(emailKind[category])} email, made for you`,

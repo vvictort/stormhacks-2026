@@ -2,6 +2,13 @@ import { Check, Circle, X } from 'lucide-react'
 import { passwordChecks } from '../validation'
 
 // Live password rules. After a failed submit, unmet rules turn into errors.
+// How each rule is shown, and what a screen reader adds after its label.
+const marks = {
+  met: { Icon: Check, spoken: ', done' },
+  unmet: { Icon: X, spoken: ', not met yet' },
+  pending: { Icon: Circle, spoken: '' },
+}
+
 export function PasswordChecklist({
   id,
   password,
@@ -21,8 +28,10 @@ export function PasswordChecklist({
       aria-live="polite"
     >
       {passwordChecks(password, confirmPassword).map((check) => {
-        const state = check.met ? 'met' : showErrors ? 'unmet' : 'pending'
-        const Icon = state === 'met' ? Check : state === 'unmet' ? X : Circle
+        let state: keyof typeof marks = 'pending'
+        if (check.met) state = 'met'
+        else if (showErrors) state = 'unmet'
+        const { Icon, spoken } = marks[state]
         return (
           <li key={check.id} data-state={state}>
             <Icon
@@ -32,13 +41,7 @@ export function PasswordChecklist({
               aria-hidden="true"
             />
             {check.label}
-            <span className="sr-only">
-              {state === 'met'
-                ? ', done'
-                : state === 'unmet'
-                  ? ', not met yet'
-                  : ''}
-            </span>
+            <span className="sr-only">{spoken}</span>
           </li>
         )
       })}

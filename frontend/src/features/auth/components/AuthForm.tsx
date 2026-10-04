@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { flushSync } from 'react-dom'
 import {
   ArrowRight,
@@ -8,6 +14,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
+import type { MascotMood } from '../../../components/Mascot'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { withViewTransition } from '../../../lib/viewTransition'
 import { useAuth } from '../AuthContext'
@@ -104,11 +111,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     clearError()
 
     // Each signup step only checks its own fields.
-    const stepFields: AuthFieldName[] | null = !isSignup
-      ? null
-      : step === 'details'
-        ? ['name', 'email']
-        : ['password', 'confirmPassword']
+    let stepFields: AuthFieldName[] | null = null
+    if (isSignup) {
+      stepFields =
+        step === 'details' ? ['name', 'email'] : ['password', 'confirmPassword']
+    }
     const allErrors = validateAuthForm(values, isSignup)
     const nextErrors: FieldErrors = stepFields
       ? Object.fromEntries(
@@ -212,38 +219,41 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   )
   // Tell reacts to the form: thinking while a request runs, a sideways look
   // when something needs fixing.
-  const mood =
-    formError || Object.values(errors).some(Boolean)
-      ? 'suspicious'
-      : pending
-        ? 'curious'
-        : 'idle'
+  let mood: MascotMood = 'idle'
+  if (formError || Object.values(errors).some(Boolean)) mood = 'suspicious'
+  else if (pending) mood = 'curious'
+
+  let description: ReactNode
+  if (!isSignup) {
+    description = 'Log in to pick up where you left off.'
+  } else if (!onPasswordStep) {
+    description = 'Scam practice matched to your level, at your own pace.'
+  } else {
+    description = (
+      <>
+        Signing up as{' '}
+        <strong className="card-email">{values.email.trim()}</strong>.{' '}
+        <button
+          type="button"
+          className="text-link inline-link"
+          disabled={disabled}
+          onClick={() => goToStep('details')}
+        >
+          Change
+        </button>
+      </>
+    )
+  }
+
+  let submitLabel = 'Log in'
+  if (isSignup) submitLabel = onPasswordStep ? 'Create account' : 'Continue'
 
   return (
     <>
       <AuthCard
         title={isSignup ? 'Create your account' : 'Welcome back'}
         mood={mood}
-        description={
-          !isSignup ? (
-            'Log in to pick up where you left off.'
-          ) : !onPasswordStep ? (
-            'Scam practice matched to your level, at your own pace.'
-          ) : (
-            <>
-              Signing up as{' '}
-              <strong className="card-email">{values.email.trim()}</strong>.{' '}
-              <button
-                type="button"
-                className="text-link inline-link"
-                disabled={disabled}
-                onClick={() => goToStep('details')}
-              >
-                Change
-              </button>
-            </>
-          )
-        }
+        description={description}
       >
         <form
           ref={form}
@@ -391,11 +401,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               </>
             ) : (
               <>
-                {!isSignup
-                  ? 'Log in'
-                  : onPasswordStep
-                    ? 'Create account'
-                    : 'Continue'}
+                {submitLabel}
                 <ArrowRight size={18} aria-hidden="true" />
               </>
             )}

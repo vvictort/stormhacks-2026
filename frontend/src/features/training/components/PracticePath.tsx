@@ -128,6 +128,28 @@ function resolveAttempt(
   }
 }
 
+function EmptyHistory() {
+  return (
+    <div className="path-empty-card">
+      <div className="path-empty-icon-wrap">
+        <HistoryIcon size={28} aria-hidden="true" />
+      </div>
+      <h3>No completed scenarios yet</h3>
+      <p>
+        When you practice phone calls, inspect phishing emails, or review
+        smishing texts, your completed simulations and decisions will appear
+        here.
+      </p>
+      <TransitionLink
+        to="/?tab=practice"
+        className="train-primary path-empty-btn"
+      >
+        Start practicing
+      </TransitionLink>
+    </div>
+  )
+}
+
 /** What to say when the chosen filters leave nothing to list. */
 function emptyFilterText(channel: string, status: string | null) {
   const label = channelTabs.find((tab) => tab.id === channel)?.label ?? channel
@@ -174,6 +196,23 @@ export function PracticePath({ progress }: { progress: Progress }) {
         )
       : inChannel
 
+  let results = (
+    <ol className="path-stops">
+      {list.slice(0, shown).map((attempt) => (
+        <HistoryStop key={attempt.key} attempt={attempt} />
+      ))}
+    </ol>
+  )
+  if (allAttempts.length === 0) {
+    results = <EmptyHistory />
+  } else if (list.length === 0) {
+    results = (
+      <div className="path-empty-filter">
+        <p>{emptyFilterText(channel, status)}</p>
+      </div>
+    )
+  }
+
   return (
     <section className="path" aria-label="Practice history">
       <div className="path-filters">
@@ -205,35 +244,7 @@ export function PracticePath({ progress }: { progress: Progress }) {
         </div>
       </div>
 
-      {allAttempts.length === 0 ? (
-        <div className="path-empty-card">
-          <div className="path-empty-icon-wrap">
-            <HistoryIcon size={28} aria-hidden="true" />
-          </div>
-          <h3>No completed scenarios yet</h3>
-          <p>
-            When you practice phone calls, inspect phishing emails, or review
-            smishing texts, your completed simulations and decisions will appear
-            here.
-          </p>
-          <TransitionLink
-            to="/?tab=practice"
-            className="train-primary path-empty-btn"
-          >
-            Start practicing
-          </TransitionLink>
-        </div>
-      ) : list.length === 0 ? (
-        <div className="path-empty-filter">
-          <p>{emptyFilterText(channel, status)}</p>
-        </div>
-      ) : (
-        <ol className="path-stops">
-          {list.slice(0, shown).map((attempt) => (
-            <HistoryStop key={attempt.key} attempt={attempt} />
-          ))}
-        </ol>
-      )}
+      {results}
 
       {list.length > shown && (
         <button

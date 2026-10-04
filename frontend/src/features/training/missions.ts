@@ -65,6 +65,10 @@ export const missionUrl = (
 ) =>
   `/train/${encodeURIComponent(scenarioId!)}?mission=${encodeURIComponent(mission.id)}`
 
+const levels = ['easy', 'medium', 'hard']
+const levelGap = (a: Difficulty, b: Difficulty) =>
+  Math.abs(levels.indexOf(a) - levels.indexOf(b))
+
 /**
  * One of each channel, with one genuine message, near the learner's difficulty
  * and in varied order.
@@ -75,19 +79,22 @@ export function createMission(
   id: string,
   list: Scenario[] = scenarios,
 ): Mission {
-  const levels = ['easy', 'medium', 'hard']
+  // Among scenarios of the closest difficulty: untried first, then missed,
+  // then already right.
+  const familiarity = (s: Scenario) => {
+    const attempt = progress[s.id]
+    if (!attempt) return 0
+    return attempt.correct ? 2 : 1
+  }
+  const rank = (s: Scenario) =>
+    levelGap(s.difficulty, difficulty) * 3 + familiarity(s)
+
   const pick = (type: Channel, action?: 'report' | 'safe') => {
     const candidates = list.filter(
       (s) =>
         s.type === type && (s.type === 'call' || s.correctAction === action),
     )
-    candidates.sort((a, b) => {
-      const rank = (s: Scenario) =>
-        Math.abs(levels.indexOf(s.difficulty) - levels.indexOf(difficulty)) *
-          3 +
-        (progress[s.id]?.correct ? 2 : progress[s.id] ? 1 : 0)
-      return rank(a) - rank(b)
-    })
+    candidates.sort((a, b) => rank(a) - rank(b))
     if (!candidates.length) {
       throw new Error('Practice scenarios are unavailable.')
     }
@@ -110,6 +117,44 @@ export function createMission(
 }
 
 /**
+ * The mission's steps with the generated email in place of its scam email, or
+ * null when it has none to replace.
+ *
+ * A genuine generated email would leave a mission that has a call with two
+ * genuine messages, so its genuine text is then swapped for the scam text
+ * closest in difficulty.
+ */
+function swapInGenerated(scenarioIds: string[], generated: EmailScenario) {
+  const ids = [...scenarioIds]
+  const steps = ids.map((id) => scenarios.find((s) => s.id === id))
+
+  const emailIndex = steps.findIndex(
+    (s) => s?.type === 'email' && s.correctAction === 'report',
+  )
+  if (emailIndex < 0) return null
+  ids[emailIndex] = generated.id
+
+  const hasCall = steps.some((s) => s?.type === 'call')
+  if (generated.correctAction !== 'safe' || !hasCall) return ids
+
+  const textIndex = steps.findIndex(
+    (s) => s?.type === 'sms' && s.correctAction === 'safe',
+  )
+  if (textIndex < 0) return ids
+
+  const text = steps[textIndex]!
+  const scamTexts = scenarios
+    .filter((s) => s.type === 'sms' && s.correctAction === 'report')
+    .sort(
+      (a, b) =>
+        levelGap(a.difficulty, text.difficulty) -
+        levelGap(b.difficulty, text.difficulty),
+    )
+  if (scamTexts.length) ids[textIndex] = scamTexts[0].id
+  return ids
+}
+
+/**
  * Personalizes the selected email; a genuine result keeps mixed-channel
  * missions balanced.
  */
@@ -121,58 +166,17 @@ export function prepareMission(
   const mission = state.mission
   if (!mission || mission.id !== missionId || mission.ready) return state
 
-  const scenarioIds = [...mission.scenarioIds]
-  let selectedEmail: EmailScenario | undefined
-  if (generated) {
-    const index = scenarioIds.findIndex((id) =>
-      scenarios.some(
-        (s) =>
-          s.id === id && s.type === 'email' && s.correctAction === 'report',
-      ),
-    )
-    if (index >= 0) {
-      scenarioIds[index] = generated.id
-      selectedEmail = generated
-      if (
-        generated.correctAction === 'safe' &&
-        scenarioIds.some((id) =>
-          scenarios.some((s) => s.id === id && s.type === 'call'),
-        )
-      ) {
-        const textIndex = scenarioIds.findIndex((id) =>
-          scenarios.some(
-            (s) =>
-              s.id === id && s.type === 'sms' && s.correctAction === 'safe',
-          ),
-        )
-        if (textIndex >= 0) {
-          const text = scenarios.find((s) => s.id === scenarioIds[textIndex])!
-          const levels = ['easy', 'medium', 'hard']
-          const candidates = scenarios.filter(
-            (s) => s.type === 'sms' && s.correctAction === 'report',
-          )
-          candidates.sort(
-            (a, b) =>
-              Math.abs(
-                levels.indexOf(a.difficulty) - levels.indexOf(text.difficulty),
-              ) -
-              Math.abs(
-                levels.indexOf(b.difficulty) - levels.indexOf(text.difficulty),
-              ),
-          )
-          if (candidates.length) scenarioIds[textIndex] = candidates[0].id
-        }
-      }
-    }
-  }
+  const swapped = generated
+    ? swapInGenerated(mission.scenarioIds, generated)
+    : null
 
   return {
     ...state,
     mission: {
       ...mission,
-      scenarioIds,
+      scenarioIds: swapped ?? [...mission.scenarioIds],
       ready: true,
-      ...(selectedEmail ? { generated: selectedEmail } : {}),
+      ...(swapped && generated ? { generated } : {}),
     },
   }
 }

@@ -61,11 +61,8 @@ export function callScreen({
     case 'analyzing':
       return 'analyzing'
     case 'completed':
-      return result?.outcome === 'declined'
-        ? 'declined'
-        : result?.outcome === 'missed'
-          ? 'missed'
-          : 'ended'
+      if (result?.outcome === 'declined') return 'declined'
+      return result?.outcome === 'missed' ? 'missed' : 'ended'
     case 'ringing':
       if (error === 'microphone_denied') return 'mic_denied'
       if (error === 'microphone_unavailable') return 'mic_unavailable'
@@ -271,18 +268,38 @@ export function riskyExchange(transcript: CallTranscriptTurn[] = []) {
   return ask ? { ask: moment(ask), reply: null } : null
 }
 
+function toneOf(result: CallResult | null) {
+  if (result?.success === true) return 'success'
+  if (result?.success === false) return 'missed'
+  return 'unscored'
+}
+
+const toneMood = {
+  success: 'happy',
+  missed: 'alert',
+  unscored: 'curious',
+} as const
+
+/** What went wrong on a call the caller won. */
+function compromisedLine(
+  scenario: CallScenario,
+  fromPractice: boolean,
+  slips: string[],
+) {
+  if (fromPractice) {
+    return `You chose "${scenario.practice.complyLabel}". That was exactly what the caller was after.`
+  }
+  if (slips.length) return `${slips.join('. ')}.`
+  return 'You went along with what the caller asked.'
+}
+
 export function buildCallDebrief(
   scenario: CallScenario,
   source: DebriefSource,
 ) {
   const { result, signals = [], tactics = [] } = source
   const copy = outcomeCopy[result?.outcome ?? 'error']
-  const tone =
-    result?.success === true
-      ? 'success'
-      : result?.success === false
-        ? 'missed'
-        : 'unscored'
+  const tone = toneOf(result)
   const has = (signal: string) => signals.includes(signal)
   const allTactics = [...new Set([...scenario.tactics, ...tactics])]
   const answered =
@@ -328,12 +345,7 @@ export function buildCallDebrief(
   let nearMiss: { line: string; exchange: typeof exchange } | null = null
   if (result?.outcome === 'compromised') {
     nearMiss = {
-      line:
-        source.from === 'practice'
-          ? `You chose "${scenario.practice.complyLabel}". That was exactly what the caller was after.`
-          : slips.length
-            ? `${slips.join('. ')}.`
-            : 'You went along with what the caller asked.',
+      line: compromisedLine(scenario, source.from === 'practice', slips),
       exchange,
     }
   } else if (result?.outcome === 'resisted' && exchange?.reply) {
@@ -359,12 +371,7 @@ export function buildCallDebrief(
     tone,
     title: copy.title,
     outcomeLine: copy.line,
-    mood:
-      tone === 'success'
-        ? ('happy' as const)
-        : tone === 'missed'
-          ? ('alert' as const)
-          : ('curious' as const),
+    mood: toneMood[tone],
     explanation: scenario.explanation,
     /**
      * What the caller tried: the pretext, their tactics, and their ask from

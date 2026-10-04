@@ -28,11 +28,9 @@ export function AuthField({
 }: AuthFieldProps) {
   // The error takes the hint's place, so describe the field by whichever is
   // showing.
-  const description = error
-    ? `${id}-error`
-    : hint
-      ? `${id}-hint`
-      : inputProps['aria-describedby']
+  let description = inputProps['aria-describedby']
+  if (error) description = `${id}-error`
+  else if (hint) description = `${id}-hint`
 
   return (
     <div className="form-field">

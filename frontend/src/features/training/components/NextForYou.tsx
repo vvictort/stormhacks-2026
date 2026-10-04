@@ -23,6 +23,11 @@ const builtIn = (type: 'email' | 'call', difficulty: Difficulty) =>
   scenarios.find((s) => s.type === type && s.difficulty === difficulty) ??
   scenarios.find((s) => s.type === type)!
 
+const pendingStatus = {
+  email: 'Writing your practice email…',
+  call: 'Preparing your practice call…',
+}
+
 /**
  * Generates an email (and optionally a call) for this user, then opens it. On
  * failure, offers a built-in one instead.
@@ -209,11 +214,7 @@ export function MadeForYouActions({
         </div>
       )}
       <p className="made-for-you-status" role="status">
-        {pending
-          ? pending === 'email'
-            ? 'Writing your practice email…'
-            : 'Preparing your practice call…'
-          : ''}
+        {pending ? pendingStatus[pending] : ''}
       </p>
       {failed && fallback && (
         <p className="made-for-you-error" role="alert">
@@ -271,6 +272,50 @@ export function NextForYou({
   )
 }
 
+function LearnedBody({
+  waiting,
+  view,
+}: {
+  waiting: boolean
+  view: ReturnType<typeof learned> | null
+}) {
+  if (waiting) {
+    return (
+      <p className="learned-wait">
+        <LoaderCircle size={16} className="spinner" aria-hidden="true" />
+        Updating your profile…
+      </p>
+    )
+  }
+  if (!view) {
+    return (
+      <p className="learned-wait">
+        Couldn't update your profile. It'll catch up next time.
+      </p>
+    )
+  }
+  return (
+    <>
+      <ul className="learned-list">
+        {view.lines.slice(0, 2).map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+      {view.insight && (
+        <figure className="learned-insight">
+          <blockquote>{view.insight.pattern}</blockquote>
+          <figcaption>{insightSourceLabel(view.insight.source)}</figcaption>
+        </figure>
+      )}
+      <p className="learned-next">
+        Next up:{' '}
+        <strong>{view.next.title.replace(/, made for you$/, '')}</strong> ·{' '}
+        {levelName(view.next.difficulty)}
+      </p>
+    </>
+  )
+}
+
 /**
  * After a debrief: what changed in Tellio's picture of this user, compared with
  * before the run, and the next step.
@@ -300,35 +345,7 @@ export function LearnedPanel({
       aria-busy={learning.status === 'waiting'}
     >
       <h3 id="learned-title">What chatisthisreal learned</h3>
-      {learning.status === 'waiting' ? (
-        <p className="learned-wait">
-          <LoaderCircle size={16} className="spinner" aria-hidden="true" />
-          Updating your profile…
-        </p>
-      ) : !view ? (
-        <p className="learned-wait">
-          Couldn't update your profile. It'll catch up next time.
-        </p>
-      ) : (
-        <>
-          <ul className="learned-list">
-            {view.lines.slice(0, 2).map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-          {view.insight && (
-            <figure className="learned-insight">
-              <blockquote>{view.insight.pattern}</blockquote>
-              <figcaption>{insightSourceLabel(view.insight.source)}</figcaption>
-            </figure>
-          )}
-          <p className="learned-next">
-            Next up:{' '}
-            <strong>{view.next.title.replace(/, made for you$/, '')}</strong> ·{' '}
-            {levelName(view.next.difficulty)}
-          </p>
-        </>
-      )}
+      <LearnedBody waiting={learning.status === 'waiting'} view={view} />
       {withActions && learning.status !== 'waiting' && (
         <MadeForYouActions
           difficulty={difficulty}

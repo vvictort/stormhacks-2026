@@ -33,6 +33,12 @@ export interface ChannelSectionProps {
   adaptiveDifficulty?: Difficulty
 }
 
+const failureText = {
+  email: "Couldn't write an email scenario just now.",
+  sms: "Couldn't write a text message scenario just now.",
+  call: "Couldn't set up a personalized call scenario just now.",
+}
+
 export function ChannelSection({
   channel,
   title,
@@ -74,14 +80,12 @@ export function ChannelSection({
           (s) => s.type === type && s.difficulty === adaptiveDifficulty,
         ) ?? pool.find((s) => s.type === type)
       setFailed({
+        // A failed call keeps its own wording; a message says what went wrong
+        // when the API did.
         message:
-          type === 'email'
-            ? (error as Error).message ||
-              "Couldn't write an email scenario just now."
-            : type === 'sms'
-              ? (error as Error).message ||
-                "Couldn't write a text message scenario just now."
-              : "Couldn't set up a personalized call scenario just now.",
+          type === 'call'
+            ? failureText.call
+            : (error as Error).message || failureText[type],
         fallbackId: fallback?.id,
       })
       setPending(null)

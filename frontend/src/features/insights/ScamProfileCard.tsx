@@ -1,5 +1,63 @@
-import { useScamProfile } from './useScamProfile'
+import { useScamProfile, type ScamProfileState } from './useScamProfile'
 import './scamProfile.css'
+
+function ProfileBody({
+  state,
+}: {
+  state: Exclude<ScamProfileState, { status: 'error' }>
+}) {
+  if (state.status === 'loading') {
+    return (
+      <div className="scam-profile-skeleton" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+    )
+  }
+
+  const { view } = state
+  if (view.empty) {
+    return (
+      <p>
+        Nothing to read yet. After a few scenarios, chatisthisreal sums up what
+        you catch and what to work on.
+      </p>
+    )
+  }
+
+  return (
+    <>
+      <p>{view.insight}</p>
+      {(view.strongest || view.weakest) && (
+        <dl className="scam-profile-facts">
+          {view.strongest && (
+            <div className="is-strong">
+              <dt>Strongest</dt>
+              <dd>{view.strongest}</dd>
+            </div>
+          )}
+          {view.weakest && (
+            <div className="is-weak">
+              <dt>Work on</dt>
+              <dd>{view.weakest}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+      <h3>How to improve</h3>
+      <p>{view.recommendation}</p>
+      {view.focus.length > 0 && (
+        <ul className="home-flags" aria-label="Practise next">
+          {view.focus.map((label) => (
+            <li key={label}>{label}</li>
+          ))}
+        </ul>
+      )}
+      <p className="scam-profile-source">{view.sourceLine}</p>
+    </>
+  )
+}
 
 /**
  * Insights' closing summary: how the user is doing, then how to improve. Hidden
@@ -16,48 +74,7 @@ export function ScamProfileCard({ uid }: { uid: string | null | undefined }) {
       aria-busy={state.status === 'loading'}
     >
       <h2 id="scam-profile-title">How you're doing</h2>
-      {state.status === 'loading' ? (
-        <div className="scam-profile-skeleton" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
-      ) : state.view.empty ? (
-        <p>
-          Nothing to read yet. After a few scenarios, chatisthisreal sums up
-          what you catch and what to work on.
-        </p>
-      ) : (
-        <>
-          <p>{state.view.insight}</p>
-          {(state.view.strongest || state.view.weakest) && (
-            <dl className="scam-profile-facts">
-              {state.view.strongest && (
-                <div className="is-strong">
-                  <dt>Strongest</dt>
-                  <dd>{state.view.strongest}</dd>
-                </div>
-              )}
-              {state.view.weakest && (
-                <div className="is-weak">
-                  <dt>Work on</dt>
-                  <dd>{state.view.weakest}</dd>
-                </div>
-              )}
-            </dl>
-          )}
-          <h3>How to improve</h3>
-          <p>{state.view.recommendation}</p>
-          {state.view.focus.length > 0 && (
-            <ul className="home-flags" aria-label="Practise next">
-              {state.view.focus.map((label) => (
-                <li key={label}>{label}</li>
-              ))}
-            </ul>
-          )}
-          <p className="scam-profile-source">{state.view.sourceLine}</p>
-        </>
-      )}
+      <ProfileBody state={state} />
     </section>
   )
 }

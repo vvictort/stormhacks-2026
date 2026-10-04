@@ -13,6 +13,8 @@ export function SocialLoginButton({
   disabled,
   onClick,
 }: SocialLoginButtonProps) {
+  const idleLabel = signup ? 'Sign up with Google' : 'Sign in with Google'
+
   return (
     <button
       type="button"
@@ -43,11 +45,7 @@ export function SocialLoginButton({
           />
         </svg>
       )}
-      {pending
-        ? 'Connecting to Google…'
-        : signup
-          ? 'Sign up with Google'
-          : 'Sign in with Google'}
+      {pending ? 'Connecting to Google…' : idleLabel}
     </button>
   )
 }

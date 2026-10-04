@@ -59,6 +59,14 @@ export interface InstinctRow {
  * The card's rows: then → now once there are two attempts, the current value
  * before that. Null with no history.
  */
+function trendNote(trend: Metrics['trend']) {
+  if (!trend) {
+    return 'Finish one more scenario to see how your instincts are changing.'
+  }
+  if (trend.window === 1) return 'Your first scenario against your latest.'
+  return `Your first ${trend.window} scenarios against your latest ${trend.window}.`
+}
+
 export function instinctsView(
   m: Metrics | null,
 ): { rows: InstinctRow[]; improved: string | null; note: string } | null {
@@ -105,16 +113,10 @@ export function instinctsView(
     rows.push({ label: 'Scams reported', now: `${m.reportRate}%` })
   }
 
-  const note = m.trend
-    ? m.trend.window === 1
-      ? 'Your first scenario against your latest.'
-      : `Your first ${m.trend.window} scenarios against your latest ${m.trend.window}.`
-    : 'Finish one more scenario to see how your instincts are changing.'
-
   return {
     rows,
     improved: m.mostImproved ? categoryLabel(m.mostImproved.category) : null,
-    note,
+    note: trendNote(m.trend),
   }
 }
 
