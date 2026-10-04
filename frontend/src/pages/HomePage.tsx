@@ -1,4 +1,4 @@
-import { ArrowRight, Info } from 'lucide-react'
+import { ArrowRight, Info, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/AuthContext'
@@ -9,7 +9,7 @@ import { scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 
 export function HomePage() {
-  const { user, profileWarning } = useAuth()
+  const { user, profileWarning, dismissProfileWarning } = useAuth()
   const { progress } = useProgress(user?.uid)
   const { done, total, correct } = summarize(progress)
   const next = recommend(progress)
@@ -39,7 +39,7 @@ export function HomePage() {
             <div className="train-notice" role="status">
               <Info size={18} aria-hidden="true" />
               <p>{profileWarning}</p>
-              {/* Integration: a dismiss button calling dismissProfileWarning() goes here. */}
+              <button type="button" className="train-notice-dismiss" onClick={dismissProfileWarning} aria-label="Dismiss this message"><X size={18} aria-hidden="true" /></button>
             </div>
           )}
 
