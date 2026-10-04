@@ -12,7 +12,7 @@ interface SimulatorProps {
   scenario: MessageScenario
   choice: Action | null
   onChoose: (action: Action) => void
-  onInspect: () => void
+  onInspect: (target: 'link' | 'sender', url?: string) => void
 }
 
 export function PhoneSimulator({ scenario, choice, onChoose, onInspect }: SimulatorProps) {

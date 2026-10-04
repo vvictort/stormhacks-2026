@@ -4,6 +4,7 @@ import { CountUp } from '../components/CountUp'
 import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
+import { InstinctsCard } from '../features/insights/InstinctsCard'
 import { GenerateEmailButton } from '../features/training/components/GenerateEmailButton'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
@@ -93,6 +94,8 @@ export function HomePage() {
                 ? "Saved in this browser. We couldn't load your phone-call results just now."
                 : 'Saved in this browser for now.'}</p>
           </section>
+
+          <InstinctsCard uid={user?.uid} />
         </div>
 
         <PracticePath progress={progress} upNextId={next?.id} />

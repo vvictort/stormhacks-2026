@@ -1,5 +1,6 @@
 import express from 'express';
 import helmet from 'helmet';
+import { behaviorRouter } from './behavior/behavior.routes.ts';
 import { callsRouter } from './calls/routes.ts';
 import type { CallService } from './calls/service.ts';
 import { requireAppRequest } from './http/app-origin.ts';
@@ -48,6 +49,7 @@ export function createApp({ repos, services, origin, verifyToken, geminiApiKey, 
   app.use('/api/training/call-scenarios', auth, scenariosRouter(repos, { geminiApiKey }));
   app.use('/api/training/email-scenarios', auth, emailScenariosRouter(repos, { model: jsonModel }));
   app.use('/api/training', auth, trainingRouter(repos.attempts));
+  app.use('/api/training', auth, behaviorRouter(repos));
 
   // Simulated texts and calls. The scenario list and tracked links are public; the SSE stream alone takes ?access_token=.
   app.use('/api/comms/scenarios', scenarioListRouter(catalog));

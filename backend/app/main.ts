@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase-admin/app';
+import { CallBehaviorSink } from './behavior/call-events.ts';
 import { createElevenLabs } from './calls/elevenlabs.ts';
 import { CallService } from './calls/service.ts';
 import { loadConfig } from './config.ts';
@@ -24,7 +25,8 @@ const services = {
   texts: new TextService(store, events, new StubProvider(), {
     appOrigin: config.APP_ORIGIN, followUpSec: config.TEXT_FOLLOWUP_SEC, idleEndSec: config.TEXT_IDLE_END_SEC,
   }),
-  calls: new CallService(store, events, {
+  // Call lifecycle events also become behaviour events in TigerData.
+  calls: new CallService(store, new CallBehaviorSink(events, repos.behavior, store), {
     attempts: repos.attempts,
     elevenLabs: createElevenLabs({ apiKey: config.ELEVENLABS_API_KEY, agentId: config.ELEVENLABS_AGENT_ID }),
     callMaxSeconds: config.CALL_MAX_SECONDS,

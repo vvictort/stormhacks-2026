@@ -3,12 +3,14 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode 
 import { useParams } from 'react-router-dom'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
+import { tracker } from '../features/insights/track'
+import { messageOutcome, runEvent, type Run, type TrackedEvent, type TrackedType } from '../features/insights/tracker'
 import { Debrief } from '../features/training/components/Debrief'
 import { PhoneFrame } from '../features/training/components/PhoneFrame'
 import { PhoneSimulator } from '../features/training/components/PhoneSimulator'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { recommend } from '../features/training/progress'
-import { hasLink, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
+import { hasLink, siteOf, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useScenario } from '../features/training/useScenario'
 
@@ -99,17 +101,43 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
   const [choice, setChoice] = useState<Action | null>(null)
   const [inspected, setInspected] = useState(false)
   const email = scenario.type === 'email'
+  // One run, one attempt id: every behaviour event of this run is timed from when it opened (features/insights).
+  const run = useRef<Run | null>(null)
+
+  useEffect(() => {
+    // Strict mode re-runs effects; the run (and its start event) happens once.
+    if (!run.current) {
+      run.current = { attemptId: crypto.randomUUID(), startedAt: performance.now() }
+      tracker.track(runEvent(scenario, run.current, 'scenario_started'))
+    }
+    return () => { void tracker.flush() }
+  }, [scenario])
+
+  function track(type: TrackedType, extra?: Pick<TrackedEvent, 'outcome' | 'metadata'>) {
+    if (run.current) tracker.track(runEvent(scenario, run.current, type, extra))
+  }
 
   function choose(action: Action) {
     setChoice(action)
     record(scenario.id, action === scenario.correctAction)
+    track(action === 'report' ? 'message_reported' : 'message_marked_safe')
+    track('scenario_completed', { outcome: messageOutcome(action, scenario.correctAction) })
+    // The debrief shows as soon as there is a choice.
+    track('debrief_viewed')
+    void tracker.flush()
+  }
+
+  function inspect(target: 'link' | 'sender', url?: string) {
+    if (choice) return
+    if (target === 'link') setInspected(true)
+    track(target === 'link' ? 'link_clicked' : 'sender_inspected', url ? { metadata: { site: siteOf(url) } } : undefined)
   }
 
   return (
     <main className="scenario-main">
       <ScenarioIntro scenario={scenario} />
 
-      <PhoneSimulator scenario={scenario} choice={choice} onChoose={choose} onInspect={() => { if (!choice) setInspected(true) }} />
+      <PhoneSimulator scenario={scenario} choice={choice} onChoose={choose} onInspect={inspect} />
 
       <div className="scenario-panel">
         {choice
