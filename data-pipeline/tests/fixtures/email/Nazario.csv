@@ -1,0 +1,20 @@
+sender,receiver,date,subject,body,urls,label
+a@x.test,b@x.test,2020,Urgent: account suspended,"Dear John Smith,
+We detected unusual activity on your PayPal account. Your account has been suspended. Click here to verify your account immediately: http://paypal-secure-login.co/verify?id=99 or call (604) 555-1234. Please confirm your identity within 24 hours or your account will be permanently closed.
+PayPal Security Team",1,1
+a@x.test,b@x.test,2020,Urgent: account suspended,"Dear John Smith,
+We detected unusual activity on your PayPal account. Your account has been suspended. Click here to verify your account immediately: http://paypal-secure-login.co/verify?id=99 or call (604) 555-1234. Please confirm your identity within 24 hours or your account will be permanently closed.
+PayPal Security Team",1,1
+a@x.test,b@x.test,2020,Urgent: account suspended!,"Dear Mary Jones,
+We detected unusual activity on your PayPal account. Your account has been suspended. Click here to verify your account immediately: http://paypal-secure-login.co/verify?id=42 or call (604) 555-9876. Please confirm your identity within 24 hours or your account will be permanently closed.
+PayPal Security Team",1,1
+a@x.test,b@x.test,2020,missing label,"This row has no label so the reader must skip it entirely, it is malformed.",0,
+a@x.test,b@x.test,2020,empty body,,0,1
+a@x.test,b@x.test,2020,short,hi there,0,1
+a@x.test,b@x.test,2020,Your order has shipped,"Hello,
+Good news: your order has shipped and the package is on its way. You can follow the delivery with the tracking number in your account at https://www.example-shop.com/orders. No action is needed from you. Thanks for shopping with us.",1,0
+a@x.test,b@x.test,2020,cheap meds,"Buy cheap viagra pills from our online pharmacy, the best prices you will ever see on the internet today.",1,1
+a@x.test,b@x.test,2020,Mailbox quota exceeded,"Your mailbox is full and has exceeded its quota. To avoid losing messages, log in here with your username and password to upgrade your storage: http://198.51.100.7/webmail/upgrade. The IT department will delete unverified accounts at the end of the day. Enter the verification code we sent to your phone.",1,1
+a@x.test,b@x.test,2020,Re: weekend plans,"> are we still on for saturday?
+Yes, see you at the usual place around noon, and bring the board game this time.
+Dave",0,0

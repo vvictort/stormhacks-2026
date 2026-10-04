@@ -43,3 +43,6 @@ backend/.local/
 
 # Local simulation data dumps
 backend/comms/
+
+# Raw Kaggle downloads for the offline dataset pipeline (never committed; licences restrict redistribution)
+data-pipeline/raw/
