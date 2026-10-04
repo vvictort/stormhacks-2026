@@ -1,8 +1,15 @@
 import { BACKEND_URL, INTERNAL_TOKEN, json, mockOutbound, startApp } from './harness.ts';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { after, beforeEach, test } from 'node:test';
-import { backendClient } from '../src/backend.ts';
+import { backendClient, trainingAttempt } from '../src/backend.ts';
 import { toTraining } from '../src/calls/outcome.ts';
+import { CallService } from '../src/calls/service.ts';
+import { JsonlEventSink } from '../src/events.ts';
+import { SampleCatalog } from '../src/scenarios/catalog.ts';
+import { JsonFileStore } from '../src/store.ts';
 import type { CallRecord } from '../src/types.ts';
 
 const ELEVENLABS = 'https://api.elevenlabs.io';
@@ -189,4 +196,64 @@ test('posting retries once on a server error, and is skipped when unconfigured',
   await backendClient(undefined, INTERNAL_TOKEN).postAttempt(call);
   await backendClient(BACKEND_URL, undefined).postAttempt(call);
   assert.equal(calls, 0);
+});
+
+test('abandoning a ringing call completes it unscored and posts nothing', async () => {
+  const app = await startApp();
+  after(app.close);
+  const posted: string[] = [];
+  mockOutbound((url) => (posted.push(url), elevenLabs(url) ?? json({ id: 'x' }, 201)));
+  const { body } = await app.api('POST', '/calls', { body: { scenarioId: 'bank-fraud-dept-otp-1' } });
+
+  assert.equal((await app.api('POST', `/calls/${body.callId}/abandon`, { token: 'valid:bob' })).status, 404, 'owner only');
+  const abandoned = await app.api('POST', `/calls/${body.callId}/abandon`);
+  assert.equal(abandoned.status, 200);
+  assert.equal(abandoned.body.status, 'completed');
+  assert.equal(abandoned.body.error, 'abandoned');
+  assert.deepEqual(abandoned.body.training, { outcome: 'error', success: null, difficulty: 'medium' });
+  // Over: it can't be abandoned again, declined into a scored result, or answered.
+  for (const action of ['abandon', 'decline', 'accept']) {
+    const res = await app.api('POST', `/calls/${body.callId}/${action}`);
+    assert.deepEqual([res.status, res.body.error], [409, 'not_ringing'], action);
+  }
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(posted.filter((url) => url.startsWith(BACKEND_URL)), [], 'nothing reaches the backend');
+
+  // A call already answered isn't ringing either.
+  const answered = await inCall(app);
+  assert.deepEqual((await app.api('POST', `/calls/${answered}/abandon`)).body.error, 'not_ringing');
+});
+
+test('the sweeper abandons a stale ringing call instead of posting a missed attempt', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'comms-sweep-'));
+  after(() => rmSync(dir, { recursive: true, force: true }));
+  const store = new JsonFileStore(dir);
+  const posted: CallRecord[] = [];
+  const calls = new CallService(store, new JsonlEventSink(dir), { postAttempt: async (call) => void posted.push(call) });
+  const call = await calls.start('alice', new SampleCatalog().pickCall('courier-customs-fee-1')!);
+  await store.updateCall(call.id, (c) => { c.createdAt = new Date(Date.now() - 3 * 60_000).toISOString(); });
+
+  await calls.sweep();
+  const swept = (await calls.get(call.id))!;
+  assert.deepEqual([swept.status, swept.error, swept.training?.success], ['completed', 'abandoned', null]);
+  assert.equal(posted.length, 0);
+  store.flush();
+});
+
+test('attempt payloads are clipped to the backend limits instead of being rejected', () => {
+  const long = 'x'.repeat(5000);
+  const call = {
+    id: 'call_long', userId: 'u', status: 'completed', createdAt: 'a', completedAt: 'b', signals: [],
+    scenario: { id: 'gen-1', title: 't'.repeat(300), tactics: ['urgency'], difficulty: 1 },
+    summary: long,
+    transcript: [{ role: 'agent', message: long, timeInCallSecs: 1 }, { role: 'user', message: 'short', timeInCallSecs: 2 }],
+    training: toTraining('resisted', 1),
+  } as unknown as CallRecord;
+  const body = trainingAttempt(call);
+  assert.equal(body.summary!.length, 4000);
+  assert.ok(body.summary!.endsWith('…'));
+  assert.equal(body.transcript[0]!.message.length, 4000);
+  assert.equal(body.transcript[1]!.message, 'short');
+  assert.equal(body.scenarioTitle.length, 200);
+  assert.equal(call.summary, long, 'the stored record is untouched');
 });

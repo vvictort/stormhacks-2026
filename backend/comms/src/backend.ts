@@ -6,7 +6,13 @@ import { CallScenario, type CallRecord } from './types.ts';
 export class BackendError extends Error {}
 
 const TIMEOUT_MS = 10_000;
+// The backend's limits (backend/app/training/attempts.schema.ts). A longer value would make it reject the whole
+// attempt, so clip instead: a shortened summary is better than a lost result.
 const MAX_TRANSCRIPT_TURNS = 200;
+const MAX_TEXT = 4000;
+const MAX_TITLE = 200;
+
+const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -18,7 +24,7 @@ export function trainingAttempt(call: CallRecord) {
     firebaseUid: call.userId,
     channel: 'call' as const,
     scenarioId: call.scenario.id,
-    scenarioTitle: call.scenario.title,
+    scenarioTitle: clip(call.scenario.title, MAX_TITLE),
     difficulty: training.difficulty,
     tactics: call.scenario.tactics,
     outcome: training.outcome,
@@ -27,9 +33,9 @@ export function trainingAttempt(call: CallRecord) {
     startedAt: call.createdAt,
     completedAt: call.completedAt!,
     durationSecs: call.durationSecs ?? null,
-    summary: call.summary ?? null,
+    summary: call.summary ? clip(call.summary, MAX_TEXT) : null,
     // Already redacted when the analysis was stored; raw captions never reach comms.
-    transcript: (call.transcript ?? []).slice(0, MAX_TRANSCRIPT_TURNS),
+    transcript: (call.transcript ?? []).slice(0, MAX_TRANSCRIPT_TURNS).map((t) => ({ ...t, message: clip(t.message, MAX_TEXT) })),
   };
 }
 

@@ -20,3 +20,20 @@ test('the API tactic vocabulary matches comms', async () => {
   const comms = await import('../comms/src/types.ts');
   assert.deepEqual([...Tactic.options].sort(), [...comms.Tactic.options].sort());
 });
+
+test("comms' training-attempt payload passes the API schema, even for an oversize call", async () => {
+  const { trainingAttempt } = await import('../comms/src/backend.ts');
+  const { attemptSchema } = await import('../app/training/attempts.schema.ts');
+  const long = 'x'.repeat(10_000);
+  const call = {
+    id: 'call_long', userId: 'uid-1', status: 'completed', signals: ['engaged'],
+    createdAt: '2026-10-03T10:00:00.000Z', completedAt: '2026-10-03T10:02:00.000Z', durationSecs: 120,
+    scenario: { id: 'gen-1', title: 't'.repeat(500), tactics: ['urgency'], difficulty: 3, callerLabel: 'x', systemPrompt: 'x', firstMessage: 'x' },
+    summary: long,
+    transcript: Array.from({ length: 250 }, (_, i) => ({ role: i % 2 ? 'user' : 'agent', message: long, timeInCallSecs: i })),
+    training: { outcome: 'resisted', success: true, difficulty: 'hard' },
+  };
+  const parsed = attemptSchema.safeParse(trainingAttempt(call as never));
+  assert.ok(parsed.success, JSON.stringify(parsed.error?.issues.slice(0, 3)));
+  assert.equal(parsed.data.transcript.length, 200);
+});
