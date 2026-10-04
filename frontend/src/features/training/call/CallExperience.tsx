@@ -1,7 +1,10 @@
 import { ConversationProvider } from '@elevenlabs/react'
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useSimulatedCall } from '../../../comms/useSimulatedCall'
+import {
+  useSimulatedCall,
+  type SimulatedCallHandle,
+} from '../../../comms/useSimulatedCall'
 import { api } from '../../../lib/api'
 import {
   guardsNavigation,
@@ -29,6 +32,7 @@ import {
   callScreen,
   debriefSource,
   practiceResult,
+  type DebriefSource,
 } from './callModel'
 import './call.css'
 
@@ -58,41 +62,24 @@ export default function CallExperience(props: Props) {
 const clockTime = () =>
   new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
-function CallStage({ uid, scenario, progress, record }: Props) {
-  const call = useSimulatedCall()
-  const adventure = useAdventure(uid)
-  const [params] = useSearchParams()
-  const missionId = params.get('mission')
-  const mission = adventure.mission?.id === missionId ? adventure.mission : null
-  const [earnedBefore] = useState(() => getAdventure(uid).earned)
-  const [practiceAttemptId] = useState(
-    () => `practice-call:${crypto.randomUUID()}`,
+const pushGuardEntry = () =>
+  window.history.pushState(
+    { ...window.history.state, tellioCallGuard: true },
+    '',
+    window.location.href,
   )
-  const previouslyMissed = useRef(false)
-  const submittedPractice = useRef(false)
-  const [practice, setPractice] = useState<{
-    result: CallResult | null
-  } | null>(null)
+
+/**
+ * While `guarded` (a live call is connecting or on): links and sign-out ask
+ * first, reload/close gets the browser's prompt, and Back lands on a duplicate
+ * entry of this page so we can ask before really leaving.
+ */
+function useLeaveGuard(call: SimulatedCallHandle, guarded: boolean) {
   const [asking, setAsking] = useState<{
     trigger: LeaveTrigger
     resolve: (leave: boolean) => void
   } | null>(null)
-  const [time] = useState(clockTime)
 
-  const completed = call.phase === 'completed'
-  const result = completed ? readCallResult(call.record) : null
-  const screen = callScreen({
-    phase: call.phase,
-    callId: call.callId,
-    error: call.error,
-    result,
-  })
-  const callerLabel = call.callerLabel ?? scenario.callerLabel
-  const guarded = !practice && guardsNavigation(call.phase)
-
-  // While a live call is connecting or on: links and sign-out ask first,
-  // reload/close gets the browser's prompt, and Back lands on a duplicate entry
-  // of this page so we can ask before really leaving.
   useEffect(() => {
     if (!guarded) return
     const unregister = setNavigationGuard(
@@ -104,11 +91,7 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     }
     const onPop = () => setAsking({ trigger: 'back_button', resolve: () => {} })
 
-    window.history.pushState(
-      { ...window.history.state, tellioCallGuard: true },
-      '',
-      window.location.href,
-    )
+    pushGuardEntry()
     window.addEventListener('beforeunload', onUnload)
     window.addEventListener('popstate', onPop)
 
@@ -127,13 +110,7 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     const decision = leaveDecision(call.phase, asking.trigger, choice)
     setAsking(null)
     if (decision === 'stay') return asking.resolve(false)
-    if (decision === 'restore_entry') {
-      return window.history.pushState(
-        { ...window.history.state, tellioCallGuard: true },
-        '',
-        window.location.href,
-      )
-    }
+    if (decision === 'restore_entry') return pushGuardEntry()
     if (decision === 'hang_up_then_back' || decision === 'hang_up_then_go') {
       await call.leave()
     }
@@ -141,15 +118,26 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     else asking.resolve(true)
   }
 
-  // Debrief data: the stored backend attempt if it's there yet, otherwise the
-  // comms record (always available).
+  return { asking: asking !== null, chooseLeave }
+}
+
+/**
+ * The stored backend attempt for a finished call. `ready` once the request has
+ * settled; `data` is null when the attempt isn't there yet, and the debrief
+ * then uses the comms record (always available).
+ */
+function useStoredAttempt(
+  uid: string | null | undefined,
+  callId: string | null,
+  completed: boolean,
+) {
   const [attempt, setAttempt] = useState<{
     callId: string
     data: unknown
   } | null>(null)
+
   useEffect(() => {
-    if (!completed || !call.callId) return
-    const callId = call.callId
+    if (!completed || !callId) return
     const controller = new AbortController()
     api<unknown>(
       `/training/attempts/${encodeURIComponent(callId)}`,
@@ -165,8 +153,42 @@ function CallStage({ uid, scenario, progress, record }: Props) {
         if (!controller.signal.aborted) setAttempt({ callId, data: null })
       })
     return () => controller.abort()
-  }, [completed, call.callId, uid])
-  const attemptReady = attempt !== null && attempt.callId === call.callId
+  }, [completed, callId, uid])
+
+  const ready = attempt !== null && attempt.callId === callId
+  return { ready, data: ready ? attempt.data : null }
+}
+
+function CallStage({ uid, scenario, progress, record }: Props) {
+  const call = useSimulatedCall()
+  const adventure = useAdventure(uid)
+  const [params] = useSearchParams()
+  const missionId = params.get('mission')
+  const mission = adventure.mission?.id === missionId ? adventure.mission : null
+  const [earnedBefore] = useState(() => getAdventure(uid).earned)
+  const [practiceAttemptId] = useState(
+    () => `practice-call:${crypto.randomUUID()}`,
+  )
+  const previouslyMissed = useRef(false)
+  const submittedPractice = useRef(false)
+  const [practice, setPractice] = useState<{
+    result: CallResult | null
+  } | null>(null)
+  const [time] = useState(clockTime)
+
+  const completed = call.phase === 'completed'
+  const result = completed ? readCallResult(call.record) : null
+  const screen = callScreen({
+    phase: call.phase,
+    callId: call.callId,
+    error: call.error,
+    result,
+  })
+  const callerLabel = call.callerLabel ?? scenario.callerLabel
+  const guarded = !practice && guardsNavigation(call.phase)
+
+  const leaveGuard = useLeaveGuard(call, guarded)
+  const stored = useStoredAttempt(uid, call.callId, completed)
 
   function finishPractice(action: 'hang_up' | 'comply') {
     if (submittedPractice.current) return
@@ -188,19 +210,21 @@ function CallStage({ uid, scenario, progress, record }: Props) {
     void call.start(scenario.id)
   }
 
-  const debrief = practice?.result
-    ? buildCallDebrief(scenario, { result: practice.result, from: 'practice' })
-    : completed && attemptReady
-      ? buildCallDebrief(scenario, debriefSource(attempt.data, call.record))
-      : null
+  let debriefFrom: DebriefSource | null = null
+  if (practice?.result) {
+    debriefFrom = { result: practice.result, from: 'practice' }
+  } else if (completed && stored.ready) {
+    debriefFrom = debriefSource(stored.data, call.record)
+  }
+  const debrief = debriefFrom && buildCallDebrief(scenario, debriefFrom)
   const liveResult =
     !practice && completed
-      ? debriefSource(attemptReady ? attempt.data : null, call.record).result
+      ? debriefSource(stored.data, call.record).result
       : null
 
   // Award only after the same authoritative result used by the debrief is
   // ready.
-  const finishedResult = practice?.result ?? (attemptReady ? liveResult : null)
+  const finishedResult = practice?.result ?? (stored.ready ? liveResult : null)
   const finishedId = practice ? practiceAttemptId : call.callId
   const finishedOutcome = finishedResult?.outcome
   const finishedSuccess = finishedResult?.success
@@ -316,8 +340,8 @@ function CallStage({ uid, scenario, progress, record }: Props) {
       </div>
 
       <LeaveDialog
-        open={asking !== null}
-        onChoose={(choice) => void chooseLeave(choice)}
+        open={leaveGuard.asking}
+        onChoose={(choice) => void leaveGuard.chooseLeave(choice)}
       />
     </>
   )
