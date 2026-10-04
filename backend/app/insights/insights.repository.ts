@@ -47,7 +47,9 @@ export class InsightsRepository {
   async save(uid: string, insights: Insights, lastAttemptAt: string | null) {
     await this.db.query(`INSERT INTO vulnerability_insights(firebase_uid, analysis, source, last_attempt_at, computed_at) VALUES($1, $2, $3, $4, now())
       ON CONFLICT (firebase_uid) DO UPDATE SET analysis = $2, source = $3, last_attempt_at = $4, computed_at = now()`,
-    [uid, JSON.stringify(insights), insights.source, lastAttemptAt]);
+    // The column predates Cortex attribution (migration 008 allows snowflake | fallback): Cortex text is still a Snowflake
+    // analysis there, and the analysis JSON keeps the exact source.
+    [uid, JSON.stringify(insights), insights.source === 'fallback' ? 'fallback' : 'snowflake', lastAttemptAt]);
   }
 
   /**

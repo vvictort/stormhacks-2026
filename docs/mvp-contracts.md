@@ -92,7 +92,9 @@ Code: `backend/app/behavior/` (routes, repository, call bridge), `frontend/src/f
 - `GET /api/training/metrics` (own data only; empty history → zeros/nulls/empty lists, 200):
   `{ attempts, accuracy, reportRate, avgDetectionMs, trend: { window, then: Period, now: Period } | null,
      categories: [{ category, attempts, accuracy, avgDetectionMs }], mostImproved: { category, then, now } | null,
-     timeline: [{ day: 'YYYY-MM-DD', attempts, correct, avgDetectionMs }] }`, `Period = { accuracy, avgDetectionMs }`.
+     timeline: [{ day: 'YYYY-MM-DD', attempts, correct, avgDetectionMs }],
+     recent: [{ at, correct: boolean, detectionMs }] (latest 12, oldest first), storage: 'timescale' | 'postgres' }`,
+  `Period = { accuracy, avgDetectionMs }`. `storage` is `timescale` only when `behavior_events` is a hypertable.
   Over completed, scored attempts (one per `attempt_id`, errors excluded). Percentages are 0–100 integers.
   `reportRate` = scam texts/emails reported ÷ scam texts/emails seen. Detection time = decision time on texts/emails and
   time-to-decline on declined calls (answered calls have none). `trend` compares the first k with the latest k attempts,
@@ -103,13 +105,16 @@ Code: `backend/app/behavior/` (routes, repository, call bridge), `frontend/src/f
 
 - `GET /api/training/insights` →
   `{ strongestAreas: string[], weakAreas: string[], behavioralPattern: string, recommendation: string,
-     nextTrainingFocus: ScamCategory[], source: 'snowflake' | 'fallback', generatedAt: string, basedOn: { attempts: number } }`.
+     nextTrainingFocus: ScamCategory[], source: 'cortex' | 'snowflake' | 'fallback', generatedAt: string, basedOn: { attempts: number } }`.
+  `cortex`: Cortex wrote the text over Snowflake's results; `snowflake`: computed in Snowflake (ranking, cohort, tactic-pair
+  and quick-catch interpretation), text from the backend; `fallback`: built in. `nextTrainingFocus` is the same
+  deterministic pick for all three. UI labels: "Interpreted by Snowflake Cortex" / "Analysed in Snowflake" / "Built-in analysis".
 - Snowflake (SQL API over HTTPS, `SNOWFLAKE_*` config) analyses the aggregated summary; without credentials, or on any
   error or timeout, the backend computes the same shape deterministically. The latest result is cached per user so
   generators can read `nextTrainingFocus` cheaply.
 - Generators: `repos.insights.latestFocus(uid): Promise<ScamCategory[]>` never calls Snowflake: the cached focus when it
   covers the newest attempt, else the built-in analysis of the current history; `[]` for a new user.
-- Snowflake only receives `HMAC(SNOWFLAKE_ID_SALT, uid)` and per-category/per-tactic counts and rates (setup:
+- Snowflake only receives `HMAC(SNOWFLAKE_ID_SALT, uid)` and counts and rates per category, tactic, tactic pair and channel (setup:
   `backend/scripts/snowflake-setup.sql`).
 
 ## The adaptive loop (Agent 5)
@@ -120,7 +125,8 @@ Code: `backend/app/behavior/` (routes, repository, call bridge), `frontend/src/f
   difficulty (`frontend/src/features/training/adaptive.ts`). Without the API it falls back to the local level.
 - Adaptive difficulty (`summarizeAttempts`): replayed per attempt; from the 3rd scored attempt, step up when the last 5
   are ≥ 85% right with none fallen for, step down when 2 or more of the last 5 were fallen for.
-- Debriefs ("What Tellio learned from this", `useLearning`): a snapshot (insights, then progress + metrics) when the
+- Debriefs ("What Tellio learned from this", `useLearning`): a snapshot (insights, progress and metrics in parallel; insights
+  given up after 6 s) when the
   run opens and again once the run's attempt id appears in `progress.attempts` (texts/emails after the tracker flush,
   calls after the server saves the analysed call; polled every 1.5 s, 7 tries). Lines are only real before/after
   differences (difficulty, focus, this category's accuracy, average decision time when faster, overall accuracy);

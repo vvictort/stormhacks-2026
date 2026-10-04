@@ -7,7 +7,7 @@ import { createDatabase, type Database } from '../app/db/database.ts';
 import { migrate } from '../app/db/migrate.ts';
 import { buildInsights, rankLocally, summarize, type AttemptRow, type Insights } from '../app/insights/analysis.ts';
 import { InsightsService } from '../app/insights/service.ts';
-import { Snowflake, snowflakeConfig, type SnowflakeConfig } from '../app/insights/snowflake.ts';
+import { interpret, Snowflake, snowflakeConfig, type SnowflakeConfig } from '../app/insights/snowflake.ts';
 import type { Config } from '../app/config.ts';
 import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
@@ -31,16 +31,27 @@ const result = (names: string[], data: (string | null)[][]) => Response.json({ r
 const done = () => result(['status'], [['ok']]);
 
 /** A fake Snowflake SQL API: answers by statement, records every request. */
-function fakeSnowflake({ cohortSize = 12, percentile = 0.8, cortex }: { cohortSize?: number; percentile?: number; cortex?: string } = {}, config = sfConfig) {
+function fakeSnowflake({ cohortSize = 12, percentile = 0.8, othersMissRate = '0.4', cortex }: { cohortSize?: number; percentile?: number; othersMissRate?: string | null; cortex?: string } = {}, config = sfConfig) {
   const requests: { url: string; init: RequestInit; body: { statement: string; bindings: Record<string, { type: string; value: string }>; [key: string]: unknown } }[] = [];
+  type Sent = { dimension: string; area: string; attempts: number; correct: number; fell_for: number; message_attempts: number; link_clicks: number; avg_response_ms: number | null };
+  const sent = () => JSON.parse(requests.find((r) => r.body.statement.startsWith('MERGE'))!.body.bindings['2'].value) as Sent[];
   const fetchImpl = (async (url: string, init: RequestInit) => {
     const body = JSON.parse(String(init.body));
     requests.push({ url, init, body });
     if (body.statement.startsWith('WITH scored')) {
-      const areas = JSON.parse(requests.find((r) => r.body.statement.startsWith('MERGE'))!.body.bindings['2'].value) as { dimension: 'category' | 'tactic'; area: string; attempts: number; correct: number; fell_for: number; message_attempts: number; link_clicks: number }[];
+      const areas = sent().filter((a) => a.dimension === 'category' || a.dimension === 'tactic');
       const ranked = rankLocally({ areas: areas.map((a) => ({ ...a, fellFor: a.fell_for, messageAttempts: a.message_attempts, linkClicks: a.link_clicks })) } as never);
       return result(['DIMENSION', 'AREA', 'ATTEMPTS', 'ACCURACY', 'WEAKNESS', 'TREND', 'COHORT_SIZE', 'COHORT_PERCENTILE'],
         ranked.map((r) => [r.dimension, r.area, String(r.attempts), r.accuracy.toFixed(6), r.weakness.toFixed(6), null, String(cohortSize), String(r.weakness >= 0.4 ? percentile : 0.1)]));
+    }
+    if (body.statement.startsWith('WITH rates')) {
+      const rows = sent().filter((a) => a.dimension !== 'category');
+      const mean = (dimension: string) => {
+        const times = rows.filter((r) => r.dimension === dimension && r.avg_response_ms !== null).map((r) => r.avg_response_ms!);
+        return times.reduce((a, b) => a + b, 0) / times.length;
+      };
+      return result(['DIMENSION', 'AREA', 'ATTEMPTS', 'MISS_RATE', 'SPEED_RATIO', 'COHORT_SIZE', 'OTHERS_MISS_RATE'],
+        rows.map((r) => [r.dimension, r.area, String(r.attempts), String((r.attempts - r.correct) / r.attempts), r.avg_response_ms === null ? null : String(r.avg_response_ms / mean(r.dimension)), String(cohortSize), othersMissRate]));
     }
     if (body.statement.includes('CORTEX')) return result(['TEXT'], [[cortex ?? null]]);
     return done();
@@ -116,10 +127,13 @@ test('Snowflake gets pseudonymous aggregates over bound variables and ranks agai
   const { requests, snowflake } = fakeSnowflake();
   const insights = await new InsightsService(memoryRepo(history).repo, snowflake).get('firebase-uid-alex');
   assert.equal(insights.source, 'snowflake');
-  assert.match(insights.behavioralPattern, /Compared with other trainees, you're weaker than most on authority pressure\./);
-  assert.deepEqual(insights.nextTrainingFocus, ['account_security', 'workplace', 'banking']);
+  // Snowflake's interpretation: the tactic pair's miss rate against other trainees, and cohort placement.
+  assert.equal(insights.behavioralPattern, 'You consistently see through delivery scams, but authority combined with urgency still causes mistakes: 3 of 3 times, against 40% for other trainees. '
+    + "Compared with other trainees, you're weaker than most on authority pressure. You decide faster on the ones that fool you, so slowing down is your best defence.");
+  // The focus stays the deterministic built-in pick.
+  assert.deepEqual(insights.nextTrainingFocus, buildInsights(summarize(history), rankLocally(summarize(history)), 'fallback').nextTrainingFocus);
 
-  assert.deepEqual(requests.map((r) => r.body.statement.split(/\s/)[0]), ['CREATE', 'MERGE', 'WITH']);
+  assert.deepEqual(requests.map((r) => r.body.statement.split(/\s/)[0]), ['CREATE', 'MERGE', 'WITH', 'WITH']);
   for (const { url, init, body } of requests) {
     assert.equal(url, 'https://myorg-acct.snowflakecomputing.com/api/v2/statements');
     const headers = init.headers as Record<string, string>;
@@ -128,9 +142,12 @@ test('Snowflake gets pseudonymous aggregates over bound variables and ranks agai
     assert.deepEqual([body.warehouse, body.database, body.schema, body.role], ['TELLIO_WH', 'TELLIO', 'PUBLIC', 'TELLIO_APP']);
     assert.equal(body.statement.includes(snowflake.trainee('firebase-uid-alex')), false, 'values are bound, never concatenated');
   }
-  const [, merge, analyse] = requests.map((r) => r.body);
+  const [, merge, analyse, interpret] = requests.map((r) => r.body);
   assert.match(merge.bindings['1'].value, /^[0-9a-f]{64}$/);
   assert.deepEqual(analyse.bindings, { 1: { type: 'TEXT', value: merge.bindings['1'].value } });
+  assert.deepEqual(interpret.bindings, analyse.bindings);
+  const areas = JSON.parse(merge.bindings['2'].value) as { dimension: string; area: string }[];
+  assert.deepEqual(areas.filter((a) => a.dimension === 'pair' || a.dimension === 'channel').map((a) => `${a.dimension}:${a.area}`).sort(), ['channel:call', 'channel:email', 'pair:authority+urgency']);
   const sent = JSON.stringify(requests.map((r) => r.body));
   for (const secret of ['firebase-uid-alex', '@', 'Parcel', 'Executive', 'exec-vendor', 'gen-email']) assert.equal(sent.includes(secret), false, secret);
   assert.deepEqual(Object.keys(JSON.parse(merge.bindings['2'].value)[0]).sort(), ['area', 'attempts', 'avg_response_ms', 'correct', 'dimension', 'earlier_accuracy', 'fell_for', 'link_clicks', 'message_attempts', 'recent_accuracy', 'reported']);
@@ -144,16 +161,54 @@ test('Cortex wording is used only when it is valid', async () => {
   const text = { behavioralPattern: 'You spot delivery scams, but urgency plus authority still gets you.', recommendation: 'Practise account security scams next and pause before acting.' };
   const good = fakeSnowflake({ cortex: `Sure!\n${JSON.stringify(text)}` }, { ...sfConfig, cortexModel: 'mistral-large2' });
   const cortexed = await new InsightsService(memoryRepo(history).repo, good.snowflake).get('alex');
-  assert.deepEqual([cortexed.source, cortexed.behavioralPattern, cortexed.recommendation], ['snowflake', text.behavioralPattern, text.recommendation]);
+  assert.deepEqual([cortexed.source, cortexed.behavioralPattern, cortexed.recommendation], ['cortex', text.behavioralPattern, text.recommendation]);
   const cortexCall = good.requests.find((r) => r.body.statement.includes('CORTEX'))!.body;
   assert.equal(cortexCall.bindings['1'].value, 'mistral-large2');
   assert.equal(cortexCall.bindings['2'].value.includes('alex'), false);
+  // Cortex reads Snowflake's interpretation and the deterministic focus with its reason.
+  const data = JSON.parse(cortexCall.bindings['2'].value.split('Data: ')[1]);
+  assert.deepEqual(data.weakestCombination, { tactics: 'authority combined with urgency', missed: 3, of: 3, otherTraineesMissRate: 0.4 });
+  assert.deepEqual(data.practiseNext, { area: 'account security scams', why: 'right on 0 of 2' });
 
   for (const reply of ['not json', JSON.stringify({ behavioralPattern: 'short', recommendation: 'x' }), JSON.stringify({ ...text, recommendation: `${text.recommendation} https://evil.example` })]) {
     const fallbackText = await new InsightsService(memoryRepo(history).repo, fakeSnowflake({ cortex: reply }, { ...sfConfig, cortexModel: 'm' }).snowflake).get('alex');
-    assert.equal(fallbackText.source, 'snowflake');
+    assert.equal(fallbackText.source, 'snowflake', 'invalid Cortex text is never labelled as Cortex');
     assert.match(fallbackText.behavioralPattern, /^You consistently see through delivery scams/);
   }
+});
+
+test('a failed interpretation keeps the Snowflake ranking; a small cohort gets no comparison', async () => {
+  const broken = fakeSnowflake({ othersMissRate: 'not a number' });
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const ranked = await new InsightsService(memoryRepo(history).repo, broken.snowflake).get('alex');
+    assert.equal(ranked.source, 'snowflake');
+    assert.match(ranked.behavioralPattern, /but you struggle when authority and urgency are combined\./);
+  } finally {
+    console.warn = warn;
+  }
+  const small = await new InsightsService(memoryRepo(history).repo, fakeSnowflake({ cohortSize: 3 }).snowflake).get('alex');
+  assert.match(small.behavioralPattern, /urgency still causes mistakes: 3 of 3 times\. /);
+});
+
+test('interpret picks the most-missed tactic pair and a quick catch from Snowflake rows', () => {
+  const r = (DIMENSION: string, AREA: string, ATTEMPTS: number, MISS_RATE: number, SPEED_RATIO: number | null, COHORT_SIZE = 8, OTHERS_MISS_RATE: number | null = 0.25) =>
+    ({ DIMENSION, AREA, ATTEMPTS: String(ATTEMPTS), MISS_RATE: String(MISS_RATE), SPEED_RATIO: SPEED_RATIO === null ? null : String(SPEED_RATIO), COHORT_SIZE: String(COHORT_SIZE), OTHERS_MISS_RATE: OTHERS_MISS_RATE === null ? null : String(OTHERS_MISS_RATE) });
+  assert.deepEqual(interpret([
+    r('pair', 'authority+urgency', 4, 0.75, 1.1),
+    r('pair', 'fear+urgency', 1, 1, 0.9), // one attempt is not a pattern
+    r('pair', 'reward+suspicious_link', 3, 0, 0.5),
+    r('tactic', 'suspicious_link', 3, 0, 0.6),
+    r('channel', 'email', 5, 0, 0.8),
+    r('tactic', 'urgency', 4, 0.5, 0.2), // fast but missed
+  ]), { weakPair: { tactics: ['authority', 'urgency'], attempts: 4, missed: 3, cohortMissRate: 0.25 }, quickCatch: { dimension: 'tactic', area: 'suspicious_link' } });
+  assert.deepEqual(interpret([r('pair', 'authority+urgency', 2, 0.5, null, 4), r('channel', 'sms', 2, 0, 0.95)]),
+    { weakPair: { tactics: ['authority', 'urgency'], attempts: 2, missed: 1, cohortMissRate: null }, quickCatch: null });
+
+  const summary = summarize(history);
+  const text = buildInsights(summary, rankLocally(summary), 'snowflake', new Date(), { weakPair: null, quickCatch: { dimension: 'tactic', area: 'suspicious_link' } });
+  assert.match(text.behavioralPattern, /^You catch suspicious links quickly, but you struggle when authority and urgency are combined\./);
 });
 
 test('any Snowflake failure falls back to the built-in analysis, and retries soon', async () => {
@@ -186,7 +241,7 @@ test('any Snowflake failure falls back to the built-in analysis, and retries soo
   } finally {
     console.warn = warn;
   }
-  assert.equal(logged.length, failures.length);
+  assert.equal(logged.filter((line) => line.includes('using the built-in analysis')).length, failures.length);
   assert.equal(logged.some((line) => line.includes('pat-secret')), false);
 });
 

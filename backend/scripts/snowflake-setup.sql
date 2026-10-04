@@ -10,10 +10,13 @@ CREATE ROLE IF NOT EXISTS TELLIO_APP;
 GRANT USAGE ON WAREHOUSE TELLIO_WH TO ROLE TELLIO_APP;
 GRANT USAGE ON DATABASE TELLIO TO ROLE TELLIO_APP;
 GRANT USAGE, CREATE TABLE ON SCHEMA TELLIO.PUBLIC TO ROLE TELLIO_APP;
--- Only for SNOWFLAKE_CORTEX_MODEL:
+-- Only for SNOWFLAKE_CORTEX_MODEL (the backend calls SNOWFLAKE.CORTEX.COMPLETE to write the profile text):
 -- GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE TELLIO_APP;
+-- If the model isn't offered in your account's region, allow cross-region inference:
+-- ALTER ACCOUNT SET CORTEX_ENABLED_CROSS_REGION = 'ANY_REGION';
 
--- Pseudonymous per-trainee aggregates (one row per scam category or tactic). No uid, email, profile or message text.
+-- Pseudonymous per-trainee aggregates: one row per scam category, tactic, tactic pair (DIMENSION 'pair', e.g.
+-- authority+urgency) or channel. No uid, email, profile or message text.
 CREATE TABLE IF NOT EXISTS TELLIO.PUBLIC.TELLIO_SKILL_STATS (
   TRAINEE STRING NOT NULL, DIMENSION STRING NOT NULL, AREA STRING NOT NULL,
   ATTEMPTS INTEGER NOT NULL, CORRECT INTEGER NOT NULL, FELL_FOR INTEGER NOT NULL,

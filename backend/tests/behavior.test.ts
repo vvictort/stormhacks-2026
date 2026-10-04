@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import supertest from 'supertest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
-import { mostImproved, type BehaviorEvent } from '../app/behavior/behavior.repository.ts';
+import { BehaviorRepository, mostImproved, type BehaviorEvent } from '../app/behavior/behavior.repository.ts';
 import { clampTime, MAX_EVENT_AGE_MS } from '../app/behavior/behavior.routes.ts';
 import { CallBehaviorSink } from '../app/behavior/call-events.ts';
 import { createElevenLabs } from '../app/calls/elevenlabs.ts';
@@ -203,6 +203,30 @@ test('a behaviour write failure never breaks the call flow', async () => {
   assert.equal(inner.events.length, 2);
 });
 
+test('storage is a TimescaleDB hypertable only when the extension and the hypertable both exist; cached, retried after an error', async () => {
+  const repoOver = (answers: (boolean | Error)[]) => {
+    const asked: string[] = [];
+    const db = { async query(sql: string) {
+      asked.push(sql);
+      const answer = answers.shift();
+      if (answer instanceof Error) throw answer;
+      return { rows: [{ found: answer }] };
+    } };
+    return { repo: new BehaviorRepository(db as never), asked };
+  };
+  const plain = repoOver([false]);
+  assert.equal(await plain.repo.storage(), 'postgres');
+  assert.equal(plain.asked.length, 1, 'timescaledb_information is never queried without the extension');
+  assert.equal(await repoOver([true, false]).repo.storage(), 'postgres');
+  const tiger = repoOver([true, true]);
+  assert.equal(await tiger.repo.storage(), 'timescale');
+  assert.equal(await tiger.repo.storage(), 'timescale');
+  assert.equal(tiger.asked.length, 2, 'cached per process');
+  const flaky = repoOver([new Error('connection refused'), true, true]);
+  await assert.rejects(flaky.repo.storage());
+  assert.equal(await flaky.repo.storage(), 'timescale');
+});
+
 // ---------- On Postgres (PGlite in tests, a TimescaleDB hypertable on TigerData) ----------
 
 const url = process.env.TEST_DATABASE_URL;
@@ -226,7 +250,7 @@ describe('behaviour events and metrics on Postgres', { skip: !url }, () => {
 
   test('empty history is all nulls and empty lists', async () => {
     assert.deepEqual((await routes(repo).metrics().expect(200)).body,
-      { attempts: 0, accuracy: null, reportRate: null, avgDetectionMs: null, trend: null, categories: [], mostImproved: null, timeline: [] });
+      { attempts: 0, accuracy: null, reportRate: null, avgDetectionMs: null, trend: null, categories: [], mostImproved: null, timeline: [], recent: [], storage: 'postgres' });
   });
 
   test('metrics on sample data: accuracy, report rate, detection time, then vs now, categories, timeline', async () => {
@@ -262,6 +286,9 @@ describe('behaviour events and metrics on Postgres', { skip: !url }, () => {
       { day: '2026-10-02', attempts: 4, correct: 4, avgDetectionMs: 7000 },
       { day: '2026-10-03', attempts: 1, correct: 1, avgDetectionMs: 6000 },
     ]);
+    assert.deepEqual(m.recent.map((r: { correct: boolean; detectionMs: number | null }) => [r.correct, r.detectionMs]),
+      [[false, 20_000], [true, 16_000], [false, 14_000], [true, 10_000], [true, 8000], [true, 3000], [true, null], [true, 6000]]);
+    assert.equal(m.recent[0].at, history[0].at);
 
     const sam = (await routes(repo).metrics('sam').expect(200)).body;
     assert.deepEqual([sam.attempts, sam.accuracy, sam.categories.length, sam.trend.window], [2, 0, 1, 1]);

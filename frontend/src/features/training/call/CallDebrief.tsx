@@ -5,12 +5,17 @@ import { Mascot } from '../../../components/Mascot'
 import { RevealText } from '../../../components/RevealText'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { spring } from '../../../lib/motion'
+import { debriefActions } from '../adaptive'
+import { voiceCredit } from '../attribution'
 import type { Scenario } from '../scenarios'
 import type { CallDebriefView, Moment } from './callModel'
 
 /** After a call: the result (from callOutcome, never decided here), the warning signs, and moments from the redacted transcript. */
 export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDebriefView; next?: Scenario; callerLabel: string; learned?: ReactNode }) {
   const heading = useRef<HTMLElement>(null)
+  const credit = voiceCredit(view)
+  // One next step: the adaptive panel's "Next scenario made for you" when it shows, the path's next otherwise.
+  const actions = debriefActions({ hasNext: Boolean(next), adaptive: Boolean(learned) })
   useEffect(() => heading.current?.focus(), [])
 
   return (
@@ -68,11 +73,13 @@ export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDe
         <p>{view.recommendation}</p>
       </div>
 
+      {credit && <p className="debrief-hint">{credit}</p>}
+
       {learned}
 
       <div className="debrief-actions">
-        {next && <TransitionLink className={learned ? 'train-ghost' : 'train-primary'} to={`/train/${next.id}`}>{learned ? 'Next on your path' : 'Next scenario'}<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
-        <TransitionLink direction="back" className={next || learned ? 'train-ghost' : 'train-primary'} to="/home">Back to home</TransitionLink>
+        {actions.pathNext && next && <TransitionLink className="train-primary" to={`/train/${next.id}`}>Next scenario<ArrowRight size={17} aria-hidden="true" /></TransitionLink>}
+        <TransitionLink direction="back" className={actions.homePrimary ? 'train-primary' : 'train-ghost'} to="/home">Back to home</TransitionLink>
       </div>
     </m.section>
   )

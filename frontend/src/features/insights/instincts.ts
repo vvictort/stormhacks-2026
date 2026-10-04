@@ -1,6 +1,7 @@
 import type { ScamCategory } from '../training/scenarios.ts'
 
-// GET /api/training/metrics (backend/app/behavior/behavior.repository.ts `Metrics`), measured in TigerData.
+// GET /api/training/metrics (backend/app/behavior/behavior.repository.ts `Metrics`), from the behaviour events table:
+// a TimescaleDB hypertable on TigerData (`storage: 'timescale'`), or a plain Postgres table.
 export interface Period { accuracy: number | null; avgDetectionMs: number | null }
 export interface Metrics {
   attempts: number
@@ -11,6 +12,9 @@ export interface Metrics {
   categories: { category: ScamCategory; attempts: number; accuracy: number | null; avgDetectionMs: number | null }[]
   mostImproved: { category: ScamCategory; then: Period; now: Period } | null
   timeline: { day: string; attempts: number; correct: number; avgDetectionMs: number | null }[]
+  /** Older backends leave these out. */
+  recent?: { at: string; correct: boolean; detectionMs: number | null }[]
+  storage?: 'timescale' | 'postgres'
 }
 
 const categoryNames: Record<ScamCategory, string> = {
@@ -57,4 +61,45 @@ export function instinctsView(m: Metrics | null): { rows: InstinctRow[]; improve
     ? m.trend.window === 1 ? 'Your first scenario against your latest.' : `Your first ${m.trend.window} scenarios against your latest ${m.trend.window}.`
     : 'Finish one more scenario to see how your instincts are changing.'
   return { rows, improved: m.mostImproved ? categoryLabel(m.mostImproved.category) : null, note }
+}
+
+/** Names TigerData only when the events really are in a TimescaleDB hypertable. */
+export const instinctsSource = (storage: Metrics['storage']) => storage === 'timescale'
+  ? 'Every tap and decision is timed and stored in TigerData.'
+  : 'Every tap and decision is timed and saved to your training history.'
+
+export interface Bar {
+  /** 0 to 1 of the chart's height. */
+  height: number
+  good: boolean
+  label: string
+}
+
+const DAYS = 14
+
+/**
+ * The card's mini chart: right calls per day once there are 3 days of history, otherwise time to decide on each recent
+ * scenario (a same-day history is a single day). Null under 2 bars.
+ */
+export function instinctsChart(m: Metrics): { title: string; keys: [good: string, missed: string]; bars: Bar[] } | null {
+  const days = m.timeline.slice(-DAYS)
+  if (days.length >= 3) {
+    return {
+      title: `Right calls per day, last ${days.length} days`,
+      keys: ['mostly right', 'mostly missed'],
+      bars: days.map((d) => ({ height: d.attempts ? d.correct / d.attempts : 0, good: d.correct * 2 >= d.attempts, label: `${d.day}: ${d.correct} of ${d.attempts} right` })),
+    }
+  }
+  const recent = m.recent ?? []
+  if (recent.length < 2) return null
+  const slowest = Math.max(...recent.map((r) => r.detectionMs ?? 0))
+  return {
+    title: `Time to decide, last ${recent.length} scenarios`,
+    keys: ['right call', 'missed'],
+    bars: recent.map((r, i) => ({
+      height: slowest && r.detectionMs !== null ? r.detectionMs / slowest : 0,
+      good: r.correct,
+      label: `Scenario ${i + 1}: ${r.correct ? 'right call' : 'missed'}${r.detectionMs === null ? '' : `, ${seconds(r.detectionMs)}`}`,
+    })),
+  }
 }
