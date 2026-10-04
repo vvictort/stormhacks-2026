@@ -3,8 +3,6 @@
 .train-shell { min-height: 100svh; display: flex; flex-direction: column; background: var(--color-background); color: var(--color-foreground); }
 .train-header { width: min(1180px, calc(100% - 64px)); margin-inline: auto; min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .train-header .brand { font-size: 32px; }
-.train-header .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
-.train-header .brand-mark svg { width: 27px; height: 27px; }
 .train-header-actions { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .train-header-error { font-size: 13px; color: var(--color-danger-strong); text-align: right; }
 
@@ -221,8 +219,6 @@
 @media (max-width: 540px) {
   .train-header { width: calc(100% - 32px); min-height: 72px; }
   .train-header .brand { font-size: 28px; }
-  .train-header .brand-mark { width: 30px; height: 30px; border-radius: 9px; }
-  .train-header .brand-mark svg { width: 24px; height: 24px; }
   .train-header .train-ghost { padding-inline: 12px; }
   .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
   .home-intro h1 { font-size: 34px; }
