@@ -1,10 +1,12 @@
-import type { Difficulty } from '../shared/vocabulary.ts';
+import { fellForScam, type Difficulty, type ScamCategory } from '../shared/vocabulary.ts';
 
-export type ScamCategory = 'banking' | 'government' | 'shipping' | 'account_security' | 'workplace' | 'promotional';
+export type { ScamCategory };
 
 export interface ScoredAttempt {
   scenarioId: string;
   scenarioTitle: string;
+  /** Stored with the attempt when known; otherwise inferred from the id and title. */
+  scamCategory?: ScamCategory | null;
   tactics: string[];
   success: boolean | null;
   outcome: string;
@@ -51,12 +53,12 @@ export function summarizeAttempts(attempts: ScoredAttempt[]) {
   // Replayed in order so the weak-category hysteresis and difficulty steps match a live update per attempt.
   for (const [index, attempt] of scored.entries()) {
     if (attempt.success) successes++;
-    if (attempt.outcome === 'compromised') {
+    if (fellForScam(attempt.outcome)) {
       compromised++;
       for (const tactic of attempt.tactics) tacticMisses.set(tactic, (tacticMisses.get(tactic) ?? 0) + 1);
     }
 
-    const category = inferCategory({ id: attempt.scenarioId, title: attempt.scenarioTitle });
+    const category = attempt.scamCategory ?? inferCategory({ id: attempt.scenarioId, title: attempt.scenarioTitle });
     const cat = categoryAccuracy[category] ??= { attempts: 0, correct: 0, accuracy: 0 };
     cat.attempts++;
     if (attempt.success) cat.correct++;

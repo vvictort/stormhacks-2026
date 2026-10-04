@@ -39,7 +39,7 @@ export function fakeRepos() {
   const attempts = new Map<string, AttemptInput>();
   const scenarios = new Map<string, { uid: string; scenario: CallScenario }>();
   const generations: { uid: string; at: number }[] = [];
-  const summary = (a: AttemptInput) => ({ id: a.attemptId, channel: a.channel, scenarioId: a.scenarioId, scenarioTitle: a.scenarioTitle, difficulty: a.difficulty, outcome: a.outcome, success: a.success, tactics: a.tactics, completedAt: new Date(a.completedAt).toISOString() });
+  const summary = (a: AttemptInput) => ({ id: a.attemptId, channel: a.channel, scenarioId: a.scenarioId, scenarioTitle: a.scenarioTitle, difficulty: a.difficulty, scamCategory: a.scamCategory, outcome: a.outcome, success: a.success, tactics: a.tactics, completedAt: new Date(a.completedAt).toISOString() });
   return {
     users: {
       async ensureUser(token: DecodedIdToken) {

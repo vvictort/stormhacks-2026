@@ -8,8 +8,9 @@ import { PhoneFrame } from '../features/training/components/PhoneFrame'
 import { PhoneSimulator } from '../features/training/components/PhoneSimulator'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { recommend } from '../features/training/progress'
-import { getScenario, hasLink, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
+import { hasLink, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
+import { useScenario } from '../features/training/useScenario'
 
 const difficultyLabel = { easy: 'Gentle start', medium: 'A little trickier', hard: 'Tricky' }
 const channelMeta = { sms: { Icon: MessageSquareText, label: 'Text message' }, email: { Icon: Mail, label: 'Email' }, call: { Icon: Phone, label: 'Phone call' } }
@@ -19,13 +20,14 @@ const CallExperience = lazy(() => import('../features/training/call/CallExperien
 
 export function ScenarioPage() {
   const { scenarioId } = useParams()
-  const scenario = getScenario(scenarioId)
+  const state = useScenario(scenarioId)
+  const scenario = state.status === 'ready' ? state.scenario : undefined
 
   return (
     <div className="train-shell">
       <TrainingHeader />
       {/* Keyed by id: a new scenario is a new run, and a call's voice provider lives exactly as long as its run. */}
-      {!scenario ? <MissingScenario /> : scenario.type === 'call' ? <CallRun key={scenario.id} scenario={scenario} /> : <ScenarioRun key={scenario.id} scenario={scenario} />}
+      {state.status === 'loading' ? <ScenarioLoading /> : !scenario ? <MissingScenario /> : scenario.type === 'call' ? <CallRun key={scenario.id} scenario={scenario} /> : <ScenarioRun key={scenario.id} scenario={scenario} />}
     </div>
   )
 }
@@ -125,6 +127,10 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
       </div>
     </main>
   )
+}
+
+function ScenarioLoading() {
+  return <main className="scenario-missing"><p className="call-loading" role="status"><LoaderCircle size={20} className="spinner" aria-hidden="true" /> Getting your scenario ready…</p></main>
 }
 
 function MissingScenario() {

@@ -71,7 +71,7 @@ test('progress and the vulnerability profile update after each attempt', async (
   await save(attempt({ attemptId: 'call_3', outcome: 'error', success: null, completedAt: '2026-10-03T12:00:00Z' }));
   const body = (await progress().expect(200)).body;
   assert.deepEqual(body.attempts.map((a: { id: string }) => a.id), ['call_3', 'call_2', 'call_1']);
-  assert.deepEqual(Object.keys(body.attempts[0]).sort(), ['channel', 'completedAt', 'difficulty', 'id', 'outcome', 'scenarioId', 'scenarioTitle', 'success']);
+  assert.deepEqual(Object.keys(body.attempts[0]).sort(), ['channel', 'completedAt', 'difficulty', 'id', 'outcome', 'scamCategory', 'scenarioId', 'scenarioTitle', 'success']);
   assert.deepEqual(body.stats, { total: 2, successes: 1, compromised: 1 });
   assert.deepEqual(body.vulnerability.weakCategories, ['banking']);
   assert.deepEqual(body.vulnerability.vulnerableTactics, ['authority', 'otp_request']);

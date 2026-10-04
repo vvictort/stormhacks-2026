@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Channel, Difficulty, Outcome, Tactic } from '../shared/vocabulary.ts';
+import { Channel, Difficulty, Outcome, ScamCategory, Tactic } from '../shared/vocabulary.ts';
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
@@ -11,6 +11,7 @@ export const attemptSchema = z.object({
   scenarioId: text(128),
   scenarioTitle: text(200),
   difficulty: Difficulty,
+  scamCategory: ScamCategory.nullable().default(null),
   tactics: z.array(Tactic).max(10),
   outcome: Outcome,
   success: z.boolean().nullable(),
@@ -33,6 +34,7 @@ export interface AttemptSummary {
   scenarioId: string;
   scenarioTitle: string;
   difficulty: AttemptInput['difficulty'];
+  scamCategory: AttemptInput['scamCategory'];
   outcome: AttemptInput['outcome'];
   success: boolean | null;
   tactics: string[];

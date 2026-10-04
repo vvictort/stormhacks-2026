@@ -6,6 +6,15 @@ import { emailScenarios } from './emailScenarios.ts'
 export type Channel = 'sms' | 'email' | 'call'
 export type Action = 'report' | 'safe'
 export type Difficulty = 'easy' | 'medium' | 'hard'
+/** backend/app/shared/vocabulary.ts ScamCategory. */
+export type ScamCategory = 'banking' | 'government' | 'shipping' | 'account_security' | 'workplace' | 'promotional'
+
+/** Set on scenarios the backend generated for this user (ids `gen-email-…`, `gen-sms-…`, `gen-call-…`). */
+export interface GeneratedInfo {
+  source: 'gemini' | 'fallback'
+  /** Why this scenario, in plain words, e.g. "Matched to your work in software and a weak spot: account security". */
+  reason: string
+}
 
 /** Something worth noticing. `quote` is the exact text it points at, so the debrief can mark it in the message. */
 export interface Indicator {
@@ -33,6 +42,9 @@ interface ScenarioCore {
   explanation: string
   /** What to check next time, shown when the call was wrong. */
   nextTime: string
+  /** Built-in scenarios leave it out; the backend infers it from the id and title. */
+  scamCategory?: ScamCategory
+  generated?: GeneratedInfo
 }
 
 interface BaseScenario extends ScenarioCore {

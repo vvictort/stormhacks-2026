@@ -21,6 +21,14 @@ const schema = z.object({
   CALL_MAX_SECONDS: z.coerce.number().int().positive().default(180),
   TEXT_FOLLOWUP_SEC: z.coerce.number().positive().default(120),
   TEXT_IDLE_END_SEC: z.coerce.number().positive().default(600),
+  // Unset: vulnerability analysis is computed in the backend from TigerData metrics (deterministic fallback).
+  SNOWFLAKE_ACCOUNT: z.string().min(1).optional(),
+  SNOWFLAKE_PAT: z.string().min(1).optional(),
+  SNOWFLAKE_WAREHOUSE: z.string().min(1).optional(),
+  SNOWFLAKE_DATABASE: z.string().min(1).optional(),
+  SNOWFLAKE_SCHEMA: z.string().min(1).default('PUBLIC'),
+  SNOWFLAKE_ROLE: z.string().min(1).optional(),
+  SNOWFLAKE_CORTEX_MODEL: z.string().min(1).optional(),
 });
 export type Config = z.infer<typeof schema>;
 export function loadConfig(): Config {
