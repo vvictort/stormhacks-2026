@@ -86,6 +86,11 @@ class Scrubbing(unittest.TestCase):
         self.assertIsNone(scrub({**rec, 'kind': 'legitimate', 'subject': 'Re: lunch',
                                  'text': '> lunch?\nsure, see you at noon by the fountain, and bring the notes too.'}))
 
+    def test_double_encoded_pound_fixed_and_other_mojibake_dropped(self):
+        text = 'URGENT! You have won a å£900 prize. Call now to claim your reward before it expires today.'
+        self.assertIn('£900', scrub({'kind': 'scam', 'subject': '', 'text': text})['text'])
+        self.assertIsNone(scrub({'kind': 'scam', 'subject': '', 'text': text.replace('å£', 'Û_')}))
+
     def test_truncates_to_contract_limit(self):
         out = scrub({'kind': 'scam', 'subject': 'S' * 300, 'text': ' '.join(f'Notice {i}: please verify the account.' for i in range(200))})
         self.assertLessEqual(len(out['text']), 1200)
@@ -125,6 +130,7 @@ class Tagging(unittest.TestCase):
         self.assertEqual(categorize('Your mailbox quota is full; log in with your password.'), 'account_security')
         self.assertEqual(categorize('Payroll update from human resources for every employee.'), 'workplace')
         self.assertIsNone(categorize('I am a barrister; my late client left an inheritance in a bank account.'))
+        self.assertEqual(categorize('WINNER!! You have been selected to receive a prize. To claim call now.'), 'promotional')
         self.assertIsNone(categorize('hello there'))
 
     def test_pattern_uses_own_words_and_exact_cues(self):
@@ -159,7 +165,7 @@ class Output(unittest.TestCase):
         texts = [e['text'] for e in ex if e['channel'] == 'email']
         self.assertEqual(sum('unusual activity' in t for t in texts), 1, 'exact + near duplicates collapse to one')
         self.assertFalse(any('viagra' in t.lower() for t in texts))
-        self.assertTrue(all(e['textKind'] == 'pattern' for e in ex if e['channel'] in ('call', 'sms')))
+        self.assertTrue(all(e['textKind'] == 'pattern' for e in ex if e['channel'] == 'call'))
         self.assertEqual(report['email']['raw_rows'], 8)
         for e in ex:
             assert_cues_exact(self, e['text'], e['cues'])

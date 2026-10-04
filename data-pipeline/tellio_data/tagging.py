@@ -102,7 +102,8 @@ CATEGORY_RULES = {
                      r"invoice|timesheet|salary"),
     'promotional': _rx(r"special offer|discount|deal|sale|% off|limited (?:time )?offer|order now|buy now|shop now|"
                        r"free (?:trial|gift|shipping|vacation)|subscribe|promotion|coupon|vacation package|prize|"
-                       r"you(?:'ve| have) won|lottery|sweepstakes|lowest prices?|best prices?|replica|pills?|"
+                       r"you(?:'ve| have) won|\bwon\b|winners?|claim (?:your|yr|ur)|award(?:ed)?|vouchers?|bonus|\bdraw\b|"
+                       r"free entry|ringtones?|lottery|sweepstakes|lowest prices?|best prices?|replica|pills?|"
                        r"pharmacy|meds|viagra|cialis"),
 }
 # Scam types Tellio has no category for: leave them null rather than force them into one.

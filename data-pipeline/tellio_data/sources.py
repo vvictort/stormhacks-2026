@@ -12,13 +12,15 @@ SOURCES = {
         'files': ('Nazario.csv', 'CEAS_08.csv', 'SpamAssasin.csv', 'Nigerian_Fraud.csv'),
     },
     'sms': {
-        'dataset': 'spam-detection-challenge',
-        'kind': 'competition',
-        'url': 'https://www.kaggle.com/competitions/spam-detection-challenge',
-        # Competition data: needs a Kaggle login and accepted rules; the rules govern reuse, so no text is committed.
-        'license': 'Kaggle competition rules (unverified; login required)',
-        'redistribution': 'derived-only',
-        'files': (),
+        # The UCI SMS Spam Collection (an input of the same Kaggle notebook as the email data). The preferred
+        # spam-detection-challenge competition needs a Kaggle login and accepted rules, so it isn't used yet.
+        'dataset': 'uciml/sms-spam-collection-dataset',
+        'kind': 'dataset',
+        'url': 'https://archive.ics.uci.edu/dataset/228/sms+spam+collection',
+        # Kaggle lists "Unknown"; the UCI ML Repository (the origin) publishes it under CC BY 4.0, read 2026-10-04.
+        'license': 'CC BY 4.0',
+        'redistribution': 'excerpts',
+        'files': ('spam.csv',),
     },
     'call': {
         'dataset': 'teeconnie/scam-and-non-scam-call-conversation-dataset',

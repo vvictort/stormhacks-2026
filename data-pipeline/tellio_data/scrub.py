@@ -174,10 +174,14 @@ def is_junk(text: str) -> bool:
     return sum(w.lower() in STOPWORDS for w in words) < 0.15 * len(words)  # word salad / foreign language
 
 
+# Characters that only appear in this data as mis-decoded bytes; such rows are dropped rather than guessed at.
+MOJIBAKE = re.compile(r'[åÛÌÒÏ]|\ufffd')
+
+
 def scrub(record: dict) -> dict | None:
     """Scrubbed copy of a raw record, or None if it is junk. Junk is judged before truncation."""
-    raw, scam = record['text'], record['kind'] == 'scam'
-    if JUNK_MARKERS.search(raw) or OFF_TOPIC.search(raw) or OFF_TOPIC.search(record.get('subject') or ''):
+    raw, scam = record['text'].replace('å£', '£'), record['kind'] == 'scam'  # the UCI SMS file double-encodes £
+    if MOJIBAKE.search(raw) or JUNK_MARKERS.search(raw) or OFF_TOPIC.search(raw) or OFF_TOPIC.search(record.get('subject') or ''):
         return None
     if not scam and (LIST_TRAFFIC.search(raw) or re.match(r'\s*(?:re|fwd?):|\s*\[', record.get('subject') or '', re.I)):
         return None
