@@ -28,7 +28,6 @@ const attempt = (overrides: Record<string, unknown> = {}) => ({
 
 function routes(repos: Repositories = fakeRepos()) {
   const sims = testServices(repos);
-  after(sims.close);
   const app = createApp({ repos, services: sims.services, origin, verifyToken });
   return {
     app,

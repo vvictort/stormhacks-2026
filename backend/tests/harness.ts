@@ -1,6 +1,3 @@
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import supertest from 'supertest';
 import { createElevenLabs } from '../app/calls/elevenlabs.ts';
@@ -10,8 +7,8 @@ import type { Repositories } from '../app/repositories.ts';
 import { ScenarioCatalog } from '../app/scenarios/catalog.ts';
 import { createApp } from '../app/server.ts';
 import type { CallScenario } from '../app/shared/types.ts';
-import { JsonlEventSink } from '../app/sim/events.ts';
-import { JsonFileStore } from '../app/sim/store.ts';
+import { MemoryEventSink, type EventSink } from '../app/sim/events.ts';
+import { MemoryStore, type SimStore } from '../app/sim/store.ts';
 import type { AttemptInput } from '../app/training/attempts.schema.ts';
 import { StubProvider } from '../app/texts/provider.ts';
 import { TextService } from '../app/texts/service.ts';
@@ -73,11 +70,8 @@ export function fakeRepos() {
   } satisfies Repositories;
 }
 
-/** The simulation services on a temp dir, as main.ts builds them, with a test ElevenLabs key unless `elevenLabs: false`. */
-export function testServices(repos: Repositories, { elevenLabs = true } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'tellio-sim-'));
-  const store = new JsonFileStore(dir);
-  const events = new JsonlEventSink(dir);
+/** The simulation services as main.ts builds them (in memory unless given a store), with a test ElevenLabs key unless `elevenLabs: false`. */
+export function testServices(repos: Repositories, { elevenLabs = true, store = new MemoryStore() as SimStore, events = new MemoryEventSink() as EventSink } = {}) {
   const services = {
     catalog: new ScenarioCatalog(repos.scenarios),
     texts: new TextService(store, events, new StubProvider(), { appOrigin: origin, followUpSec: 120, idleEndSec: 600 }),
@@ -87,18 +81,12 @@ export function testServices(repos: Repositories, { elevenLabs = true } = {}) {
       callMaxSeconds: 180,
     }),
   };
-  const close = async () => {
-    // Let in-flight event writes land before the temp dir goes.
-    await new Promise((r) => setTimeout(r, 20));
-    store.flush();
-    rmSync(dir, { recursive: true, force: true });
-  };
-  return { services, store, close };
+  return { services, store };
 }
 
 /** The whole API with simulation services; `api` calls `/api/comms/*` the way the browser client does. */
 export function startApp({ verify = fakeVerify, repos = fakeRepos() as Repositories, elevenLabs = true }: { verify?: VerifyToken; repos?: Repositories; elevenLabs?: boolean } = {}) {
-  const { services, store, close } = testServices(repos, { elevenLabs });
+  const { services, store } = testServices(repos, { elevenLabs });
   const app = createApp({ repos, services, origin, verifyToken: verify });
 
   /** `token: null` sends no Authorization header. POSTs always carry the app Origin and a JSON body. */
@@ -108,5 +96,5 @@ export function startApp({ verify = fakeVerify, repos = fakeRepos() as Repositor
     const res = method === 'GET' ? await req : await req.send((body ?? {}) as object);
     return { status: res.status, body: res.body, headers: res.headers };
   };
-  return { app, api, repos, services, store, close };
+  return { app, api, repos, services, store };
 }

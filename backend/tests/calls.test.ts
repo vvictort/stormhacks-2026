@@ -1,6 +1,6 @@
 import { fakeRepos, json, mockOutbound, startApp, testServices } from './harness.ts';
 import assert from 'node:assert/strict';
-import { after, beforeEach, test } from 'node:test';
+import { beforeEach, test } from 'node:test';
 import { trainingAttempt } from '../app/calls/attempt.ts';
 import { toTraining } from '../app/calls/outcome.ts';
 import type { Repositories } from '../app/repositories.ts';
@@ -57,7 +57,6 @@ async function inCall(app: ReturnType<typeof startApp>, tokenConversationId?: st
 
 test('unknown scenario ids are 404 scenario_not_found', async () => {
   const app = startApp();
-  after(app.close);
   for (const scenarioId of ['nope', 'gen-abc']) {
     const res = await app.api('POST', '/calls', { body: { scenarioId } });
     assert.deepEqual([res.status, res.body.error.code], [404, 'scenario_not_found'], scenarioId);
@@ -67,7 +66,6 @@ test('unknown scenario ids are 404 scenario_not_found', async () => {
 
 test('a client-supplied scenario (or any extra key) is a 400', async () => {
   const app = startApp();
-  after(app.close);
   const scenario = { id: 'x', title: 'x', tactics: ['urgency'], difficulty: 1, callerLabel: 'x', systemPrompt: 'x', firstMessage: 'x' };
   for (const path of ['/calls', '/texts']) {
     assert.equal((await app.api('POST', path, { body: { scenario } })).status, 400, path);
@@ -78,7 +76,6 @@ test('a client-supplied scenario (or any extra key) is a 400', async () => {
 
 test('generated scenarios resolve only for their owner', async () => {
   const app = startApp();
-  after(app.close);
   const generated = { id: 'gen-1', title: 'Generated', tactics: ['urgency'], difficulty: 3, callerLabel: 'Someone', systemPrompt: 'Be a scammer.', firstMessage: 'Hello.' } as const;
   await app.repos.scenarios.save('alice', { ...generated, tactics: [...generated.tactics] }, 'fallback');
   const res = await app.api('POST', '/calls', { token: 'valid:alice', body: { scenarioId: 'gen-1' } });
@@ -90,7 +87,6 @@ test('generated scenarios resolve only for their owner', async () => {
 
 test('the token conversation id is bound on accept; a different one is 409', async () => {
   const app = startApp();
-  after(app.close);
   const callId = await inCall(app, 'conv_token');
   assert.equal((await app.api('POST', `/calls/${callId}/connected`, { body: { conversationId: 'conv_token' } })).status, 200);
   const res = await app.api('POST', `/calls/${callId}/connected`, { body: { conversationId: 'conv_other' } });
@@ -99,7 +95,6 @@ test('the token conversation id is bound on accept; a different one is 409', asy
 
 test('/connected binds the first id; mismatched /ended is 409 and the call stays in_call', async () => {
   const app = startApp();
-  after(app.close);
   const ringing = (await app.api('POST', '/calls', { body: { scenarioId: 'bank-fraud-dept-otp-1' } })).body.callId;
   const early = await app.api('POST', `/calls/${ringing}/connected`, { body: { conversationId: 'conv_A' } });
   assert.deepEqual([early.status, early.body.error.code], [409, 'not_in_call']);
@@ -137,7 +132,6 @@ test('canonical outcome mapping matches the contract table', () => {
 test('an analysed call is saved as a training attempt with a redacted transcript', async () => {
   const { repos, inserted, nextSave } = recordingRepos();
   const app = startApp({ repos });
-  after(app.close);
   const callId = await inCall(app, 'conv_1');
 
   const saved = nextSave();
@@ -166,7 +160,6 @@ test('an analysed call is saved as a training attempt with a redacted transcript
 test('a declined call carries its training result and is saved as a success', async () => {
   const { repos, inserted, nextSave } = recordingRepos();
   const app = startApp({ repos });
-  after(app.close);
   const { body } = await app.api('POST', '/calls', { body: { scenarioId: 'courier-customs-fee-1' } });
   const saved = nextSave();
   const declined = await app.api('POST', `/calls/${body.callId}/decline`, { body: { reason: 'declined' } });
@@ -182,7 +175,6 @@ test('a database error while saving is logged and never breaks the call', async 
   const attempted = new Promise<void>((r) => { failed = r; });
   repos.attempts.insert = async () => { failed(); throw new Error('connection refused'); };
   const app = startApp({ repos });
-  after(app.close);
   const { body } = await app.api('POST', '/calls', { body: { scenarioId: 'courier-customs-fee-1' } });
   const missed = await app.api('POST', `/calls/${body.callId}/decline`, { body: { reason: 'missed' } });
   assert.equal(missed.status, 200);
@@ -195,7 +187,6 @@ test('without ElevenLabs keys calls still ring and score; only accept is 503 ele
   mockOutbound((url) => { throw new Error(`unexpected outbound request: ${url}`); });
   const { repos, inserted, nextSave } = recordingRepos();
   const app = startApp({ repos, elevenLabs: false });
-  after(app.close);
   const ringing = (await app.api('POST', '/calls', { body: { scenarioId: 'bank-fraud-dept-otp-1' } })).body.callId;
   const accept = await app.api('POST', `/calls/${ringing}/accept`);
   assert.deepEqual([accept.status, accept.body.error.code], [503, 'elevenlabs_not_configured']);
@@ -209,7 +200,6 @@ test('without ElevenLabs keys calls still ring and score; only accept is 503 ele
 test('abandoning a ringing call completes it unscored and saves nothing', async () => {
   const { repos, inserted } = recordingRepos();
   const app = startApp({ repos });
-  after(app.close);
   const { body } = await app.api('POST', '/calls', { body: { scenarioId: 'bank-fraud-dept-otp-1' } });
 
   assert.equal((await app.api('POST', `/calls/${body.callId}/abandon`, { token: 'valid:bob' })).status, 404, 'owner only');
@@ -233,8 +223,7 @@ test('abandoning a ringing call completes it unscored and saves nothing', async 
 
 test('the sweeper abandons a stale ringing call instead of saving a missed attempt', async () => {
   const { repos, inserted } = recordingRepos();
-  const { services, store, close } = testServices(repos as Repositories);
-  after(close);
+  const { services, store } = testServices(repos as Repositories);
   const call = await services.calls.start('alice', (await services.catalog.pickCall('courier-customs-fee-1', 'alice'))!);
   await store.updateCall(call.id, (c) => { c.createdAt = new Date(Date.now() - 3 * 60_000).toISOString(); });
 

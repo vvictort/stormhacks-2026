@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'node:url';
 import { initializeApp } from 'firebase-admin/app';
 import { createElevenLabs } from './calls/elevenlabs.ts';
 import { CallService } from './calls/service.ts';
@@ -7,22 +6,19 @@ import { createDatabase } from './db/database.ts';
 import { createRepositories } from './repositories.ts';
 import { ScenarioCatalog } from './scenarios/catalog.ts';
 import { createApp } from './server.ts';
-import { JsonlEventSink } from './sim/events.ts';
-import { JsonFileStore } from './sim/store.ts';
+import { PgEventSink, PgSimStore } from './sim/sim.repository.ts';
 import { StubProvider } from './texts/provider.ts';
 import { closeAll as closeStreams } from './texts/sse.ts';
 import { TextService } from './texts/service.ts';
 
 const SWEEP_INTERVAL_MS = 15_000;
-// In-progress simulations and their event log (gitignored).
-const DATA_DIR = fileURLToPath(new URL('../data', import.meta.url));
 
 const config = loadConfig();
 initializeApp({ projectId: config.FIREBASE_PROJECT_ID });
 const db = createDatabase(config.DATABASE_URL);
 const repos = createRepositories(db);
-const store = new JsonFileStore(DATA_DIR);
-const events = new JsonlEventSink(DATA_DIR);
+const store = new PgSimStore(db);
+const events = new PgEventSink(db);
 const services = {
   catalog: new ScenarioCatalog(repos.scenarios),
   texts: new TextService(store, events, new StubProvider(), {
@@ -51,7 +47,6 @@ function shutdown() {
   if (closing) return;
   closing = true;
   clearInterval(sweeper);
-  store.flush();
   const deadline = setTimeout(() => { server.closeAllConnections(); process.exit(1); }, 10000);
   deadline.unref();
   // Open SSE streams would hold close() until the deadline; clients reconnect on their own.
