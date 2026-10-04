@@ -39,6 +39,7 @@ export function fakeRepos() {
   const attempts = new Map<string, AttemptInput>();
   const scenarios = new Map<string, { uid: string; scenario: CallScenario }>();
   const generations: { uid: string; at: number }[] = [];
+  const messages = new Map<string, { uid: string; scenario: unknown }>();
   const summary = (a: AttemptInput) => ({ id: a.attemptId, channel: a.channel, scenarioId: a.scenarioId, scenarioTitle: a.scenarioTitle, difficulty: a.difficulty, scamCategory: a.scamCategory, outcome: a.outcome, success: a.success, tactics: a.tactics, completedAt: new Date(a.completedAt).toISOString() });
   return {
     users: {
@@ -65,6 +66,11 @@ export function fakeRepos() {
       async save(uid: string, scenario: CallScenario) { scenarios.set(scenario.id, { uid, scenario }); },
       async get(uid: string, id: string) {
         const stored = scenarios.get(id);
+        return stored?.uid === uid ? stored.scenario : null;
+      },
+      async saveMessage(uid: string, scenario: { id: string }) { messages.set(scenario.id, { uid, scenario }); },
+      async getMessage(uid: string, id: string) {
+        const stored = messages.get(id);
         return stored?.uid === uid ? stored.scenario : null;
       },
       async claimGeneration(uid: string, perMinute: number, perDay: number) {

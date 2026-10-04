@@ -60,6 +60,11 @@ ids from `scenarios.ts`, generated ones from a GET that returns the **frontend `
   the browser. Rate limit: `repos.scenarios.claimGeneration(uid, perMinute, perDay)` (shared budget).
 - Every red flag / indicator `quote` must appear verbatim in the rendered text (sender, subject, body, links), so
   `markText` can highlight it.
+  Emails (`backend/app/scenarios/email-generator.ts`): checked against exactly what `EmailView` highlights, i.e.
+  `fromAddress`, `replyTo`, `subject`, body paragraphs, `attachment` (via `markText`) and whole link URLs (`markFor`);
+  `fromName` is not highlighted, so it never counts. Overlapping quotes count as hidden.
+- `generateEmailScenario({ ..., focus?: ScamCategory[] })`: the first valid `focus` category wins over weak categories
+  (feed it Snowflake's `nextTrainingFocus`); the email route does not read insights yet.
 
 ## Behaviour events and metrics (Agent 2)
 

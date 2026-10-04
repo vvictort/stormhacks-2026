@@ -29,6 +29,9 @@
 .home-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 32px; }
 .home-cta p { font-size: 14px; color: var(--color-muted-strong); }
 .home-cta strong { color: var(--color-foreground); font-weight: 600; }
+.home-generate { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.home-generate .train-ghost:disabled { cursor: progress; }
+.home-generate-error { flex-basis: 100%; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--color-accent-strong); }
 .home-progress { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--color-border); }
 .home-progress h2 { margin: 0 0 10px; font-family: var(--font-editorial); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
 .home-progress h3 { margin: 22px 0 10px; font-size: 14px; font-weight: 600; }
@@ -91,6 +94,8 @@
 .train-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-block: -10px; font-size: 14px; font-weight: 500; color: var(--color-primary-strong); }
 .train-back:hover { text-decoration: underline; text-underline-offset: 3px; }
 .scenario-meta { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--color-muted-strong); }
+.scenario-generated { margin-top: 10px; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--color-muted-strong); text-wrap: pretty; }
+.scenario-generated strong { color: var(--color-primary-strong); font-weight: 600; }
 .scenario-situation { margin-top: 18px; max-width: 46ch; padding: 14px 16px; border-radius: 10px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 15px; line-height: 1.55; }
 .scenario-situation strong { font-weight: 600; }
 .scenario-panel { grid-area: panel; padding-top: 28px; min-width: 0; }
@@ -217,6 +222,7 @@
   .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
   .home-intro h1 { font-size: 34px; }
   .home-cta .train-primary { width: 100%; }
+  .home-generate .train-ghost { width: 100%; white-space: normal; }
   .path-channel { --path-indent: 50px; }
   .path-channel::before { left: 18px; }
   .path-node { width: 38px; height: 38px; }

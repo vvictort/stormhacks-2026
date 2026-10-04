@@ -17,6 +17,17 @@ export class ScenariosRepository {
     return row?.scenario ?? null;
   }
 
+  /** Generated texts and emails, stored in the frontend `Scenario` shape; the channel comes from the id. */
+  async saveMessage(uid: string, scenario: { id: string; type: 'email' | 'sms' }, source: ScenarioSource) {
+    await this.db.query('INSERT INTO generated_message_scenarios(id,firebase_uid,channel,scenario,source) VALUES($1,$2,$3,$4,$5)',[scenario.id,uid,scenario.type,JSON.stringify(scenario),source]);
+  }
+
+  /** Only the owner's message scenario; anyone else gets null. */
+  async getMessage(uid: string, id: string): Promise<unknown> {
+    const { rows: [row] } = await this.db.query('SELECT scenario FROM generated_message_scenarios WHERE id=$1 AND firebase_uid=$2',[id,uid]);
+    return row?.scenario ?? null;
+  }
+
   /**
    * Counts a generation request against the user's per-minute and per-day limits; false (nothing recorded) when
    * either is used up. The per-user advisory lock makes count-then-insert atomic across requests and processes.
