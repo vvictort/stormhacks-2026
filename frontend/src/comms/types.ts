@@ -153,10 +153,9 @@ export interface CallOverrides {
   tts?: { voiceId: string }
 }
 
-/** Body of `POST /comms/texts`; an empty pick means a random scenario. Calls take a `scenarioId` only. */
-export interface ScenarioPick<S> {
+/** Body of `POST /comms/texts`; an empty pick means a random scenario. Scenarios are server-owned: ids only. */
+export interface ScenarioPick {
   scenarioId?: string
-  scenario?: S
 }
 
 /** `POST /comms/texts` 201 response. */

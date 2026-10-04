@@ -1,0 +1,143 @@
+// Phone-call practice: teaching metadata only. The caller's script and voice live on the comms service
+// (backend/comms/fixtures/scenarios/call-*.json); ids here must match those exactly.
+// Every company, person and number here is invented.
+import type { CallScenario } from './scenarios.ts'
+
+export const callScenarios: CallScenario[] = [
+  {
+    id: 'courier-customs-fee-1',
+    type: 'call',
+    title: 'Customs fee on a parcel',
+    summary: 'A delivery company calls to "confirm" your account and a customs fee.',
+    situation: "You're expecting a parcel from overseas sometime this week.",
+    difficulty: 'easy',
+    callerLabel: 'Parcel delivery',
+    callerNumber: '+1 (604) 555-0177',
+    tactics: ['urgency', 'info_request', 'otp_request'],
+    indicators: [
+      { title: 'They called you about a fee', detail: 'Couriers leave a notice or send a tracking update. A surprise call asking you to pay over the phone is not how real fees are collected.' },
+      { title: 'They want to "confirm" your details', detail: 'A real courier already has your address. Asking you to read back your account or card details is how a scammer collects them.' },
+      { title: 'A small amount and a short deadline', detail: 'The fee is kept low so it feels too minor to question, and the deadline is there to stop you checking.' },
+    ],
+    explanation: 'This is a delivery-fee scam by phone. The parcel story makes the call feel expected, then a small fee and a deadline push you to pay or hand over details before you check.',
+    nextTime: "Hang up and look up your tracking number on the courier's own website or app. If there's a real fee, it will show there.",
+    practice: {
+      lines: [
+        "Hello, I'm calling from the parcel delivery service about a package addressed to you.",
+        "It's being held at customs. There's an unpaid import fee of $3.99 before we can release it.",
+        "I just need to confirm the account on file. We've sent a confirmation code to your phone.",
+        'Can you read me that code? If the fee isn\'t paid in the next hour, the parcel goes back to the sender.',
+      ],
+      complyLabel: 'Read out the code',
+    },
+  },
+  {
+    id: 'bank-fraud-dept-otp-1',
+    type: 'call',
+    title: 'Your bank\'s "fraud team"',
+    summary: 'A caller from your bank asks for a verification code to stop a charge.',
+    situation: 'You bank with Maple Trust Bank and use its card most days.',
+    difficulty: 'medium',
+    callerLabel: 'Maple Trust Bank',
+    callerNumber: '+1 (833) 555-0148',
+    tactics: ['authority', 'urgency', 'fear', 'otp_request'],
+    indicators: [
+      { title: 'A code read back over the phone', detail: 'Your bank texts a code so that only you can use it. A caller who asks you to read it out is trying to sign in or approve a payment as you.' },
+      { title: 'Fear, then a rush', detail: 'A scary charge gets you worried; "it goes through in a few minutes" stops you from hanging up to check.' },
+      { title: "Talked out of calling back", detail: 'If calling your bank yourself is "too slow", that is the clearest sign. A real fraud team is happy for you to call the number on your card.' },
+      { title: 'A name on the screen proves nothing', detail: "Caller ID can be faked. A bank's name on your phone doesn't mean your bank is on the line." },
+    ],
+    explanation: "This is a fake fraud-department call. It borrows your bank's name and a frightening charge, then asks for the one code that lets the caller into your account.",
+    nextTime: 'Never read out a code someone texted you, even to your bank. Hang up and call the number on the back of your card.',
+    practice: {
+      lines: [
+        "Hi, this is Daniel from the Maple Trust Bank fraud prevention team. We've flagged a suspicious purchase on your card.",
+        'Someone is trying to spend $842.17 at an electronics store in Toronto right now.',
+        "To cancel it, I've just texted you a six-digit verification code. Can you read it back to me?",
+        "Please hurry, the charge goes through in a few minutes and we can't refund it after that.",
+      ],
+      complyLabel: 'Read out the code',
+    },
+  },
+  {
+    id: 'cra-tax-arrears-1',
+    type: 'call',
+    title: 'Taxes owed to the CRA',
+    summary: 'A tax officer says you owe money and must pay today.',
+    situation: 'You filed your taxes in the spring and got a normal notice of assessment.',
+    difficulty: 'medium',
+    callerLabel: 'Canada Revenue Agency',
+    callerNumber: '+1 (613) 555-0109',
+    tactics: ['authority', 'fear', 'urgency'],
+    indicators: [
+      { title: 'Threats of arrest or legal action', detail: 'The real CRA does not threaten arrest or police on the phone. Fear is there to stop you thinking clearly.' },
+      { title: 'Pay today, by an odd method', detail: 'Gift cards, cryptocurrency or a transfer "right now" are what scammers ask for, because they are hard to trace and undo.' },
+      { title: 'Stay on the line', detail: "Being told not to hang up or tell anyone keeps you from checking with someone you trust." },
+    ],
+    explanation: 'This is a government-impersonation scam. It uses an official-sounding title and a threat to rush you into paying in a way that cannot be reversed.',
+    nextTime: 'Hang up, then check your account on the CRA website yourself, or call the number listed there. Real tax debts arrive in writing first.',
+    practice: {
+      lines: [
+        'This is Officer Grant with the Canada Revenue Agency. This is a final notice about unpaid taxes in your name.',
+        'You owe $1,960 from a reassessment. If it is not paid today, a warrant will be issued for your arrest.',
+        'You can settle it right now by buying prepaid cards and reading me the numbers.',
+        'Do not hang up and do not discuss this with anyone, or the case goes to the police.',
+      ],
+      complyLabel: 'Agree to pay',
+    },
+  },
+  {
+    id: 'tech-support-remote-1',
+    type: 'call',
+    title: 'Tech support on the line',
+    summary: 'A technician says your computer is infected and wants remote access.',
+    situation: 'Your laptop has been running a little slowly lately.',
+    difficulty: 'medium',
+    callerLabel: 'Tech support',
+    callerNumber: '+1 (888) 555-0132',
+    tactics: ['authority', 'fear', 'info_request'],
+    indicators: [
+      { title: 'They called you first', detail: "Real tech companies don't phone people out of the blue about viruses. You'd only hear from support after contacting them." },
+      { title: 'Asking to control your computer', detail: 'Remote access lets the caller see everything, install anything and open your banking while you watch.' },
+      { title: 'A problem only they can see', detail: '"We\'re getting error alerts from your computer" is a story you cannot check, which is exactly why it is used.' },
+    ],
+    explanation: 'This is a tech-support scam. A made-up infection gets you worried, then remote access gives the caller your computer, your passwords and often your bank account.',
+    nextTime: "Hang up. If you're worried about your computer, contact the company yourself through its official website, or ask someone you trust.",
+    practice: {
+      lines: [
+        "Hello, I'm calling from the technical support department. Our system is getting error reports from your computer.",
+        'It looks like a virus is stealing your files. We need to fix it before it reaches your online banking.',
+        "I'll walk you through it. Please go to the website I give you and download our remote support tool.",
+        "Once it's installed, read me the access number on your screen so I can connect.",
+      ],
+      complyLabel: 'Give remote access',
+    },
+  },
+  {
+    id: 'exec-vendor-payment-1',
+    type: 'call',
+    title: "The boss's urgent payment",
+    summary: 'A senior executive calls about changing a supplier\'s bank details.',
+    situation: "You handle supplier payments at work. Your company's CFO is Dana Whitfield.",
+    difficulty: 'hard',
+    callerLabel: 'Dana Whitfield',
+    tactics: ['authority', 'urgency', 'info_request'],
+    indicators: [
+      { title: 'A senior name and a secret', detail: 'Pressure from someone important, plus "keep this between us", is designed to make you skip the usual checks.' },
+      { title: 'New bank details by phone', detail: "Changing where money goes is the step scammers need most. Real changes go through your normal written process and get checked." },
+      { title: 'It has to happen today', detail: 'A deadline before a "board meeting" or "audit" leaves no time to call the supplier or your manager to confirm.' },
+      { title: 'A voice can be faked', detail: 'AI can copy a familiar voice from a short clip. Sounding like your boss is no longer proof that it is them.' },
+    ],
+    explanation: 'This is business payment fraud. It borrows an executive\'s authority and a deadline so a payment goes to the scammer\'s account before anyone checks.',
+    nextTime: 'Never change payment details from a call alone. Hang up and confirm with the person and the supplier on numbers you already have on file.',
+    practice: {
+      lines: [
+        "Hi, it's Dana. I'm about to walk into a board meeting, so I need a quick favour.",
+        "Northfield Supplies changed banks. Their invoice has to go out today to the new account, or we lose the contract.",
+        "I'll text you the new account details. Please process the $18,400 before noon.",
+        "Keep this between us for now, I don't want it held up in the usual approvals.",
+      ],
+      complyLabel: 'Make the payment',
+    },
+  },
+]

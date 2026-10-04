@@ -9,7 +9,6 @@ import type {
   StartTextResponse,
   StartTextResult,
   TextMessage,
-  TextScenario,
   TextThread,
 } from './types'
 
@@ -99,7 +98,7 @@ export function createCommsClient({
     },
 
     /** Starts a text thread, or resumes the user's active one (`resumed: true`). */
-    async startText(pick: ScenarioPick<TextScenario> = {}, signal?: AbortSignal): Promise<StartTextResult> {
+    async startText(pick: ScenarioPick = {}, signal?: AbortSignal): Promise<StartTextResult> {
       try {
         const { threadId } = await request<StartTextResponse>('POST', '/texts', { body: pick, signal })
         return { threadId, resumed: false }
