@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 import { Brand } from '../../../components/Brand'
@@ -13,7 +14,7 @@ export function AuthLayout() {
 
       <main className="auth-main">
         <section className="editorial" aria-labelledby="editorial-title">
-          <p id="editorial-title" className="editorial-title">A little practice.<br />A <em>sharper instinct.</em></p>
+          <p id="editorial-title" className="editorial-title"><span className="reveal-line" style={{ '--w': 0 } as CSSProperties}>A little practice.</span><br /><span className="reveal-line" style={{ '--w': 3 } as CSSProperties}>A <em>sharper instinct.</em></span></p>
           <p className="editorial-description text-muted-strong">Tellio sends scam texts, emails and calls to a practice phone in your browser, so you learn the warning signs before a real one reaches you.</p>
           <Mascot className="auth-mascot" />
         </section>

@@ -38,6 +38,11 @@
   --motion-quick: 160ms;
   --motion-enter: 280ms;
   --motion-scale: 1;
+  /* Phone-app feel: a gentle spring (damping .78, ~2% overshoot, settles in 485ms) for releases
+     and arrivals, and the iOS sheet curve for screen pushes. */
+  --spring: linear(0, 0.046, 0.154, 0.29, 0.431, 0.563, 0.679, 0.776, 0.852, 0.91, 0.953, 0.982, 1.001, 1.012, 1.018, 1.02, 1.019, 1.017, 1.015, 1.012, 1.009, 1.007, 1.005, 1.003, 1);
+  --spring-duration: 485ms;
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Scrolling stays fully live (wheel, touch, keys); only the bar is hidden, here and in every inner scroller. */
@@ -113,7 +118,6 @@ h1:focus, #auth-content:focus { outline: none; }
 .social-button { border-width: 1px; background: transparent; }
 .social-button:hover:not(:disabled) { background: var(--color-background); border-color: var(--color-muted-strong); }
 /* Press: a 1px settle, the same on every full-width button. */
-.primary-button:active:not(:disabled), .social-button:active:not(:disabled) { translate: 0 calc(1px * var(--motion-scale)); }
 .primary-button:active:not(:disabled) { background-color: var(--color-primary-deep); }
 .social-button:active:not(:disabled) { background: color-mix(in srgb, var(--color-border) 45%, var(--color-background)); }
 /* Signup steps share the fieldset rhythm; a new step rises in. */
@@ -174,6 +178,62 @@ h1:focus, #auth-content:focus { outline: none; }
 @supports (animation-timeline: view()) {
   .how-it-works > li { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
 }
+
+/* ---------- Touch feel: press in fast, spring back out ---------- */
+:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .path-stop, .sms-link, .home-cta a) {
+  --press: .97;
+  transition-property: background-color, border-color, color, opacity, box-shadow, scale;
+  transition-duration: var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--motion-quick), var(--spring-duration);
+  transition-timing-function: var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--ease-out-quint), var(--spring);
+}
+.path-stop { --press: .985; }
+:is(.primary-button, .social-button, .train-primary, .train-ghost, .phone-actions button, .sms-link, .home-cta a):active:not(:disabled),
+.path-stop:active { scale: calc(1 - (1 - var(--press)) * var(--motion-scale)); transition-duration: 90ms; transition-timing-function: ease-out; }
+
+/* ---------- Text that arrives word by word ---------- */
+.reveal-word, .reveal-line { display: inline-block; animation: word-in 560ms var(--ease-out-quint) backwards; animation-delay: calc(var(--reveal-delay, 0ms) + var(--w, 0) * 42ms); }
+@keyframes word-in { from { opacity: 0; translate: 0 calc(.32em * var(--motion-scale)); filter: blur(calc(6px * var(--motion-scale))); } }
+
+/* ---------- Screen transitions (View Transitions; see lib/viewTransition.ts) ---------- */
+.train-header { view-transition-name: app-header; }   /* the nav bar stays put, like an app's */
+.auth-card { view-transition-name: auth-card; }
+.editorial { view-transition-name: auth-editorial; }
+:is(.form-step, .form-step-static) { view-transition-name: form-step; }
+::view-transition-group(*) { animation-duration: 420ms; animation-timing-function: var(--ease-ios); }
+/* Push: the new screen slides over from the right while the old one drifts left and dims. Pop reverses it.
+   Full width on phones; a shorter glide on wide screens so the whole desktop doesn't sweep. */
+:root { --push: 36px; }
+@media (max-width: 760px) { :root { --push: 100%; } }
+[data-nav="forward"]::view-transition-new(root) { animation: 420ms var(--ease-ios) both push-in; }
+[data-nav="forward"]::view-transition-old(root) { animation: 420ms var(--ease-ios) both push-under; }
+[data-nav="back"]::view-transition-old(root) { animation: 360ms var(--ease-ios) both pop-out; z-index: 2; }
+[data-nav="back"]::view-transition-new(root) { animation: 360ms var(--ease-ios) both pop-under; }
+@keyframes push-in { from { translate: var(--push) 0; opacity: .4; box-shadow: -18px 0 40px #2525251a; } }
+@keyframes push-under { to { translate: calc(var(--push) * -.3) 0; opacity: .55; } }
+@keyframes pop-out { to { translate: var(--push) 0; opacity: .4; } }
+@keyframes pop-under { from { translate: calc(var(--push) * -.3) 0; opacity: .55; } }
+/* Login <-> signup: only the card morphs (size and content); the page around it holds still. */
+[data-nav="swap"]::view-transition-old(root), [data-nav="swap"]::view-transition-new(root) { animation: none; }
+/* Fade-through, not crossfade: old card content leaves before the new arrives, so they never overlap. */
+[data-nav="swap"]::view-transition-old(auth-card) { animation: 130ms ease-out both vt-fade-out; }
+[data-nav="swap"]::view-transition-new(auth-card) { animation: 260ms var(--ease-out-quint) 90ms both vt-fade-in; }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; } }
+/* Signup steps: fields push sideways inside the card. */
+[data-nav^="step"]::view-transition-old(form-step), [data-nav^="step"]::view-transition-new(form-step) { height: 100%; overflow: clip; }
+/* Only the fields move; the rest of the card (description, button label) switches at once while its height morphs. */
+[data-nav^="step"]::view-transition-old(auth-card), [data-nav^="step"]::view-transition-old(root) { display: none; }
+[data-nav^="step"]::view-transition-new(auth-card), [data-nav^="step"]::view-transition-new(root) { animation: none; }
+[data-nav="step-forward"]::view-transition-new(form-step) { animation: 320ms var(--ease-ios) 70ms both step-in; }
+[data-nav="step-forward"]::view-transition-old(form-step) { animation: 160ms ease-in both step-out; }
+[data-nav="step-back"]::view-transition-new(form-step) { animation: 320ms var(--ease-ios) 70ms both step-in-back; }
+[data-nav="step-back"]::view-transition-old(form-step) { animation: 160ms ease-in both step-out-back; }
+@keyframes step-in { from { translate: 48px 0; opacity: 0; } }
+@keyframes step-out { to { translate: -48px 0; opacity: 0; } }
+@keyframes step-in-back { from { translate: -48px 0; opacity: 0; } }
+@keyframes step-out-back { to { translate: 48px 0; opacity: 0; } }
+/* The view transition already animates these; don't play their own entrances on top. */
+[data-nav] :is(.auth-card, .editorial, .form-step) { animation: none; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fade-in { from { opacity: 0; } }

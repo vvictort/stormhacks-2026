@@ -1,5 +1,5 @@
 import { Check, Mail, MessageSquareText, Phone, RotateCcw } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { TransitionLink } from '../../../components/TransitionLink'
 import type { Progress } from '../progress'
 import { channels, scenarios, type Scenario } from '../scenarios'
 
@@ -48,7 +48,8 @@ function PathStop({ scenario, progress, upNext }: { scenario: Scenario; progress
         {state === 'missed' && <RotateCcw size={10} strokeWidth={3} />}
       </span>
       <div className="path-stop-body">
-        <Link className="path-stop-link" to={`/train/${scenario.id}`}>{scenario.title}</Link>
+        {/* Shares a transition name with the scenario heading, so the title morphs into the page. */}
+        <TransitionLink className="path-stop-link" to={`/train/${scenario.id}`} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</TransitionLink>
         <p>{scenario.summary}</p>
       </div>
       <span className="path-status">{upNext && attempt ? 'Up next' : status}</span>

@@ -1,3 +1,4 @@
+import { LazyMotion } from 'motion/react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { AuthLayout } from './features/auth/components/AuthLayout'
@@ -6,11 +7,14 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ScenarioPage } from './pages/ScenarioPage'
 import { SignupPage } from './pages/SignupPage'
+import { loadMotionFeatures } from './lib/motion'
 
 function App() {
   return (
+    <LazyMotion features={loadMotionFeatures} strict>
     <AuthProvider>
-      <BrowserRouter>
+      {/* Synchronous route updates let a View Transition capture the new screen (see lib/viewTransition). */}
+      <BrowserRouter useTransitions={false}>
         <Routes>
           <Route element={<RequireAuth />}>
             <Route path="/home" element={<HomePage />} />
@@ -27,6 +31,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </LazyMotion>
   )
 }
 
