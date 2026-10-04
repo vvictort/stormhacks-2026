@@ -23,8 +23,10 @@ The dependency-free unit tests use Node's built-in test runner and TypeScript st
 
 - `/login`: email/password login, Google sign-in, and an accessible password-reset dialog.
 - `/signup`: name, email, password, confirmation, and Google sign-up.
-- `/` and unknown routes redirect to `/login`.
-- Existing or newly authenticated users see a signed-in confirmation with sign-out. There is no dashboard or onboarding yet.
+- `/home` and `/train/:scenarioId` require a signed-in user (`RequireAuth` in `src/features/auth/RouteGuards.tsx`). Logged-out visitors go to `/login`, which remembers the destination in `location.state.from` and returns there after login. An explicit sign-out lands on a plain `/login`.
+- Signed-in users who open `/login` or `/signup` go to `/home` (or the remembered destination), once any auth operation has finished.
+- `/` and unknown routes go to `/home`, so they end up at `/home` or `/login` depending on the session.
+- While Firebase restores the session, protected routes show only a neutral "Checking your session…" status and the auth pages show their own session check, so neither protected content nor the login form flashes.
 - The layout uses two columns on desktop and a single auth card below 960px. The original semantic palette is preserved, with darker companion tokens for accessible text and controls.
 
 ## Authentication integration
@@ -33,7 +35,9 @@ The dependency-free unit tests use Node's built-in test runner and TypeScript st
 
 Email/password registration checks Firebase's current password policy, creates the account, and saves the supplied name with `updateProfile`. The interface requires at least eight characters; a stricter Firebase policy is also enforced and explained inline. Login accepts existing passwords without imposing the new-account minimum. Password whitespace is preserved.
 
-Account creation and display-name saving have separate outcomes. If the account is created but saving the name fails, the user remains signed in and sees a warning. Retrying account creation is not offered.
+Account creation and display-name saving have separate outcomes. Firebase signs the user in before the name is saved, so the redirect off `/signup` waits until the whole operation settles (`pending` is null). If the name can't be saved, the user stays signed in and `profileWarning` stays in the auth context after the redirect, for `/home` to show. `dismissProfileWarning()` clears it, and so does signing out (including from another tab). Retrying account creation is not offered.
+
+Redirect decisions are pure functions in `src/features/auth/redirect.ts`. `safeReturnPath` accepts only in-app paths and never sends users back to an auth page.
 
 Google authentication uses `GoogleAuthProvider` and `signInWithPopup` from the same Firebase instance. Both Google buttons share the same flow. Blocked/cancelled popups and provider errors receive friendly messages.
 
@@ -58,7 +62,9 @@ When deploying to a static host, rewrite application routes to `index.html` so d
 
 ## Verification
 
-The unit suite covers required fields, email format, signup password requirements, significant password whitespace, credential-error privacy, and friendly provider/password-policy messages.
+The unit suite covers required fields, email format, signup password requirements, significant password whitespace, credential-error privacy, friendly provider/password-policy and Google popup messages, every route-guard decision (loading, redirect, waiting on pending operations, sign-out), and return-path safety.
+
+Route protection was checked in a browser against mocked Firebase Auth REST responses (no live accounts or emails). The checks covered: logged-out access to `/home`, `/train/:id`, `/` and unknown paths; returning to a deep link after login; sessions surviving a reload with no login flash; signed-in visits to `/login`, `/signup`, `/` and unknown paths; sign-out and its reload; signup holding on `/signup` until the name is saved; the profile warning reaching `/home`; duplicate accounts; matching wrong-password and unknown-account messages; password-reset success, unknown-account and rate-limit cases; and Google popups that are blocked or closed.
 
 Browser checks cover:
 
