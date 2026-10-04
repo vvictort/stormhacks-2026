@@ -2,19 +2,40 @@
 
 **Practise spotting scams before a real one reaches you.** Tellio is a scam-awareness training web app built at StormHacks 2026. Scam texts, emails and phone calls arrive on a practice phone in your browser; you react the way you would on your own phone, then a debrief shows the red flags you caught or missed. Nothing real is ever at risk: no real messages, links or calls leave the app.
 
+## Overview
+
+Tellio is an **adaptive scam simulator**: it learns how you get fooled and writes increasingly personal training scenarios aimed at exactly that. Each scenario you finish feeds the next one:
+
+```mermaid
+flowchart LR
+  P[Your profile<br/>job, interests] --> W[Your weak spots<br/>scam types + tactics]
+  L[(Scam library<br/>real-world examples)] --> G
+  W --> G[Gemini writes<br/>a new scenario]
+  G --> X[You react<br/>text · email · live call]
+  X --> T[(TigerData<br/>behaviour over time)]
+  T --> S[Snowflake<br/>interprets the patterns]
+  S --> W
+```
+
+| Piece | What it does | Where you see it |
+|---|---|---|
+| **Scam library** | An offline Python pipeline ([`data-pipeline/`](data-pipeline/)) curates ~500 real phishing emails and scam-call patterns from Kaggle datasets into `backend/fixtures/scam-library.json`. Gemini gets 2–3 matching examples (by channel, scam type, tactics and difficulty); without Gemini, built-in scenarios are built from these examples. No embeddings, no runtime Python. | "Grounded in real-world scam patterns" |
+| **Gemini** | Writes a personalised scam email or call script aimed at your current weak spot. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback. | "Written by Gemini" |
+| **ElevenLabs** | Voices the live scam call you answer and talk to, then scores what you gave away (codes, card, personal details). | Call debrief: "powered by ElevenLabs" |
+| **TigerData** | Stores every tap and decision, with the scam tactics involved, in a TimescaleDB hypertable and turns it into metrics over time. | **Your scam instincts** card and chart |
+| **Snowflake** | Compares pseudonymous aggregates across trainees to find which tactic combinations fool you (e.g. authority with urgency); with Cortex on, writes the summary. | **What Tellio has learned**, labelled by what actually ran |
+| **Firebase** | Sign-in (email/password or Google). | Login |
+
+Every optional service degrades honestly: without ElevenLabs, calls become caption-only practice; without Gemini, scenarios are built from the scam library; without Snowflake, the backend's own analysis runs ("Built-in analysis"). At startup the API prints one line per integration saying what's on.
+
 ## What it does
 
 - **Three channels on one practice phone**
   - **Texts:** a scam (or genuine) SMS to judge: tap the link to see where it really goes (it never opens), then report it or mark it safe.
   - **Emails:** a phishing email with sender details and links to inspect.
-  - **Calls:** a live AI voice caller (ElevenLabs) you can answer, talk to and hang up on, with live captions.
-- **Debriefs that teach:** after each scenario you see what gave it away (urgency, unexpected fees, look-alike addresses, requests for codes) and what to check next time. Calls get their own debrief built from the redacted transcript.
-- **Adaptive practice:** an adaptive scam simulator that learns how you get fooled and trains against your weaknesses. Every text, email and call result is saved server-side; scenarios get harder as you make the right calls and ease off after misses, and Home's **Next for you** names the scam type Tellio will train next and why.
-  - **Gemini** writes the personalised scam emails and call scenarios, aimed at your current training focus and grounded in 2–3 matching real-world examples from Tellio's scam library (picked by channel, category, tactics and difficulty; no embeddings). Those scenarios also say "Grounded in real-world scam patterns".
-  - **TigerData** stores every behaviour event (opens, sender checks, link taps, decisions, call answers and declines) in a TimescaleDB hypertable and computes **Your scam instincts** (decision time, right calls, report rate, trend, and a small chart of recent decisions). The card names TigerData only when `behavior_events` really is a hypertable.
-  - **Snowflake** interprets pseudonymous aggregates across trainees for **What Tellio has learned**: which tactic combinations fool you (e.g. authority with urgency) against other trainees, what you catch quickly, and where you rank. With `SNOWFLAKE_CORTEX_MODEL`, Cortex writes the summary and why the next focus was chosen. The focus itself stays a deterministic pick, and the card says "Interpreted by Snowflake Cortex", "Analysed in Snowflake" or "Built-in analysis" according to what actually ran.
-  - **ElevenLabs** voices the live scam call; the call debrief credits it only when a call was answered with live voice.
-- **Works without the optional keys:** without ElevenLabs, calls fall back to a caption-only practice mode; without Gemini, built-in scenarios are built from the scam library (a real phishing email with invented names, or a real scam-call pattern); without Snowflake (or when it's slow or fails), the backend's own analysis is used ("Built-in analysis"). At startup the API prints one line each for Gemini, ElevenLabs, Snowflake and TigerData saying what's on.
+  - **Calls:** a live AI voice caller you can answer, talk to and hang up on, with live captions.
+- **Debriefs that teach:** after each scenario you see what gave it away (urgency, unexpected fees, look-alike addresses, requests for codes) and what to check next time, then **What Tellio learned from this** shows what changed in your profile and offers the next scenario made for you.
+- **Adaptive practice:** scenarios get harder as you make the right calls and ease off after misses, and Home's **Next for you** names the scam type Tellio will train next and why.
 
 ## How it works
 
@@ -23,19 +44,21 @@ flowchart LR
   U[Browser<br/>React app] -- Firebase sign-in --> F[(Firebase Auth)]
   U -- "/api (ID token)" --> B[Backend API<br/>Express]
   B -- verify token --> F
-  B -- profiles, attempts,<br/>simulations --> D[(TigerData / Postgres)]
+  B -- profiles, attempts,<br/>behaviour events --> D[(TigerData / Postgres)]
+  B -- grounding examples --> L[(scam-library.json)]
+  B -- scenario generation --> G[Gemini]
   B -- conversation token,<br/>call analysis --> E[ElevenLabs]
   U <-- live voice (WebRTC) --> E
-  B -- scenario generation --> G[Gemini]
   B -- pseudonymous aggregates --> S[(Snowflake)]
+  K[Kaggle datasets] -. offline Python .-> L
 ```
 
-1. You sign in with **Firebase** (email/password or Google). Every API request carries the Firebase ID token, which the backend verifies.
-2. The **backend** (one Express server) stores your profile, runs text and call simulations under `/api/comms`, and saves every finished attempt to **Postgres**.
-3. For a **call**, the backend hands the browser a short-lived ElevenLabs token; you talk to the voice agent directly. After you hang up, the backend fetches ElevenLabs' analysis, decides the outcome (did you share a code, card or personal info?) and saves a redacted record.
-4. Texts and emails send small behaviour events (`POST /api/training/events`) to TigerData, and a finished one is saved as an attempt too. Progress, adaptive difficulty, metrics and your vulnerability analysis (Snowflake, or the built-in fallback) are computed server-side from those attempts and events.
+1. You sign in with **Firebase**. Every API request carries the Firebase ID token, which the backend verifies.
+2. For a **generated scenario**, the backend reads your profile and weak spots, retrieves 2–3 matching examples from the scam library and asks **Gemini** for a new email or call script, then validates it before you see it.
+3. For a **call**, the backend hands the browser a short-lived ElevenLabs token; you talk to the voice agent directly. After you hang up, the backend fetches ElevenLabs' analysis, decides the outcome and saves a redacted record.
+4. Texts and emails send small behaviour events (`POST /api/training/events`) with the scenario's tactics to **TigerData**, and each finished scenario is saved as an attempt. Progress, difficulty, metrics and the vulnerability analysis (**Snowflake**, or the built-in fallback) are computed server-side from those attempts and events.
 
-The cross-cutting rules are written down in [`docs/call-integration.md`](docs/call-integration.md) (calls, outcomes, auth) and [`docs/mvp-contracts.md`](docs/mvp-contracts.md) (the adaptive loop: events, metrics, insights, generated scenarios).
+The cross-cutting rules are written down in [`docs/call-integration.md`](docs/call-integration.md) (calls, outcomes, auth), [`docs/mvp-contracts.md`](docs/mvp-contracts.md) (the adaptive loop) and [`docs/dataset.md`](docs/dataset.md) (dataset sources and licences).
 
 ## Tech stack
 
@@ -48,7 +71,8 @@ The cross-cutting rules are written down in [`docs/call-integration.md`](docs/ca
 | Database | TigerData (managed PostgreSQL) via `pg`, versioned SQL migrations |
 | AI content | Google Gemini (`@google/genai`) for personalised emails and call scenarios, with built-in fallbacks |
 | Analytics | TigerData hypertable (`behavior_events`) for behaviour metrics; Snowflake SQL API (optional Cortex) for the vulnerability analysis |
-| Tests | Node's built-in test runner; supertest for the API |
+| Data | Python 3.12 + pandas, offline only ([`data-pipeline/`](data-pipeline/)); Kaggle phishing-email and scam-call datasets |
+| Tests | Node's built-in test runner; supertest for the API; Python `unittest` for the pipeline |
 
 ## Repository layout
 
@@ -65,7 +89,7 @@ docs/       dataset.md (sources, licences, counts), call-integration.md (calls, 
 PRODUCT.md  who Tellio is for and the product principles
 ```
 
-Each folder has its own README with the details: [`frontend/README.md`](frontend/README.md), [`backend/README.md`](backend/README.md).
+Each folder has its own README with the details: [`frontend/README.md`](frontend/README.md), [`backend/README.md`](backend/README.md), [`data-pipeline/README.md`](data-pipeline/README.md).
 
 ## Running it locally
 
@@ -122,13 +146,13 @@ Without these, calls still work in caption-only practice mode.
 
 Set `GEMINI_API_KEY` in `backend/.env`. Without it, generation builds scenarios from the scam library; only Gemini-written ones show "Written by Gemini".
 
-### 6. Optional: rebuild the scam library
-
-The library is committed, so this is only needed to change it. See [`data-pipeline/README.md`](data-pipeline/README.md): `python -m tellio_data download`, then `build`. The email and call datasets download anonymously. The SMS competition data needs Kaggle credentials and accepted competition rules, so the committed library has no SMS rows yet.
-
 ### 5. Optional: Snowflake vulnerability analysis
 
 Run `backend/scripts/snowflake-setup.sql` once in Snowflake, create a programmatic access token for the service user, then set `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE` and `SNOWFLAKE_ID_SALT` (16+ characters, keep it stable) in `backend/.env` (optionally `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL`). The startup log says which analysis is in use, and Home's card credits Snowflake (or Cortex) only when it really produced the result. Snowflake only receives an HMAC of the user id and counts and rates per category, tactic, tactic pair and channel.
+
+### 6. Optional: rebuild the scam library
+
+The library is committed, so this is only needed to change it. See [`data-pipeline/README.md`](data-pipeline/README.md): `python -m tellio_data download`, then `build`. The email and call datasets download anonymously. The SMS competition data needs Kaggle credentials and accepted competition rules, so the committed library has no SMS rows yet.
 
 ## Tests and checks
 
