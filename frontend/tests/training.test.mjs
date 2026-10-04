@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { markFor, markText, scenarios } from '../src/features/training/scenarios.ts'
+import { markFor, markText, scenarios, siteOf } from '../src/features/training/scenarios.ts'
 import { loadProgress, recommend, recordAttempt, saveProgress, summarize } from '../src/features/training/progress.ts'
 
 test('every quoted indicator appears in its scenario text and ids are unique', () => {
@@ -42,4 +42,9 @@ test('progress falls back to memory when localStorage is unavailable', () => {
   saveProgress('uid-1', { x: { correct: true, at: 1 } })
   assert.deepEqual(loadProgress('uid-1'), { x: { correct: true, at: 1 } })
   assert.deepEqual(loadProgress('uid-2'), {})
+})
+
+test('siteOf shows the domain a look-alike link really belongs to', () => {
+  assert.equal(siteOf('https://canadapost.ca-redelivery.info/update'), 'ca-redelivery.info')
+  assert.equal(siteOf('not a url'), 'not a url')
 })

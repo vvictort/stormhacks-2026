@@ -91,7 +91,7 @@ export const scenarios: Scenario[] = [
       { quote: 'Reply C to confirm', title: 'Nothing to pay, no link to tap', detail: "It doesn't ask for money, a password or personal details. Replying with one letter gives nothing away." },
       { quote: '604-555-0182', title: 'A number you can check', detail: "The callback number is the same one the text came from, and you can compare it with the number on the clinic's booking confirmation." },
     ],
-    explanation: "This one is genuine. It's expected, asks for nothing sensitive, and gives you a way to check it independently.",
+    explanation: 'Real reminders tend to look like this: you were expecting it, it asks for nothing sensitive, and you can check it on your own.',
     nextTime: "Being careful is never wrong. To tell real reminders apart, ask: was I expecting this, and does it ask for money, codes or personal details?",
   },
   {
@@ -153,4 +153,14 @@ export function markText(text: string, indicators: Indicator[]): Segment[] {
 export function markFor(quote: string, indicators: Indicator[]) {
   const index = indicators.findIndex((indicator) => indicator.quote === quote)
   return index < 0 ? undefined : index + 1
+}
+
+/** The site a link really goes to: the last two parts of its host name. */
+// ponytail: naive for two-part suffixes like .co.uk; use a public-suffix list if scenarios need them.
+export function siteOf(url: string) {
+  try {
+    return new URL(url).hostname.split('.').slice(-2).join('.')
+  } catch {
+    return url
+  }
 }
