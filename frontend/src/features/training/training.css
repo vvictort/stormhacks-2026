@@ -22,7 +22,7 @@
 .train-notice-dismiss:hover { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
 
 /* ---------- Home: one column, three tabs (Practice, History, Insights) ---------- */
-.home-main { width: min(680px, calc(100% - 48px)); margin: 24px auto 72px; }
+.home-main { width: min(860px, calc(100% - 48px)); margin: 24px auto 72px; }
 .home-title { margin: 8px 0 22px; font-family: var(--font-editorial); font-size: clamp(32px, 3.4vw, 42px); font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
 .home-title:focus { outline: none; }
 
