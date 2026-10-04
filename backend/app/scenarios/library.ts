@@ -111,6 +111,20 @@ let loaded: ScamLibrary | undefined;
 /** The library the server uses, loaded on first use. */
 export const defaultLibrary = () => (loaded ??= ScamLibrary.load());
 
+/** Invented names for the library's placeholders, shared by every scenario built from a row. */
+const PLACEHOLDERS: Record<string, string> = {
+  '[Bank]': 'Maple Ridge Credit Union', '[Payment Service]': 'PayNorth', '[Card Network]': 'Northcard', '[Online Store]': 'Shopwell',
+  '[Tech Company]': 'Northpeak', '[Email Provider]': 'Northpeak Mail', '[Tax Agency]': 'Federal Refund Centre',
+  '[Government Agency]': 'Federal Benefits Office', '[Courier]': 'Swiftline Courier', '[News Site]': 'Daily Ledger',
+  '[Name]': 'Customer', '[number]': '48213', '[street address]': '120 Harbour Street',
+};
+
+/** Row text with placeholders filled and whitespace collapsed (cue quotes go through the same, so they still match); null if any bracket is left. */
+export function fillPlaceholders(text: string) {
+  const filled = text.replace(/\[[^\]\n]*\]/g, (placeholder) => PLACEHOLDERS[placeholder] ?? placeholder).replace(/\s+/g, ' ').trim();
+  return /[[\]]/.test(filled) ? null : filled;
+}
+
 const clean = (value: string, max: number) => {
   const flat = value.replace(/[\u0000-\u001f\u007f`]/g, ' ').replace(/\s+/g, ' ').trim();
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;

@@ -7,7 +7,7 @@ import { createDatabase, type Database } from '../app/db/database.ts';
 import { migrate } from '../app/db/migrate.ts';
 import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
-import { EmailScenario, fallbackEmail, generateEmailScenario, hiddenIndicators, toScenario } from '../app/scenarios/email-generator.ts';
+import { EmailScenario, generateEmailScenario, hiddenIndicators, toScenario } from '../app/scenarios/email-generator.ts';
 import type { JsonModel } from '../app/scenarios/gemini.ts';
 import { Difficulty, ScamCategory } from '../app/shared/vocabulary.ts';
 
@@ -61,15 +61,16 @@ function fakeModel(...answers: (string | Error)[]) {
 }
 const meta = { id: 'gen-email-00000000-0000-4000-8000-000000000000', difficulty: 'medium', category: 'workplace', receivedAt: '9:14 AM', generated: { source: 'gemini', reason: 'Because.' } } as const;
 
-test('every built-in email passes the same checks, at every difficulty, with and without a profile', () => {
+test('without a library, the one last-resort email passes the same checks for every category and difficulty', async () => {
   for (const category of ScamCategory.options) {
     for (const difficulty of Difficulty.options) {
-      for (const [profession, interest] of [['', undefined], ['software developer', 'hiking'], ["night-shift nurse & parent's aide", 'jazz / vinyl']] as const) {
-        const draft = toScenario(JSON.stringify(fallbackEmail(category, difficulty, profession, interest)), { ...meta, difficulty, category });
-        assert.ok('scenario' in draft, `${category}/${difficulty}/${profession}: ${'problems' in draft ? draft.problems.join('; ') : ''}`);
-        assert.equal(hiddenIndicators(draft.scenario).length, 0);
-        assert.ok(draft.scenario.indicators.length >= 3 && draft.scenario.indicators.length <= 6);
-        if (difficulty === 'hard') assert.ok(draft.scenario.indicators.length < fallbackEmail(category, 'easy').redFlags.length);
+      for (const [profession, interests] of [['', []], ["night-shift nurse & parent's aide", ['jazz / vinyl']]] as const) {
+        const { scenario, source } = await generateEmailScenario({ difficulty, focus: [category], profession, interests: [...interests] });
+        assert.equal(source, 'fallback');
+        assert.equal(EmailScenario.safeParse(scenario).success, true, `${category}/${difficulty}`);
+        assert.equal(hiddenIndicators(scenario).length, 0);
+        assert.deepEqual([scenario.scamCategory, scenario.difficulty, scenario.subject], [category, difficulty, 'Action needed: confirm your account details']);
+        assert.doesNotMatch(scenario.generated.reason, /dataset/, 'the hand-written email claims no source');
       }
     }
   }
@@ -181,7 +182,8 @@ test('without a model the built-in email follows focus, then weak categories, an
   assert.equal(weak.scenario.scamCategory, 'shipping');
   assert.equal(weak.scenario.generated.reason, 'Matched to your interest in cycling, and focused on delivery emails, where you slipped before.');
   const banking = await generateEmailScenario({ difficulty: 'medium', weakCategories: ['banking'], profession: 'teacher' });
-  assert.equal(banking.scenario.generated.reason, 'Focused on bank emails, where you slipped before.', 'no claim about a profile the email does not use');
+  assert.equal(banking.scenario.generated.reason, 'Matched to your work (teacher), and focused on bank emails, where you slipped before.');
+  assert.match(banking.scenario.situation, /teacher/, 'the claim matches what the email uses');
 });
 
 function routes(repos: Repositories = fakeRepos(), jsonModel?: JsonModel) {

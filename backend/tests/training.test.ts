@@ -218,7 +218,8 @@ describe('Postgres training persistence', { skip: !url }, () => {
     const { generate, startCall, getScenario } = routes(repo);
     const created = (await generate().expect(201)).body;
     const teaching = (await getScenario(created.scenarioId).expect(200)).body;
-    assert.deepEqual([teaching.id, teaching.generated.source, teaching.practice.lines.length], [created.scenarioId, 'fallback', 4]);
+    assert.deepEqual([teaching.id, teaching.generated.source], [created.scenarioId, 'fallback']);
+    assert.ok(teaching.practice.lines.length >= 3);
     await getScenario(created.scenarioId, 'sam').expect(404);
     const row = (await db.query('SELECT firebase_uid, source FROM generated_call_scenarios WHERE id=$1', [created.scenarioId])).rows[0];
     assert.deepEqual(row, { firebase_uid: 'alex', source: 'fallback' });

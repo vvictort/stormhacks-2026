@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { Difficulty, ScamCategory, Tactic } from '../shared/vocabulary.ts';
 import { generateChecked, parseModelJson, type JsonModel } from './gemini.ts';
 import { cleanProfileText } from './generator.ts';
-import { blockedBrand, Grounding, groundingBlock, type ScamLibrary } from './library.ts';
+import { CATEGORY_NAMES } from './callContent.ts';
+import { blockedBrand, fillPlaceholders, Grounding, groundingBlock, type LibraryExample, type ScamLibrary } from './library.ts';
 
 // Generated practice emails: Gemini writes one for the user's profile and weak spots, the server checks every word the
 // debrief will highlight, and a built-in email stands in whenever the model is missing, slow or wrong.
@@ -196,12 +197,12 @@ const categoryNoun: Record<ScamCategory, string> = {
 };
 
 const categoryBrief: Record<ScamCategory, string> = {
-  banking: 'a bank or credit union: a held payment, a locked card, a suspicious transfer',
-  government: 'a tax or benefits office: a refund, a missed payment, a benefit to claim',
-  shipping: 'a courier: a missed delivery, a customs or redelivery fee',
-  account_security: 'an online account or app: an unusual sign-in, storage full, a password expiring',
-  workplace: "the trainee's workplace: IT asking to re-confirm a sign-in, a manager or vendor asking for a payment or document",
-  promotional: 'a prize, giveaway, loyalty reward or discount linked to something the trainee likes',
+  banking: 'a bank, credit union or card issuer',
+  government: 'a tax, benefits or other government office',
+  shipping: 'a courier or delivery service',
+  account_security: 'an online account, app or email provider',
+  workplace: "the trainee's workplace: its IT team, a manager or a vendor",
+  promotional: 'a prize, giveaway, loyalty reward or offer',
 };
 
 const difficultyBrief: Record<Difficulty, string> = {
@@ -288,204 +289,120 @@ export async function generateEmailScenario(input: EmailGenerationInput): Promis
     if (scenario) return { scenario, source: 'gemini' };
   }
 
-  const template = fallbackEmail(p.category, input.difficulty, p.profession, p.interests[0]);
-  const used = (value: string | undefined) => (value && JSON.stringify(template).includes(value) ? value : '');
-  const draft = toScenario(JSON.stringify(template), { ...base, generated: { source: 'fallback', reason: reason(p.why, used(p.profession), used(p.interests[0]) || undefined) } });
-  if (!('scenario' in draft)) throw new Error(`Built-in ${p.category} email is invalid: ${draft.problems.join('; ')}`);
-  return { scenario: draft.scenario, source: 'fallback' };
+  // Built-in: the best clean library excerpt for this category, else the one generic last-resort email.
+  const candidates = input.library?.examplesFor({ channel: 'email', category: p.category, tactics: p.tactics, difficulty: input.difficulty, limit: Infinity }) ?? [];
+  const why = reason(p.why, p.profession, p.interests[0]);
+  for (const example of [...candidates, LAST_RESORT]) {
+    const template = emailFromExample(example, p.category, input.difficulty, p.profession, p.interests[0]);
+    if (!template) continue;
+    const attribution = example === LAST_RESORT ? '' : ` Adapted from a real phishing email in a public dataset (${example.source.license}).`;
+    const draft = toScenario(JSON.stringify(template), { ...base, generated: { source: 'fallback', reason: `${why}${attribution}` } });
+    if ('scenario' in draft) return { scenario: draft.scenario, source: 'fallback' };
+  }
+  throw new Error(`Built-in ${p.category} email is invalid`);
 }
 
-const fallbackTactics: Record<ScamCategory, Tactic[]> = {
-  workplace: ['authority', 'urgency', 'info_request', 'suspicious_link'],
-  banking: ['fear', 'urgency', 'info_request', 'suspicious_link'],
-  shipping: ['urgency', 'info_request', 'suspicious_link'],
-  government: ['authority', 'reward', 'urgency', 'info_request'],
-  promotional: ['reward', 'urgency', 'info_request', 'suspicious_link'],
-  account_security: ['fear', 'urgency', 'otp_request', 'suspicious_link'],
+/** Invented senders, one per category; library emails are rewritten as if they sent them. */
+const SENDERS: Record<ScamCategory, { name: string; address: string }> = {
+  banking: { name: 'Maple Ridge Credit Union', address: 'alerts@mapleridge-cu-secure.com' },
+  government: { name: 'Federal Refund Centre', address: 'refunds@tax-refund-centre-ca.com' },
+  shipping: { name: 'Swiftline Courier', address: 'tracking@swiftline-delivery-notice.com' },
+  account_security: { name: 'Northpeak Cloud', address: 'no-reply@northpeak-cloud-support.com' },
+  workplace: { name: 'IT Service Desk', address: 'it-servicedesk@staff-portal-update.com' },
+  promotional: { name: 'Northern Lights Giveaways', address: 'winners@nlgiveaways-prize.com' },
 };
 
-/** Built-in emails, one per category, written to pass the same checks as the model's. Every name and domain is invented. */
-export function fallbackEmail(category: ScamCategory, difficulty: Difficulty, profession = '', interest?: string): ModelEmail {
-  const by = <T>(easy: T, medium: T, hard: T) => ({ easy, medium, hard })[difficulty];
-  const greeting = (generic: string) => by(generic, 'Hi there,', 'Hi there,');
-  const greetingFlag = (generic: string) => by([{ quote: generic, title: "It doesn't know your name", reason: 'A real organisation you deal with knows who you are. A greeting that fits anyone means the same email went to thousands of people.' }], [], []);
-  const deadline = (quote: string) => difficulty === 'hard' ? [] : [{ quote, title: 'A deadline to rush you', reason: 'A countdown is there to make you act before you stop and check.' }];
-  const urgent = (easy: string, medium: string, hard: string) => by(easy, medium, hard);
-  // Hard emails drop the deadline, so they drop urgency too.
-  const tactics = fallbackTactics[category].filter((tactic) => difficulty !== 'hard' || tactic !== 'urgency');
-  const common = { expectedAction: 'report' as const, scamCategory: category, difficulty, tactics };
+/** Debrief copy for each library cue tag (tactics and signals). Generic: it fits any email that uses the tactic. */
+const CUE_COPY: Record<string, { title: string; reason: string }> = {
+  urgency: { title: 'A deadline to rush you', reason: 'A countdown is there to make you act before you stop and check.' },
+  fear: { title: 'A threat to scare you', reason: 'Talk of a blocked account, a fine or a loss is meant to make you fix it right away, through their link.' },
+  authority: { title: 'An "official" voice', reason: 'Anyone can sign an email as an administrator, a bank or an agency. A title proves nothing.' },
+  impersonation: { title: 'Borrowing a trusted name', reason: 'The email leans on a name you would trust. Check with that organisation yourself, not through this message.' },
+  info_request: { title: 'It asks for your details', reason: 'A real organisation already has your details and will not ask you to confirm them by email.' },
+  credential_request: { title: 'It asks you to sign in or verify', reason: 'Verifying through a link in an email is how passwords get stolen. Open the site or app yourself instead.' },
+  otp_request: { title: 'It asks for a code', reason: 'A one-time code is only for the site you opened yourself. Anyone asking for it wants into your account.' },
+  verification_code: { title: 'A code you did not ask for', reason: 'A code that arrives out of the blue means someone else is trying to sign in or pay as you.' },
+  suspicious_link: { title: 'A link to click', reason: 'A button or link in a surprise email can lead to a look-alike page. Go to the real site yourself.' },
+  suspicious_domain: { title: 'A web address that looks off', reason: 'Read the address up to the first single slash: that is the site you would really visit.' },
+  reward: { title: 'Something for nothing', reason: "A prize, refund or payout out of nowhere is bait. If you didn't enter, you didn't win." },
+  payment_request: { title: 'It asks for money', reason: 'A surprise request to pay, even a small fee, is the scam. Check any bill through your own account.' },
+  account_security: { title: 'A problem with your account', reason: 'A warning about your account is a classic hook. Check by opening the app or site yourself.' },
+  attachment: { title: 'An attachment to open', reason: 'Unexpected attachments can hide fake sign-in pages or malware.' },
+  remote_access: { title: 'It wants access to your device', reason: 'Installing software or giving access because an email said so hands your device to a stranger.' },
+  social_engineering: { title: 'A story to lower your guard', reason: 'A friendly or urgent story is there to make you skip the usual checks.' },
+};
 
-  switch (category) {
-    case 'workplace': {
-      const line = urgent('accounts that are not confirmed today will be disabled', 'please confirm by end of day Friday', 'please confirm when you have a moment this week');
-      return {
-        ...common,
-        title: 'Staff sign-in re-confirmation',
-        summary: 'IT asks you to re-confirm your work sign-in for an access review.',
-        situation: `It's a normal workday${profession ? ` in your ${profession} role` : ''}, and you sign in to several work tools each day.`,
-        senderName: 'IT Service Desk',
-        senderEmail: 'it-servicedesk@staff-portal-update.com',
-        subject: 'Access review: re-confirm your staff sign-in',
-        body: [
-          greeting('Dear Employee,'),
-          `As part of this quarter's access review, every staff account must re-confirm its sign-in${profession ? `, starting with ${profession} roles` : ''}. To keep your access, ${line}.`,
-          'Sign in through the review portal below with your work email and password, then approve the prompt on your phone. The policy is attached for reference.',
-          'Thanks for your help,',
-          'IT Service Desk',
-        ],
-        links: ['https://staff-portal-update.com/sso/confirm'],
-        attachment: 'Access_Review_Policy.pdf.html',
-        redFlags: [
-          ...greetingFlag('Dear Employee,'),
-          { quote: 'staff-portal-update.com', title: "An address that isn't your workplace's", reason: "Your IT team writes from your organisation's own domain. Anyone can register a name like staff-portal-update.com." },
-          ...deadline(line),
-          { quote: 'work email and password, then approve the prompt on your phone', title: 'It asks for your password and approval', reason: 'Approving a sign-in prompt you did not start lets someone else into your account. Real IT never asks for your password.' },
-          { quote: 'https://staff-portal-update.com/sso/confirm', title: 'A sign-in page you reached from an email', reason: 'Open your work tools the way you normally do instead of following a link in an email.' },
-          { quote: 'Access_Review_Policy.pdf.html', title: 'A web page posing as a document', reason: 'The name ends in .html, so it opens a web page, often a fake sign-in form, not a PDF.' },
-        ],
-        explanation: 'This is a credential-phishing email dressed up as an IT access review. It borrows the routine of work email to get your password and an approved sign-in prompt.',
-        nextTime: 'When IT asks you to sign in or approve something, check with your IT team through a channel you already use, not by replying or clicking.',
-      };
-    }
-    case 'banking': {
-      const line = urgent('will be cancelled and your account frozen within 2 hours', 'will be cancelled if it is not verified within 24 hours', 'is waiting for your review');
-      return {
-        ...common,
-        title: 'Held payment verification',
-        summary: 'Your credit union says a transfer from your account is on hold.',
-        situation: 'You bank with a local credit union and use its app most weeks.',
-        senderName: 'Maple Ridge Credit Union',
-        senderEmail: 'alerts@mapleridge-cu-secure.com',
-        subject: 'Payment on hold: please verify a transfer',
-        body: [
-          greeting('Dear Member,'),
-          `We placed a hold on an e-Transfer of $1,284.60 from your chequing account. The payment ${line}.`,
-          'To release or stop it, verify your identity with your card number and online banking password at the link below.',
-          'Maple Ridge Member Security',
-        ],
-        links: ['https://mapleridge-cu.verify-member.com/login'],
-        redFlags: [
-          ...greetingFlag('Dear Member,'),
-          { quote: 'mapleridge-cu-secure.com', title: "An address that isn't the bank's", reason: 'Your bank emails from its own web address. Extra words like "secure" in a domain are a common disguise.' },
-          ...deadline(line),
-          { quote: 'card number and online banking password', title: 'It asks for your password', reason: 'Your bank will never ask you to type your password into a page you reached from an email.' },
-          { quote: 'https://mapleridge-cu.verify-member.com/login', title: 'A look-alike web address', reason: 'Read the address up to the first single slash: the site is verify-member.com. "mapleridge-cu" is only a label in front of it.' },
-        ],
-        explanation: 'This is a banking phishing email. A held payment creates worry, and the link leads to a look-alike page that collects your card number and password.',
-        nextTime: "When an email says a payment is on hold, open your bank's app or call the number on your card, and check there.",
-      };
-    }
-    case 'shipping': {
-      const line = urgent('will be returned to the sender today', 'will be returned to the sender after 48 hours', 'can be rescheduled for tomorrow');
-      return {
-        ...common,
-        title: 'Missed delivery fee',
-        summary: 'A courier says it missed you and needs a small fee to try again.',
-        situation: `You've ordered a few things online lately${interest ? `, including something for ${interest}` : ''}.`,
-        senderName: 'Swiftline Courier',
-        senderEmail: 'tracking@swiftline-delivery-notice.com',
-        subject: 'Delivery attempt: parcel SW-48219-CA',
-        body: [
-          greeting('Dear Customer,'),
-          `We tried to deliver your parcel${interest ? ` (labelled "${interest} order")` : ''} today, but no one was available to sign for it. The parcel ${line}.`,
-          'To book a new delivery, pay the $3.48 redelivery fee by card using the link below.',
-          'Swiftline Courier Customer Care',
-        ],
-        links: ['https://swiftline.parcel-redeliver.com/pay'],
-        redFlags: [
-          ...greetingFlag('Dear Customer,'),
-          { quote: 'swiftline-delivery-notice.com', title: "An address that isn't the courier's", reason: "Couriers email from their own domain. A notice from an unfamiliar domain is a reason to check the tracking number yourself." },
-          ...deadline(line),
-          { quote: '$3.48 redelivery fee', title: 'An unexpected fee', reason: "A small amount feels too minor to question. The fee isn't the goal; the card details you'd type in are." },
-          { quote: 'https://swiftline.parcel-redeliver.com/pay', title: 'A look-alike web address', reason: 'Read the address up to the first single slash: the site is parcel-redeliver.com, not the courier.' },
-        ],
-        explanation: 'This is a delivery-fee scam. It borrows the everyday hassle of a missed parcel, adds a small fee, and sends you to a look-alike page to collect your card details.',
-        nextTime: "Don't pay delivery fees from an email link. Look up the tracking number on the courier's own website instead.",
-      };
-    }
-    case 'government': {
-      const line = urgent('This offer will expire in 24 hours.', 'Please claim within 5 days.', 'Most claims are processed within a week.');
-      return {
-        ...common,
-        title: 'Tax refund to claim',
-        summary: 'A tax office says you are owed a refund.',
-        situation: 'You filed your taxes this spring and got a notice of assessment.',
-        senderName: 'Federal Refund Centre',
-        senderEmail: 'refunds@tax-refund-centre-ca.com',
-        subject: 'You are eligible for a refund of $612.40',
-        body: [
-          greeting('Dear Taxpayer,'),
-          `Our records show an overpayment on your 2025 return${profession ? `, filed with the occupation "${profession}"` : ''}. You are eligible for a refund of $612.40. ${line}`,
-          'To receive it by e-Transfer, confirm your SIN and banking details at the link below.',
-          'Federal Refund Centre',
-        ],
-        links: ['https://tax-refund-centre-ca.com/claim'],
-        redFlags: [
-          ...greetingFlag('Dear Taxpayer,'),
-          { quote: 'tax-refund-centre-ca.com', title: 'Not a government address', reason: "Government offices don't email from domains like this one. Anyone can buy a name with \"tax\" and \"ca\" in it." },
-          ...deadline(line),
-          { quote: 'confirm your SIN and banking details', title: 'It asks for your SIN and bank details', reason: 'A refund is paid to the account you already set up. No real tax office asks you to type your SIN into a page from an email.' },
-          { quote: 'https://tax-refund-centre-ca.com/claim', title: 'A link to a look-alike site', reason: 'Sign in to your tax account the way you normally do instead of using a link in an email.' },
-        ],
-        explanation: 'This is a refund scam. The promise of money owed lowers your guard, and the link collects your SIN and banking details for identity theft.',
-        nextTime: "Check refunds by signing in to your tax account yourself, never through a link in an email.",
-      };
-    }
-    case 'promotional': {
-      const line = urgent('Claim within 1 hour or the prize goes to someone else.', 'Please claim within 3 days.', 'Your prize is reserved until the end of the month.');
-      return {
-        ...common,
-        title: 'Gift card giveaway',
-        summary: "A giveaway says you've won a gift card.",
-        situation: `You follow a few shops and pages${interest ? ` about ${interest}` : ''}, but you don't remember entering a contest.`,
-        senderName: 'Northern Lights Giveaways',
-        senderEmail: 'winners@nlgiveaways-prize.com',
-        subject: "Congratulations, you've been selected",
-        body: [
-          greeting('Dear Winner,'),
-          `You were entered automatically in our${interest ? ` ${interest}` : ''} customer giveaway, and you've won a $500 gift card. ${line}`,
-          'To release your prize, pay the $4.99 shipping and handling fee by credit card at the link below.',
-          'Northern Lights Giveaways',
-        ],
-        links: ['https://nlgiveaways-prize.com/claim'],
-        redFlags: [
-          ...greetingFlag('Dear Winner,'),
-          { quote: 'entered automatically', title: "A contest you didn't enter", reason: "You can't win a draw you never entered. Being picked out of nowhere is a classic hook." },
-          ...deadline(line),
-          { quote: '$4.99 shipping and handling fee', title: 'You pay to get a prize', reason: 'Real prizes are free. The small fee is how they get your credit card number.' },
-          { quote: 'https://nlgiveaways-prize.com/claim', title: 'A link from an unknown sender', reason: 'Prize links from senders you have never dealt with lead to pages built to collect card details.' },
-        ],
-        explanation: 'This is a prize scam. A surprise win gets you excited, and a small fee gets your card number, often followed by bigger charges.',
-        nextTime: "If you didn't enter, you didn't win. Never pay a fee to receive a prize.",
-      };
-    }
-    case 'account_security': {
-      const line = urgent('your account and all files will be permanently deleted in 2 hours', 'syncing will stop within 24 hours', 'syncing may pause until you confirm');
-      return {
-        ...common,
-        title: 'Unusual sign-in to your cloud storage',
-        summary: 'A storage app says someone signed in from a new device.',
-        situation: `You keep${profession ? ' work and' : ''} personal files in a cloud storage app.`,
-        senderName: 'Northpeak Cloud',
-        senderEmail: 'no-reply@northpeak-cloud-support.com',
-        subject: 'Action needed: confirm a new sign-in',
-        body: [
-          greeting('Dear User,'),
-          `We noticed a sign-in to your Northpeak Cloud account from a new device in Calgary, AB.${profession ? ` Shared folders from your ${profession} work are included in this review.` : ''} If you don't confirm it, ${line}.`,
-          'Confirm it was you with your email password and the 6-digit code we text you.',
-          'The Northpeak Cloud Accounts Team',
-        ],
-        links: ['https://northpeak.account-review.net/confirm'],
-        redFlags: [
-          ...greetingFlag('Dear User,'),
-          { quote: 'northpeak-cloud-support.com', title: "An address that isn't the app's", reason: 'The name says Northpeak Cloud, but the address is a different domain. Anyone can register a name like that.' },
-          ...deadline(line),
-          { quote: 'your email password and the 6-digit code we text you', title: 'It asks for your password and code', reason: 'A sign-in code is only for the site you opened yourself. Anyone asking you to pass it on wants into your account.' },
-          { quote: 'https://northpeak.account-review.net/confirm', title: 'A look-alike web address', reason: 'Read the address up to the first single slash: the site is account-review.net. "northpeak" is only a label in front of it.' },
-        ],
-        explanation: 'This is an account-takeover email. A sign-in alert creates worry, and the link collects your password and the code that protects your account.',
-        nextTime: 'When an email warns about a sign-in, open the app yourself and check its security page. Never share a code you were texted.',
-      };
-    }
+/** The one hand-written email, used only when the library has nothing clean for the category (or is missing). */
+const LAST_RESORT: LibraryExample = {
+  id: 'built-in', channel: 'email', kind: 'scam', category: null, difficulty: 'easy', textKind: 'pattern', signals: [],
+  tactics: ['fear', 'urgency', 'info_request', 'suspicious_link'],
+  subject: 'Action needed: confirm your account details',
+  text: 'Dear Customer, We noticed unusual activity on your account and have limited it to protect you. To restore access, confirm your password and card number within 24 hours using the secure link below. If you do not confirm in time, your account will be closed. Click here to confirm your details.',
+  cues: [
+    { tag: 'urgency', quote: 'within 24 hours' },
+    { tag: 'credential_request', quote: 'confirm your password and card number' },
+    { tag: 'fear', quote: 'your account will be closed' },
+    { tag: 'suspicious_link', quote: 'Click here to confirm your details' },
+  ],
+  source: { dataset: 'tellio', license: 'built-in', row: 0, label: 'scam' },
+};
+
+const FOOTER = /confidential|intended (solely )?for|intended recipient|disclaimer|prohibited|unlawful|liability|views expressed|all rights reserved/i;
+
+const mostlyCaps = (value: string) => {
+  const letters = value.replace(/[^A-Za-z]/g, '');
+  return value.replace(/[^A-Z]/g, '').length > letters.length * 0.4;
+};
+
+/**
+ * A library scam email rewritten for practice: placeholders become the category's invented names, a cut-off ending
+ * is trimmed to the last full sentence, sentences are grouped into paragraphs, and each cue becomes a red flag with
+ * generic copy. Null when the excerpt can't make a clean email (leftover brackets, shouting, too short or long, fewer than 3 findable cues).
+ * `toScenario` still checks the result like any model answer.
+ */
+export function emailFromExample(example: LibraryExample, category: ScamCategory, difficulty: Difficulty, profession = '', interest?: string): ModelEmail | null {
+  const sender = SENDERS[category];
+  const text = fillPlaceholders(example.text)?.replace(/[^.!?]*(…|\.\.\.)$/, '').trim();
+  if (!text || text.replace(/[^A-Za-z]/g, '').length < 100 || mostlyCaps(text) || !example.tactics.length) return null;
+  const paragraphs: string[] = [];
+  // Excerpts often repeat themselves and trail off into legal footers: keep each sentence once, and no footers.
+  for (const sentence of new Set(text.split(/(?<=[.!?])\s+/))) {
+    if (sentence.length > 600) return null;
+    if (FOOTER.test(sentence)) continue;
+    if (paragraphs.length && paragraphs[paragraphs.length - 1].length + sentence.length < 300) paragraphs[paragraphs.length - 1] += ` ${sentence}`;
+    else paragraphs.push(sentence);
   }
+  const body = paragraphs.slice(0, 6);
+  const filledSubject = fillPlaceholders(example.subject ?? '');
+  const subject = filledSubject && filledSubject.length >= 3 && filledSubject.length <= 120 && !mostlyCaps(filledSubject) ? filledSubject : `A message from ${sender.name}`;
+  const domain = sender.address.split('@')[1];
+  const titles = new Set<string>();
+  const cueFlags = example.cues.flatMap(({ tag, quote: raw }) => {
+    const copy = CUE_COPY[tag];
+    const quote = fillPlaceholders(raw);
+    if (!copy || !quote || titles.has(copy.title) || ![subject, ...body].some((value) => value.includes(quote))) return [];
+    titles.add(copy.title);
+    return [{ quote, title: copy.title, reason: copy.reason }];
+  });
+  if (cueFlags.length < 3) return null;
+  const named = CATEGORY_NAMES[category];
+  return {
+    title: `${named[0].toUpperCase()}${named.slice(1)} email from ${sender.name}`,
+    summary: `An email from ${sender.name} that wants you to act.`,
+    situation: `This email from ${sender.name} lands in your inbox${profession ? ` on a busy day in your ${profession} work` : interest ? ` while you're reading up on ${interest}` : ''}.`,
+    senderName: sender.name,
+    senderEmail: sender.address,
+    subject,
+    body: [...body, sender.name],
+    expectedAction: 'report',
+    scamCategory: category,
+    difficulty,
+    tactics: example.tactics,
+    redFlags: [
+      { quote: domain, title: "An address that isn't theirs", reason: `The name says ${sender.name}, but anyone can register an address like ${domain}. Check the sender against the organisation's real website.` },
+      ...cueFlags,
+    ].slice(0, 8),
+    explanation: `This is a ${named} phishing email, adapted from a real one with the names and links swapped for invented ones. Each marked phrase is a tell the real scammers used.`,
+    nextTime: "Don't act on an email like this. Open the organisation's app or website yourself, or call a number you already trust, and check there.",
+  };
 }

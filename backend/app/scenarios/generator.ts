@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { CallScenario, difficultyName } from '../shared/types.ts';
 import type { Difficulty, ScamCategory, Tactic } from '../shared/vocabulary.ts';
 import { generateChecked, parseModelJson, type JsonModel } from './gemini.ts';
-import { blockedBrand, groundingBlock, type Grounding, type ScamLibrary } from './library.ts';
-import { CALLER_ID_INDICATOR, CATEGORY_NAMES, COMPLY_LABELS, DIFFICULTY_STYLE, FALLBACK_CALLS, TACTIC_INDICATORS, TACTIC_LINES } from './callContent.ts';
+import { blockedBrand, fillPlaceholders, groundingBlock, type Grounding, type ScamLibrary } from './library.ts';
+import { CALLER_ID_INDICATOR, CALLERS, CATEGORY_NAMES, COMPLY_LABELS, DIFFICULTY_STYLE, GENERIC_NEXT_TIME, LAST_RESORT_PATTERN, TACTIC_INDICATORS, TACTIC_LINES } from './callContent.ts';
 import type { ScenarioSource, StoredCallScenario } from './scenarios.repository.ts';
 
 export interface CallScenarioRequest {
@@ -112,14 +112,15 @@ const reasonFor = (why: string, difficulty: 1 | 2 | 3) => `${why} Set at ${level
 
 /** Teaching copy for a Gemini-written call: its own sentences, plus warning signs and caption practice from its tactics. */
 function teachingFor(tactics: Tactic[], firstMessage: string, written: Partial<Record<'summary' | 'situation' | 'explanation' | 'nextTime', string>>, category: ScamCategory) {
-  const fallback = FALLBACK_CALLS[category];
+  const lines = tactics.map((tactic) => TACTIC_LINES[tactic]).filter((line): line is string => Boolean(line));
   return {
-    summary: written.summary ?? fallback.summary,
+    summary: written.summary ?? `A ${CATEGORY_NAMES[category]} call you weren’t expecting.`,
     situation: written.situation ?? 'A call comes in from a number you don’t know.',
-    explanation: written.explanation ?? fallback.explanation,
-    nextTime: written.nextTime ?? fallback.nextTime,
+    explanation: written.explanation ?? `This was a ${CATEGORY_NAMES[category]} scam call: the caller used pressure to get details or money no real organisation asks for by phone.`,
+    nextTime: written.nextTime ?? GENERIC_NEXT_TIME,
     practice: {
-      lines: [firstMessage, ...tactics.map((tactic) => TACTIC_LINES[tactic]).filter((line): line is string => Boolean(line))].slice(0, 4),
+      // Caption practice needs a few lines; pad short ones with the commonest follow-ups.
+      lines: [firstMessage, ...new Set(lines.length >= 2 ? lines : [...lines, TACTIC_LINES.info_request!, TACTIC_LINES.urgency!])].slice(0, 4),
       complyLabel: tactics.map((tactic) => COMPLY_LABELS[tactic]).find(Boolean) ?? 'Do what they ask',
     },
   };
@@ -190,23 +191,47 @@ SPECIFICATION RULES:
   return scenario ? { scenario, source: 'gemini' } : { scenario: fallbackCallScenario(id, category, request, reason), source: 'fallback' };
 }
 
+/**
+ * A built-in call: the best library call pattern for the category (our own summary of a real scam call, never its
+ * wording) played by the category's invented caller, else the one generic last-resort pattern.
+ */
 function fallbackCallScenario(id: string, category: ScamCategory, request: CallScenarioRequest, reason: string): StoredCallScenario {
+  const candidates = request.library?.examplesFor({ channel: 'call', category, tactics: request.vulnerableTactics, difficulty: request.difficulty, limit: Infinity }) ?? [];
+  for (const example of candidates) {
+    const steps = fillPlaceholders(example.text)?.split('->').map((step) => step.trim().replace(/\.$/, '')).filter((step) => step && !/^Caller\b/.test(step));
+    if (!steps || steps.length < 2 || !example.tactics.length) continue;
+    return patternCall(id, category, request, steps, example.tactics, `${reason} Follows a real scam-call pattern summarised from a public dataset (${example.source.license}).`);
+  }
+  return patternCall(id, category, request, LAST_RESORT_PATTERN.steps, LAST_RESORT_PATTERN.tactics, reason);
+}
+
+/** A call scenario and its teaching copy from a scam pattern's steps ("says …", "asks for …", in the caller's order). */
+function patternCall(id: string, category: ScamCategory, request: CallScenarioRequest, steps: string[], tactics: Tactic[], reason: string): StoredCallScenario {
   const difficulty = difficultyNumber[request.difficulty];
   const { first, profession } = persona(request);
-  const { title, tactics, callerLabel, firstMessage, systemPrompt, ...teaching } = FALLBACK_CALLS[category];
+  const caller = CALLERS[category];
+  const says = steps.find((step) => step.startsWith('says '))?.slice('says '.length);
   const scenario = CallScenario.parse({
     id,
-    title,
+    title: says ? `${says[0].toUpperCase()}${says.slice(1)}` : `A call from ${caller.label}`,
     tactics,
     difficulty,
     scamCategory: category,
-    callerLabel,
-    systemPrompt: `${systemPrompt.replace('{work}', profession ? ` (who works as: ${profession})` : '')}\n\n${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first}; use it once or twice, naturally.` : ''}`,
-    firstMessage: firstMessage.replace('{first}', first ? ` ${first}` : ''),
+    callerLabel: caller.label,
+    systemPrompt: `You are ${caller.person} from ${caller.label}, phoning someone${profession ? ` (who works as: ${profession})` : ''}.
+Play out this scam-call pattern one step at a time, in your own words (each step is what you do; "you" means the person you call):
+${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+Invent any names, amounts and reference numbers you need, but never name a real company, bank or government agency.
+If they hesitate, stay calm and explain why it can't wait. If they want to hang up and call back on an official number, try to keep them on the line.
+
+${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first}; use it once or twice, naturally.` : ''}`,
+    firstMessage: `Hi${first ? ` ${first}` : ''}, this is ${caller.person} from ${caller.label}. I'm calling because ${says ?? 'there is an urgent problem with your account'}, and I need to sort it out with you right now.`,
   });
-  // Caption practice opens with the same (personalised) line the voice caller would say.
-  const practice = { ...teaching.practice, lines: [scenario.firstMessage, ...teaching.practice.lines.slice(1)] };
-  return { ...scenario, teaching: { ...teaching, practice, generated: { source: 'fallback', reason } } };
+  const teaching = teachingFor(scenario.tactics, scenario.firstMessage, {
+    summary: `A caller from ${caller.label} ${steps[0]}.`,
+    explanation: `This call follows a real ${CATEGORY_NAMES[category]} scam pattern: the caller ${steps.join(', then ')}. Every name and number here is invented.`,
+  }, category);
+  return { ...scenario, teaching: { ...teaching, callerNumber: caller.number, generated: { source: 'fallback', reason } } };
 }
 
 /**

@@ -9,10 +9,12 @@ import supertest from 'supertest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import type { Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
-import { EmailScenario, generateEmailScenario, type EmailGenerationInput } from '../app/scenarios/email-generator.ts';
+import { EmailScenario, emailFromExample, generateEmailScenario, hiddenIndicators, toScenario, type EmailGenerationInput } from '../app/scenarios/email-generator.ts';
 import type { JsonModel } from '../app/scenarios/gemini.ts';
-import { generateCallScenario, type CallScenarioRequest } from '../app/scenarios/generator.ts';
-import { blockedBrand, groundingBlock, ScamLibrary } from '../app/scenarios/library.ts';
+import { generateCallScenario, trainingCallScenario, type CallScenarioRequest } from '../app/scenarios/generator.ts';
+import { blockedBrand, fillPlaceholders, groundingBlock, ScamLibrary } from '../app/scenarios/library.ts';
+import { CallScenario } from '../app/shared/types.ts';
+import { Difficulty, ScamCategory } from '../app/shared/vocabulary.ts';
 
 // backend/tests/fixtures/scam-library.json: a small, clearly synthetic library in the real file's shape.
 const FIXTURE = fileURLToPath(new URL('./fixtures/scam-library.json', import.meta.url));
@@ -178,7 +180,7 @@ test('without Gemini, or when it fails, the built-in email is used and never cla
   const offline = await generateEmailScenario({ ...emailInput, library: library() });
   assert.equal(offline.source, 'fallback');
   assert.equal(offline.scenario.generated.grounding, undefined);
-  assert.deepEqual(offline.scenario.tactics, ['authority', 'urgency', 'info_request', 'suspicious_link']);
+  assert.deepEqual(offline.scenario.tactics, ['fear', 'urgency', 'info_request', 'suspicious_link'], 'the synthetic rows are too short to build from: the last resort');
   const down = fakeModel(new Error('Gemini timed out'));
   const failed = await generateEmailScenario({ ...emailInput, model: down.model, library: library(), budgetMs: 1000 });
   assert.equal(failed.source, 'fallback');
@@ -262,4 +264,81 @@ test('grounding survives storage: GET returns it for generated emails and calls,
 test('blockedBrand catches the courier, not hyphenated words like pop-ups', () => {
   assert.ok(blockedBrand.test('Your UPS parcel is held'));
   assert.ok(!blockedBrand.test('Close the pop-ups and sign-ups, then follow-ups'));
+});
+
+// ---------- Built-in scenarios from the real library (backend/fixtures/scam-library.json) ----------
+
+const real = ScamLibrary.load();
+const strings = (value: unknown): string[] => typeof value === 'string' ? [value] : value && typeof value === 'object' ? Object.values(value).flatMap(strings) : [];
+/** No placeholder (or any other bracket) left in any text the scenario carries. */
+const noBrackets = (value: unknown) => strings(value).every((text) => !/[[\]]/.test(text));
+
+test('placeholders become invented names, whitespace collapses, and leftover brackets reject the text', () => {
+  assert.equal(fillPlaceholders('Dear [Name],\n your  [Bank] card [number]'), 'Dear Customer, your Maple Ridge Credit Union card 48213');
+  assert.equal(fillPlaceholders('See [IMAGE] below'), null);
+  assert.equal(fillPlaceholders('A stray ] bracket'), null);
+});
+
+test('every clean library email builds into a scenario that passes the model checks, with no placeholders', () => {
+  assert.ok(real.examples.length > 0, 'the real library is committed');
+  const buildable = new Set<string>();
+  for (const category of ScamCategory.options) {
+    for (const difficulty of Difficulty.options) {
+      for (const example of real.examplesFor({ channel: 'email', category, difficulty, limit: Infinity })) {
+        const template = emailFromExample(example, category, difficulty, 'teacher');
+        if (!template) continue;
+        buildable.add(category);
+        const draft = toScenario(JSON.stringify(template), { id: 'gen-email-00000000-0000-4000-8000-000000000000', difficulty, category, receivedAt: '9:14 AM', generated: { source: 'fallback', reason: 'Because.' } });
+        assert.ok('scenario' in draft, `${example.id}: ${'problems' in draft ? draft.problems.join('; ') : ''}`);
+        assert.ok(noBrackets(draft.scenario), example.id);
+        assert.equal(hiddenIndicators(draft.scenario).length, 0, example.id);
+        assert.ok(draft.scenario.indicators.length >= 3, example.id);
+      }
+    }
+  }
+  assert.ok(['banking', 'account_security', 'workplace', 'government', 'shipping'].every((category) => buildable.has(category)), [...buildable].join());
+});
+
+test('without Gemini, generated emails come from the library with attribution, or from the last resort without it', async () => {
+  for (const category of ScamCategory.options) {
+    const fromLibrary = real.examplesFor({ channel: 'email', category, difficulty: 'medium', limit: Infinity }).some((e) => emailFromExample(e, category, 'medium'));
+    for (const difficulty of Difficulty.options) {
+      const { scenario, source } = await generateEmailScenario({ difficulty, focus: [category], profession: 'teacher', library: real });
+      assert.equal(source, 'fallback');
+      assert.equal(EmailScenario.safeParse(scenario).success, true, `${category}/${difficulty}`);
+      assert.equal(scenario.generated.grounding, undefined);
+      assert.ok(noBrackets(scenario), `${category}/${difficulty}`);
+      assert.equal(scenario.generated.reason.endsWith(' Adapted from a real phishing email in a public dataset (CC BY-SA 4.0).'), fromLibrary, `${category}: ${scenario.generated.reason}`);
+      if (!fromLibrary) assert.equal(scenario.subject, 'Action needed: confirm your account details');
+    }
+  }
+});
+
+test('without Gemini, generated calls follow a library pattern with attribution, or the last resort without it', async () => {
+  for (const library of [real, ScamLibrary.load(join(tmpdir(), 'missing.json'))]) {
+    for (const category of ScamCategory.options) {
+      const fromLibrary = library.examplesFor({ channel: 'call', category, difficulty: 'easy' }).length > 0;
+      for (const difficulty of Difficulty.options) {
+        const { scenario, source } = await generateCallScenario({ difficulty, focus: [category], name: 'Alex Rivera', profession: 'nurse', library });
+        assert.equal(source, 'fallback');
+        assert.equal(CallScenario.safeParse(scenario).success, true);
+        assert.match(scenario.firstMessage, /^Hi Alex, this is /);
+        assert.match(scenario.systemPrompt, /Play out this scam-call pattern[\s\S]*1\. [\s\S]*Difficulty: [\s\S]*first name is Alex;/);
+        const teaching = trainingCallScenario(scenario);
+        assert.ok(noBrackets(teaching) && noBrackets(scenario.systemPrompt), `${category}/${difficulty}`);
+        assert.ok(teaching.practice.lines.length >= 3 && teaching.callerNumber && teaching.indicators.length >= 2);
+        assert.equal(teaching.generated.grounding, undefined);
+        assert.equal(/Follows a real scam-call pattern summarised from a public dataset \(CC BY-NC-ND 4\.0\)\.$/.test(teaching.generated.reason), fromLibrary, `${category}: ${teaching.generated.reason}`);
+        if (!fromLibrary) assert.equal(scenario.title, 'There is an urgent problem with your account');
+      }
+    }
+  }
+});
+
+test('with no Gemini key, the API serves library-built emails', async () => {
+  const repos: Repositories = fakeRepos();
+  const app = createApp({ repos, services: testServices(repos).services, origin, verifyToken, library: real });
+  const { scenario } = (await supertest(app).post('/api/training/email-scenarios').set('Origin', origin).set('Authorization', 'Bearer alex').send({}).expect(201)).body;
+  assert.equal(scenario.generated.source, 'fallback');
+  assert.match(scenario.generated.reason, /Adapted from a real phishing email in a public dataset \(CC BY-SA 4\.0\)\.$/, 'the accountant profile picks a category the library covers');
 });
