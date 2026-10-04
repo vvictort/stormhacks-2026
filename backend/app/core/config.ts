@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 const envFile = resolve('.env');
 if (existsSync(envFile)) process.loadEnvFile(envFile);
+const optional = (value: z.ZodString) => z.preprocess((v) => v === '' ? undefined : v, value.optional());
 const schema = z.object({
   DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol)),
   FIREBASE_PROJECT_ID: z.string().min(1),
@@ -10,6 +11,10 @@ const schema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   APP_ORIGIN: z.url().default('http://localhost:5173'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  // Shared with comms for /api/internal/*. Unset disables those routes.
+  INTERNAL_API_TOKEN: optional(z.string().min(32)),
+  // Unset uses the built-in call scenarios.
+  GEMINI_API_KEY: optional(z.string().min(1)),
 });
 export function loadConfig() {
   const result = schema.safeParse(process.env);
