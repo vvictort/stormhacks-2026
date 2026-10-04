@@ -79,8 +79,8 @@ export function HomePage() {
               <MissionCard key={user?.uid} uid={user?.uid} progress={progress} adaptive={adaptive} difficulty={currentLevel(progress)} loading={callSync === 'loading'} />
               <section className="home-standalone" aria-labelledby="standalone-title">
                 <h2 id="standalone-title">Just one scenario?</h2>
-                <MadeForYouActions difficulty={adaptive?.difficulty ?? currentLevel(progress)} label="Practise an email" withCall />
-                <TransitionLink className="text-link mission-review" to="/home?tab=library&channel=sms">Browse text messages<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
+                <p>Pick a channel for a quick round of practice.</p>
+                <MadeForYouActions key={user?.uid} difficulty={adaptive?.difficulty ?? currentLevel(progress)} label="Practise an email" variant="picker" progress={progress} />
               </section>
               {next && (
                 <section className="home-upnext" aria-labelledby="upnext-title">

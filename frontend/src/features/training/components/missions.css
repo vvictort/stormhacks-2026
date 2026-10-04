@@ -69,10 +69,9 @@
 .debrief-more > p { font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); margin-top: 10px; }
 .debrief-more > summary svg { flex-shrink: 0; transition: transform var(--motion-quick) var(--ease-out-quint); }
 .debrief-more[open] > summary svg { transform: rotate(180deg); }
-.home-standalone { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--color-border); }
-.home-standalone h2 { font-size: 13px; color: var(--color-muted-strong); }
-.home-standalone .train-primary { background: transparent; color: var(--color-foreground); border: 1px solid var(--color-control); box-shadow: none; }
-.home-standalone .train-primary:hover { background: var(--color-surface); }
+.home-standalone { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--color-border); scroll-margin-top: 56px; }
+.home-standalone h2 { font-family: var(--font-editorial); font-size: 24px; font-weight: 400; letter-spacing: -.02em; }
+.home-standalone > p { margin-top: 6px; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); }
 .debrief-mission-complete { margin-top: 18px; padding: 12px 0; border-block: 1px solid var(--color-border); color: var(--color-success-strong); font-size: 14px; line-height: 1.6; }
 .debrief-mission-complete strong { display: block; }
 @media (prefers-reduced-motion: no-preference) {
