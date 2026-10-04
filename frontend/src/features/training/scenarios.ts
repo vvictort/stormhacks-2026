@@ -107,8 +107,12 @@ export const channels: { type: Channel; name: string; ready: boolean; blurb: str
 const built = practice as unknown as { texts: SmsScenario[]; emails: EmailScenario[]; calls: CallScenario[] }
 const levels: Difficulty[] = ['easy', 'medium', 'hard']
 
-/** The practice path: the library-built scams and the genuine messages, easiest first within each channel. */
-export const scenarios: Scenario[] = [...built.texts, ...genuineScenarios, ...built.emails, ...built.calls]
+/** a1, b1, a2, b2, …: with the stable sort below, the path alternates scams and genuine messages instead of running long on one answer. */
+const interleave = <T>(a: T[], b: T[]) => [...a.flatMap((item, i) => (i < b.length ? [item, b[i]] : [item])), ...b.slice(a.length)]
+const genuine = (type: MessageScenario['type']) => genuineScenarios.filter((scenario) => scenario.type === type)
+
+/** The practice path: the library-built scams with the genuine messages mixed in, easiest first. */
+export const scenarios: Scenario[] = [...interleave<Scenario>(built.texts, genuine('sms')), ...interleave<Scenario>(built.emails, genuine('email')), ...built.calls]
   .sort((a, b) => levels.indexOf(a.difficulty) - levels.indexOf(b.difficulty))
 
 export function getScenario(id: string | undefined) {

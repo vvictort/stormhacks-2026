@@ -6,9 +6,12 @@ import { generateEmailScenario } from "./email-generator.ts";
 import type { JsonModel } from "./gemini.ts";
 import type { ScamLibrary } from "./library.ts";
 
+// About one generated email in three is genuine, so "Report" is not always the right answer.
+const GENUINE_SHARE = 1 / 3;
+
 /**
- * POST /api/training/email-scenarios → 201 { scenario }: a scam email written for this user from their saved profile, history
- * and current training focus (the request body is ignored). GET /:id → the scenario, owner only.
+ * POST /api/training/email-scenarios → 201 { scenario }: an email written for this user from their saved profile, history
+ * and current training focus (the request body is ignored): a scam, or sometimes a genuine one. GET /:id → the scenario, owner only.
  */
 export function emailScenariosRouter(
   { users, attempts, scenarios, insights }: Repositories,
@@ -36,6 +39,7 @@ export function emailScenariosRouter(
       library: options.library,
       difficulty,
       focus,
+      genuine: Math.random() < GENUINE_SHARE,
       profession: profile.profession,
       interests: profile.interests,
       weakCategories: vulnerability.weakCategories,

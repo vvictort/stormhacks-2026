@@ -20,7 +20,7 @@ flowchart LR
 | Piece | What it does | Where you see it |
 |---|---|---|
 | **Scam library** | An offline Python pipeline ([`data-pipeline/`](data-pipeline/)) curates ~600 real phishing emails, spam texts and scam-call patterns from public datasets into `backend/fixtures/scam-library.json`. Gemini gets 2–3 matching examples (by channel, scam type, tactics and difficulty). The practice path is built from it too: real phishing emails with invented names, real scam-call patterns, and texts Gemini wrote from library examples; only the genuine "looks safe" messages are hand-written. No embeddings, no runtime Python. | "Grounded in real-world scam patterns", and each practice scenario's source line |
-| **Gemini** | Writes a personalised scam email or call script aimed at your current weak spot. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback. | "Written by Gemini" |
+| **Gemini** | Writes a personalised scam email or call script aimed at your current weak spot. About one generated email in three is genuine instead, so Report is not always the right answer. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback. | "Written by Gemini" |
 | **ElevenLabs** | Runs the live scam call you answer and talk to (a voice agent with Gemini 2.5 Flash as its LLM), then scores what you gave away (codes, card, personal details). | Call debrief: "powered by ElevenLabs" |
 | **TigerData** | Stores every tap and decision, with the scam tactics involved, in a TimescaleDB hypertable and turns it into metrics over time. | **Your scam instincts** card and chart |
 | **Snowflake** | Compares pseudonymous aggregates across trainees to find which tactic combinations fool you (e.g. authority with urgency); with Cortex on, writes the summary. | **What Tellio has learned**, labelled by what actually ran |
@@ -32,8 +32,9 @@ Every optional service degrades honestly: without ElevenLabs, calls become capti
 
 - **Three channels on one practice phone**
   - **Texts:** a scam (or genuine) SMS to judge: tap the link to see where it really goes (it never opens), then report it or mark it safe.
-  - **Emails:** a phishing email with sender details and links to inspect.
+  - **Emails:** a phishing (or genuine) email with sender details and links to inspect.
   - **Calls:** a live AI voice caller you can answer, talk to and hang up on, with live captions.
+- **Not everything is a scam:** close to half of the practice path's texts and emails are genuine, and about one generated email in three is too, so you practise telling real from fake instead of reporting everything. Calls are always scams.
 - **Debriefs that teach:** after each scenario you see what gave it away (urgency, unexpected fees, look-alike addresses, requests for codes) and what to check next time, then **What Tellio learned from this** shows what changed in your profile and offers the next scenario made for you.
 - **Adaptive practice:** scenarios get harder as you make the right calls and ease off after misses, and Home's **Next for you** names the scam type Tellio will train next and why.
 

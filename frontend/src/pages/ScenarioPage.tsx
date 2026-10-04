@@ -37,7 +37,8 @@ export function ScenarioPage() {
   )
 }
 
-function ScenarioIntro({ scenario }: { scenario: Scenario }) {
+/** `sourceShown`: only scams have a source line, so on a text or email it would give the answer away; it waits for the choice. */
+function ScenarioIntro({ scenario, sourceShown = true }: { scenario: Scenario; sourceShown?: boolean }) {
   const heading = useRef<HTMLHeadingElement>(null)
   const { Icon, label } = channelMeta[scenario.type]
   const credit = generatedCredit(scenario.generated)
@@ -54,7 +55,7 @@ function ScenarioIntro({ scenario }: { scenario: Scenario }) {
       <TransitionLink direction="back" className="train-back" to="/home" aria-label="Back to all scenarios"><ArrowLeft size={16} aria-hidden="true" />Back</TransitionLink>
       <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
       <p className="scenario-meta"><Icon size={15} aria-hidden="true" /> {label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
-      {scenario.generated && (
+      {scenario.generated && sourceShown && (
         <div className="scenario-generated">
           {/* The reason can carry a dataset licence credit, so it stays one tap away. Practice-path scenarios (lib-…) weren't made for this user. */}
           <details><summary>{scenario.id.startsWith('gen-') ? 'Made for you' : 'Source'}</summary><p>{scenario.generated.reason}</p></details>
@@ -152,7 +153,7 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
 
   return (
     <main className="scenario-main">
-      <ScenarioIntro scenario={scenario} />
+      <ScenarioIntro scenario={scenario} sourceShown={Boolean(choice)} />
 
       <PhoneSimulator scenario={scenario} choice={choice} onChoose={choose} onInspect={inspect} />
 
