@@ -10,6 +10,8 @@ cp .env.example .env
 npm run dev
 ```
 
+Pages that load data also need the backend running (`cd ../backend && npm run dev`, see `backend/README.md`). Vite proxies `/api` to it on port 3000.
+
 Fill in `.env` with the values from the Firebase console (Project settings → Your apps → Web app). `.env` is git-ignored; never commit it. For a deployed build, set the same `VITE_FIREBASE_*` variables in the host's build environment. The app throws on startup, naming any missing variable.
 
 Open the Vite URL using **localhost**. The configured Firebase project's authorized domains currently include `localhost`, `stormhacks-2026.firebaseapp.com`, and `stormhacks-2026.web.app`. The IP address `127.0.0.1` is not currently authorized for Google sign-in.
@@ -39,6 +41,8 @@ The dependency-free unit tests use Node's built-in test runner and TypeScript st
 Email/password registration checks Firebase's current password policy, creates the account, and saves the supplied name with `updateProfile`. The interface requires at least eight characters; a stricter Firebase policy is also enforced and explained inline. Login accepts existing passwords without imposing the new-account minimum. Password whitespace is preserved.
 
 Account creation and display-name saving have separate outcomes. Firebase signs the user in before the name is saved, so the redirect off `/signup` waits until the whole operation settles (`pending` is null). If the name can't be saved, the user stays signed in and `profileWarning` stays in the auth context after the redirect, for `/home` to show. `dismissProfileWarning()` clears it, and so does signing out (including from another tab). Retrying account creation is not offered.
+
+Backend calls go through `api()` in `src/lib/api.ts`, which sends the user's Firebase ID token as `Authorization: Bearer <token>`. The backend verifies it on every `/api` route except `/api/health` and only serves the caller's own records. If the backend answers 401, `api()` signs the user out and `RequireAuth` sends them to `/login`. The route guards control what the UI shows. The backend is what actually protects the data.
 
 Redirect decisions are pure functions in `src/features/auth/redirect.ts`. `safeReturnPath` accepts only in-app paths and never sends users back to an auth page.
 
