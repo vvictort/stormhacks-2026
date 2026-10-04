@@ -121,7 +121,8 @@ Browser writes (every non-GET under `/api`) require the configured `Origin` and 
 | PUT | `/api/users/me` | Save personal details and complete onboarding |
 | GET | `/api/training/progress` | `{ attempts, stats, vulnerability }`: newest 50 attempts plus stats over the whole history |
 | GET | `/api/training/attempts/:id` | One attempt with signals, summary and redacted transcript; 404 unless it is the caller's |
-| POST | `/api/training/call-scenarios` | Generate and store a scenario; `201 { scenarioId, title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, counted in Postgres so the limit holds across processes and restarts, else `429 RATE_LIMITED` |
+| POST | `/api/training/call-scenarios` | Generate and store a scenario (Gemini, else a built-in one per scam category); `201 { scenarioId: "gen-call-…", title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, counted in Postgres so the limit holds across processes and restarts, else `429 RATE_LIMITED` |
+| GET | `/api/training/call-scenarios/:id` | The generated call as the frontend `CallScenario` (teaching copy, `scamCategory`, `generated: { source, reason }`), never the prompt; owner only, else `404 scenario_not_found` |
 
 Progress `stats` are `{ total, successes, compromised }` over scored attempts (`error` attempts are listed but not counted). `vulnerability` is `{ weakCategories, vulnerableTactics, categoryAccuracy }`: categories are inferred from the scenario id/title, a category turns weak below 75% accuracy and recovers at 80%, and tactics are ranked by how often they appeared in compromised attempts. The same replay sets the difficulty used for generated scenarios.
 
@@ -196,7 +197,7 @@ SSE events (`Content-Type: text/event-stream`, no compression, a `: ping` commen
 | `tech-support-remote-1` | 2 / medium | Tech support wants remote access |
 | `exec-vendor-payment-1` | 3 / hard | Executive asks for an urgent payment to a new vendor account |
 
-`gen-…` ids come from `POST /api/training/call-scenarios`; `ScenarioCatalog` resolves them from `generated_call_scenarios` for the verified uid only, so another user's id is a 404.
+`gen-call-…` ids (older `gen-…` ones too) come from `POST /api/training/call-scenarios`; `ScenarioCatalog` resolves them from `generated_call_scenarios` for the verified uid only, so another user's id is a 404.
 
 **Conversation binding.** The ElevenLabs `conversation_id` from the token is bound on accept when present. Otherwise the first id reported via `/connected` or `/ended` is bound. Any different id later is `409 conversation_mismatch`; a mismatched `/ended` leaves the call `in_call`, so the correct `/ended` (or the sweeper after max duration) can still finish it. Only the bound id is ever analysed; a call with none ends as `error`.
 

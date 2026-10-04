@@ -205,7 +205,9 @@ function fallbackCallScenario(id: string, category: ScamCategory, request: CallS
     systemPrompt: `${systemPrompt.replace('{work}', profession ? ` (who works as: ${profession})` : '')}\n\n${DIFFICULTY_STYLE[difficulty]}${first ? `\nThe person's first name is ${first}; use it once or twice, naturally.` : ''}`,
     firstMessage: firstMessage.replace('{first}', first ? ` ${first}` : ''),
   });
-  return { ...scenario, teaching: { ...teaching, generated: { source: 'fallback', reason } } };
+  // Caption practice opens with the same (personalised) line the voice caller would say.
+  const practice = { ...teaching.practice, lines: [scenario.firstMessage, ...teaching.practice.lines.slice(1)] };
+  return { ...scenario, teaching: { ...teaching, practice, generated: { source: 'fallback', reason } } };
 }
 
 /**

@@ -142,7 +142,7 @@ If they offer to call the helpdesk back, say the queue is very long tonight and 
     practice: {
       lines: [
         "Hi, this is Sarah from the IT service desk. We're moving everyone to the new sign-in system tonight.",
-        "Your account is one of the last ones left, and it'll be locked tomorrow morning if it isn't moved.",
+        "If it isn't moved tonight, it'll be locked tomorrow morning and you won't be able to sign in.",
         "Can you confirm your work username? Then read me the six-digit code that's about to pop up on your phone.",
         'The window closes in ten minutes, and unlocking an account takes a manager-approved ticket.',
       ],
