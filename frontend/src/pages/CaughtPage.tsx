@@ -38,7 +38,7 @@ const checks = [
 export function CaughtPage() {
   const { user } = useAuth()
   useEffect(() => {
-    document.title = 'That was a practice link · Tellio'
+    document.title = 'That was a practice link · chatisthisreal'
   }, [])
 
   return (
@@ -52,7 +52,7 @@ export function CaughtPage() {
           <RevealText as="h1" text="That link was part of a practice scam." />
         </div>
         <p className="caught-lede">
-          You tapped a link in a simulated message from Tellio. Nothing
+          You tapped a link in a simulated message from chatisthisreal. Nothing
           happened: no site opened, nothing was downloaded and none of your
           details went anywhere. On a real scam, this is the moment a fake page
           would ask for your password or card.

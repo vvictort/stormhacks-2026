@@ -80,7 +80,7 @@ const app = createApp({
   snowflake: snowflake && new Snowflake(snowflake),
 });
 const server = app.listen(config.PORT, config.HOST, () =>
-  console.info(`Tellio API: http://${config.HOST}:${config.PORT}/api`),
+  console.info(`chatisthisreal API: http://${config.HOST}:${config.PORT}/api`),
 );
 server.on("error", async (error) => {
   console.error("API startup failed:", (error as NodeJS.ErrnoException).code);

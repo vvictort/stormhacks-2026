@@ -283,7 +283,7 @@ function reason(why: string, profession: string, interest: string | undefined) {
 }
 
 function promptFor(input: SmsGenerationInput, p: ReturnType<typeof plan>) {
-  return `You write practice SMS / text messages for Tellio, a scam-awareness training app. Write ONE realistic smishing text message for a trainee to judge.
+  return `You write practice SMS / text messages for chatisthisreal, a scam-awareness training app. Write ONE realistic smishing text message for a trainee to judge.
 
 CATEGORY: ${p.category}, from ${categoryBrief[p.category]}.
 DIFFICULTY: ${input.difficulty}

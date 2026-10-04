@@ -111,8 +111,8 @@ export function nextForYou(
     return {
       title: 'An email made for you',
       reason: adaptive
-        ? 'Tellio writes it around your profile. Each result you give it shapes what comes next.'
-        : "Tellio writes it around your profile and how you've done so far.",
+        ? 'chatisthisreal writes it around your profile. Each result you give it shapes what comes next.'
+        : "chatisthisreal writes it around your profile and how you've done so far.",
       difficulty: adaptive?.difficulty ?? localLevel,
     }
   }
@@ -122,7 +122,7 @@ export function nextForYou(
   const reason = !record
     ? `You haven't practised ${plural[category]} yet, so that's next.`
     : record.correct < record.attempts
-      ? `Tellio noticed ${plural[category]} catch you out: you've made the right call on ${record.correct} of ${record.attempts}.`
+      ? `chatisthisreal noticed ${plural[category]} catch you out: you've made the right call on ${record.correct} of ${record.attempts}.`
       : `You've caught every one of the ${plural[category]} so far. This one keeps that sharp.`
 
   return {
@@ -214,8 +214,8 @@ export function learned(
     const keep = now.focus[0] ?? category
     lines.push(
       keep
-        ? `Nothing to adjust yet. Tellio will keep practising ${plural[keep]} with you.`
-        : 'Nothing to adjust yet. Tellio will keep practising with you.',
+        ? `Nothing to adjust yet. chatisthisreal will keep practising ${plural[keep]} with you.`
+        : 'Nothing to adjust yet. chatisthisreal will keep practising with you.',
     )
   }
 

@@ -168,7 +168,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         description={
           user.displayName
             ? `Welcome, ${user.displayName}. You’re in the right place.`
-            : 'Welcome to Tellio. You’re in the right place.'
+            : 'Welcome to chatisthisreal. You’re in the right place.'
         }
       >
         <div className="signed-in-icon bg-success/15 text-success-strong">
@@ -439,7 +439,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           }}
         />
         <p className="auth-switch text-muted-strong">
-          {isSignup ? 'Already have an account?' : 'New to Tellio?'}{' '}
+          {isSignup ? 'Already have an account?' : 'New to chatisthisreal?'}{' '}
           <TransitionLink
             direction="swap"
             className="text-link"

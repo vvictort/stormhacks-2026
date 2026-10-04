@@ -191,7 +191,7 @@ const problem: Partial<
   insecure: {
     icon: <ShieldAlert size={26} />,
     title: 'Live calls need a secure page',
-    body: 'Browsers only share the microphone on HTTPS or localhost. Open Tellio from a secure address to take live calls.',
+    body: 'Browsers only share the microphone on HTTPS or localhost. Open chatisthisreal from a secure address to take live calls.',
   },
   comms_unavailable: {
     icon: <WifiOff size={26} />,
@@ -343,7 +343,7 @@ export function LiveCallScreen(props: LiveProps) {
           />
           <p className="call-mic-note">
             <Mic size={16} aria-hidden="true" />
-            If your browser asks, allow the microphone. Tellio only uses it
+            If your browser asks, allow the microphone. chatisthisreal only uses it
             during this practice call.
           </p>
           <div className="call-actions is-single">

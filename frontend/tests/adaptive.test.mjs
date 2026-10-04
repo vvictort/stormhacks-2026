@@ -65,7 +65,7 @@ test('nextForYou explains the focus from real numbers, and stays plain without t
   assert.deepEqual(nextForYou(weak, 'easy'), {
     title: 'An account-security email, made for you',
     reason:
-      "Tellio noticed account-security scams catch you out: you've made the right call on 1 of 3. You also tend to go along with urgency.",
+      "chatisthisreal noticed account-security scams catch you out: you've made the right call on 1 of 3. You also tend to go along with urgency.",
     difficulty: 'medium',
   })
 
@@ -77,7 +77,7 @@ test('nextForYou explains the focus from real numbers, and stays plain without t
 
   assert.deepEqual(nextForYou(null, 'hard'), {
     title: 'An email made for you',
-    reason: "Tellio writes it around your profile and how you've done so far.",
+    reason: "chatisthisreal writes it around your profile and how you've done so far.",
     difficulty: 'hard',
   })
 })
@@ -136,10 +136,10 @@ test('learned reports only real before/after changes', () => {
   assert.deepEqual(view.insight, after.insight)
   assert.equal(view.next.title, 'A bank email, made for you')
 
-  // Nothing changed: say what Tellio keeps practising, never invent a change.
+  // Nothing changed: say what chatisthisreal keeps practising, never invent a change.
   const same = learned(after, after, 'run-1')
   assert.deepEqual(same.lines, [
-    'Nothing to adjust yet. Tellio will keep practising bank scams with you.',
+    'Nothing to adjust yet. chatisthisreal will keep practising bank scams with you.',
   ])
   assert.equal(same.insight, null)
   assert.equal(learned(before, { ...after, adaptive: null }, 'run-1'), null)

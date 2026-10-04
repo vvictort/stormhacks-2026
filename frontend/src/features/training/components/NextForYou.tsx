@@ -299,7 +299,7 @@ export function LearnedPanel({
       aria-live="polite"
       aria-busy={learning.status === 'waiting'}
     >
-      <h3 id="learned-title">What Tellio learned</h3>
+      <h3 id="learned-title">What chatisthisreal learned</h3>
       {learning.status === 'waiting' ? (
         <p className="learned-wait">
           <LoaderCircle size={16} className="spinner" aria-hidden="true" />

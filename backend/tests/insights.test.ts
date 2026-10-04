@@ -384,7 +384,7 @@ test("empty history is a friendly empty analysis, not an error, and is not cache
     {
       strongestAreas: [],
       weakAreas: [],
-      behavioralPattern: "Tellio hasn't seen you handle a scam yet.",
+      behavioralPattern: "chatisthisreal hasn't seen you handle a scam yet.",
       recommendation:
         "Try a few scenarios and you'll see what you catch, and what catches you.",
       nextTrainingFocus: [],

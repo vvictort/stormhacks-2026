@@ -644,7 +644,7 @@ function promptFor(
 - explanation says why the email is genuine; nextTime says how to tell a real one from a look-alike.`
     : `- It is a scam: expectedAction "report". Leave out links or attachment if they don't fit.
 - redFlags: 3 to 6, each quote copied EXACTLY from the subject, senderEmail, a body paragraph, the attachment name, or a whole link URL. Do not quote senderName. Quotes must not overlap.`;
-  return `You write practice emails for Tellio, a scam-awareness training app. Write ONE realistic ${kind}.
+  return `You write practice emails for chatisthisreal, a scam-awareness training app. Write ONE realistic ${kind}.
 
 CATEGORY: ${p.category}, from ${categoryBrief[p.category]}.
 DIFFICULTY: ${(genuine ? genuineBrief : difficultyBrief)[input.difficulty]}${tactics}

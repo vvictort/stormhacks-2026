@@ -6,10 +6,10 @@ export function Brand({ to = '/' }: { to?: string }) {
       direction="back"
       to={to}
       className="brand"
-      aria-label="Tellio home"
+      aria-label="chatisthisreal home"
     >
       <span>
-        tellio<span className="text-primary">.</span>
+        chatisthisreal<span className="text-primary">.</span>
       </span>
     </TransitionLink>
   )

@@ -76,7 +76,7 @@ export function HomePage() {
   const stats = channelStats(progress)
 
   useEffect(() => {
-    document.title = 'Home · Tellio'
+    document.title = 'Home · chatisthisreal'
   }, [])
 
   // Tabs live in the URL (Back and reload keep them); filters are dropped when
@@ -218,7 +218,7 @@ export function HomePage() {
                 >
                   <div className="home-adaptive-badge">
                     <TellIcon size={16} aria-hidden="true" />
-                    <span>Tellio's Focus</span>
+                    <span>chatisthisreal's Focus</span>
                   </div>
                   <div className="home-adaptive-content">
                     <p className="home-adaptive-title">{adaptiveFocus.title}</p>

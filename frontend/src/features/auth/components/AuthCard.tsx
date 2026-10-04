@@ -18,7 +18,7 @@ export function AuthCard({
   const heading = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    document.title = `${title} · Tellio`
+    document.title = `${title} · chatisthisreal`
     heading.current?.focus({ preventScroll: true })
   }, [title])
 

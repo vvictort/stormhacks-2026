@@ -409,7 +409,7 @@ export function textPrompt(
   difficulty: Difficulty,
   examples: readonly LibraryExample[],
 ) {
-  return `You write one practice scam TEXT MESSAGE (SMS) for Tellio, a scam-awareness trainer. It appears on a pretend phone in a training app and is explained in a debrief afterwards.
+  return `You write one practice scam TEXT MESSAGE (SMS) for chatisthisreal, a scam-awareness trainer. It appears on a pretend phone in a training app and is explained in a debrief afterwards.
 
 SCAM TYPE: it pretends to come from ${categoryBrief[category]}.
 LEVEL: ${textLevel[difficulty]}

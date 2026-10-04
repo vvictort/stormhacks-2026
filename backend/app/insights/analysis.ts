@@ -445,7 +445,7 @@ export function buildInsights(
   const plan = weakCategories.length
     ? `Your next training should focus on ${list(weakCategories.slice(0, 2).map((c) => categoryLabels[c]))}.`
     : untried.length
-      ? `Next, try ${list(untried.slice(0, 2).map((c) => categoryLabels[c]))}: Tellio hasn't seen you handle those yet.`
+      ? `Next, try ${list(untried.slice(0, 2).map((c) => categoryLabels[c]))}: chatisthisreal hasn't seen you handle those yet.`
       : weakest
         ? `Keep practising ${categoryLabels[weakest]} at a harder level.`
         : "";
@@ -470,7 +470,7 @@ export function buildInsights(
 export const emptyInsights = (now = new Date()): Insights => ({
   strongestAreas: [],
   weakAreas: [],
-  behavioralPattern: "Tellio hasn't seen you handle a scam yet.",
+  behavioralPattern: "chatisthisreal hasn't seen you handle a scam yet.",
   recommendation:
     "Try a few scenarios and you'll see what you catch, and what catches you.",
   nextTrainingFocus: [],

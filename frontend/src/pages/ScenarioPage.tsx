@@ -112,7 +112,7 @@ function ScenarioIntro({
   const credit = generatedCredit(scenario.generated, !isScam(scenario))
 
   useEffect(() => {
-    document.title = `${scenario.title} · Tellio`
+    document.title = `${scenario.title} · chatisthisreal`
     // A new scenario is a new page: jump, don't glide, past the global smooth
     // scroll.
     window.scrollTo({ top: 0, behavior: 'instant' })
@@ -476,7 +476,7 @@ function ScenarioLoading() {
 
 function MissingScenario() {
   useEffect(() => {
-    document.title = 'Scenario not found · Tellio'
+    document.title = 'Scenario not found · chatisthisreal'
   }, [])
 
   return (

@@ -55,7 +55,7 @@ export function InstinctsCard({ uid }: { uid: string | null | undefined }) {
       </div>
       {!view ? (
         <p>
-          Finish a couple of scenarios and Tellio will start timing your
+          Finish a couple of scenarios and chatisthisreal will start timing your
           instincts.
         </p>
       ) : (
