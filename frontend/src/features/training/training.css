@@ -52,20 +52,24 @@
 .path { padding: 24px 0 0; }
 .path > h2 { margin: 0 0 26px; font-family: var(--font-editorial); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
 .path-list, .path-stops { margin: 0; padding: 0; list-style: none; }
-.path-channel { position: relative; padding: 0 0 30px 58px; }
+/* --path-indent: distance from the rail's node column to the content. */
+.path-channel { --path-indent: 58px; position: relative; padding: 0 0 30px var(--path-indent); }
 .path-channel::before { content: ""; position: absolute; left: 20px; top: 44px; bottom: 4px; border-left: 2px solid var(--color-border); }
 .path-channel:last-child { padding-bottom: 0; }
 .path-channel:last-child::before { display: none; }
 .path-channel.is-soon::before { border-left-style: dashed; }
-.path-channel-head { display: flex; align-items: center; gap: 12px; min-height: 42px; flex-wrap: wrap; }
+/* The head anchors its own node: the scroll reveal animates `translate` here, which would otherwise
+   re-parent an absolutely positioned node and drop it onto the title. */
+.path-channel-head { position: relative; display: flex; align-items: center; gap: 12px; min-height: 42px; flex-wrap: wrap; }
 .path-channel-head h3 { margin: 0; font-size: 17px; font-weight: 600; }
-.path-node { position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--color-primary-strong); color: var(--color-surface); }
+.path-node { position: absolute; left: calc(-1 * var(--path-indent)); top: 0; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--color-primary-strong); color: var(--color-surface); }
 .is-soon .path-node { background: var(--color-surface); color: var(--color-muted-strong); border: 1.5px dashed var(--color-control); }
 .path-soon { padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface)); color: var(--color-accent-strong); font-size: 12px; font-weight: 500; }
 .path-blurb { margin-top: 4px; max-width: 44ch; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); }
 .path-stops { display: grid; gap: 6px; margin-top: 14px; }
 .path-stop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline; padding: 14px 18px; border: 1px solid transparent; border-radius: 12px; transition: background-color 160ms ease, border-color 160ms ease; }
-.path-stop:hover { background: var(--color-surface); border-color: var(--color-border); }
+/* Hover cards only where hover exists: on touch a stuck card would look like a second "Up next". */
+@media (hover: hover) { .path-stop:hover { background: var(--color-surface); border-color: var(--color-border); } }
 .path-stop.is-upnext { background: var(--color-surface); border-color: var(--color-border); box-shadow: 0 6px 20px #4836260d, 0 1px 3px #48362608; }
 .path-stop:has(.path-stop-link:focus-visible) { outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
 .path-dot { position: absolute; left: -46px; top: 19px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--color-background); border: 2px solid var(--color-control); color: var(--color-surface); }
@@ -223,7 +227,7 @@
   .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
   .home-intro h1 { font-size: 34px; }
   .home-cta .train-primary { width: 100%; }
-  .path-channel { padding-left: 50px; }
+  .path-channel { --path-indent: 50px; }
   .path-channel::before { left: 18px; }
   .path-node { width: 38px; height: 38px; }
   .path-dot { left: -40px; }

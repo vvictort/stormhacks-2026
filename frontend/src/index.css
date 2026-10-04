@@ -132,7 +132,8 @@ h1:focus, #auth-content:focus { outline: none; }
 .form-feedback { display: grid; align-items: center; min-height: 60px; }
 .form-feedback > * { grid-area: 1 / 1; }
 .auth-divider { display: flex; align-items: center; gap: 14px; font-size: 12px; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s; }
-.auth-divider[data-hidden] { opacity: 0; visibility: hidden; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s var(--motion-quick); }
+/* Fades out faster than the error rises in, so the "or" never ghosts through the message. */
+.auth-divider[data-hidden] { opacity: 0; visibility: hidden; transition: opacity 90ms ease-out, visibility 0s 90ms; }
 .form-alert p { display: flex; align-items: flex-start; gap: 8px; color: var(--color-danger-strong); font-size: 13px; line-height: 1.5; text-wrap: pretty; --rise: -4px; animation: rise-in 220ms var(--ease-out-quint) backwards; }
 .form-alert svg { flex-shrink: 0; margin-top: 2px; }
 .auth-divider > span { flex: 1; height: 1px; background: var(--color-border); }
