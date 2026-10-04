@@ -96,3 +96,14 @@ export function microphoneErrorCode(error: unknown) {
  * page, a new call) must abandon it, or comms would later sweep it into a result nobody earned.
  */
 export const ringsOnServer = (stage: string) => stage === 'ringing' || stage === 'answering'
+
+/**
+ * Giving up on a call that hasn't connected (Cancel, the connect timeout): what the server must be told.
+ * `abandon` while the accept may not have landed yet (the call can still ring there), `end` once the server has the
+ * call in_call but the voice session never connected (it completes unscored as `error`). Null once connected or over.
+ */
+export function connectDrop(stage: string, connected: boolean): 'abandon' | 'end' | null {
+  if (stage === 'answering') return 'abandon'
+  if (stage === 'in_call' && !connected) return 'end'
+  return null
+}

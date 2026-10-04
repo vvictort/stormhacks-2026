@@ -28,7 +28,7 @@ The API listens on `127.0.0.1:3000`. `APP_ORIGIN` must match the frontend origin
 
 TigerData TLS keeps certificate and hostname verification enabled. For a custom service CA, place the certificate bundle outside tracked source and add its absolute path as `sslrootcert` in `DATABASE_URL`. Local `.certs/` and `.env` are ignored. See [TigerData's strict SSL procedure](https://www.tigerdata.com/docs/use-timescale/latest/security/strict-ssl/). Database passwords containing special characters must be URL-encoded.
 
-Migrations in `app/db/migrations` are transactional, serialized, and recorded in `schema_migrations`; `npm run migrate` applies any that are new. `001` creates `user_profiles`; `002` creates `training_attempts` (id = call id, so saving the same call twice is a no-op; canonical channel/difficulty/outcome enforced by CHECKs; `metadata` holds only the redacted summary and transcript) and `generated_call_scenarios` (`gen-…` ids, the `CallScenario` JSON, `source` = `gemini` or `fallback`). Migration commands are repeatable and do not drop existing tables. Run migrations explicitly before serving traffic; API startup does not modify the schema.
+Migrations in `app/db/migrations` are transactional, serialized, and recorded in `schema_migrations`; `npm run migrate` applies any that are new. `001` creates `user_profiles`; `002` creates `training_attempts` (id = call id, so saving the same call twice is a no-op; canonical channel/difficulty/outcome enforced by CHECKs; `metadata` holds only the redacted summary and transcript) and `generated_call_scenarios` (`gen-…` ids, the `CallScenario` JSON, `source` = `gemini` or `fallback`); `003` creates the simulation tables `sim_text_threads`, `sim_calls` and `sim_events` (see **Simulation state**); `004` creates `scenario_generation_requests`, the log behind the scenario generation rate limit. Migration commands are repeatable and do not drop existing tables. Run migrations explicitly before serving traffic; API startup does not modify the schema.
 
 ### ElevenLabs (voice calls)
 
@@ -51,10 +51,7 @@ Re-running `setup:agent` updates the existing agent. Then sign in to the fronten
 
 ### Simulation state
 
-- Text threads, calls and tracked links in progress are kept in memory and snapshotted to `data/store.json`, which survives restarts (flushed on shutdown).
-- Simulation events are appended to `data/events.jsonl`.
-
-Both files are gitignored. Finished calls also become rows in `training_attempts`.
+Text threads, calls and their tracked links live in Postgres (`sim_text_threads`, `sim_calls`), one jsonb document per simulation, so restarts and every API process share them. Each update is a row-locked read-modify-write (`SELECT … FOR UPDATE` in a transaction), and a partial unique index allows one active text thread per user. Simulation events are appended to `sim_events`. Nothing is written to local files. Finished calls also become rows in `training_attempts`.
 
 ### Environment
 
@@ -85,12 +82,12 @@ app/
   config.ts             env schema (zod)
   repositories.ts       builds every feature's repository from one pool
   shared/               vocabulary.ts (canonical channel, difficulty, outcome, tactic), types.ts (scenario, text thread and call shapes), redact.ts, ids.ts
-  http/                 errors, Firebase auth (with the SSE query-token option), app-origin guard, rate limit
+  http/                 errors, Firebase auth (with the SSE query-token option), app-origin guard
   db/                   pool, migrate, migrations/*.sql
   users/                onboarding profile: routes, repository, schema
   training/             attempts and progress: routes, repository, schema, progress (pure)
   scenarios/            catalog.ts (fixtures + the owner's gen- scenarios), generator (Gemini), repository, routes (generate, list)
-  sim/                  JSON-file store and JSONL event sink for in-progress simulations
+  sim/                  simulation store and event sink: interfaces with in-memory versions (store.ts, events.ts), Postgres in sim.repository.ts
   texts/                service, routes (+ tracked-link redirect and SSE stream), sse, links, provider (reply generation), classify
   calls/                service, routes, elevenlabs client, outcome (canonical table), attempt (training-attempt payload), preamble
 fixtures/scenarios/     sample text-*.json and call-*.json scenarios, loaded at startup
@@ -124,7 +121,7 @@ Browser writes (every non-GET under `/api`) require the configured `Origin` and 
 | PUT | `/api/users/me` | Save personal details and complete onboarding |
 | GET | `/api/training/progress` | `{ attempts, stats, vulnerability }`: newest 50 attempts plus stats over the whole history |
 | GET | `/api/training/attempts/:id` | One attempt with signals, summary and redacted transcript; 404 unless it is the caller's |
-| POST | `/api/training/call-scenarios` | Generate and store a scenario; `201 { scenarioId, title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, else `429 RATE_LIMITED` |
+| POST | `/api/training/call-scenarios` | Generate and store a scenario; `201 { scenarioId, title, callerLabel, difficulty, tactics, source }`. Send `{}`. 5/min and 30/day per user, counted in Postgres so the limit holds across processes and restarts, else `429 RATE_LIMITED` |
 
 Progress `stats` are `{ total, successes, compromised }` over scored attempts (`error` attempts are listed but not counted). `vulnerability` is `{ weakCategories, vulnerableTactics, categoryAccuracy }`: categories are inferred from the scenario id/title, a category turns weak below 75% accuracy and recovers at 80%, and tactics are ranked by how often they appeared in compromised attempts. The same replay sets the difficulty used for generated scenarios.
 
@@ -152,7 +149,7 @@ Use the wiring in **`frontend/src/comms/`** rather than calling these routes by 
 | `api.ts` | `comms`: a typed client for every route below (base `/api/comms`, override with `VITE_COMMS_BASE_URL`). It attaches the Firebase token, sends JSON on every POST, and retries once with a fresh token on 401. |
 | `useScenarios(channel?)` | Sample scenarios for a picker. |
 | `useTextThread(threadId)` | A live text thread: messages, typing indicator, outcome, `send`, `report`, `reconnect`. |
-| `useSimulatedCall()` | The call lifecycle (`start`, `accept`, `decline`, `hangUp`), live captions and the analysed result. It must render inside `<ConversationProvider>` from `@elevenlabs/react`. |
+| `useSimulatedCall()` | The call lifecycle (`start`, `accept`, `decline`, `hangUp`, `cancel` while connecting), live captions and the analysed result. It must render inside `<ConversationProvider>` from `@elevenlabs/react`. |
 
 Simulation ids are unguessable, so they're safe to put in results URLs.
 
@@ -238,7 +235,7 @@ If you use `@elevenlabs/react` directly instead of `useSimulatedCall`, note two 
 
 ### Events
 
-`EventSink` (`app/sim/events.ts`) receives every simulation event. Today it writes JSONL; swap in a Postgres sink in `app/main.ts`. Envelope:
+`EventSink` (`app/sim/events.ts`) receives every simulation event. `PgEventSink` stores each one in `sim_events` (the whole envelope in `event`, plus `type`, `at`, `user_id`, `simulation_id` and `channel` columns); a failed write is logged and never interrupts a simulation. Envelope:
 
 ```ts
 { id, type, at, userId, simulationId, channel: 'text' | 'call', scenarioId, tactics, data }
@@ -270,10 +267,10 @@ npm run typecheck
 npm test
 ```
 
-Unit and route tests run without a database, against in-memory repositories, a temp-dir simulation store and a stubbed `fetch` (they never read `.env` or reach ElevenLabs, Gemini or Firebase). Integration tests require a dedicated database with a name ending in `_test`:
+Unit and route tests run without a database, against in-memory repositories, an in-memory simulation store and a stubbed `fetch` (they never read `.env` or reach ElevenLabs, Gemini or Firebase). Integration tests require a dedicated database with a name ending in `_test`:
 
 ```sh
 TEST_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/tellio_test' npm test
 ```
 
-The suites truncate only `user_profiles`, `training_attempts` and `generated_call_scenarios` in that test database, and test files run serially. Test Firebase verifiers are injected directly into the test app (`tests/harness.ts`); production has no mock-auth mode. Tests cover token verification (forged, unsigned, expired), the SSE query token, the Origin/JSON guard, unknown and client-supplied scenarios, `gen-` owner scope, conversation binding, abandon and the sweeper, the canonical outcome table, redaction and clipping of saved attempts, the no-ElevenLabs fallback, idempotent saves, owner-only reads, progress/vulnerability updates, scenario fallback and rate limits, plus profile isolation, idempotent onboarding, identity synchronization, invalid input, persistence across reconstructed servers, safe failures and origin enforcement.
+The suites truncate only `user_profiles`, `training_attempts`, `generated_call_scenarios`, `scenario_generation_requests` and the `sim_*` tables in that test database, and test files run serially. Test Firebase verifiers are injected directly into the test app (`tests/harness.ts`); production has no mock-auth mode. Tests cover token verification (forged, unsigned, expired), the SSE query token, the Origin/JSON guard, unknown and client-supplied scenarios, `gen-` owner scope, conversation binding, abandon and the sweeper, the simulation store contract (in memory and in Postgres: atomic updates, one active thread per user, sweeper queries, link lookups), the canonical outcome table, redaction and clipping of saved attempts, the no-ElevenLabs fallback, idempotent saves, owner-only reads, progress/vulnerability updates, scenario fallback and rate limits, plus profile isolation, idempotent onboarding, identity synchronization, invalid input, persistence across reconstructed servers, safe failures and origin enforcement.

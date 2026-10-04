@@ -12,7 +12,6 @@ import { createApp } from '../app/server.ts';
 const origin = 'http://localhost:5173';
 // Profile routes never touch simulations; one shared set keeps createApp's wiring complete.
 const sims = testServices(fakeRepos());
-after(sims.close);
 const services = sims.services;
 const identity = (uid: string) => ({ uid, sub: uid, aud: 'test-project', iss: 'https://securetoken.google.com/test-project', auth_time: 0, iat: 0, exp: 9999999999, firebase: { identities: {}, sign_in_provider: 'password' }, email: `${uid}@example.test`, email_verified: true, name: uid === 'alex' ? 'Alex' : undefined }) as DecodedIdToken;
 const verifyToken = async (token: string) => {

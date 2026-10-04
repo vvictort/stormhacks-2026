@@ -66,6 +66,7 @@ interface LiveProps {
   onAccept: () => void
   onDecline: () => void
   onHangUp: () => void
+  onCancel: () => void
   onRetry: () => void
   onPractice: () => void
 }
@@ -76,6 +77,7 @@ const problem: Partial<Record<CallScreen, { icon: ReactNode; title: string; body
   insecure: { icon: <ShieldAlert size={26} />, title: 'Live calls need a secure page', body: 'Browsers only share the microphone on HTTPS or localhost. Open Tellio from a secure address to take live calls.' },
   comms_unavailable: { icon: <WifiOff size={26} />, title: "Live voice isn't available", body: "We couldn't reach the call service, so this call can't ring right now.", retry: 'Try again' },
   voice_unavailable: { icon: <Radio size={26} />, title: "Live voice isn't available", body: "The AI voice for practice calls isn't set up or isn't responding right now." },
+  not_connected: { icon: <PhoneOff size={26} />, title: "The call didn't connect", body: "The voice line never came through, so this call doesn't count either way.", retry: 'Ring me again' },
   failed: { icon: <PhoneOff size={26} />, title: 'The call dropped', body: 'Something went wrong with this call before it could finish.', retry: 'Ring me again' },
 }
 
@@ -127,6 +129,9 @@ export function LiveCallScreen(props: LiveProps) {
         <div className="call-screen">
           <Caller label={callerLabel} number={scenario.callerNumber} status={<><LoaderCircle size={16} className="spinner" aria-hidden="true" /> Connecting…</>} />
           <p className="call-mic-note"><Mic size={16} aria-hidden="true" />If your browser asks, allow the microphone. Tellio only uses it during this practice call.</p>
+          <div className="call-actions is-single">
+            <RoundButton kind="hangup" label="Cancel" icon={<PhoneOff size={26} />} onClick={props.onCancel} />
+          </div>
         </div>
       )
     case 'active':
