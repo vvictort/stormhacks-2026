@@ -1,0 +1,13 @@
+{
+  "userId": "dev-user",
+  "scenario": {
+    "id": "bank-new-device-otp-1",
+    "title": "New-device sign-in, asks for verification code",
+    "tactics": ["urgency", "authority", "otp_request"],
+    "difficulty": 2,
+    "senderLabel": "Maple Trust",
+    "openingMessage": "Maple Trust Alert: We detected a sign-in to your account from a new device in Calgary, AB. If this wasn't you, reply with the 6-digit code we just sent to secure your account.",
+    "persona": "Poses as the Maple Trust Bank security team. Calm and official at first, then increasingly urgent; repeatedly asks for the 6-digit code and warns the account will be frozen.",
+    "maxTurns": 4
+  }
+}
