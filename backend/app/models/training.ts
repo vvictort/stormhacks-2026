@@ -1,0 +1,77 @@
+export type Difficulty = 'easy' | 'medium' | 'hard';
+export type ScamCategory = 'banking' | 'government' | 'shipping' | 'account_security' | 'workplace' | 'promotional';
+
+export interface ScoredAttempt {
+  scenarioId: string;
+  scenarioTitle: string;
+  tactics: string[];
+  success: boolean | null;
+  outcome: string;
+  completedAt: string;
+}
+
+export interface CategoryAccuracy {
+  attempts: number;
+  correct: number;
+  accuracy: number; // 0 to 100
+}
+
+// Ordered: the first match wins, so specific pretexts come before broad ones.
+const categoryRules: [ScamCategory, RegExp][] = [
+  ['government', /\bcra\b|\birs\b|\btax|arrears|government/],
+  ['shipping', /ship|deliver|parcel|package|customs|courier/],
+  ['banking', /bank|\bcard|charge|financ/],
+  ['account_security', /tech.?support|remote/],
+  ['workplace', /\bexec|vendor|\bwork|helpdesk|\bit (support|department)|\bsso\b|employee|corporate|payroll/],
+  ['promotional', /promo|reward|gift|prize|contest/],
+];
+
+export function inferCategory(scenario: { id: string; title: string }): ScamCategory {
+  const text = `${scenario.id} ${scenario.title}`.toLowerCase();
+  return categoryRules.find(([, pattern]) => pattern.test(text))?.[0] ?? 'account_security';
+}
+
+const levels: Difficulty[] = ['easy', 'medium', 'hard'];
+
+/** Stats, category accuracy, vulnerability and adaptive difficulty from a user's attempts (any order). */
+export function summarizeAttempts(attempts: ScoredAttempt[]) {
+  // Unscored (error) attempts are listed elsewhere but never count for or against the user.
+  const scored = attempts.filter((a) => a.success !== null).sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+  const categoryAccuracy: Partial<Record<ScamCategory, CategoryAccuracy>> = {};
+  const weak = new Set<ScamCategory>();
+  const tacticMisses = new Map<string, number>();
+  let successes = 0;
+  let compromised = 0;
+  let difficulty: Difficulty = 'easy';
+
+  // Replayed in order so the weak-category hysteresis and difficulty steps match a live update per attempt.
+  for (const [index, attempt] of scored.entries()) {
+    if (attempt.success) successes++;
+    if (attempt.outcome === 'compromised') {
+      compromised++;
+      for (const tactic of attempt.tactics) tacticMisses.set(tactic, (tacticMisses.get(tactic) ?? 0) + 1);
+    }
+
+    const category = inferCategory({ id: attempt.scenarioId, title: attempt.scenarioTitle });
+    const cat = categoryAccuracy[category] ??= { attempts: 0, correct: 0, accuracy: 0 };
+    cat.attempts++;
+    if (attempt.success) cat.correct++;
+    cat.accuracy = Math.round((cat.correct / cat.attempts) * 100);
+    if (cat.accuracy < 75) weak.add(category);
+    else if (cat.accuracy >= 80) weak.delete(category);
+
+    const seen = index + 1;
+    const step = seen < 3 ? 0 : successes / seen >= 0.85 && compromised === 0 ? 1 : compromised >= 2 ? -1 : 0;
+    difficulty = levels[Math.min(2, Math.max(0, levels.indexOf(difficulty) + step))];
+  }
+
+  return {
+    stats: { total: scored.length, successes, compromised },
+    vulnerability: {
+      weakCategories: [...weak],
+      vulnerableTactics: [...tacticMisses].sort((a, b) => b[1] - a[1]).map(([tactic]) => tactic),
+      categoryAccuracy,
+    },
+    difficulty,
+  };
+}

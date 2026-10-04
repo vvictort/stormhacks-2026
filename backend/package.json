@@ -8,9 +8,7 @@
     "start": "node --import tsx app/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
-    "migrate": "node --import tsx app/db/migrate.ts",
-    "test:call": "tsx test_call.ts",
-    "test:report": "tsx test_comms_report.ts"
+    "migrate": "node --import tsx app/db/migrate.ts"
   },
   "dependencies": {
     "@google/genai": "^2.3.0",
