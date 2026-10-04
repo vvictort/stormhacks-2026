@@ -7,6 +7,8 @@ import { requireAuth, type VerifyToken } from './http/auth.ts';
 import { AppError, errorHandler } from './http/errors.ts';
 import type { Repositories } from './repositories.ts';
 import type { ScenarioCatalog } from './scenarios/catalog.ts';
+import { emailScenariosRouter } from './scenarios/email.routes.ts';
+import { geminiJson, type JsonModel } from './scenarios/gemini.ts';
 import { scenarioListRouter, scenariosRouter } from './scenarios/scenarios.routes.ts';
 import { linkRouter, textStream, textsRouter } from './texts/routes.ts';
 import type { TextService } from './texts/service.ts';
@@ -25,12 +27,14 @@ export interface AppOptions {
   origin: string;
   verifyToken?: VerifyToken;
   geminiApiKey?: string;
+  /** Tests inject a fake structured-output model; otherwise Gemini when a key is set. */
+  jsonModel?: JsonModel;
 }
 
 const notFound = () => { throw new AppError(404, 'NOT_FOUND', 'Route not found.'); };
 
 /** HTTP assembly only: shared middleware, then each feature's router. */
-export function createApp({ repos, services, origin, verifyToken, geminiApiKey }: AppOptions) {
+export function createApp({ repos, services, origin, verifyToken, geminiApiKey, jsonModel = geminiApiKey ? geminiJson(geminiApiKey) : undefined }: AppOptions) {
   const { catalog, texts, calls } = services;
   const app = express();
   app.disable('x-powered-by');
@@ -42,6 +46,7 @@ export function createApp({ repos, services, origin, verifyToken, geminiApiKey }
   const auth = requireAuth(verifyToken);
   app.use('/api/users', auth, usersRouter(repos.users));
   app.use('/api/training/call-scenarios', auth, scenariosRouter(repos, { geminiApiKey }));
+  app.use('/api/training/email-scenarios', auth, emailScenariosRouter(repos, { model: jsonModel }));
   app.use('/api/training', auth, trainingRouter(repos.attempts));
 
   // Simulated texts and calls. The scenario list and tracked links are public; the SSE stream alone takes ?access_token=.
