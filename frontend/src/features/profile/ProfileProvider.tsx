@@ -12,7 +12,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!uid || initializing) return
     const controller = new AbortController()
-    api<UserProfile>('/users/me', { signal: controller.signal }).then((profile) => {
+    api<UserProfile>('/users/me', { signal: controller.signal }, uid).then((profile) => {
       if (!controller.signal.aborted) setState({ uid, profile, loading: false, error: null })
     }).catch(() => {
       if (!controller.signal.aborted) setState({ uid, profile: null, loading: false, error: 'We couldn’t load your profile. Please try again.' })
@@ -26,7 +26,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     error: uid && matches ? state.error : null,
     retry: () => { setState({ uid, profile: null, loading: true, error: null }); setRetryCount((count) => count + 1) },
     save: async (input) => {
-      const profile = await api<UserProfile>('/users/me', { method: 'PUT', body: JSON.stringify(input) })
+      if (!uid) throw new Error('Not signed in')
+      const profile = await api<UserProfile>('/users/me', { method: 'PUT', body: JSON.stringify(input) }, uid)
       setState({ uid, profile, loading: false, error: null })
     },
   }}>{children}</ProfileContext.Provider>
