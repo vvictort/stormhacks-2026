@@ -43,7 +43,8 @@ export function instinctsView(m: Metrics | null): { rows: InstinctRow[]; improve
     const before = then?.avgDetectionMs ?? null
     rows.push(before === null
       ? { label: 'Time to decide', now: seconds(now.avgDetectionMs) }
-      : { label: 'Time to decide', then: seconds(before), now: seconds(now.avgDetectionMs), better: now.avgDetectionMs < before })
+      // Faster only counts as better when the right-call rate didn't fall with it.
+      : { label: 'Time to decide', then: seconds(before), now: seconds(now.avgDetectionMs), better: now.avgDetectionMs < before && (now.accuracy ?? 0) >= (then?.accuracy ?? 0) })
   }
   if (now.accuracy !== null) {
     const before = then?.accuracy ?? null

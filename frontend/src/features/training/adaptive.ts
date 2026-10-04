@@ -112,12 +112,14 @@ export function learned(before: Snapshot, after: Snapshot, attemptId: string): L
   }
   const mBefore = before.metrics?.avgDetectionMs
   const mAfter = after.metrics?.avgDetectionMs
-  if (mBefore && mAfter && mAfter < mBefore) {
+  const accBefore = before.metrics?.accuracy
+  const accAfter = after.metrics?.accuracy
+  // Deciding faster isn't an improvement when the run lowered the right-call rate (falling for it faster).
+  const accuracyDropped = typeof accBefore === 'number' && typeof accAfter === 'number' && accAfter < accBefore
+  if (mBefore && mAfter && mAfter < mBefore && !accuracyDropped) {
     const pct = Math.round((1 - mAfter / mBefore) * 100)
     if (pct >= 1) lines.push(`Your average time to decide improved by ${pct}% (${seconds(mBefore)} → ${seconds(mAfter)}).`)
   }
-  const accBefore = before.metrics?.accuracy
-  const accAfter = after.metrics?.accuracy
   if (typeof accBefore === 'number' && typeof accAfter === 'number' && accBefore !== accAfter) lines.push(`Right calls overall: ${accBefore}% → ${accAfter}%.`)
 
   if (lines.length === 0) {

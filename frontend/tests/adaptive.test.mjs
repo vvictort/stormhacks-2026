@@ -45,8 +45,10 @@ test('learned reports only real before/after changes', () => {
     'Difficulty increased to Medium.',
     'Your focus moved to bank scams.',
     'Bank scams: right calls 100% → 50%.',
-    'Your average time to decide improved by 21% (10.0s → 7.9s).',
+    'Right calls overall: 100% → 75%.',
   ])
+  // Faster with accuracy held (or up) is an improvement; faster while falling for it isn't.
+  assert.ok(learned({ ...before, metrics: metrics({ avgDetectionMs: 10000, accuracy: 75 }) }, after, 'run-1').lines.includes('Your average time to decide improved by 21% (10.0s → 7.9s).'))
   assert.deepEqual(view.insight, after.insight)
   assert.equal(view.next.title, 'A bank email, made for you')
 

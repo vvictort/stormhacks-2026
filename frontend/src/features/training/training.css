@@ -89,6 +89,7 @@
 .scenario-meta { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--color-muted-strong); }
 .scenario-generated { margin-top: 10px; max-width: 46ch; font-size: 14px; line-height: 1.55; color: var(--color-muted-strong); text-wrap: pretty; }
 .scenario-generated strong { color: var(--color-primary-strong); font-weight: 600; }
+.scenario-generated .scenario-source { display: block; margin-top: 4px; font-size: 13px; color: var(--color-muted-strong); }
 .scenario-situation { margin-top: 18px; max-width: 46ch; padding: 14px 16px; border-radius: 10px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 15px; line-height: 1.55; }
 .scenario-situation strong { font-weight: 600; }
 .scenario-panel { grid-area: panel; padding-top: 28px; min-width: 0; }

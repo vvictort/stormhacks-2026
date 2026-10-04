@@ -75,6 +75,8 @@ test('the instincts card shows then → now, the most improved category and an h
   const slower = instinctsView(metrics({ trend: { window: 1, then: { accuracy: 100, avgDetectionMs: 5000 }, now: { accuracy: 0, avgDetectionMs: null } } }))
   assert.deepEqual(slower.rows.slice(0, 1), [{ label: 'Right calls', then: '100%', now: '0%', better: false }])
   assert.equal(slower.note, 'Your first scenario against your latest.')
+  const fasterButWrong = instinctsView(metrics({ trend: { window: 2, then: { accuracy: 100, avgDetectionMs: 9500 }, now: { accuracy: 0, avgDetectionMs: 500 } } }))
+  assert.equal(fasterButWrong.rows[0].better, false, 'falling for it faster is not better')
   assert.equal(seconds(14_249), '14.2s')
   assert.equal(categoryLabel('account_security'), 'account security scams')
 })

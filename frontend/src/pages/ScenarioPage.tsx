@@ -52,7 +52,13 @@ function ScenarioIntro({ scenario }: { scenario: Scenario }) {
       <TransitionLink direction="back" className="train-back" to="/home"><ArrowLeft size={16} aria-hidden="true" />All scenarios</TransitionLink>
       <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
       <p className="scenario-meta"><Icon size={15} aria-hidden="true" /> {label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
-      {scenario.generated && <p className="scenario-generated"><strong>Generated for your training profile.</strong> {scenario.generated.reason}</p>}
+      {scenario.generated && (
+        <p className="scenario-generated">
+          <strong>Generated for your training profile.</strong> {scenario.generated.reason}
+          {/* Honest source line: only when Gemini really wrote it (the fallback is a built-in template). */}
+          {scenario.generated.source === 'gemini' && <span className="scenario-source">Written by Gemini</span>}
+        </p>
+      )}
       <p className="scenario-situation"><strong>What you know:</strong> {scenario.situation}</p>
     </div>
   )
