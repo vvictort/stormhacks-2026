@@ -4,11 +4,15 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { spring } from '../../../lib/motion'
 import { markFor, markText, siteOf, type Indicator, type SmsMessage, type SmsScenario } from '../scenarios'
 
+import { FlaggableText } from './FlaggableText.tsx'
+
 interface ThreadProps {
   scenario: SmsScenario
   /** After a decision, indicators are marked in the text. */
   revealed: boolean
   onInspect: (target: 'link' | 'sender', url?: string) => void
+  flaggedPhrases?: string[]
+  onToggleFlag?: (phrase: string) => void
 }
 
 /** How many messages have "arrived". Each one is preceded by a typing indicator, like a real phone. */
@@ -23,7 +27,7 @@ function useArrivals(total: number, instant: boolean) {
   return instant ? total : arrived
 }
 
-export function MessageThread({ scenario, revealed, onInspect }: ThreadProps) {
+export function MessageThread({ scenario, revealed, onInspect, flaggedPhrases, onToggleFlag }: ThreadProps) {
   const indicators = revealed ? scenario.indicators : []
   const clueLabel = scenario.correctAction === 'report' ? 'red flag' : 'good sign'
   const reduce = useReducedMotion()
@@ -37,7 +41,15 @@ export function MessageThread({ scenario, revealed, onInspect }: ThreadProps) {
       <ol className="sms-list" aria-live="polite">
         <AnimatePresence initial={false}>
           {scenario.messages.slice(0, arrived).map((message, i) => (
-            <MessageBubble key={i} message={message} indicators={indicators} clueLabel={clueLabel} onInspect={onInspect} />
+            <MessageBubble
+              key={i}
+              message={message}
+              indicators={indicators}
+              clueLabel={clueLabel}
+              onInspect={onInspect}
+              flaggedPhrases={flaggedPhrases}
+              onToggleFlag={onToggleFlag}
+            />
           ))}
           {typing && (
             <m.li key="typing" className="sms-typing" aria-hidden="true" layout
@@ -57,13 +69,24 @@ interface BubbleProps {
   indicators: Indicator[]
   clueLabel: string
   onInspect: ThreadProps['onInspect']
+  flaggedPhrases?: string[]
+  onToggleFlag?: (phrase: string) => void
 }
 
-export function MessageBubble({ message, indicators, clueLabel, onInspect }: BubbleProps) {
+export function MessageBubble({ message, indicators, clueLabel, onInspect, flaggedPhrases, onToggleFlag }: BubbleProps) {
   return (
     // Grows out of the typing indicator's corner.
     <m.li className="sms-bubble" layout initial={{ opacity: 0, scale: 0.7, y: 6 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={spring}>
-      <p><Marked text={message.text} indicators={indicators} clueLabel={clueLabel} /></p>
+      <p>
+        <FlaggableText
+          text={message.text}
+          revealed={Boolean(indicators.length)}
+          indicators={indicators}
+          clueLabel={clueLabel}
+          flaggedPhrases={flaggedPhrases}
+          onToggleFlag={onToggleFlag}
+        />
+      </p>
       {message.link && <LinkPreview url={message.link} mark={markFor(message.link, indicators)} clueLabel={clueLabel} onInspect={onInspect} />}
     </m.li>
   )

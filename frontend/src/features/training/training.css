@@ -21,12 +21,12 @@
 .train-notice-dismiss { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; margin: -11px -10px -11px 0; border-radius: 8px; color: inherit; }
 .train-notice-dismiss:hover { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
 
-/* ---------- Home: one column, three tabs (Practice, History, Insights) ---------- */
+/* ---------- Home: one column, three tabs (Practice, Library, Insights) ---------- */
 .home-main { width: min(680px, calc(100% - 48px)); margin: 24px auto 72px; }
 .home-title { margin: 8px 0 22px; font-family: var(--font-editorial); font-size: clamp(32px, 3.4vw, 42px); font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
 .home-title:focus { outline: none; }
 
-/* Segmented control: the home tabs and History's channel filter. */
+/* Segmented control: the home tabs and Library's channel filter. */
 .segmented { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--color-foreground) 6%, transparent); }
 .segmented button { flex: 1; min-height: 40px; padding: 0 12px; border-radius: 9px; color: var(--color-muted-strong); font-size: 14px; font-weight: 600; white-space: nowrap; }
 .segmented button:hover:not([aria-selected="true"], [aria-pressed="true"]) { color: var(--color-foreground); }
@@ -172,8 +172,14 @@
 .clue-tip strong { display: flex; align-items: center; gap: 2px; margin-bottom: 4px; font-size: 14px; font-weight: 600; }
 .clue-num { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-right: 3px; padding: 0 4px; border-radius: 9px; background: var(--color-primary-strong); color: var(--color-surface); font-size: 11px; font-weight: 700; line-height: 1; vertical-align: 2px; text-decoration: none; font-variant-numeric: tabular-nums; }
 .sms-link.is-marked { background: color-mix(in srgb, var(--color-primary) 18%, transparent); border-radius: 4px; }
-.is-safe-scenario .clue, .is-safe-scenario .sms-link.is-marked { background: color-mix(in srgb, var(--color-success) 26%, transparent); text-decoration-color: var(--color-success-strong); }
 .is-safe-scenario .clue-num { background: var(--color-success-strong); }
+
+/* Tap-to-flag interactive phrases */
+.flaggable-phrase { display: inline; padding: 1px 4px; border-radius: 4px; cursor: pointer; transition: background-color var(--motion-quick) var(--ease-out-quint); outline: 1px dashed transparent; }
+.flaggable-phrase:hover { background: color-mix(in srgb, var(--color-accent) 18%, transparent); outline-color: color-mix(in srgb, var(--color-accent) 40%, transparent); }
+.flaggable-phrase.is-flagged { background: color-mix(in srgb, var(--color-accent) 30%, transparent); outline: 1px solid var(--color-accent-strong); font-weight: 500; }
+.flaggable-phrase:focus-visible { outline: 2px solid var(--color-primary-strong); outline-offset: 1px; }
+.flaggable-phrase .flag-icon { display: inline; vertical-align: -1px; margin-right: 3px; color: var(--color-accent-strong); }
 
 /* Mail app: subject, a sender you can expand, then the body. */
 .email-bar { min-height: 44px; gap: 2px; padding-block: 4px; font-size: 15px; color: #1F5C99; }
@@ -199,8 +205,17 @@
 .phone-actions button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--color-control); background: var(--color-surface); box-shadow: 0 1px 2px #2525250f; color: #252525; font-size: 15px; font-weight: 600; line-height: 1.2; transition: background-color var(--motion-quick) var(--ease-out-quint), border-color var(--motion-quick) var(--ease-out-quint), scale var(--motion-quick) var(--ease-out-quint); }
 .phone-actions button:hover { background: #fff; border-color: var(--color-muted-strong); }
 .phone-actions button:active { scale: calc(1 - 0.03 * var(--motion-scale)); }
-.phone-actions button:focus-visible { outline-offset: 2px; }
-.phone-decided { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 18px 14px 22px; border-top: 1px solid #E7E1D7; font-size: 15px; font-weight: 600; color: #252525; text-align: center; }
+.phone-actions-hint { text-align: center; margin-bottom: 8px; font-size: 12px; font-weight: 500; color: var(--color-muted-strong); }
+.phone-decision-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.phone-conf-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.phone-conf-head p { margin: 0; font-size: 13px; font-weight: 600; color: #5A4F43; }
+.phone-change-btn { font-size: 12px; }
+.phone-conf-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.phone-conf-buttons button { min-height: 44px; padding: 6px 4px; font-size: 13px; font-weight: 600; border-radius: 12px; border: 1px solid var(--color-control); background: var(--color-surface); color: var(--color-foreground); }
+.phone-conf-buttons button:hover { background: #fff; border-color: var(--color-muted-strong); }
+.phone-decided { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 16px 14px 20px; border-top: 1px solid #E7E1D7; font-size: 15px; font-weight: 600; color: #252525; text-align: center; }
+.phone-decided p { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.phone-decided-conf { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: var(--color-muted-strong); }
 .phone-decided.is-report svg { color: var(--color-danger-strong); }
 .phone-decided.is-safe svg { color: var(--color-success-strong); }
 
@@ -211,6 +226,8 @@
 .debrief-verdict h2 { margin: 0; font-family: var(--font-editorial); font-size: 30px; font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
 .debrief-verdict h2:focus { outline: none; }
 .debrief-lede { margin-top: 10px; max-width: 60ch; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); text-wrap: pretty; }
+.debrief-confidence { margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: var(--color-muted-strong); }
+.debrief-confidence strong { color: var(--color-foreground); }
 .debrief h3 { margin: 28px 0 2px; font-size: 15px; font-weight: 600; }
 .debrief-hint { font-size: 13px; color: var(--color-muted-strong); }
 .debrief-clues { display: grid; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
@@ -233,7 +250,15 @@
 .debrief-next p { font-size: 14px; line-height: 1.55; }
 .debrief-tip { display: flex; align-items: flex-start; gap: 10px; margin-top: 20px; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); font-size: 14px; line-height: 1.5; }
 .debrief-tip > svg { flex-shrink: 0; margin-top: 2px; color: var(--color-accent-strong); }
-.debrief-habit { display: flex; align-items: center; gap: 6px; width: fit-content; margin-top: 16px; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface)); color: var(--color-success-strong); font-size: 13px; font-weight: 500; }
+.debrief-habit { display: flex; align-items: center; gap: 6px; width: fit-content; margin-top: 8px; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface)); color: var(--color-success-strong); font-size: 13px; font-weight: 500; }
+.debrief-habits { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; }
+.debrief-flag-score { margin-top: 18px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-surface); }
+.debrief-flag-score h4 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--color-muted-strong); text-transform: uppercase; letter-spacing: 0.04em; }
+.flag-score-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.flag-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.flag-chip.is-caught { background: color-mix(in srgb, var(--color-success) 16%, var(--color-surface)); color: var(--color-success-strong); border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent); }
+.flag-chip.is-missed { background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface)); color: var(--color-danger-strong); border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent); }
+.flag-chip.is-wrong { background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface)); color: var(--color-accent-strong); border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent); }
 .debrief-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
 
 /* ---------- Motion: one arrival, one reveal ---------- */
@@ -302,3 +327,28 @@ p.call-loading { flex-direction: row; gap: 8px; }
 .caught-lede { margin-top: 18px; font-size: 16px; line-height: 1.65; color: var(--color-muted-strong); }
 .caught-main h2 { margin: 32px 0 0; font-size: 16px; font-weight: 600; }
 @media (max-width: 540px) { .caught-mascot { width: 56px; height: 56px; } }
+
+/* Keep decision controls visible while the message scrolls, including at 200% zoom. */
+.phone-screen { min-height: 0; }
+.phone-actions, .phone-decided { flex-shrink: 0; }
+.phone-actions-hint span { display: inline-flex; align-items: center; gap: 5px; }
+.phone-conf-buttons { flex-wrap: wrap; }
+.phone-conf-buttons > button { min-height: 44px; }
+.scenario-meta { flex-wrap: wrap; }
+@media (max-width: 540px) {
+  .scenario-main { width: calc(100% - 24px); }
+  .phone { padding: 5px; border-radius: 28px; box-shadow: 0 10px 26px -16px #3a2a1e59; }
+  .phone-screen { border-radius: 23px; }
+  .phone-decision-buttons { flex-wrap: wrap; }
+  .phone-decision-buttons button { white-space: normal; min-height: 46px; flex: 1 1 110px; }
+  .train-primary, .train-ghost { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .debrief-clues > li, .email-view, .sms-typing span { animation: none; }
+}
+.phone-actions > .phone-actions-hint { display: block; }
+.phone-actions > .phone-conf-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.phone-actions > .phone-conf-buttons { display: flex; flex-wrap: wrap; }
+.phone-conf-buttons > button { flex: 1 1 70px; }
+.phone-actions .phone-change-btn { box-shadow: none; padding: 4px 8px; font-size: 12px; min-height: 44px; background: transparent; border: 0; }
+@media (max-width: 540px) { .phone-actions > .phone-decision-buttons { display: flex; flex-wrap: wrap; } }

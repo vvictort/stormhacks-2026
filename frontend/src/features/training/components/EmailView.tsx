@@ -1,19 +1,31 @@
 import { ChevronDown, ChevronLeft, Paperclip } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 import { markFor, type EmailScenario } from '../scenarios'
-import { LinkPreview, Marked } from './SmsThread'
+import { FlaggableText } from './FlaggableText.tsx'
+import { LinkPreview } from './SmsThread.tsx'
 
 interface EmailViewProps {
   scenario: EmailScenario
   /** After a decision, indicators are marked and sender details open. */
   revealed: boolean
   onInspect: (target: 'link' | 'sender', url?: string) => void
+  flaggedPhrases?: string[]
+  onToggleFlag?: (phrase: string) => void
 }
 
-export function EmailView({ scenario, revealed, onInspect }: EmailViewProps) {
+export function EmailView({ scenario, revealed, onInspect, flaggedPhrases, onToggleFlag }: EmailViewProps) {
   const indicators = revealed ? scenario.indicators : []
   const clueLabel = scenario.correctAction === 'report' ? 'red flag' : 'good sign'
-  const mark = (text: string) => <Marked text={text} indicators={indicators} clueLabel={clueLabel} />
+  const mark = (text: string) => (
+    <FlaggableText
+      text={text}
+      revealed={revealed}
+      indicators={indicators}
+      clueLabel={clueLabel}
+      flaggedPhrases={flaggedPhrases}
+      onToggleFlag={onToggleFlag}
+    />
+  )
 
   return (
     <>

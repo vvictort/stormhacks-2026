@@ -82,7 +82,7 @@ export function NextForYou({ adaptive, localLevel, loading }: { adaptive: Adapti
 }
 
 /** After a debrief: what changed in Tellio's picture of this user, compared with before the run, and the next step. */
-export function LearnedPanel({ learning, attemptId }: { learning: Learning; attemptId: string }) {
+export function LearnedPanel({ learning, attemptId, withActions = true }: { learning: Learning; attemptId: string; withActions?: boolean }) {
   if (learning.status === 'loading' || learning.status === 'off') return null
   const view = learning.status === 'ready' ? learned(learning.before, learning.after, attemptId) : null
   const difficulty = view?.next.difficulty ?? learning.before.adaptive?.difficulty ?? 'easy'
@@ -106,7 +106,7 @@ export function LearnedPanel({ learning, attemptId }: { learning: Learning; atte
               <p className="learned-next">Next up: <strong>{view.next.title.replace(/, made for you$/, '')}</strong> · {levelName(view.next.difficulty)}</p>
             </>
           )}
-      {learning.status !== 'waiting' && <MadeForYouActions difficulty={difficulty} label="Next scenario made for you" />}
+      {withActions && learning.status !== 'waiting' && <MadeForYouActions difficulty={difficulty} label="Next scenario made for you" />}
     </section>
   )
 }

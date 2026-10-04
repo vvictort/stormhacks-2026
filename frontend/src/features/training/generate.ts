@@ -16,6 +16,6 @@ export async function generateScenario(api: Api, channel: 'email' = 'email'): Pr
     // lib/authenticatedRequest reports the status at the end of the message.
     throw new Error(/ 429$/.test((error as Error)?.message ?? '')
       ? "You've made a lot of practice emails just now. Take a short break, then try again."
-      : "We couldn't write a new email just now. Try again in a moment, or pick a scenario from your path.", { cause: error })
+      : "We couldn't write a new email just now. Try again in a moment, or choose a practice scenario from the Library.", { cause: error })
   }
 }

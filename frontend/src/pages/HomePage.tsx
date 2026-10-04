@@ -7,7 +7,8 @@ import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { InstinctsCard } from '../features/insights/InstinctsCard'
 import { ScamProfileCard } from '../features/insights/ScamProfileCard'
-import { NextForYou } from '../features/training/components/NextForYou'
+import { MadeForYouActions } from '../features/training/components/NextForYou'
+import { MissionCard } from '../features/training/components/MissionCard'
 import { PathStop, PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { channelStats, currentLevel, recommend, summarize, timeline, type Progress } from '../features/training/progress'
@@ -15,7 +16,7 @@ import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
 
-const tabs = [{ id: 'practice', label: 'Practice' }, { id: 'history', label: 'History' }, { id: 'insights', label: 'Insights' }] as const
+const tabs = [{ id: 'practice', label: 'Practice' }, { id: 'library', label: 'Library' }, { id: 'insights', label: 'Insights' }] as const
 type Tab = (typeof tabs)[number]['id']
 
 export function HomePage() {
@@ -23,7 +24,7 @@ export function HomePage() {
   const { profile } = useProfile()
   const { progress, callSync, adaptive } = useProgress(user?.uid)
   const [params, setParams] = useSearchParams()
-  const tab: Tab = tabs.find((t) => t.id === params.get('tab'))?.id ?? 'practice'
+  const tab: Tab = tabs.find((t) => t.id === (params.get('tab') === 'history' ? 'library' : params.get('tab')))?.id ?? 'practice'
   const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
   const next = recommend(progress)
   const all = timeline(progress)
@@ -77,12 +78,17 @@ export function HomePage() {
                   <button type="button" className="train-notice-dismiss" onClick={dismissProfileWarning} aria-label="Dismiss this message"><X size={18} aria-hidden="true" /></button>
                 </div>
               )}
-              <NextForYou adaptive={adaptive} localLevel={currentLevel(progress)} loading={callSync === 'loading'} />
+              <MissionCard key={user?.uid} uid={user?.uid} progress={progress} adaptive={adaptive} difficulty={currentLevel(progress)} loading={callSync === 'loading'} />
+              <section className="home-standalone" aria-labelledby="standalone-title">
+                <h2 id="standalone-title">Just one scenario?</h2>
+                <MadeForYouActions difficulty={adaptive?.difficulty ?? currentLevel(progress)} label="Practise an email" withCall />
+                <TransitionLink className="text-link mission-review" to="/home?tab=library&channel=sms">Browse text messages<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
+              </section>
               {next && (
                 <section className="home-upnext" aria-labelledby="upnext-title">
                   <div className="home-section-head">
-                    <h2 id="upnext-title">On your path</h2>
-                    <button type="button" className="text-link" onClick={() => show('history')}>See all<ArrowRight size={14} aria-hidden="true" /></button>
+                    <h2 id="upnext-title">From the library</h2>
+                    <button type="button" className="text-link" onClick={() => show('library')}>Browse all<ArrowRight size={14} aria-hidden="true" /></button>
                   </div>
                   <ol className="path-stops"><PathStop scenario={next} progress={progress} upNext /></ol>
                 </section>
@@ -90,11 +96,11 @@ export function HomePage() {
             </>
           )}
 
-          {tab === 'history' && <PracticePath progress={progress} />}
+          {tab === 'library' && <PracticePath progress={progress} />}
 
           {tab === 'insights' && (
             <>
-              <ResultsSummary progress={progress} saved={callSync !== 'unavailable'} onMissed={() => setParams({ tab: 'history', status: 'missed' }, { replace: true })} />
+              <ResultsSummary progress={progress} saved={callSync !== 'unavailable'} onMissed={() => setParams({ tab: 'library', status: 'missed' }, { replace: true })} />
               <InstinctsCard uid={user?.uid} />
               <ScamProfileCard uid={user?.uid} />
               {flagsSeen.length > 0 && (

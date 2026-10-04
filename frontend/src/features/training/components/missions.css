@@ -1,0 +1,80 @@
+.mission-card { margin-top: 20px; padding: 26px; border: 1px solid color-mix(in srgb, var(--color-primary) 32%, var(--color-border)); border-radius: 22px; background: radial-gradient(ellipse at top right, #eee4cf 0, transparent 62%), var(--color-surface); }
+.mission-card.is-complete { border-color: var(--color-success); background: radial-gradient(ellipse at top right, #e0e8d9 0, transparent 62%), var(--color-surface); }
+.mission-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mission-eyebrow { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.5; color: var(--color-primary-strong); }
+.mission-eyebrow svg { flex-shrink: 0; }
+.mission-card h2 { margin: 10px 0 0; font-family: var(--font-editorial); font-weight: 400; font-size: clamp(28px, 4vw, 36px); line-height: 1.12; letter-spacing: -.025em; }
+.mission-mascot { flex-shrink: 0; width: 90px; height: 90px; }
+.mission-objective { margin-top: 12px; max-width: 42ch; color: var(--color-muted-strong); font-size: 15px; line-height: 1.6; }
+.mission-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 20px 0; font-size: 13px; color: var(--color-muted-strong); }
+.mission-progress ol { display: flex; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.mission-progress li { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-control); font-size: 13px; font-weight: 600; background: var(--color-surface); }
+.mission-progress li > span { display: flex; }
+.mission-progress .is-current { color: var(--color-primary-strong); border: 2px solid var(--color-primary-strong); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent); }
+.mission-progress .is-done { color: var(--color-surface); background: var(--color-success-strong); border-color: var(--color-success-strong); }
+.mission-focus { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13px; line-height: 1.5; color: var(--color-muted-strong); }
+.mission-focus > span:last-child { padding: 3px 9px; border-radius: 999px; background: var(--color-background); color: var(--color-foreground); }
+.mission-start { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 20px; }
+.mission-start > span { display: inline-flex; align-items: center; gap: 5px; color: var(--color-muted-strong); font-size: 12px; }
+.mission-loading, .mission-error { font-size: 13px; line-height: 1.6; color: var(--color-muted-strong); }
+.mission-loading:not(:empty), .mission-error { margin-top: 12px; }
+.mission-error { color: var(--color-danger-strong); }
+.mission-fallback { margin-top: 8px; min-height: 44px; }
+.mission-saved { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--color-border); color: var(--color-muted-strong); font-size: 12px; line-height: 1.6; }
+.badge-collection { margin-top: 26px; }
+.badge-collection .home-section-head { flex-wrap: wrap; }
+.badge-collection .home-section-head > span { font-size: 12px; color: var(--color-muted-strong); }
+.badge-collection ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0; list-style: none; margin: 12px 0 0; }
+.badge-collection li { padding: 14px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.badge-icon { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 10px; border: 1px dashed var(--color-control); border-radius: 50%; color: var(--color-muted-strong); background: var(--color-background); }
+.is-earned .badge-icon { background: #efe3c7; color: var(--color-accent-strong); border: 1px solid var(--color-accent); }
+.badge-collection strong { display: block; font-size: 14px; }
+.badge-status { display: block; margin-top: 3px; font-size: 11px; color: var(--color-muted-strong); }
+.is-earned .badge-status { color: var(--color-success-strong); }
+.badge-collection p { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--color-muted-strong); }
+.new-badges { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--color-accent); border-radius: 12px; background: #f4ecd9; }
+.new-badges p { display: flex; align-items: flex-start; gap: 8px; color: var(--color-accent-strong); font-size: 13px; line-height: 1.6; }
+.new-badges svg { flex-shrink: 0; margin-top: 3px; }
+.new-badges strong { display: block; }
+.mission-review { min-height: 44px; margin-top: 8px; }
+.mission-run { margin-top: 14px; }
+.mission-run .mission-progress { margin-block: 10px; }
+.mission-run > p { font-size: 13px; color: var(--color-muted-strong); }
+.practice-tip { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; margin-top: 16px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); font-size: 13px; line-height: 1.6; }
+.practice-tip p { flex: 1; }
+.practice-tip .text-link { min-height: 44px; flex-shrink: 0; }
+.debrief-more { margin-top: 20px; }
+.debrief-more > summary { min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--color-muted-strong); }
+.debrief-more > p { font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); margin-top: 10px; }
+.home-standalone { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--color-border); }
+.home-standalone h2 { font-size: 13px; color: var(--color-muted-strong); }
+.home-standalone .train-primary { background: transparent; color: var(--color-foreground); border: 1px solid var(--color-control); box-shadow: none; }
+.home-standalone .train-primary:hover { background: var(--color-surface); }
+@media (prefers-reduced-motion: no-preference) {
+  .mission-mascot.is-waving { transform-origin: 50% 85%; animation: tell-wave 900ms ease-out 1; }
+  .mission-mascot.is-celebrating, .new-badges { animation: mission-celebrate 450ms var(--ease-out-quint) 1; }
+}
+@keyframes tell-wave { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 55% { transform: rotate(7deg); } 80% { transform: rotate(-3deg); } }
+@keyframes mission-celebrate { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (max-width: 540px) {
+  .mission-card { padding: 18px; border-radius: 18px; }
+  .mission-mascot { width: 64px; height: 64px; }
+  .mission-start > button { width: 100%; white-space: normal; }
+  .badge-collection ul { grid-template-columns: minmax(0, 1fr); }
+  .badge-collection li { display: flex; align-items: flex-start; gap: 12px; padding: 12px; }
+  .badge-icon { flex-shrink: 0; margin: 0; }
+  .badge-status { display: inline; margin-left: 8px; }
+  .badge-collection strong { display: inline; }
+  .badge-collection p { margin-top: 3px; }
+  .mission-eyebrow { font-size: 11px; }
+  .practice-tip { flex-wrap: wrap; }
+  .practice-tip .text-link { margin-left: auto; }
+}
+.debrief-mission-complete { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface)); color: var(--color-success-strong); font-size: 14px; line-height: 1.5; }
+.debrief-mission-complete > svg { flex-shrink: 0; margin-top: 2px; }
+.debrief-mission-complete strong { display: block; }
+
+.debrief-more > summary { justify-content: space-between; border-bottom: 1px solid var(--color-border); }
+.debrief-more > summary svg { flex-shrink: 0; transition: transform var(--motion-quick) var(--ease-out-quint); }
+.debrief-more[open] > summary svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .debrief-more > summary svg { transition: none; } }
