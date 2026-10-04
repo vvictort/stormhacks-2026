@@ -77,13 +77,13 @@ export function Marked({ text, indicators, clueLabel }: { text: string; indicato
 }
 
 function Clue({ n, label, children }: { n: number; label: string; children: string }) {
-  // Keep the number with the first word so it never sits alone at a line end.
-  const space = children.indexOf(' ')
-  const head = space < 0 ? children : children.slice(0, space)
+  // Glue the number to the first character only: there's no break inside a word anyway, and a long
+  // unbroken mark (an email address) can still wrap instead of overflowing the phone.
+  const [first = '', ...rest] = Array.from(children)
   return (
     <mark className="clue">
-      <span className="clue-head"><span className="clue-num" aria-hidden="true">{n}</span>{head}</span>
-      {space < 0 ? '' : children.slice(space)}
+      <span className="clue-head"><span className="clue-num" aria-hidden="true">{n}</span>{first}</span>
+      {rest.join('')}
       <span className="sr-only"> ({label} {n})</span>
     </mark>
   )
