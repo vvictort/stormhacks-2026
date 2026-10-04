@@ -1,6 +1,7 @@
-import { ArrowRight, CircleCheck, Lightbulb } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { Mascot } from '../../../components/Mascot'
 import type { Action, Scenario } from '../scenarios'
 
 interface DebriefProps {
@@ -24,7 +25,7 @@ export function Debrief({ scenario, choice, inspected, next }: DebriefProps) {
   return (
     <section className={`debrief ${correct ? 'is-correct' : 'is-missed'}${isScam ? '' : ' is-safe-scenario'}`} aria-labelledby="debrief-title">
       <div className="debrief-verdict">
-        {correct ? <CircleCheck size={22} aria-hidden="true" /> : <Lightbulb size={22} aria-hidden="true" />}
+        <Mascot className="debrief-mascot" mood={correct ? 'happy' : isScam ? 'alert' : 'curious'} />
         <h2 id="debrief-title" ref={heading} tabIndex={-1}>{title}</h2>
       </div>
       <p className="debrief-lede">{scenario.explanation}</p>

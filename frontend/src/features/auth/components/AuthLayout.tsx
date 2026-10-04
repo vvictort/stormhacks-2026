@@ -1,7 +1,7 @@
 import { ShieldCheck } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 import { Brand } from '../../../components/Brand'
-import { SecurityIllustration } from './SecurityIllustration'
+import { Mascot } from '../../../components/Mascot'
 
 export function AuthLayout() {
   return (
@@ -15,12 +15,7 @@ export function AuthLayout() {
         <section className="editorial" aria-labelledby="editorial-title">
           <p id="editorial-title" className="editorial-title">A little practice.<br />A <em>sharper instinct.</em></p>
           <p className="editorial-description text-muted-strong">Tellio sends scam texts, emails and calls to a practice phone in your browser, so you learn the warning signs before a real one reaches you.</p>
-          <SecurityIllustration />
-          <ol className="how-it-works">
-            <li><strong>A message arrives.</strong> <span className="text-muted-strong">A text, email or call, written like a real scam.</span></li>
-            <li><strong>You respond.</strong> <span className="text-muted-strong">Reply, tap the link, ignore it or hang up. Nothing real happens.</span></li>
-            <li><strong>See the red flags.</strong> <span className="text-muted-strong">Then on to the next one, matched to how you did.</span></li>
-          </ol>
+          <Mascot className="auth-mascot" />
         </section>
 
         <div id="auth-content" className="auth-column" tabIndex={-1}>

@@ -144,10 +144,8 @@
 
 /* ---------- Debrief ---------- */
 .debrief { max-width: 520px; }
-.debrief-verdict { display: flex; align-items: flex-start; gap: 10px; }
-.debrief-verdict > svg { flex-shrink: 0; margin-top: 7px; }
-.is-correct .debrief-verdict > svg { color: var(--color-success-strong); }
-.is-missed .debrief-verdict > svg { color: var(--color-accent-strong); }
+.debrief-verdict { display: flex; align-items: center; gap: 12px; }
+.debrief-mascot { flex-shrink: 0; width: 64px; height: 64px; }
 .debrief-verdict h2 { margin: 0; font-family: var(--font-editorial); font-size: 30px; font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
 .debrief-verdict h2:focus { outline: none; }
 .debrief-lede { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
