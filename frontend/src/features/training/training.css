@@ -79,15 +79,15 @@
 .home-recent .is-missed { background: var(--color-accent-strong); }
 
 /* History: filters, then a flat list of scenario rows (also the Practice tab's "On your path" row). */
-.path { padding-top: 12px; }
-.path-filters { display: grid; gap: 10px; }
+.path { padding-top: 20px; }
+.path-filters { display: grid; gap: 14px; }
 .path-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .path-chips button { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-muted-strong); font-size: 13px; font-weight: 500; }
 .path-chips button[aria-pressed="true"] { border-color: var(--color-foreground); background: var(--color-foreground); color: var(--color-surface); }
 .path-chip-count { font-size: 12px; font-variant-numeric: tabular-nums; opacity: .7; }
 .path-empty { margin-top: 24px; font-size: 15px; color: var(--color-muted-strong); }
 .path-more { width: 100%; margin-top: 12px; }
-.path-stops { display: grid; gap: 2px; margin: 14px 0 0; padding: 0; list-style: none; }
+.path-stops { display: grid; gap: 2px; margin: 8px 0 0; padding: 0; list-style: none; }
 .path-stop { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border: 1px solid transparent; border-radius: 12px; transition: background-color 160ms ease, border-color 160ms ease; }
 /* Hover cards only where hover exists: on touch a stuck card would look like a second "Up next". */
 @media (hover: hover) { .path-stop:hover { background: var(--color-surface); border-color: var(--color-border); } }

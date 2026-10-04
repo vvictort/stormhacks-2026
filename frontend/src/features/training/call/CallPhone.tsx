@@ -1,6 +1,6 @@
 import { LoaderCircle, Mic, MicOff, Phone, PhoneMissed, PhoneOff, Radio, RotateCcw, ShieldAlert, Captions, UserRound, WifiOff } from 'lucide-react'
 import { m } from 'motion/react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { spring } from '../../../lib/motion'
 import { haptic } from '../../../lib/viewTransition'
 import type { CallCaption } from '../../../comms/callState'
@@ -41,8 +41,12 @@ function RoundButton({ kind, label, icon, onClick, autoFocus }: { kind: 'answer'
 
 /** Captions, newest last; only the latest few stay on screen. A polite live region reads each new line once. */
 function CaptionLog({ captions, callerLabel }: { captions: CallCaption[]; callerLabel: string }) {
+  const log = useRef<HTMLDivElement>(null)
+  const latest = captions.at(-1)?.message
+  // Keep the newest line in view as lines arrive or grow, without yanking back on unrelated re-renders.
+  useEffect(() => { log.current?.scrollTo({ top: log.current.scrollHeight }) }, [captions.length, latest])
   return (
-    <div className="call-captions" role="log" aria-live="polite" aria-label="Live captions">
+    <div ref={log} className="call-captions" role="log" aria-live="polite" aria-label="Live captions">
       {captions.length === 0
         ? <p className="call-captions-empty">Captions appear here.</p>
         : captions.slice(-4).map((caption, i, shown) => (

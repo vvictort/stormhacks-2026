@@ -68,7 +68,9 @@
 @media (prefers-reduced-motion: reduce) { .call-speaking.is-on .call-bars i { height: 12px; } }
 @keyframes call-bar { 0%, 100% { height: 4px; } 50% { height: 14px; } }
 
-.call-captions { flex: 1; min-height: 0; width: 100%; margin-top: 14px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; text-align: left; }
+/* Newest at the bottom via margin-top: auto, not justify-content: flex-end, which cuts a tall caption's top off unscrollably. */
+.call-captions { flex: 1; min-height: 0; width: 100%; margin-top: 14px; padding: 12px 0 4px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; text-align: left; mask-image: linear-gradient(transparent, #000 12px); }
+.call-captions > :first-child { margin-top: auto; }
 .call-captions-empty { margin: auto 0; text-align: center; font-size: 13px; color: #BFAF9C; }
 .call-caption { padding: 9px 12px; border-radius: 14px; background: #FFFFFF14; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; animation: rise-in 300ms var(--ease-out-quint) backwards; }
 .call-caption.is-user { background: #C56B4E40; align-self: flex-end; }

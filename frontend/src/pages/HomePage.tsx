@@ -1,7 +1,8 @@
-import { ArrowRight, Check, Info, Mail, MessageSquareText, Phone, RotateCcw, Sparkles, X } from 'lucide-react'
+import { ArrowRight, Check, Info, Mail, MessageSquareText, Phone, RotateCcw, X } from 'lucide-react'
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
+import { TellIcon } from '../components/TellIcon'
 import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
@@ -56,7 +57,7 @@ export function HomePage() {
     <div className="train-shell">
       <TrainingHeader />
       <main className="home-main">
-        <RevealText as="h1" className="home-title" text={heading} />
+        <RevealText as="h1" className="home-title" text={heading} highlight={firstName} />
 
         <div className="home-tabs segmented" role="tablist" aria-label="Home" onKeyDown={onTabKey}>
           {tabs.map((t) => (
@@ -119,7 +120,7 @@ const channelRows = [
   { key: 'sms', label: 'Texts', Icon: MessageSquareText },
   { key: 'email', label: 'Emails', Icon: Mail },
   { key: 'call', label: 'Calls', Icon: Phone },
-  { key: 'made', label: 'Made for you', Icon: Sparkles },
+  { key: 'made', label: 'Made for you', Icon: TellIcon },
 ] as const
 const percent = (part: number, whole: number) => whole ? Math.round((part / whole) * 100) : 0
 
