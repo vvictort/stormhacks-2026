@@ -118,6 +118,16 @@ h1:focus, #auth-content:focus { outline: none; }
 .primary-button:active:not(:disabled), .social-button:active:not(:disabled) { translate: 0 calc(1px * var(--motion-scale)); }
 .primary-button:active:not(:disabled) { background-color: var(--color-primary-deep); }
 .social-button:active:not(:disabled) { background: color-mix(in srgb, var(--color-border) 45%, var(--color-background)); }
+/* Signup steps share the fieldset rhythm; a new step rises in. */
+.form-step, .form-step-static { display: grid; gap: 12px; min-width: 0; }
+.form-step { --rise: 8px; animation: rise-in var(--motion-enter) var(--ease-out-quint) backwards; }
+.card-email { color: var(--color-foreground); font-weight: 600; overflow-wrap: anywhere; }
+.inline-link { display: inline; font-size: inherit; }
+.password-checklist { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.5; }
+.password-checklist li { display: flex; align-items: center; gap: 8px; color: var(--color-muted-strong); transition: color var(--motion-quick) var(--ease-out-quint); }
+.password-checklist svg { flex-shrink: 0; animation: settle-in 200ms var(--ease-out-quint); }
+.password-checklist [data-state="met"] { color: var(--color-success-strong); }
+.password-checklist [data-state="unmet"] { color: var(--color-danger-strong); }
 /* The divider's 60px row doubles as the form-level error slot (three lines of text fit). */
 .form-feedback { display: grid; align-items: center; min-height: 60px; }
 .form-feedback > * { grid-area: 1 / 1; }

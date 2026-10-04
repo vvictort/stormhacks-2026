@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 
 interface AuthCardProps {
   title: string
-  description: string
+  description: ReactNode
   children: ReactNode
 }
 

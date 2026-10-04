@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { validateAuthForm, validateEmail } from '../src/features/auth/validation.ts'
+import { passwordChecks, validateAuthForm, validateEmail } from '../src/features/auth/validation.ts'
 import { getAuthErrorMessage, PasswordPolicyError } from '../src/features/auth/errors.ts'
 import { resolveGuestRoute, resolveProtectedRoute, safeReturnPath } from '../src/features/auth/redirect.ts'
 
@@ -98,4 +98,15 @@ test('return paths stay inside the app and never loop back to auth pages', () =>
     assert.equal(safeReturnPath(from), '/home', String(from))
   }
   assert.equal(safeReturnPath('/loginhelp'), '/loginhelp')
+})
+
+test('the signup password checklist tracks length and matching live', () => {
+  const state = (password, confirm) => passwordChecks(password, confirm).map((check) => check.met)
+  assert.deepEqual(state('', ''), [false, false])
+  assert.deepEqual(state('short', 'short'), [false, true])
+  assert.deepEqual(state('a long password', ''), [true, false])
+  assert.deepEqual(state('a long password', 'a long passwor'), [true, false])
+  assert.deepEqual(state('a long password', 'a long password'), [true, true])
+  // The checklist and submit validation agree on the length rule.
+  assert.equal(validateAuthForm({ name: 'A', email: 'a@b.co', password: '1234567', confirmPassword: '1234567' }, true).password !== undefined, !passwordChecks('1234567', '1234567')[0].met)
 })
