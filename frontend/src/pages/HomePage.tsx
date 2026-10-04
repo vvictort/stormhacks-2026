@@ -4,6 +4,7 @@ import { CountUp } from '../components/CountUp'
 import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
+import { ScamProfileCard } from '../features/insights/ScamProfileCard'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { currentLevel, recommend, summarize, timeline } from '../features/training/progress'
@@ -91,6 +92,7 @@ export function HomePage() {
                 ? "Saved in this browser. We couldn't load your phone-call results just now."
                 : 'Saved in this browser for now.'}</p>
           </section>
+          <ScamProfileCard uid={user?.uid} />
         </div>
 
         <PracticePath progress={progress} upNextId={next?.id} />
