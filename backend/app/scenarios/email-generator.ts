@@ -628,11 +628,11 @@ export async function generateEmailScenario(
   };
 
   if (input.model) {
-    // ponytail: a genuine email comes only from the model, ungrounded (the library's grounding is for scams). There
-    // is no built-in genuine email: on failure the built-in scam below is used. Add some if the mix must hold without Gemini.
+    // ponytail: a genuine email comes only from the model, grounded in the library's hand-picked legitimate emails.
+    // There is no built-in genuine email: on failure the built-in scam below is used. Add some if the mix must hold without Gemini.
     const genuine = Boolean(input.genuine);
     const examples = genuine
-      ? []
+      ? (input.library?.genuineEmails(p.category) ?? [])
       : (input.library?.examplesFor({
           channel: "email",
           category: p.category,

@@ -16,7 +16,7 @@ import { badges, completeAdventure, missionComplete, missionUrl, type BadgeId } 
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { recommend } from '../features/training/progress'
 import { scoreFlags, type Confidence, type FlagScore } from '../features/training/flagging'
-import { hasLink, siteOf, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
+import { hasLink, isScam, siteOf, type Action, type CallScenario, type MessageScenario, type Scenario } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useLearning } from '../features/training/useLearning'
 import { useScenario } from '../features/training/useScenario'
@@ -42,10 +42,11 @@ export function ScenarioPage() {
   )
 }
 
-function ScenarioIntro({ scenario, embedded = false }: { scenario: Scenario; embedded?: boolean }) {
+/** `sourceShown`: the source line says what a text or email was built from (real scams or real genuine emails), which gives the answer away; it waits for the choice. */
+function ScenarioIntro({ scenario, embedded = false, sourceShown = true }: { scenario: Scenario; embedded?: boolean; sourceShown?: boolean }) {
   const heading = useRef<HTMLHeadingElement>(null)
   const label = channelLabel[scenario.type]
-  const credit = generatedCredit(scenario.generated)
+  const credit = generatedCredit(scenario.generated, !isScam(scenario))
 
   useEffect(() => {
     document.title = `${scenario.title} · Tellio`
@@ -59,7 +60,7 @@ function ScenarioIntro({ scenario, embedded = false }: { scenario: Scenario; emb
       <TransitionLink direction="back" className="train-back" to="/home" aria-label="Back to all scenarios"><ArrowLeft size={16} aria-hidden="true" />Back</TransitionLink>
       <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
       <p className="scenario-meta">{label} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
-      {scenario.generated && (
+      {scenario.generated && sourceShown && (
         <div className="scenario-generated">
           {/* The reason can carry a dataset licence credit, so it stays one tap away. Practice-path scenarios (lib-…) weren't made for this user. */}
           <details><summary>{scenario.id.startsWith('gen-') ? 'Made for you' : 'Source'}</summary><p>{scenario.generated.reason}</p></details>
@@ -201,7 +202,7 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
   return (
     <main className="scenario-main">
       <div className="scenario-intro">
-        <ScenarioIntro scenario={scenario} embedded />
+        <ScenarioIntro scenario={scenario} embedded sourceShown={Boolean(choice)} />
         {mission && <div className="mission-run"><p>{missionComplete(mission) ? 'Mission complete. Every decision counts.' : 'Your three-scenario mission'}</p><MissionProgress mission={mission} currentId={scenario.id} /></div>}
         {!choice && !adventure.tipSeen && <aside className="practice-tip" aria-label="How to practise"><p><strong>A quick tip</strong>Tap suspicious phrases, inspect the sender or link, then decide. Your selections are checked after you answer.</p><button type="button" className="text-link" onClick={() => updateAdventure(user?.uid, state => ({ ...state, tipSeen: true }))}>Got it</button></aside>}
       </div>

@@ -14,6 +14,7 @@ import {
   toScenario,
 } from "../app/scenarios/email-generator.ts";
 import type { JsonModel } from "../app/scenarios/gemini.ts";
+import { GENUINE_EMAILS, ScamLibrary } from "../app/scenarios/library.ts";
 import { Difficulty, ScamCategory } from "../app/shared/vocabulary.ts";
 
 const identity = (uid: string) =>
@@ -413,6 +414,43 @@ test("a genuine request gives a safe email with no tactics; a scam or uncheckabl
       .scenario.correctAction,
     "report",
   );
+});
+
+test("a genuine email is grounded in the library's hand-picked legitimate emails, its category's first", async () => {
+  const library = ScamLibrary.load(); // the committed library: the picks are ids in it
+  const all = library.genuineEmails("banking", Infinity);
+  assert.deepEqual(
+    new Set(all.map((e) => e.id)),
+    new Set(Object.keys(GENUINE_EMAILS)),
+    "every pick is in the library, legitimate and free of real brands",
+  );
+  assert.ok(all.every((e) => e.channel === "email" && e.kind === "legitimate"));
+  assert.deepEqual(
+    all.slice(0, 3).map((e) => GENUINE_EMAILS[e.id] === "banking"),
+    [true, true, false],
+  );
+  assert.deepEqual(new ScamLibrary().genuineEmails("banking"), []);
+
+  const { model, prompts } = fakeModel(JSON.stringify(genuineEmail()));
+  const { scenario } = await generateEmailScenario({
+    model,
+    library,
+    difficulty: "medium",
+    genuine: true,
+    focus: ["banking"],
+  });
+  assert.deepEqual(scenario.generated.grounding, {
+    exampleCount: 3,
+    source: "scam-library",
+  });
+  assert.match(
+    prompts[0],
+    /Use only for how real, legitimate emails are structured and worded\./,
+  );
+  assert.match(prompts[0], /1\. EXCERPT; a real, legitimate email\n/);
+  assert.match(prompts[0], /Scheduled Payment Alert/);
+  assert.match(prompts[0], /category, difficulty and trainee context above/);
+  assert.doesNotMatch(prompts[0], /scam behaviour|tactics: /);
 });
 
 test("without a model the built-in email follows focus, then weak categories, and says why", async () => {
