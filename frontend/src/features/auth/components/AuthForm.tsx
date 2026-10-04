@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { ArrowRight, Check, CircleAlert, LoaderCircle, LogOut } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
+import { TransitionLink } from '../../../components/TransitionLink'
+import { withViewTransition } from '../../../lib/viewTransition'
 import { useAuth } from '../AuthContext'
 import { passwordChecks, validateAuthForm, type AuthFieldName, type FieldErrors } from '../validation'
 import { AuthCard } from './AuthCard'
@@ -42,9 +44,12 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   }, [step, stepMoved])
 
   function goToStep(next: 'details' | 'password') {
-    setStepMoved(true)
     clearError()
-    setStep(next)
+    // The fields push sideways inside the card, like a wizard on a phone.
+    withViewTransition(next === 'password' ? 'step-forward' : 'step-back', () => {
+      setStepMoved(true)
+      setStep(next)
+    })
   }
 
   function change(field: AuthFieldName, value: string) {
@@ -156,7 +161,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         }} />
         <p className="auth-switch text-muted-strong">
           {isSignup ? 'Already have an account?' : 'New to Tellio?'}{' '}
-          <Link className="text-link" to={isSignup ? '/login' : '/signup'} state={location.state} onClick={(event) => { if (pending) event.preventDefault() }} aria-disabled={disabled || undefined} tabIndex={disabled ? -1 : undefined}>{isSignup ? 'Log in' : 'Create an account'}<ArrowRight size={14} aria-hidden="true" /></Link>
+          <TransitionLink direction="swap" className="text-link" to={isSignup ? '/login' : '/signup'} state={location.state} onClick={(event) => { if (pending) event.preventDefault() }} aria-disabled={disabled || undefined} tabIndex={disabled ? -1 : undefined}>{isSignup ? 'Log in' : 'Create an account'}<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
         </p>
       </AuthCard>
       {resetOpen && <ResetPasswordDialog initialEmail={values.email} onClose={() => { setResetOpen(false); clearError() }} />}

@@ -1,6 +1,7 @@
 import { ArrowLeft, Mail, MessageSquareText } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { Debrief } from '../features/training/components/Debrief'
 import { PhoneSimulator } from '../features/training/components/PhoneSimulator'
@@ -46,8 +47,8 @@ function ScenarioRun({ scenario }: { scenario: Scenario }) {
   return (
     <main className="scenario-main">
       <div className="scenario-intro">
-        <Link className="train-back" to="/home"><ArrowLeft size={16} aria-hidden="true" />All scenarios</Link>
-        <h1 ref={heading} tabIndex={-1}>{scenario.title}</h1>
+        <TransitionLink direction="back" className="train-back" to="/home"><ArrowLeft size={16} aria-hidden="true" />All scenarios</TransitionLink>
+        <h1 ref={heading} tabIndex={-1} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</h1>
         <p className="scenario-meta">{email ? <Mail size={15} aria-hidden="true" /> : <MessageSquareText size={15} aria-hidden="true" />} {email ? 'Email' : 'Text message'} <span aria-hidden="true">·</span> {difficultyLabel[scenario.difficulty]}</p>
         <p className="scenario-situation"><strong>What you know:</strong> {scenario.situation}</p>
       </div>
@@ -79,7 +80,7 @@ function MissingScenario() {
     <main className="scenario-missing">
       <h1>We couldn't find that scenario.</h1>
       <p>It may have been renamed. Your practice path has everything that's available.</p>
-      <Link className="train-primary" to="/home">Back to home</Link>
+      <TransitionLink direction="back" className="train-primary" to="/home">Back to home</TransitionLink>
     </main>
   )
 }

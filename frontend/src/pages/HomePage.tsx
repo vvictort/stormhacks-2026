@@ -1,6 +1,8 @@
 import { ArrowRight, Check, Info, RotateCcw, X } from 'lucide-react'
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { CountUp } from '../components/CountUp'
+import { RevealText } from '../components/RevealText'
+import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
@@ -36,12 +38,12 @@ export function HomePage() {
       <TrainingHeader />
       <main className="home-main">
         <div className="home-intro">
-          <h1>{heading}</h1>
+          <RevealText as="h1" text={heading} />
           <p className="home-lede">Tellio sends practice scam texts and emails to a phone in your browser. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
 
           <section className="profile-summary" aria-label="Your saved profile">
             <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
-            <Link className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></Link>
+            <TransitionLink className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></TransitionLink>
           </section>
 
           {profileWarning && (
@@ -53,7 +55,7 @@ export function HomePage() {
           )}
 
           <div className="home-cta">
-            <Link className="train-primary" to={`/train/${target.id}`}>{cta}<ArrowRight size={17} aria-hidden="true" /></Link>
+            <TransitionLink className="train-primary" to={`/train/${target.id}`}>{cta}<ArrowRight size={17} aria-hidden="true" /></TransitionLink>
             <p>{next ? 'Up next' : 'Starts with'}: <strong>{target.title}</strong></p>
           </div>
 
@@ -63,7 +65,7 @@ export function HomePage() {
               ? <p>Nothing yet. After each scenario, you'll see here what you caught and which red flags you've learned to spot.</p>
               : (
                 <>
-                  <p>You've tried <strong>{done} of {total}</strong> scenarios and made the right call on <strong>{correct}</strong>.</p>
+                  <p>You've tried <strong><CountUp value={done} /> of {total}</strong> scenarios and made the right call on <strong><CountUp value={correct} /></strong>.</p>
                   <p>Practice level: <strong className="home-level">{level}</strong>. Two right calls move you up a level, and a miss eases things back.</p>
                   <h3>Your last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h3>
                   <ol className="home-recent">
