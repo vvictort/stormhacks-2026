@@ -9,7 +9,7 @@ import { Repositories } from '../app/db/repositories.ts';
 import { createApp } from '../app/server.ts';
 
 const origin = 'http://localhost:5173';
-const identity = (uid: string) => ({ uid, sub: uid, email: `${uid}@example.test`, email_verified: true, name: uid === 'alex' ? 'Alex' : undefined }) as DecodedIdToken;
+const identity = (uid: string) => ({ uid, sub: uid, aud: 'test-project', iss: 'https://securetoken.google.com/test-project', auth_time: 0, iat: 0, exp: 9999999999, firebase: { identities: {}, sign_in_provider: 'password' }, email: `${uid}@example.test`, email_verified: true, name: uid === 'alex' ? 'Alex' : undefined }) as DecodedIdToken;
 const verifyToken = async (token: string) => {
   if (token === 'alex' || token === 'sam') return identity(token);
   throw Object.assign(new Error('TOKEN_PRIVATE'),{code:'auth/invalid-id-token'});
@@ -44,7 +44,7 @@ describe('TigerData-compatible profile persistence', {skip:!url}, () => {
   beforeEach(async()=>{await db.query('TRUNCATE user_profiles');app=createApp(repo,{origin,verifyToken});});
   after(async()=>{await db?.end();});
   const get = (token='alex') => supertest(app).get('/api/users/me').set('Authorization',`Bearer ${token}`);
-  const put = (body: unknown,token='alex') => supertest(app).put('/api/users/me').set('Origin',origin).set('Authorization',`Bearer ${token}`).send(body);
+  const put = (body: object,token='alex') => supertest(app).put('/api/users/me').set('Origin',origin).set('Authorization',`Bearer ${token}`).send(body);
   test('first login persists Firebase identity and concurrent retries create one profile', async()=>{
     const results=await Promise.all([get().expect(200),get().expect(200)]);
     assert.equal(results[0].body.id,results[1].body.id);
