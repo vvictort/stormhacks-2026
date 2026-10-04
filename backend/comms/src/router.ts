@@ -1,36 +1,71 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { Router, type ErrorRequestHandler } from 'express';
+import { Router, type ErrorRequestHandler, type Request } from 'express';
 import { z } from 'zod';
+import { AuthError, getUserId, type AuthOptions } from './auth.ts';
 import { ElevenLabsError, ElevenLabsNotConfigured } from './calls/elevenlabs.ts';
 import type { CallService } from './calls/service.ts';
 import { ROOT_DIR, isProduction } from './config.ts';
+import type { SampleCatalog } from './samples.ts';
 import { CallScenario, TextScenario } from './types.ts';
 import type { TextService } from './texts/service.ts';
 import * as sse from './texts/sse.ts';
 
-const StartText = z.object({ userId: z.string().min(1), scenario: TextScenario });
+// Start a sample by id, a custom scenario, or (neither) a random sample. Not a union, so an
+// invalid `scenario` is a 400 rather than a random pick. Unknown keys (e.g. an old `userId`) are stripped.
+const StartText = z
+  .object({ scenarioId: z.string().min(1).optional(), scenario: TextScenario.optional() })
+  .refine((b) => !(b.scenarioId && b.scenario), { message: 'Send scenarioId or scenario, not both' });
 const Reply = z.object({ body: z.string().trim().min(1).max(1000) });
-const StartCall = z.object({ userId: z.string().min(1), scenario: CallScenario });
+const StartCall = z
+  .object({ scenarioId: z.string().min(1).optional(), scenario: CallScenario.optional() })
+  .refine((b) => !(b.scenarioId && b.scenario), { message: 'Send scenarioId or scenario, not both' });
+const ListScenarios = z.object({ channel: z.enum(['text', 'call']).optional() });
 const Decline = z.object({ reason: z.enum(['declined', 'missed']).default('declined') });
 const Ended = z.object({ conversationId: z.string().min(1).optional() });
 
 export interface Services {
   texts: TextService;
   calls: CallService;
+  samples: SampleCatalog;
 }
 
-export function createRouter({ texts, calls }: Services) {
+export function createRouter({ texts, calls, samples }: Services) {
   const router = Router();
+
+  // The simulation if it belongs to the caller, else null (reported as 404 so ids can't be probed).
+  // Authenticates first so a bad token is a 401 even for unknown ids.
+  const ownThread = async (req: Request, id: string, opts?: AuthOptions) => {
+    const userId = await getUserId(req, opts);
+    const thread = await texts.get(id);
+    return thread && thread.userId === userId ? thread : null;
+  };
+  const ownCall = async (req: Request, id: string) => {
+    const userId = await getUserId(req);
+    const call = await calls.get(id);
+    return call && call.userId === userId ? call : null;
+  };
 
   router.get('/health', (_req, res) => {
     res.json({ ok: true });
   });
 
+  // --- Sample scenarios (summaries only, no prompts) ---
+
+  router.get('/scenarios', (req, res) => {
+    res.json({ scenarios: samples.list(ListScenarios.parse(req.query).channel) });
+  });
+
   // --- Simulated texts ---
 
   router.post('/texts', async (req, res) => {
-    const { userId, scenario } = StartText.parse(req.body);
+    const userId = await getUserId(req);
+    const body = StartText.parse(req.body ?? {});
+    const scenario = body.scenario ?? samples.pickText(body.scenarioId);
+    if (!scenario) {
+      res.status(404).json({ error: 'scenario_not_found' });
+      return;
+    }
     const started = await texts.start(userId, scenario);
     if ('conflict' in started) {
       res.status(409).json({ error: 'active_thread_exists', threadId: started.conflict.id });
@@ -41,7 +76,7 @@ export function createRouter({ texts, calls }: Services) {
   });
 
   router.get('/texts/:id', async (req, res) => {
-    const thread = await texts.get(req.params.id);
+    const thread = await ownThread(req, req.params.id);
     if (!thread) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -50,7 +85,7 @@ export function createRouter({ texts, calls }: Services) {
   });
 
   router.get('/texts/:id/stream', async (req, res) => {
-    const thread = await texts.get(req.params.id);
+    const thread = await ownThread(req, req.params.id, { allowQueryToken: true });
     if (!thread) {
       res.status(404).json({ error: 'not_found' });
       return;
@@ -59,6 +94,10 @@ export function createRouter({ texts, calls }: Services) {
   });
 
   router.post('/texts/:id/replies', async (req, res) => {
+    if (!(await ownThread(req, req.params.id))) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
     const { body } = Reply.parse(req.body);
     const result = await texts.reply(req.params.id, body);
     if (result === 'not_found') res.status(404).json({ error: 'not_found' });
@@ -67,13 +106,17 @@ export function createRouter({ texts, calls }: Services) {
   });
 
   router.post('/texts/:id/report', async (req, res) => {
+    if (!(await ownThread(req, req.params.id))) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
     const result = await texts.report(req.params.id);
     if (result === 'not_found') res.status(404).json({ error: 'not_found' });
     else if (result === 'ended') res.status(409).json({ error: 'thread_ended' });
     else res.json(result);
   });
 
-  // Tracked scam link inside a simulated text.
+  // Tracked scam link inside a simulated text. No auth: it's a plain browser navigation.
   router.get('/l/:token', async (req, res) => {
     const redirectTo = await texts.handleLinkClick(req.params.token);
     if (!redirectTo) {
@@ -86,18 +129,28 @@ export function createRouter({ texts, calls }: Services) {
   // --- Simulated calls ---
 
   router.post('/calls', async (req, res) => {
-    const { userId, scenario } = StartCall.parse(req.body);
+    const userId = await getUserId(req);
+    const body = StartCall.parse(req.body ?? {});
+    const scenario = body.scenario ?? samples.pickCall(body.scenarioId);
+    if (!scenario) {
+      res.status(404).json({ error: 'scenario_not_found' });
+      return;
+    }
     const call = await calls.start(userId, scenario);
     res.status(201).json({ callId: call.id, callerLabel: scenario.callerLabel, call });
   });
 
   router.get('/calls/:id', async (req, res) => {
-    const call = await calls.get(req.params.id);
+    const call = await ownCall(req, req.params.id);
     if (!call) res.status(404).json({ error: 'not_found' });
     else res.json(call);
   });
 
   router.post('/calls/:id/accept', async (req, res) => {
+    if (!(await ownCall(req, req.params.id))) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
     const result = await calls.accept(req.params.id);
     if (result === 'not_found') res.status(404).json({ error: 'not_found' });
     else if (result === 'wrong_state') res.status(409).json({ error: 'not_ringing' });
@@ -105,6 +158,10 @@ export function createRouter({ texts, calls }: Services) {
   });
 
   router.post('/calls/:id/decline', async (req, res) => {
+    if (!(await ownCall(req, req.params.id))) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
     const { reason } = Decline.parse(req.body ?? {});
     const result = await calls.decline(req.params.id, reason);
     if (result === 'not_found') res.status(404).json({ error: 'not_found' });
@@ -113,6 +170,10 @@ export function createRouter({ texts, calls }: Services) {
   });
 
   router.post('/calls/:id/ended', async (req, res) => {
+    if (!(await ownCall(req, req.params.id))) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
     const { conversationId } = Ended.parse(req.body ?? {});
     const result = await calls.ended(req.params.id, conversationId);
     if (result === 'not_found') res.status(404).json({ error: 'not_found' });
@@ -137,6 +198,10 @@ export function createRouter({ texts, calls }: Services) {
 }
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  if (err instanceof AuthError) {
+    res.status(401).set('WWW-Authenticate', 'Bearer').json({ error: 'unauthorized', reason: err.code });
+    return;
+  }
   if (err instanceof z.ZodError) {
     res.status(400).json({ error: 'invalid_request', issues: err.issues });
     return;
