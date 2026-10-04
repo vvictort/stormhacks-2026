@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
-const envFile = resolve('.env');
+// backend/.env, wherever the command is run from.
+const envFile = fileURLToPath(new URL('../.env', import.meta.url));
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 const schema = z.object({
   DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol)),

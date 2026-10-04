@@ -38,4 +38,5 @@ logs/
 
 # Local database certificate bundles and test artifacts
 backend/.certs/
+backend/certs/
 backend/.local/

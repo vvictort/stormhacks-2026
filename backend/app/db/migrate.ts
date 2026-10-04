@@ -8,7 +8,7 @@ export async function migrate(db: Database) {
   await transaction(db, async (client) => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('scam-training-migrations'))");
     await client.query('CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
-    const directory = resolve('app/db/migrations');
+    const directory = fileURLToPath(new URL('./migrations', import.meta.url));
     const files = (await readdir(directory)).filter((x) => x.endsWith('.sql')).sort();
     for (const file of files) {
       const existing = await client.query('SELECT 1 FROM schema_migrations WHERE version = $1', [file]);

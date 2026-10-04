@@ -1,4 +1,8 @@
+import { isAbsolute } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+
+const backendDir = fileURLToPath(new URL('../../', import.meta.url));
 
 export function createDatabase(connectionString: string) {
   const url = new URL(connectionString);
@@ -7,6 +11,9 @@ export function createDatabase(connectionString: string) {
     throw new Error('Database TLS configuration must verify server certificates.');
   }
   if (mode && mode !== 'disable') url.searchParams.set('sslmode', 'verify-full');
+  // A relative CA path (e.g. certs/tigerdata-ca.pem) is relative to backend/, so the same URL works on every machine.
+  const rootCert = url.searchParams.get('sslrootcert');
+  if (rootCert && !isAbsolute(rootCert)) url.searchParams.set('sslrootcert', backendDir + rootCert);
   // Preserve CA/cert parameters while making certificate verification explicit.
   return new pg.Pool({ connectionString: url.toString(), max: 10, connectionTimeoutMillis: 5000 });
 }
