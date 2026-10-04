@@ -62,6 +62,12 @@ export function fakeRepos() {
         return a && a.firebaseUid === uid ? { ...summary(a), signals: a.signals, startedAt: a.startedAt, durationSecs: a.durationSecs, summary: a.summary, transcript: a.transcript } : null;
       },
     },
+    insights: {
+      async attemptRows() { return []; },
+      async state() { return { cached: null, lastAttemptAt: null }; },
+      async save() {},
+      async latestFocus() { return []; },
+    },
     scenarios: {
       async save(uid: string, scenario: CallScenario) { scenarios.set(scenario.id, { uid, scenario }); },
       async get(uid: string, id: string) {

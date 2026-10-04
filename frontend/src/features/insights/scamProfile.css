@@ -1,0 +1,15 @@
+/* "What Tellio has learned": sits under .home-progress and borrows its type scale. */
+.scam-profile-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; max-width: 46ch; margin: 4px 0 16px; }
+.scam-profile-facts > div { padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.scam-profile-facts dt { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--color-muted-strong); }
+.scam-profile-facts dd { margin: 4px 0 0; font-size: 15px; font-weight: 600; line-height: 1.35; }
+.scam-profile-facts .is-strong { border-color: color-mix(in srgb, var(--color-success-strong) 35%, transparent); }
+.scam-profile-facts .is-strong dd { color: var(--color-success-strong); }
+.scam-profile-facts .is-weak { border-color: color-mix(in srgb, var(--color-primary) 40%, transparent); }
+.scam-profile-facts .is-weak dd { color: var(--color-primary-strong); }
+.home-progress > p.scam-profile-tip { margin-top: 12px; font-size: 14px; }
+.scam-profile-skeleton { display: grid; gap: 10px; max-width: 46ch; }
+.scam-profile-skeleton span { height: 14px; border-radius: 7px; background: var(--color-border); animation: pulse 900ms ease-in-out infinite alternate; }
+.scam-profile-skeleton span:nth-child(2) { width: 82%; }
+.scam-profile-skeleton span:nth-child(3) { width: 60%; }
+@media (prefers-reduced-motion: reduce) { .scam-profile-skeleton span { animation: none; } }

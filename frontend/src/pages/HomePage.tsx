@@ -6,6 +6,7 @@ import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { InstinctsCard } from '../features/insights/InstinctsCard'
 import { GenerateEmailButton } from '../features/training/components/GenerateEmailButton'
+import { ScamProfileCard } from '../features/insights/ScamProfileCard'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { currentLevel, recommend, summarize, timeline } from '../features/training/progress'
@@ -96,6 +97,7 @@ export function HomePage() {
           </section>
 
           <InstinctsCard uid={user?.uid} />
+          <ScamProfileCard uid={user?.uid} />
         </div>
 
         <PracticePath progress={progress} upNextId={next?.id} />

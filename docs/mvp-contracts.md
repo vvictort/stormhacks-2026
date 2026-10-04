@@ -105,6 +105,10 @@ Code: `backend/app/behavior/` (routes, repository, call bridge), `frontend/src/f
 - Snowflake (SQL API over HTTPS, `SNOWFLAKE_*` config) analyses the aggregated summary; without credentials, or on any
   error or timeout, the backend computes the same shape deterministically. The latest result is cached per user so
   generators can read `nextTrainingFocus` cheaply.
+- Generators: `repos.insights.latestFocus(uid): Promise<ScamCategory[]>` never calls Snowflake: the cached focus when it
+  covers the newest attempt, else the built-in analysis of the current history; `[]` for a new user.
+- Snowflake only receives `HMAC(SNOWFLAKE_ID_SALT, uid)` and per-category/per-tactic counts and rates (setup:
+  `backend/scripts/snowflake-setup.sql`).
 
 ## UI copy
 
