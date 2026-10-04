@@ -11,7 +11,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Start the backend separately from `backend/` after configuring its `.env` and running `npm run migrate`. Vite uses port 5173 and proxies `/api` to `localhost:3000`; that one server also serves the simulated texts and calls (`/api/comms`, including SSE). Open **http://localhost:5173**; localhost is authorized in the existing Firebase project. The strict development port keeps the backend's `APP_ORIGIN` consistent.
+Start the backend separately from `backend/` after configuring its `.env` and running `npm run migrate`. Vite uses port 5173 and proxies `/api` to `localhost:3000`; that one server also serves the simulated texts and calls (`/api/comms`, including SSE). Open **http://localhost:5173**; localhost is authorized in the existing Firebase project. Keep the dev server on 5173 (the default) so it matches the backend's `APP_ORIGIN`.
 
 ## Flow
 
@@ -22,7 +22,7 @@ Start the backend separately from `backend/` after configuring its `.env` and ru
 - Saving opens the existing `/home` training page. Its profile summary links back to edit onboarding details.
 - `/train/:scenarioId` retains the current messaging simulator and debrief. Phone-call scenarios open a call screen on the practice phone instead (see below).
 - `/caught?sim=<threadId>` is a public page that tracked practice links redirect to. It explains the simulated link and the red flags to check.
-- Profile data survives refresh, sign-out/login and browser changes. Messaging practice progress still uses browser-local storage; this milestone does not persist training results.
+- Profile data survives refresh, sign-out/login and browser changes. Phone-call results are saved by the backend; text and email practice progress still uses browser-local storage.
 
 The profile provider clears displayed data when account identities differ and ignores responses from cancelled loads. While the profile is loading, protected routes show a loader. Failed profile loads show retry/sign-out controls; failed saves keep all form input. Firebase remains the sole authentication provider: application code never stores passwords or copies Firebase tokens into TigerData.
 
