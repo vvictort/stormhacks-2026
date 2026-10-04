@@ -1,4 +1,4 @@
-import { auth } from '../firebase'
+import { auth } from '../lib/firebase'
 import { CommsError, createCommsClient } from './client'
 
 async function firebaseIdToken(forceRefresh: boolean) {

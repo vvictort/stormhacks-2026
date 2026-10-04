@@ -1,0 +1,239 @@
+/* Training surfaces: home, practice phone, debrief. Tokens come from index.css @theme. */
+
+.train-shell { min-height: 100svh; display: flex; flex-direction: column; background: var(--color-background); color: var(--color-foreground); }
+.train-header { width: min(1180px, calc(100% - 64px)); margin-inline: auto; min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.train-header .brand { font-size: 32px; }
+.train-header-actions { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.train-header-error { font-size: 13px; color: var(--color-danger-strong); text-align: right; }
+
+/* Buttons and links that act like buttons */
+.train-primary, .train-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 11px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; line-height: 1.3; white-space: nowrap; transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease; }
+.train-primary { background: var(--color-primary-strong); color: var(--color-surface); box-shadow: 0 1px 2px #6b2f1d26; }
+.train-primary:hover { background: var(--color-primary-deep); }
+.train-ghost { border: 1px solid var(--color-control); background: transparent; color: var(--color-foreground); }
+.train-ghost:hover:not(:disabled) { background: var(--color-surface); border-color: var(--color-muted-strong); }
+.train-primary:active, .train-ghost:active:not(:disabled) { transform: translateY(1px); }
+.train-header .train-ghost { min-height: 44px; padding: 9px 16px; font-weight: 500; }
+
+.train-notice { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; margin-top: 24px; border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent); background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)); border-radius: 10px; color: var(--color-accent-strong); font-size: 14px; line-height: 1.55; }
+.train-notice > svg { flex-shrink: 0; margin-top: 2px; }
+.train-notice > p { flex: 1; }
+.train-notice-dismiss { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; margin: -11px -10px -11px 0; border-radius: 8px; color: inherit; }
+.train-notice-dismiss:hover { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
+
+/* ---------- Home ---------- */
+.home-main { width: min(1180px, calc(100% - 64px)); margin: 24px auto 72px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(48px, 8vw, 120px); align-items: start; }
+.home-intro { padding-top: 24px; }
+.home-intro h1 { margin: 0 0 18px; font-family: var(--font-editorial); font-size: clamp(38px, 3.8vw, 50px); font-weight: 400; line-height: 1.1; letter-spacing: -0.035em; text-wrap: balance; }
+.home-intro h1:focus { outline: none; }
+.home-lede { max-width: 44ch; font-size: 16px; line-height: 1.65; color: var(--color-muted-strong); }
+.home-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 32px; }
+.home-cta p { font-size: 14px; color: var(--color-muted-strong); }
+.home-cta strong { color: var(--color-foreground); font-weight: 600; }
+.home-progress { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--color-border); }
+.home-progress h2 { margin: 0 0 10px; font-family: var(--font-editorial); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+.home-progress h3 { margin: 22px 0 10px; font-size: 14px; font-weight: 600; }
+.home-progress > p { text-wrap: pretty; max-width: 46ch; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.home-progress > p strong { color: var(--color-foreground); font-weight: 600; }
+.home-flags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.home-flags li { padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)); color: var(--color-primary-strong); font-size: 13px; line-height: 1.4; }
+.home-progress .home-saved { margin-top: 18px; font-size: 13px; }
+.home-progress > p + p { margin-top: 8px; }
+.home-level { text-transform: capitalize; }
+.home-recent { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.home-recent li { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--color-surface); }
+.home-recent .is-right { background: var(--color-success-strong); }
+.home-recent .is-missed { background: var(--color-accent-strong); }
+.home-progress .home-recent-note { margin-top: 8px; font-size: 13px; }
+
+/* The practice path: a vertical rail with one node per channel and a stop per scenario. */
+.path { padding: 24px 0 0; }
+.path > h2 { margin: 0 0 26px; font-family: var(--font-editorial); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+.path-list, .path-stops { margin: 0; padding: 0; list-style: none; }
+/* --path-indent: distance from the rail's node column to the content. */
+.path-channel { --path-indent: 58px; position: relative; padding: 0 0 30px var(--path-indent); }
+.path-channel::before { content: ""; position: absolute; left: 20px; top: 44px; bottom: 4px; border-left: 2px solid var(--color-border); }
+.path-channel:last-child { padding-bottom: 0; }
+.path-channel:last-child::before { display: none; }
+.path-channel.is-soon::before { border-left-style: dashed; }
+/* The head anchors its own node: the scroll reveal animates `translate` here, which would otherwise
+   re-parent an absolutely positioned node and drop it onto the title. */
+.path-channel-head { position: relative; display: flex; align-items: center; gap: 12px; min-height: 42px; flex-wrap: wrap; }
+.path-channel-head h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.path-node { position: absolute; left: calc(-1 * var(--path-indent)); top: 0; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--color-primary-strong); color: var(--color-surface); }
+.is-soon .path-node { background: var(--color-surface); color: var(--color-muted-strong); border: 1.5px dashed var(--color-control); }
+.path-soon { padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface)); color: var(--color-accent-strong); font-size: 12px; font-weight: 500; }
+.path-blurb { margin-top: 4px; max-width: 44ch; font-size: 14px; line-height: 1.6; color: var(--color-muted-strong); }
+.path-stops { display: grid; gap: 6px; margin-top: 14px; }
+.path-stop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline; padding: 14px 18px; border: 1px solid transparent; border-radius: 12px; transition: background-color 160ms ease, border-color 160ms ease; }
+/* Hover cards only where hover exists: on touch a stuck card would look like a second "Up next". */
+@media (hover: hover) { .path-stop:hover { background: var(--color-surface); border-color: var(--color-border); } }
+.path-stop.is-upnext { background: var(--color-surface); border-color: var(--color-border); box-shadow: 0 6px 20px #4836260d, 0 1px 3px #48362608; }
+.path-stop:has(.path-stop-link:focus-visible) { outline: 2px solid var(--color-primary-strong); outline-offset: 2px; }
+.path-dot { position: absolute; left: -46px; top: 19px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--color-background); border: 2px solid var(--color-control); color: var(--color-surface); }
+.is-right .path-dot { background: var(--color-success-strong); border-color: var(--color-success-strong); }
+.is-missed .path-dot { background: var(--color-accent-strong); border-color: var(--color-accent-strong); }
+.is-next .path-dot { border-color: var(--color-primary-strong); box-shadow: inset 0 0 0 3px var(--color-background), inset 0 0 0 9px var(--color-primary); }
+.path-stop-body { min-width: 0; }
+.path-stop-link { font-size: 16px; font-weight: 600; color: var(--color-foreground); }
+.path-stop-link::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
+.path-stop-link:focus-visible { outline: none; }
+.path-stop-body p { margin-top: 3px; font-size: 14px; line-height: 1.5; color: var(--color-muted-strong); }
+.path-status { font-size: 13px; font-weight: 500; color: var(--color-muted-strong); white-space: nowrap; }
+.is-right .path-status { color: var(--color-success-strong); }
+.is-missed .path-status { color: var(--color-accent-strong); }
+.is-upnext .path-status { color: var(--color-primary-strong); }
+
+/* ---------- Scenario ---------- */
+.scenario-main { width: min(1100px, calc(100% - 64px)); margin: 8px auto 64px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); grid-template-rows: auto 1fr; grid-template-areas: "intro phone" "panel phone"; column-gap: clamp(48px, 7vw, 104px); align-items: start; }
+.scenario-intro { grid-area: intro; padding-top: 12px; }
+.scenario-intro h1 { margin: 18px 0 12px; font-family: var(--font-editorial); font-size: clamp(34px, 3.4vw, 44px); font-weight: 400; line-height: 1.12; letter-spacing: -0.03em; text-wrap: balance; }
+.scenario-intro h1:focus { outline: none; }
+.train-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-block: -10px; font-size: 14px; font-weight: 500; color: var(--color-primary-strong); }
+.train-back:hover { text-decoration: underline; text-underline-offset: 3px; }
+.scenario-meta { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--color-muted-strong); }
+.scenario-situation { margin-top: 18px; max-width: 46ch; padding: 14px 16px; border-radius: 10px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 15px; line-height: 1.55; }
+.scenario-situation strong { font-weight: 600; }
+.scenario-panel { grid-area: panel; padding-top: 28px; min-width: 0; }
+.scenario-howto h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+.scenario-howto ol { display: grid; gap: 8px; max-width: 46ch; margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.55; color: var(--color-muted-strong); }
+.scenario-howto li::marker { color: var(--color-primary-strong); font-weight: 600; }
+.scenario-howto strong { color: var(--color-foreground); font-weight: 600; }
+.scenario-missing { width: min(560px, calc(100% - 32px)); margin: 80px auto; }
+.scenario-missing h1 { margin: 0 0 12px; font-family: var(--font-editorial); font-size: 38px; font-weight: 400; letter-spacing: -0.03em; line-height: 1.15; }
+.scenario-missing p { margin-bottom: 28px; color: var(--color-muted-strong); line-height: 1.6; }
+
+/* ---------- Practice phone ---------- */
+.phone-wrap { grid-area: phone; position: sticky; top: 20px; display: flex; justify-content: center; }
+.phone { --phone-w: min(100%, clamp(280px, calc((100svh - 140px) * 0.48), 360px)); width: var(--phone-w); aspect-ratio: 9 / 18.6; padding: 10px; border-radius: 46px; background: #2B2724; box-shadow: 0 1px 0 #ffffff1f inset, 0 24px 48px -18px #3a2a1e59, 0 4px 12px #3a2a1e1f; }
+.phone-screen { height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 37px; background: #FBF9F5; color: #252525; }
+.phone-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 12px 24px 6px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.phone-camera { width: 11px; height: 11px; border-radius: 50%; background: #2B2724; }
+.phone-status-icons { display: flex; justify-content: flex-end; align-items: center; gap: 5px; }
+.phone-app-header { display: flex; align-items: center; gap: 10px; padding: 8px 16px 12px 8px; border-bottom: 1px solid #E7E1D7; }
+.phone-app-back { color: #6E6253; flex-shrink: 0; }
+.phone-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%; background: #E3DDD3; color: #6E6253; }
+.phone-app-title { min-width: 0; }
+.phone-app-title h2 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.phone-app-title p { font-size: 12px; color: #6E6253; }
+
+.sms-thread { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 14px 18px; }
+.sms-thread:focus-visible { outline-offset: -3px; }
+.sms-day { margin-bottom: 12px; text-align: center; font-size: 12px; color: #6E6253; }
+.sms-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sms-bubble { max-width: 86%; padding: 10px 13px; border-radius: 18px 18px 18px 6px; background: #ECE6DC; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
+.sms-bubble p { margin: 0; }
+
+.sms-link { display: inline; margin-top: 4px; padding: 0; border: 0; background: none; color: #1F5C99; text-align: left; font-size: 15px; line-height: 1.45; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; word-break: break-all; }
+.sms-link:hover { text-decoration-thickness: 2px; }
+.sms-inspect { margin-top: 10px; padding: 10px 11px; border-radius: 12px; background: #FBF9F5; border: 1px solid #DCD3C5; font-size: 13px; line-height: 1.45; }
+.sms-inspect[hidden] { display: none; }
+.sms-inspect p { display: flex; align-items: center; gap: 6px; }
+.sms-inspect-note { color: #6E6253; font-size: 12px; }
+.sms-inspect-site { margin-top: 6px; }
+.sms-inspect-site strong { font-weight: 600; }
+.sms-inspect-url { margin-top: 4px; color: #5A4F43; font-size: 12px; word-break: break-all; }
+
+/* Clue markers: number + tint + underline, so meaning never rests on colour alone. */
+.clue { padding: 1px 2px; border-radius: 4px; background: color-mix(in srgb, var(--color-primary) 18%, transparent); color: inherit; text-decoration: underline 2px var(--color-primary-strong); text-underline-offset: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.clue-head { white-space: nowrap; }
+.clue-num { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-right: 3px; padding: 0 4px; border-radius: 9px; background: var(--color-primary-strong); color: var(--color-surface); font-size: 11px; font-weight: 700; line-height: 1; vertical-align: 2px; text-decoration: none; font-variant-numeric: tabular-nums; }
+.sms-link.is-marked { background: color-mix(in srgb, var(--color-primary) 18%, transparent); border-radius: 4px; }
+.is-safe-scenario .clue, .is-safe-scenario .sms-link.is-marked { background: color-mix(in srgb, var(--color-success) 26%, transparent); text-decoration-color: var(--color-success-strong); }
+.is-safe-scenario .clue-num { background: var(--color-success-strong); }
+
+/* Mail app: subject, a sender you can expand, then the body. */
+.email-bar { min-height: 44px; gap: 2px; padding-block: 4px; font-size: 15px; color: #1F5C99; }
+.email-view { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px 18px; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+.email-view:focus-visible { outline-offset: -3px; }
+.email-subject { margin: 0 0 10px; font-size: 18px; font-weight: 600; line-height: 1.3; }
+.email-from { display: flex; align-items: center; gap: 10px; }
+.email-from .phone-avatar { font-weight: 600; }
+.email-sender { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; font-size: 15px; font-weight: 600; text-align: left; }
+.email-sender[aria-expanded="true"] svg { transform: rotate(180deg); }
+.email-meta { font-size: 12px; color: #6E6253; }
+.email-details { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; margin-top: 10px; }
+.email-details dt { color: #6E6253; }
+.email-details dd { margin: 0; }
+.email-body { margin-top: 16px; }
+.email-body p + p { margin-top: 12px; }
+.email-link { margin-top: 12px; }
+.email-attachment { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 10px 12px; border-radius: 12px; border: 1px solid #DCD3C5; background: #F4F0E9; font-size: 14px; word-break: break-all; }
+
+.phone-actions { padding: 12px 14px 16px; border-top: 1px solid #E7E1D7; background: #F4F0E9; }
+.phone-actions > p { margin-bottom: 10px; text-align: center; font-size: 13px; font-weight: 600; color: #4A4037; }
+.phone-actions > div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.phone-actions button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; padding: 8px 10px; border-radius: 14px; border: 1px solid #A89A86; background: #FFFDF8; color: #252525; font-size: 14px; font-weight: 600; line-height: 1.2; transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease; }
+.phone-actions button:hover { background: #fff; border-color: #6E6253; }
+.phone-actions button:active { transform: scale(0.98); }
+.phone-actions button:focus-visible { outline-offset: 2px; }
+.phone-decided { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 16px 14px 20px; border-top: 1px solid #E7E1D7; background: #F4F0E9; font-size: 13px; font-weight: 500; color: #4A4037; text-align: center; }
+
+/* ---------- Debrief ---------- */
+.debrief { max-width: 520px; }
+.debrief-verdict { display: flex; align-items: center; gap: 12px; }
+.debrief-mascot { flex-shrink: 0; width: 64px; height: 64px; }
+.debrief-verdict h2 { margin: 0; font-family: var(--font-editorial); font-size: 30px; font-weight: 500; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
+.debrief-verdict h2:focus { outline: none; }
+.debrief-lede { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.debrief h3 { margin: 28px 0 2px; font-size: 15px; font-weight: 600; }
+.debrief-hint { font-size: 13px; color: var(--color-muted-strong); }
+.debrief-clues { display: grid; gap: 14px; margin: 14px 0 0; padding: 0; list-style: none; }
+.debrief-clues li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; }
+.debrief-clues .clue-num { margin: 2px 0 0; min-width: 22px; height: 22px; border-radius: 11px; font-size: 12px; }
+.debrief.is-safe-scenario .clue-num { background: var(--color-success-strong); }
+.debrief-clues strong { font-size: 15px; font-weight: 600; }
+.debrief-clues p { margin-top: 2px; font-size: 14px; line-height: 1.55; color: var(--color-muted-strong); }
+.debrief-next { margin-top: 26px; padding: 14px 16px; border-radius: 10px; background: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent); }
+.debrief-next h3 { margin: 0 0 4px; }
+.debrief-next p { font-size: 14px; line-height: 1.55; }
+.debrief-habit { margin-top: 20px; font-size: 14px; line-height: 1.55; color: var(--color-success-strong); }
+.debrief-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+
+/* ---------- Motion: one arrival, one reveal ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .sms-bubble { animation: sms-arrive 280ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; animation-delay: calc(250ms + var(--i, 0) * 700ms); transform-origin: bottom left; }
+  .debrief { animation: debrief-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+  .clue, .sms-link.is-marked { animation: clue-in 300ms ease-out backwards; }
+}
+/* Scroll reveal (rise-in and --motion-scale from index.css): short blocks only, so
+   "entry 100%" is reached as soon as each is fully on screen. Not on the phone or dialogs. */
+@supports (animation-timeline: view()) {
+  .home-progress, .path-channel-head, .path-blurb, .path-stop,
+  .debrief-clues > li, .debrief-next, .debrief-habit, .debrief-actions { animation: rise-in linear backwards; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+}
+@keyframes sms-arrive { from { opacity: 0; transform: translateY(8px) scale(0.97); } }
+@keyframes debrief-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes clue-in { from { background-color: transparent; } }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1023px) {
+  .home-main { grid-template-columns: minmax(0, 1fr); gap: 48px; width: min(640px, calc(100% - 48px)); }
+  .home-intro { padding-top: 8px; }
+  .scenario-main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "phone" "panel"; width: min(600px, calc(100% - 48px)); }
+  .scenario-intro { text-align: left; }
+  .phone-wrap { position: static; margin-top: 28px; }
+  .phone { --phone-w: min(100%, clamp(280px, calc((100svh - 220px) * 0.48), 360px)); }
+  .debrief { max-width: none; }
+}
+@media (max-width: 540px) {
+  .train-header { width: calc(100% - 32px); min-height: 72px; }
+  .train-header .brand { font-size: 28px; }
+  .train-header .train-ghost { padding-inline: 12px; }
+  .home-main, .scenario-main { width: calc(100% - 32px); margin-top: 4px; }
+  .home-intro h1 { font-size: 34px; }
+  .home-cta .train-primary { width: 100%; }
+  .path-channel { --path-indent: 50px; }
+  .path-channel::before { left: 18px; }
+  .path-node { width: 38px; height: 38px; }
+  .path-dot { left: -40px; }
+  .path-stop { grid-template-columns: minmax(0, 1fr); padding: 12px 14px; }
+  .scenario-intro h1 { font-size: 30px; margin-top: 14px; }
+  .scenario-situation { margin-top: 14px; font-size: 14px; }
+  .phone-wrap { margin-top: 20px; }
+  /* On a real phone, the practice phone takes the width and most of the height. */
+  .phone { width: 100%; max-width: 400px; aspect-ratio: auto; height: clamp(460px, calc(100svh - 120px), 680px); padding: 7px; border-radius: 36px; }
+  .phone-screen { border-radius: 30px; }
+  .debrief-verdict h2 { font-size: 26px; }
+  .debrief-actions > a { flex: 1 1 100%; }
+}
