@@ -246,104 +246,120 @@ export function completeCallAdventure(
   })
 }
 
-export function readAdventure(raw: string | null): Adventure | null {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isStrings = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string')
+
+const oneOf = (options: string[], value: unknown) =>
+  options.some((option) => option === value)
+
+const GENERATED_TEXT_FIELDS = [
+  'title',
+  'summary',
+  'situation',
+  'fromName',
+  'fromAddress',
+  'subject',
+  'receivedAt',
+  'explanation',
+  'nextTime',
+]
+
+function validEarned(earned: unknown) {
+  return (
+    isRecord(earned) &&
+    Object.entries(earned).every(
+      ([id, at]) =>
+        badges.some((badge) => badge.id === id) &&
+        typeof at === 'number' &&
+        Number.isFinite(at),
+    )
+  )
+}
+
+function validIndicator(indicator: unknown) {
+  return (
+    isRecord(indicator) &&
+    typeof indicator.title === 'string' &&
+    typeof indicator.detail === 'string' &&
+    (indicator.quote === undefined || typeof indicator.quote === 'string')
+  )
+}
+
+function validGeneratedEmail(email: unknown) {
+  return (
+    isRecord(email) &&
+    email.type === 'email' &&
+    typeof email.id === 'string' &&
+    email.id.startsWith('gen-email-') &&
+    oneOf(['report', 'safe'], email.correctAction) &&
+    oneOf(['easy', 'medium', 'hard'], email.difficulty) &&
+    isStrings(email.body) &&
+    email.body.length > 0 &&
+    GENERATED_TEXT_FIELDS.every((key) => typeof email[key] === 'string') &&
+    Array.isArray(email.indicators) &&
+    email.indicators.every(validIndicator) &&
+    (email.links === undefined || isStrings(email.links))
+  )
+}
+
+function validMission(mission: unknown) {
+  if (!isRecord(mission)) return false
+
+  const { id, ready, scenarioIds, completed, generated } = mission
+  if (typeof id !== 'string' || typeof ready !== 'boolean') return false
+  if (!isStrings(scenarioIds) || !isStrings(completed)) return false
+  if (scenarioIds.length !== 3 || new Set(scenarioIds).size !== 3) return false
+
+  // Completed steps are the mission's first steps, in order and without
+  // repeats, and a mission that isn't ready has none.
+  if (
+    new Set(completed).size !== completed.length ||
+    completed.some((step, index) => scenarioIds[index] !== step) ||
+    (!ready && completed.length > 0)
+  ) {
+    return false
+  }
+
+  if (generated && !validGeneratedEmail(generated)) return false
+
+  const generatedId = isRecord(generated) ? generated.id : undefined
+  return scenarioIds.every(
+    (step) =>
+      step === generatedId ||
+      scenarios.some((scenario) => scenario.id === step),
+  )
+}
+
+function parseJson(raw: string): unknown {
   try {
-    if (!raw) return null
-    const s = JSON.parse(raw)
-    const strings = (v: unknown): v is string[] =>
-      Array.isArray(v) && v.every((x) => typeof x === 'string')
-
-    if (
-      s.version !== 1 ||
-      !Number.isInteger(s.completedMissions) ||
-      s.completedMissions < 0 ||
-      typeof s.tipSeen !== 'boolean' ||
-      !strings(s.processed) ||
-      s.processed.length > 128 ||
-      !s.earned ||
-      typeof s.earned !== 'object' ||
-      Array.isArray(s.earned)
-    ) {
-      return null
-    }
-    if (
-      Object.entries(s.earned).some(
-        ([id, at]) =>
-          !badges.some((b) => b.id === id) ||
-          typeof at !== 'number' ||
-          !Number.isFinite(at),
-      )
-    ) {
-      return null
-    }
-
-    const m = s.mission
-    if (m !== null) {
-      if (
-        !m ||
-        typeof m.id !== 'string' ||
-        typeof m.ready !== 'boolean' ||
-        !strings(m.scenarioIds) ||
-        m.scenarioIds.length !== 3 ||
-        new Set(m.scenarioIds).size !== 3 ||
-        !strings(m.completed) ||
-        new Set(m.completed).size !== m.completed.length ||
-        m.completed.some((id: string, i: number) => m.scenarioIds[i] !== id) ||
-        (!m.ready && m.completed.length > 0)
-      ) {
-        return null
-      }
-
-      const g = m.generated
-      if (g) {
-        const fields = [
-          'title',
-          'summary',
-          'situation',
-          'fromName',
-          'fromAddress',
-          'subject',
-          'receivedAt',
-          'explanation',
-          'nextTime',
-        ]
-        if (
-          g.type !== 'email' ||
-          typeof g.id !== 'string' ||
-          !g.id.startsWith('gen-email-') ||
-          !['report', 'safe'].includes(g.correctAction) ||
-          !['easy', 'medium', 'hard'].includes(g.difficulty) ||
-          !strings(g.body) ||
-          !g.body.length ||
-          fields.some((key) => typeof g[key] !== 'string') ||
-          !Array.isArray(g.indicators) ||
-          g.indicators.some(
-            (
-              i: { title?: unknown; detail?: unknown; quote?: unknown } | null,
-            ) =>
-              !i ||
-              typeof i.title !== 'string' ||
-              typeof i.detail !== 'string' ||
-              (i.quote !== undefined && typeof i.quote !== 'string'),
-          ) ||
-          (g.links !== undefined && !strings(g.links))
-        ) {
-          return null
-        }
-      }
-
-      if (
-        m.scenarioIds.some(
-          (id: string) =>
-            id !== m.generated?.id && !scenarios.some((s) => s.id === id),
-        )
-      ) {
-        return null
-      }
-    }
-
-    return s as Adventure
+    return JSON.parse(raw)
   } catch {
     return null
   }
+}
+
+function isAdventure(state: unknown): state is Adventure {
+  return (
+    isRecord(state) &&
+    state.version === 1 &&
+    typeof state.completedMissions === 'number' &&
+    Number.isInteger(state.completedMissions) &&
+    state.completedMissions >= 0 &&
+    typeof state.tipSeen === 'boolean' &&
+    isStrings(state.processed) &&
+    state.processed.length <= 128 &&
+    validEarned(state.earned) &&
+    (state.mission === null || validMission(state.mission))
+  )
+}
+
+/** The saved adventure, or null if it is missing, corrupt or out of date. */
+export function readAdventure(raw: string | null): Adventure | null {
+  if (!raw) return null
+
+  const state = parseJson(raw)
+  return isAdventure(state) ? state : null
 }

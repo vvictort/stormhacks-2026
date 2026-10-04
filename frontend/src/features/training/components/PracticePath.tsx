@@ -12,12 +12,7 @@ import { TransitionLink } from '../../../components/TransitionLink'
 import type { Progress } from '../progress'
 import { timeline } from '../progress'
 import { getCachedScenarioMeta } from '../scenarioCache'
-import {
-  getScenario,
-  type Channel,
-  type Difficulty,
-  type Scenario,
-} from '../scenarios'
+import { getScenario, type Channel, type Difficulty } from '../scenarios'
 
 const channelIcon: Record<Channel, typeof MessageSquareText> = {
   sms: MessageSquareText,
@@ -46,7 +41,6 @@ const statusTabs = [
 const statusText = {
   right: 'Right call',
   missed: 'Missed',
-  todo: 'Not tried',
 } as const
 
 const PAGE = 12
@@ -132,6 +126,16 @@ function resolveAttempt(
     at,
     difficulty: staticScenario?.difficulty ?? cached?.difficulty,
   }
+}
+
+/** What to say when the chosen filters leave nothing to list. */
+function emptyFilterText(channel: string, status: string | null) {
+  const label = channelTabs.find((tab) => tab.id === channel)?.label ?? channel
+  const where = channel === 'all' ? 'history' : label
+
+  if (status === 'missed') return `No missed scenarios in ${where}. Nice work!`
+  if (status === 'right') return `No right calls recorded in ${where} yet.`
+  return `No ${label} scenarios completed yet.`
 }
 
 /**
@@ -221,13 +225,7 @@ export function PracticePath({ progress }: { progress: Progress }) {
         </div>
       ) : list.length === 0 ? (
         <div className="path-empty-filter">
-          <p>
-            {status === 'missed'
-              ? `No missed scenarios in ${channel === 'all' ? 'history' : (channelTabs.find((t) => t.id === channel)?.label ?? channel)}. Nice work!`
-              : status === 'right'
-                ? `No right calls recorded in ${channel === 'all' ? 'history' : (channelTabs.find((t) => t.id === channel)?.label ?? channel)} yet.`
-                : `No ${channelTabs.find((t) => t.id === channel)?.label ?? channel} scenarios completed yet.`}
-          </p>
+          <p>{emptyFilterText(channel, status)}</p>
         </div>
       ) : (
         <ol className="path-stops">
@@ -292,47 +290,6 @@ export function HistoryStop({ attempt }: { attempt: HistoryAttempt }) {
           {formatRelativeTime(attempt.at)}
         </time>
       </div>
-    </li>
-  )
-}
-
-/** Legacy PathStop for backwards compatibility if referenced */
-export function PathStop({
-  scenario,
-  progress,
-  upNext = false,
-}: {
-  scenario: Scenario
-  progress: Progress
-  upNext?: boolean
-}) {
-  const Icon = channelIcon[scenario.type]
-  const attempt = progress[scenario.id]
-  const state = attempt ? (attempt.correct ? 'right' : 'missed') : 'todo'
-  return (
-    <li className={`path-stop is-${state}${upNext ? ' is-upnext' : ''}`}>
-      <span className="path-dot" aria-hidden="true">
-        {state === 'right' ? (
-          <Check size={12} strokeWidth={3} />
-        ) : state === 'missed' ? (
-          <RotateCcw size={11} strokeWidth={3} />
-        ) : (
-          <Icon size={15} />
-        )}
-      </span>
-      <div className="path-stop-body">
-        <TransitionLink
-          className="path-stop-link"
-          to={`/train/${scenario.id}`}
-          style={{ viewTransitionName: `title-${scenario.id}` }}
-        >
-          {scenario.title}
-        </TransitionLink>
-        <p>{scenario.summary}</p>
-      </div>
-      <span className="path-status">
-        {upNext ? 'Up next' : statusText[state]}
-      </span>
     </li>
   )
 }
