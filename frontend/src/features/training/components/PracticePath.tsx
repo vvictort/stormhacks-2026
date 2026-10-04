@@ -1,86 +1,261 @@
-import { m } from 'motion/react'
+import { Check, History as HistoryIcon, Mail, MessageSquareText, Phone, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { TransitionLink } from '../../../components/TransitionLink'
 import { spring } from '../../../lib/motion'
 import type { Progress } from '../progress'
-import { scenarios, type Scenario } from '../scenarios'
+import { timeline } from '../progress'
+import { getCachedScenarioMeta } from '../scenarioCache'
+import { getScenario, type Channel, type Difficulty, type Scenario } from '../scenarios'
 
-const channelLabel = { sms: 'Text message', email: 'Email', call: 'Phone call' }
-const channelTabs = [{ id: 'all', label: 'All' }, { id: 'sms', label: 'Texts' }, { id: 'email', label: 'Emails' }, { id: 'call', label: 'Calls' }] as const
-const statusTabs = [{ id: 'todo', label: 'To try' }, { id: 'missed', label: 'Missed' }, { id: 'right', label: 'Right' }] as const
-const statusText = { right: 'Right call', missed: 'Missed', todo: 'Not tried' }
-// ponytail: client-side paging over the whole list; page from the server when the library outgrows one JSON.
-const PAGE = 12
-
-type State = keyof typeof statusText
-const stateOf = (scenario: Scenario, progress: Progress): State => {
-  const attempt = progress[scenario.id]
-  return attempt ? (attempt.correct ? 'right' : 'missed') : 'todo'
+const channelIcon: Record<Channel, typeof MessageSquareText> = {
+  sms: MessageSquareText,
+  email: Mail,
+  call: Phone,
 }
 
-/** Every scenario, filtered by channel and result (kept in the URL), a page at a time. */
+const channelLabels: Record<Channel, string> = {
+  sms: 'Text',
+  email: 'Email',
+  call: 'Call',
+}
+
+
+const channelTabs = [
+  { id: 'all', label: 'All' },
+  { id: 'sms', label: 'Texts' },
+  { id: 'email', label: 'Emails' },
+  { id: 'call', label: 'Calls' },
+] as const
+
+const statusTabs = [
+  { id: 'missed', label: 'Missed' },
+  { id: 'right', label: 'Right' },
+] as const
+
+const statusText = { right: 'Right call', missed: 'Missed', todo: 'Not tried' } as const
+const PAGE = 12
+
+export interface HistoryAttempt {
+  id: string
+  key: string
+  title: string
+  summary: string
+  type: Channel
+  correct: boolean
+  at: number
+  difficulty?: Difficulty
+}
+
+function formatRelativeTime(timestamp: number): string {
+  if (!timestamp || Number.isNaN(timestamp)) return ''
+  const diff = Math.max(0, Date.now() - timestamp)
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return 'Just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(timestamp))
+}
+
+function resolveAttempt(attempt: { id: string; correct: boolean; at: number }, index: number): HistoryAttempt {
+  const staticScenario = getScenario(attempt.id)
+  const cached = getCachedScenarioMeta(attempt.id)
+
+  let type: Channel = staticScenario?.type ?? cached?.type ?? 'call'
+  if (!staticScenario && !cached) {
+    if (attempt.id.startsWith('gen-sms-') || attempt.id.includes('sms')) type = 'sms'
+    else if (attempt.id.startsWith('gen-email-') || attempt.id.includes('email')) type = 'email'
+    else if (attempt.id.startsWith('gen-call-') || attempt.id.includes('call')) type = 'call'
+  }
+
+  const defaultTitle = {
+    sms: 'Personalised text message',
+    email: 'Personalised phishing email',
+    call: 'AI voice scam call',
+  }[type]
+  const title = staticScenario?.title ?? cached?.title ?? defaultTitle
+
+  const defaultSummary = {
+    sms: 'Smishing text message simulation tailored for you',
+    email: 'Phishing inbox simulation tailored for you',
+    call: 'Interactive scam phone call simulation',
+  }[type]
+  const summary = staticScenario?.summary ?? cached?.summary ?? defaultSummary
+
+  const at = typeof attempt.at === 'number' && !Number.isNaN(attempt.at) ? attempt.at : Date.now()
+
+  return {
+    id: attempt.id,
+    key: `${attempt.id}-${at}-${index}`,
+    title,
+    summary,
+    type,
+    correct: attempt.correct,
+    at,
+    difficulty: staticScenario?.difficulty ?? cached?.difficulty,
+  }
+}
+
+/** Attempted scenarios, filtered by channel and result (kept in the URL), newest first. */
 export function PracticePath({ progress }: { progress: Progress }) {
   const [params, setParams] = useSearchParams()
   const channel = params.get('channel') ?? 'all'
-  const status = params.get('status') ?? 'all'
+  const status = params.get('status')
   const [shown, setShown] = useState(PAGE)
 
   function pick(key: 'channel' | 'status', value: string) {
     const next = new URLSearchParams(params)
-    if (value === 'all') next.delete(key)
+    if (value === 'all' || params.get(key) === value) next.delete(key)
     else next.set(key, value)
     setParams(next, { replace: true })
     setShown(PAGE)
   }
 
-  const inChannel = channel === 'all' ? scenarios : scenarios.filter((scenario) => scenario.type === channel)
-  const count = (id: string) => inChannel.filter((scenario) => stateOf(scenario, progress) === id).length
-  const list = status === 'all' ? inChannel : inChannel.filter((scenario) => stateOf(scenario, progress) === status)
+  // Every completed attempt from timeline, newest first
+  const allAttempts = timeline(progress)
+    .map(resolveAttempt)
+    .sort((a, b) => b.at - a.at)
+
+  const inChannel = channel === 'all' ? allAttempts : allAttempts.filter((item) => item.type === channel)
+  const count = (id: 'missed' | 'right') => inChannel.filter((item) => (id === 'right' ? item.correct : !item.correct)).length
+  const list = status === 'missed' || status === 'right'
+    ? inChannel.filter((item) => (status === 'right' ? item.correct : !item.correct))
+    : inChannel
 
   return (
-    <section className="path" aria-label="All scenarios">
+    <section className="path" aria-label="Practice history">
       <div className="path-filters">
         <div className="segmented" role="group" aria-label="Channel">
           {channelTabs.map((tab) => (
-            <button key={tab.id} type="button" aria-pressed={channel === tab.id} onClick={() => pick('channel', tab.id)}>
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={channel === tab.id}
+              onClick={() => pick('channel', tab.id)}
+            >
               {tab.label}
-              {channel === tab.id && <m.span className="seg-thumb" layoutId="channel-tab" layout="x" transition={spring} />}
             </button>
           ))}
         </div>
         {/* Toggles: pressing the active result again shows every result. */}
         <div className="path-chips" role="group" aria-label="Result">
           {statusTabs.map((tab) => (
-            <button key={tab.id} type="button" aria-pressed={status === tab.id} onClick={() => pick('status', status === tab.id ? 'all' : tab.id)}>
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={status === tab.id}
+              onClick={() => pick('status', tab.id)}
+            >
               {tab.label} <span className="path-chip-count">{count(tab.id)}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {list.length === 0
-        ? <p className="path-empty">Nothing here yet.</p>
-        : (
-          <ol className="path-stops">
-            {list.slice(0, shown).map((scenario) => <PathStop key={scenario.id} scenario={scenario} progress={progress} />)}
-          </ol>
-        )}
+      {allAttempts.length === 0 ? (
+        <div className="path-empty-card">
+          <div className="path-empty-icon-wrap">
+            <HistoryIcon size={28} aria-hidden="true" />
+          </div>
+          <h3>No completed scenarios yet</h3>
+          <p>
+            When you practice phone calls, inspect phishing emails, or review smishing texts,
+            your completed simulations and decisions will appear here.
+          </p>
+          <TransitionLink to="/?tab=practice" className="train-primary path-empty-btn">
+            Start practicing
+          </TransitionLink>
+        </div>
+      ) : list.length === 0 ? (
+        <div className="path-empty-filter">
+          <p>
+            {status === 'missed'
+              ? `No missed scenarios in ${channel === 'all' ? 'history' : channelTabs.find((t) => t.id === channel)?.label ?? channel}. Nice work!`
+              : status === 'right'
+              ? `No right calls recorded in ${channel === 'all' ? 'history' : channelTabs.find((t) => t.id === channel)?.label ?? channel} yet.`
+              : `No ${channelTabs.find((t) => t.id === channel)?.label ?? channel} scenarios completed yet.`}
+          </p>
+        </div>
+      ) : (
+        <ol className="path-stops">
+          {list.slice(0, shown).map((attempt) => (
+            <HistoryStop key={attempt.key} attempt={attempt} />
+          ))}
+        </ol>
+      )}
+
       {list.length > shown && (
-        <button type="button" className="train-ghost path-more" onClick={() => setShown(shown + PAGE)}>Show more <span className="path-chip-count">{list.length - shown}</span></button>
+        <button
+          type="button"
+          className="train-ghost path-more"
+          onClick={() => setShown(shown + PAGE)}
+        >
+          Show more <span className="path-chip-count">{list.length - shown}</span>
+        </button>
       )}
     </section>
   )
 }
 
+export function HistoryStop({ attempt }: { attempt: HistoryAttempt }) {
+  const Icon = channelIcon[attempt.type]
+  const state = attempt.correct ? 'right' : 'missed'
+  return (
+    <li className={`path-stop is-${state}`}>
+      <span className="path-dot" aria-hidden="true">
+        {attempt.correct ? <Check size={12} strokeWidth={3} /> : <RotateCcw size={11} strokeWidth={3} />}
+      </span>
+      <div className="path-stop-body">
+        <div className="path-stop-meta">
+          <span className="path-channel-tag">
+            <Icon size={12} aria-hidden="true" />
+            <span>{channelLabels[attempt.type]}</span>
+          </span>
+          {attempt.difficulty && (
+            <span className="path-diff-tag">{attempt.difficulty}</span>
+          )}
+        </div>
+        <TransitionLink
+          className="path-stop-link"
+          to={`/train/${attempt.id}`}
+          style={{ viewTransitionName: `title-${attempt.id}` }}
+        >
+          {attempt.title}
+        </TransitionLink>
+        <p>{attempt.summary}</p>
+      </div>
+      <div className="path-stop-end">
+        <span className="path-status">{statusText[state]}</span>
+        <time
+          className="path-time"
+          dateTime={new Date(attempt.at).toISOString()}
+          title={new Date(attempt.at).toLocaleString()}
+        >
+          {formatRelativeTime(attempt.at)}
+        </time>
+      </div>
+    </li>
+  )
+}
+
+/** Legacy PathStop for backwards compatibility if referenced */
 export function PathStop({ scenario, progress, upNext = false }: { scenario: Scenario; progress: Progress; upNext?: boolean }) {
-  const state = stateOf(scenario, progress)
+  const Icon = channelIcon[scenario.type]
+  const attempt = progress[scenario.id]
+  const state = attempt ? (attempt.correct ? 'right' : 'missed') : 'todo'
   return (
     <li className={`path-stop is-${state}${upNext ? ' is-upnext' : ''}`}>
-      <span className="path-channel">{channelLabel[scenario.type]}</span>
+      <span className="path-dot" aria-hidden="true">
+        {state === 'right' ? <Check size={12} strokeWidth={3} /> : state === 'missed' ? <RotateCcw size={11} strokeWidth={3} /> : <Icon size={15} />}
+      </span>
       <div className="path-stop-body">
-        {/* Shares a transition name with the scenario heading, so the title morphs into the page. */}
-        <TransitionLink className="path-stop-link" to={`/train/${scenario.id}`} style={{ viewTransitionName: `title-${scenario.id}` }}>{scenario.title}</TransitionLink>
+        <TransitionLink className="path-stop-link" to={`/train/${scenario.id}`} style={{ viewTransitionName: `title-${scenario.id}` }}>
+          {scenario.title}
+        </TransitionLink>
         <p>{scenario.summary}</p>
       </div>
       <span className="path-status">{upNext ? 'Up next' : statusText[state]}</span>

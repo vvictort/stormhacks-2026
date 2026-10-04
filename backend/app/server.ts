@@ -11,6 +11,7 @@ import { AppError, errorHandler } from "./http/errors.ts";
 import type { Repositories } from "./repositories.ts";
 import type { ScenarioCatalog } from "./scenarios/catalog.ts";
 import { emailScenariosRouter } from "./scenarios/email.routes.ts";
+import { smsScenariosRouter } from "./scenarios/sms.routes.ts";
 import { geminiJson, type JsonModel } from "./scenarios/gemini.ts";
 import { defaultLibrary, type ScamLibrary } from "./scenarios/library.ts";
 import {
@@ -81,6 +82,11 @@ export function createApp({
     "/api/training/email-scenarios",
     auth,
     emailScenariosRouter(repos, { model: jsonModel, library }),
+  );
+  app.use(
+    "/api/training/sms-scenarios",
+    auth,
+    smsScenariosRouter(repos, { model: jsonModel, library }),
   );
   const insights = new InsightsService(repos.insights, snowflake);
   app.get("/api/training/insights", auth, async (req, res) => {

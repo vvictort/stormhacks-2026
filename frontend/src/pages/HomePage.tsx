@@ -3,21 +3,28 @@ import { m } from 'motion/react'
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
+import { RevealText } from '../components/RevealText'
+import { TellIcon } from '../components/TellIcon'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { InstinctsCard } from '../features/insights/InstinctsCard'
 import { ScamProfileCard } from '../features/insights/ScamProfileCard'
-import { MadeForYouActions } from '../features/training/components/NextForYou'
+import { ChannelSection } from '../features/training/components/ChannelSection'
 import { MissionCard } from '../features/training/components/MissionCard'
-import { PathStop, PracticePath } from '../features/training/components/PracticePath'
+import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
-import { channelStats, currentLevel, recommend, summarize, timeline, type Progress } from '../features/training/progress'
+import { nextForYou } from '../features/training/adaptive'
+import { channelStats, currentLevel, summarize, timeline, type Progress } from '../features/training/progress'
 import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
 import { spring } from '../lib/motion'
 
-const tabs = [{ id: 'practice', label: 'Practice' }, { id: 'library', label: 'Library' }, { id: 'insights', label: 'Insights' }] as const
+const tabs = [
+  { id: 'practice', label: 'Practice' },
+  { id: 'history', label: 'History' },
+  { id: 'insights', label: 'Insights' },
+] as const
 type Tab = (typeof tabs)[number]['id']
 
 export function HomePage() {
@@ -25,23 +32,26 @@ export function HomePage() {
   const { profile } = useProfile()
   const { progress, callSync, adaptive } = useProgress(user?.uid)
   const [params, setParams] = useSearchParams()
-  const tab: Tab = tabs.find((t) => t.id === (params.get('tab') === 'history' ? 'library' : params.get('tab')))?.id ?? 'practice'
+  const tab: Tab = tabs.find((t) => t.id === params.get('tab'))?.id ?? 'practice'
   const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({})
-  const next = recommend(progress)
-  const all = timeline(progress)
-  const right = all.filter(attempt => attempt.correct).length
-  const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
 
-  const greeting = all.length === 0 && !adaptive?.attempts.length ? 'Welcome' : 'Welcome back'
-  const status = all.length > 1 ? `You've made the right call on ${right} of ${all.length} so far.`
-    : all.length === 1 ? right ? 'You made the right call on your first scenario.' : 'Your first scenario caught you out. That’s what practice is for.' : null
+  const all = timeline(progress)
+  const userLevel = currentLevel(progress)
+  const adaptiveFocus = adaptive ? nextForYou(adaptive, userLevel) : null
+
+  const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
+  const name = firstName ? `, ${firstName}` : ''
+
+  const heading = all.length === 0 && !adaptive?.attempts.length ? `Welcome${name}. Let's find your blind spots.` : `Ready when you are${name}.`
   const flagsSeen = [...new Set(scenarios
     .filter((scenario) => progress[scenario.id] && isScam(scenario))
     .flatMap((scenario) => scenario.indicators.map((indicator) => indicator.title)))]
 
+  const stats = channelStats(progress)
+
   useEffect(() => { document.title = 'Home · Tellio' }, [])
 
-  // Tabs live in the URL (Back and reload keep them); filters are dropped when you leave the Library.
+  // Tabs live in the URL (Back and reload keep them); filters are dropped when you leave History.
   function show(id: Tab) {
     setParams(id === 'practice' ? {} : { tab: id }, { replace: true })
   }
@@ -60,12 +70,21 @@ export function HomePage() {
     <div className="train-shell">
       <TrainingHeader />
       <main className="home-main">
-        <div className="home-welcome"><h1 className="home-title">{greeting}{firstName && <>, <span>{firstName}</span></>}.</h1><p>{status ?? 'A little practice. A sharper instinct.'}</p></div>
+        <RevealText as="h1" className="home-title" text={heading} highlight={firstName} />
 
-        <div className="home-tabs segmented" role="tablist" aria-label="Home" onKeyDown={onTabKey}>
+        <div className="home-tabs segmented" role="tablist" aria-label="Home sections" onKeyDown={onTabKey}>
           {tabs.map((t) => (
-            <button key={t.id} ref={(node) => { tabRefs.current[t.id] = node }} type="button" role="tab" id={`tab-${t.id}`}
-              aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1} onClick={() => show(t.id)}>
+            <button
+              key={t.id}
+              ref={(node) => { tabRefs.current[t.id] = node }}
+              type="button"
+              role="tab"
+              id={`tab-${t.id}`}
+              aria-selected={tab === t.id}
+              aria-controls={`panel-${t.id}`}
+              tabIndex={tab === t.id ? 0 : -1}
+              onClick={() => show(t.id)}
+            >
               {t.label}
               {/* layout="x": the bar is sticky, so a scroll jump must not make it fly vertically. */}
               {tab === t.id && <m.span className="seg-thumb" layoutId="home-tab" layout="x" transition={spring} />}
@@ -80,32 +99,94 @@ export function HomePage() {
                 <div className="train-notice" role="status">
                   <Info size={18} aria-hidden="true" />
                   <p>{profileWarning}</p>
-                  <button type="button" className="train-notice-dismiss" onClick={dismissProfileWarning} aria-label="Dismiss this message"><X size={18} aria-hidden="true" /></button>
+                  <button type="button" className="train-notice-dismiss" onClick={dismissProfileWarning} aria-label="Dismiss this message">
+                    <X size={18} aria-hidden="true" />
+                  </button>
                 </div>
               )}
+
+              {/* Gamification Mission Card */}
               <MissionCard key={user?.uid} uid={user?.uid} progress={progress} adaptive={adaptive} difficulty={currentLevel(progress)} loading={callSync === 'loading'} />
-              <section className="home-standalone" aria-labelledby="standalone-title">
-                <h2 id="standalone-title">Just one scenario?</h2>
-                <p>Pick a channel for a quick round of practice.</p>
-                <MadeForYouActions key={user?.uid} difficulty={adaptive?.difficulty ?? currentLevel(progress)} label="Practise an email" variant="picker" progress={progress} />
-              </section>
-              {next && (
-                <section className="home-upnext" aria-labelledby="upnext-title">
-                  <div className="home-section-head">
-                    <h2 id="upnext-title">From the library</h2>
-                    <button type="button" className="text-link" onClick={() => show('library')}>Browse all<ArrowRight size={14} aria-hidden="true" /></button>
+
+              {/* Quick jump navigation pills across all 3 channels */}
+              <nav className="home-channel-jump" aria-label="Jump to channel section">
+                <a href="#section-call" className="channel-jump-pill">
+                  <Phone size={15} aria-hidden="true" />
+                  <span>Calls</span>
+                  <span className="jump-count">{stats.call.attempts ? `${stats.call.attempts} runs` : 'Ready'}</span>
+                </a>
+                <a href="#section-email" className="channel-jump-pill">
+                  <Mail size={15} aria-hidden="true" />
+                  <span>Emails</span>
+                  <span className="jump-count">{stats.email.attempts ? `${stats.email.attempts} runs` : 'Ready'}</span>
+                </a>
+                <a href="#section-sms" className="channel-jump-pill">
+                  <MessageSquareText size={15} aria-hidden="true" />
+                  <span>Messaging</span>
+                  <span className="jump-count">{stats.sms.attempts ? `${stats.sms.attempts} runs` : 'Ready'}</span>
+                </a>
+              </nav>
+
+              {/* Adaptive recommendation banner if Tellio has user insights */}
+              {adaptiveFocus && (
+                <div className="home-adaptive-banner" role="region" aria-label="Adaptive focus recommendation">
+                  <div className="home-adaptive-badge">
+                    <TellIcon size={16} aria-hidden="true" />
+                    <span>Tellio's Focus</span>
                   </div>
-                  <ol className="path-stops"><PathStop scenario={next} progress={progress} upNext /></ol>
-                </section>
+                  <div className="home-adaptive-content">
+                    <p className="home-adaptive-title">{adaptiveFocus.title}</p>
+                    <p className="home-adaptive-reason">
+                      {adaptiveFocus.reason} · Difficulty: <strong>{adaptiveFocus.difficulty}</strong>
+                    </p>
+                  </div>
+                </div>
               )}
+
+              {/* Section 1: Calls */}
+              <ChannelSection
+                channel="call"
+                title="Calls"
+                subtitle="Interactive voice scam simulations powered by conversational AI. Practice recognizing caller urgency, authority impersonation, and phone fraud."
+                badge="Live Voice AI"
+                Icon={Phone}
+                progress={progress}
+                adaptiveDifficulty={userLevel}
+              />
+
+              {/* Section 2: Emails */}
+              <ChannelSection
+                channel="email"
+                title="Emails"
+                subtitle="Phishing inbox simulations. Inspect spoofed senders, deceptive domains, credential harvesting links, and suspicious attachments."
+                badge="Phishing Inbox"
+                Icon={Mail}
+                progress={progress}
+                adaptiveDifficulty={userLevel}
+              />
+
+              {/* Section 3: Messaging */}
+              <ChannelSection
+                channel="sms"
+                title="Messaging"
+                subtitle="Smishing text messages delivered to a simulated phone. Spot malicious links, fake delivery updates, and fraudulent 2FA security requests."
+                badge="SMS & Smishing"
+                Icon={MessageSquareText}
+                progress={progress}
+                adaptiveDifficulty={userLevel}
+              />
             </>
           )}
 
-          {tab === 'library' && <PracticePath progress={progress} />}
+          {tab === 'history' && <PracticePath progress={progress} />}
 
           {tab === 'insights' && (
             <>
-              <ResultsSummary progress={progress} saved={callSync !== 'unavailable'} />
+              <ResultsSummary
+                progress={progress}
+                saved={callSync !== 'unavailable'}
+                onMissed={() => setParams({ tab: 'history', status: 'missed' }, { replace: true })}
+              />
               <InstinctsCard uid={user?.uid} />
               <ScamProfileCard uid={user?.uid} />
               {flagsSeen.length > 0 && (

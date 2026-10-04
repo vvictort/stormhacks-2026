@@ -1,4 +1,5 @@
 import { api } from '../../../lib/api'
+import { saveCachedScenarioMeta } from '../scenarioCache'
 
 // Outside the lazy call chunk on purpose: safe to import from the main bundle (Home). Never import `@elevenlabs/react`
 // or `useSimulatedCall` here.
@@ -20,5 +21,12 @@ export interface CreatedCallScenario {
  */
 export async function requestPersonalisedCall(signal?: AbortSignal, expectedUid?: string): Promise<string> {
   const created = await api<CreatedCallScenario>('/training/call-scenarios', { method: 'POST', body: '{}', signal }, expectedUid)
+  saveCachedScenarioMeta({
+    id: created.scenarioId,
+    title: created.title || 'Personalised scam call',
+    summary: `${created.callerLabel} · Interactive voice scam simulation`,
+    type: 'call',
+    difficulty: created.difficulty,
+  })
   return created.scenarioId
 }
