@@ -154,6 +154,7 @@ export function behaviorRouter(
             : Math.round(e.responseTimeMs / 1000),
         summary: null,
         transcript: [],
+        metadata: e.metadata,
       });
     }
     res.status(202).json({ accepted: parsed.length });

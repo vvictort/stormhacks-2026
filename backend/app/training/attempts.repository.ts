@@ -19,10 +19,11 @@ function mapAttempt(row: QueryResultRow): AttemptSummary {
     success: row.success,
     tactics: row.tactics,
     completedAt: iso(row.completed_at)!,
+    confidence: (row.metadata?.confidence as string) ?? null,
   };
 }
 const summaryColumns =
-  "id,channel,scenario_id,scenario_title,difficulty,scam_category,outcome,success,tactics,completed_at";
+  "id,channel,scenario_id,scenario_title,difficulty,scam_category,outcome,success,tactics,completed_at,metadata";
 
 export class AttemptsRepository {
   private readonly db: Database;
@@ -49,7 +50,7 @@ export class AttemptsRepository {
         a.startedAt,
         a.completedAt,
         a.durationSecs,
-        JSON.stringify({ summary: a.summary, transcript: a.transcript }),
+        JSON.stringify({ summary: a.summary, transcript: a.transcript, ...(a.metadata ?? {}) }),
         a.scamCategory,
       ],
     );

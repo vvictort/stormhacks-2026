@@ -42,6 +42,7 @@ export const attemptSchema = z.object({
     )
     .max(200)
     .default([]),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 export type AttemptInput = z.infer<typeof attemptSchema>;
 
@@ -56,6 +57,7 @@ export interface AttemptSummary {
   success: boolean | null;
   tactics: string[];
   completedAt: string;
+  confidence?: string | null;
 }
 
 export interface AttemptDetail extends AttemptSummary {

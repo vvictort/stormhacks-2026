@@ -169,6 +169,40 @@ test("progress and the vulnerability profile update after each attempt", async (
       vulnerableTactics: [],
       categoryAccuracy: {},
     },
+    tacticMastery: {
+      authority: {
+        tactic: "authority",
+        attempts: 0,
+        correct: 0,
+        accuracy: 0,
+        confidentlyWrong: 0,
+        state: "untouched",
+      },
+      urgency: {
+        tactic: "urgency",
+        attempts: 0,
+        correct: 0,
+        accuracy: 0,
+        confidentlyWrong: 0,
+        state: "untouched",
+      },
+      fear: {
+        tactic: "fear",
+        attempts: 0,
+        correct: 0,
+        accuracy: 0,
+        confidentlyWrong: 0,
+        state: "untouched",
+      },
+      reward: {
+        tactic: "reward",
+        attempts: 0,
+        correct: 0,
+        accuracy: 0,
+        confidentlyWrong: 0,
+        state: "untouched",
+      },
+    },
     difficulty: "easy",
     focus: [],
   });
@@ -219,6 +253,10 @@ test("progress and the vulnerability profile update after each attempt", async (
     banking: { attempts: 1, correct: 0, accuracy: 0 },
     shipping: { attempts: 1, correct: 1, accuracy: 100 },
   });
+  assert.equal(body.tacticMastery.authority.state, "shaky");
+  assert.equal(body.tacticMastery.urgency.state, "solid");
+  assert.equal(body.tacticMastery.fear.state, "untouched");
+  assert.equal(body.tacticMastery.reward.state, "untouched");
 });
 
 test("scenario generation falls back without Gemini, stores the scenario and only its owner can call it", async () => {
