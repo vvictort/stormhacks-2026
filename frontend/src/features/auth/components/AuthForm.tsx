@@ -89,7 +89,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   // pending until the whole operation settles, including any profile warning.
   if (user && (!pending || pending === 'signout')) {
     return (
-      <AuthCard title="You’re signed in" description={user.displayName ? `Welcome, ${user.displayName}. You’re in the right place.` : 'Welcome to Tellio. You’re in the right place.'}>
+      <AuthCard title="You’re signed in" mood="happy" description={user.displayName ? `Welcome, ${user.displayName}. You’re in the right place.` : 'Welcome to Tellio. You’re in the right place.'}>
         <div className="signed-in-icon bg-success/15 text-success-strong"><Check size={30} aria-hidden="true" /></div>
         <p className="signed-in-message text-muted-strong">Your training experience is coming soon. Your account is ready when you are.</p>
         <p className="signed-in-email">{user.email}</p>
@@ -109,12 +109,15 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const formError = resetOpen ? null : error ?? passwordError
   // After a submit attempt, unmet rules stay marked until they are met.
   const [lengthCheck, matchCheck] = passwordChecks(values.password, values.confirmPassword)
+  // Tell reacts to the form: thinking while a request runs, a sideways look when something needs fixing.
+  const mood = formError || Object.values(errors).some(Boolean) ? 'suspicious' : pending ? 'curious' : 'idle'
   return (
     <>
       <AuthCard
         title={isSignup ? 'Create your account' : 'Welcome back'}
+        mood={mood}
         description={!isSignup ? 'Log in to pick up where you left off.'
-          : !onPasswordStep ? 'Get scam simulations matched to your level and see how you improve over time.'
+          : !onPasswordStep ? 'Scam practice matched to your level, at your own pace.'
           : <>Signing up as <strong className="card-email">{values.email.trim()}</strong>. <button type="button" className="text-link inline-link" disabled={disabled} onClick={() => goToStep('details')}>Change</button></>}
       >
         <form ref={form} className="auth-form" onSubmit={handleSubmit} noValidate aria-busy={disabled}>
@@ -130,7 +133,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               <div key="password" className="form-step">
                 {/* Lets password managers save the new password against this email. */}
                 <input type="email" name="username" autoComplete="username" value={values.email.trim()} readOnly tabIndex={-1} aria-hidden="true" className="sr-only" />
-                <PasswordInput id="auth-password" name="password" label="Password" autoComplete="new-password" required placeholder="Create a strong password" value={values.password} aria-describedby="password-checklist" aria-invalid={(triedPassword && !lengthCheck.met) || passwordError ? true : undefined} onChange={(event) => change('password', event.target.value)} />
+                <PasswordInput id="auth-password" name="password" label="Password" autoComplete="new-password" required placeholder="Create a strong password" value={values.password} messages={false} aria-describedby="password-checklist" aria-invalid={(triedPassword && !lengthCheck.met) || passwordError ? true : undefined} onChange={(event) => change('password', event.target.value)} />
                 <PasswordInput id="auth-confirm-password" name="confirmPassword" label="Confirm password" autoComplete="new-password" required placeholder="Enter your password again" value={values.confirmPassword} messages={false} aria-describedby="password-checklist" aria-invalid={triedPassword && !matchCheck.met ? true : undefined} onChange={(event) => change('confirmPassword', event.target.value)} />
                 <PasswordChecklist id="password-checklist" password={values.password} confirmPassword={values.confirmPassword} showErrors={triedPassword} />
               </div>

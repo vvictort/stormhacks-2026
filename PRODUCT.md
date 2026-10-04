@@ -43,7 +43,7 @@ The scams play out on a simulated phone built into the browser. Scam texts, phis
 ## Evidence on Hand
 
 - No testimonials, user data, statistics or press. Future work must not invent figures about scam losses, user counts or results.
-- Built: the auth flow (`frontend/src/pages/`, `frontend/src/features/auth/`), including a custom security illustration (`SecurityIllustration.tsx`).
+- Built: the auth flow (`frontend/src/pages/`, `frontend/src/features/auth/`), presented as an app screen (the signed-in app's bar plus one centred form column) with Tell, the speech-bubble mascot (`frontend/src/components/Mascot.tsx`).
 
 ## Product Principles
 
