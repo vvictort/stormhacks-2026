@@ -75,7 +75,10 @@ payment, personal info or agreeing to act is a successful (resisted-type) outcom
   - `tech-support-remote-1`: tech support wants remote access (2 / medium)
   - `exec-vendor-payment-1`: executive / vendor urgent payment change (3 / hard)
 - Generated (Gemini) scenarios: created only by `POST /api/training/call-scenarios`, stored in
-  `generated_call_scenarios`, ids prefixed `gen-`. `ScenarioCatalog` (`backend/app/scenarios/catalog.ts`) resolves any
+  `generated_call_scenarios`, ids `gen-call-<uuid>` (older `gen-<uuid>` ids stay valid; everything matches on `gen-`).
+  Without `GEMINI_API_KEY`, or when Gemini fails, one of six built-in personalised calls (one per scam category, each a
+  different pretext from the fixtures) is used. Generated calls carry `scamCategory`, which the saved attempt and the
+  `call.ringing` event (`data.scamCategory`) pass on. `ScenarioCatalog` (`backend/app/scenarios/catalog.ts`) resolves any
   id: a fixture, or a `gen-` scenario only if it belongs to the verified caller (another user's id is a 404).
 
 ## Conversation id binding
@@ -130,8 +133,14 @@ flow. The call record (with its `training` field) stays available from `GET /api
 - `GET /api/training/attempts/:id` → one attempt including its redacted transcript, signals and summary (owner only, else 404).
   For a call, `:id` is the call id.
 - `POST /api/training/call-scenarios` → generates a scenario with Gemini (or a built-in fallback when no key),
-  stores it, returns `{ scenarioId: "gen-…", title, callerLabel, difficulty, tactics, source: "gemini" | "fallback" }`
+  stores it, returns `{ scenarioId: "gen-call-…", title, callerLabel, difficulty, tactics, source: "gemini" | "fallback" }`
   (no prompt text). Rate-limited per uid (5/min and 30/day), `429 { error: { code: "RATE_LIMITED" } }`.
+  The category comes from (in order) a `focus` list given server-side (e.g. the insights' `nextTrainingFocus`), the
+  user's weak categories, then their profile; the browser sends `{}`.
+- `GET /api/training/call-scenarios/:id` → the frontend `CallScenario` (owner only, `404 scenario_not_found` otherwise):
+  `{ id, type: "call", title, summary, situation, difficulty, callerLabel, callerNumber?, tactics, indicators: [{ title, detail }],
+  explanation, nextTime, practice: { lines, complyLabel }, scamCategory, generated: { source, reason } }`. Never the
+  system prompt or voice. `/train/gen-call-…` loads it through `useScenario`.
 
 The simulated text and call routes are listed in [`backend/README.md`](../backend/README.md#simulated-texts-and-calls-apicomms).
 

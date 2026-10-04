@@ -1,18 +1,22 @@
 import { transaction, type Database } from '../db/database.ts';
 import type { CallScenario } from '../shared/types.ts';
+import type { CallTeaching } from './callContent.ts';
 
 export type ScenarioSource = 'gemini' | 'fallback';
+
+/** A generated call as stored: the caller (server-only) plus the teaching copy the browser may see. */
+export type StoredCallScenario = CallScenario & { teaching?: CallTeaching & { generated: { source: ScenarioSource; reason: string } } };
 
 export class ScenariosRepository {
   private readonly db: Database;
   constructor(db: Database) { this.db = db; }
 
-  async save(uid: string, scenario: CallScenario, source: ScenarioSource) {
+  async save(uid: string, scenario: StoredCallScenario, source: ScenarioSource) {
     await this.db.query('INSERT INTO generated_call_scenarios(id,firebase_uid,scenario,source) VALUES($1,$2,$3,$4)',[scenario.id,uid,JSON.stringify(scenario),source]);
   }
 
   /** Only the owner's scenario; anyone else gets null. */
-  async get(uid: string, id: string): Promise<CallScenario | null> {
+  async get(uid: string, id: string): Promise<StoredCallScenario | null> {
     const { rows: [row] } = await this.db.query('SELECT scenario FROM generated_call_scenarios WHERE id=$1 AND firebase_uid=$2',[id,uid]);
     return row?.scenario ?? null;
   }

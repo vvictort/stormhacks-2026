@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 import { channelReady, channels, getScenario, hasLink, isScam, scenarios } from '../src/features/training/scenarios.ts'
 import { OUTCOME_TABLE, isScored, normalizeCommsOutcome, readCallResult } from '../src/features/training/callOutcome.ts'
-import { buildCallDebrief, callScreen, debriefSource, formatDuration, importantMoments, offersPractice, practiceResult } from '../src/features/training/call/callModel.ts'
+import { buildCallDebrief, callScreen, debriefSource, formatDuration, importantMoments, offersPractice, practiceResult, riskyExchange } from '../src/features/training/call/callModel.ts'
 import { confirmNavigation, guardsNavigation, leaveDecision, navigationGuarded, setNavigationGuard } from '../src/lib/navigationGuard.ts'
 import { mergeProgress, recordAttempt, recommend, summarize, currentLevel } from '../src/features/training/progress.ts'
 
@@ -196,30 +196,101 @@ test('buildCallDebrief: a resisted call with a challenge', () => {
   const view = buildCallDebrief(bank, { from: 'record', result: { outcome: 'resisted', success: true }, signals: ['engaged', 'challenged'], tactics: ['urgency', 'authority'], transcript })
   assert.equal(view.tone, 'success')
   assert.equal(view.mood, 'happy')
+  assert.equal(view.answered, true)
+  assert.equal(view.pretext, bank.summary)
   assert.ok(view.didWell.some((line) => line.includes('questioned')))
-  assert.deepEqual(view.improve, [bank.nextTime])
+  assert.ok(view.didWell.includes('You kept the code to yourself.'), 'what the user held back on, from the tactics')
+  assert.equal(view.recommendation, bank.nextTime)
+  assert.equal(view.nearMiss, null, 'a flat refusal is not a near miss')
+  assert.deepEqual(view.ask, { role: 'agent', message: 'Can you read me the code we just texted?', time: '0:09' })
+  assert.ok(!view.moments.some((m) => m.time === '0:09'), 'the quoted ask is not repeated in the moments')
   assert.deepEqual(view.warningSigns, bank.indicators)
   assert.equal(new Set(view.tactics).size, view.tactics.length, 'tactics are deduped')
-  assert.ok(view.detected.includes('You questioned the caller'))
   assert.equal(view.practice, false)
 })
 
-test('buildCallDebrief: compromised, declined, missed and unscored', () => {
-  const lost = buildCallDebrief(bank, { from: 'attempt', result: { outcome: 'compromised', success: false }, signals: ['shared_code', 'agreed_to_action'] })
+test('buildCallDebrief: a resisted call that nearly went wrong, and a lingering one', () => {
+  const wobble = [
+    { role: 'agent', message: 'I just texted you a code. Read it to me please.', timeInCallSecs: 5 },
+    { role: 'user', message: 'Okay, hold on, let me find it.', timeInCallSecs: 9 },
+    { role: 'user', message: "Actually no, I'll call my bank myself.", timeInCallSecs: 20 },
+  ]
+  const view = buildCallDebrief(bank, { from: 'attempt', result: { outcome: 'resisted', success: true }, signals: ['engaged'], transcript: wobble })
+  assert.match(view.nearMiss.line, /started to go along/)
+  assert.deepEqual([view.nearMiss.exchange.ask.time, view.nearMiss.exchange.reply.time], ['0:05', '0:09'])
+  assert.match(view.recommendation, /Hang up sooner/)
+})
+
+test('buildCallDebrief: compromised shows where the caller got through and one fix', () => {
+  const gave = [
+    { role: 'agent', message: 'Can you read me the code we just texted?', timeInCallSecs: 9 },
+    { role: 'user', message: "Sure, it's [NUMBER:6 digits].", timeInCallSecs: 14 },
+  ]
+  const lost = buildCallDebrief(bank, { from: 'attempt', result: { outcome: 'compromised', success: false }, signals: ['engaged', 'shared_code', 'agreed_to_action'], transcript: gave })
   assert.equal(lost.tone, 'missed')
   assert.equal(lost.mood, 'alert')
   assert.equal(lost.didWell.length, 0)
-  assert.equal(lost.improve.length, 2)
+  assert.equal(lost.nearMiss.line, 'You read out a code. You agreed to do what they asked.')
+  assert.equal(lost.nearMiss.exchange.reply.message, "Sure, it's [NUMBER:6 digits].")
+  assert.match(lost.recommendation, /Never read out a code/)
+  const practice = buildCallDebrief(bank, { from: 'practice', result: practiceResult('comply') })
+  assert.equal(practice.nearMiss.line, `You chose "${bank.practice.complyLabel}". That was exactly what the caller was after.`)
+  assert.equal(practice.practice, true)
+})
+
+test('buildCallDebrief: declined, missed and unscored', () => {
   const declined = buildCallDebrief(bank, { from: 'record', result: { outcome: 'declined', success: true } })
   assert.equal(declined.tone, 'success')
   assert.match(declined.title, /Declining/)
+  assert.equal(declined.answered, false)
+  assert.equal(declined.nearMiss, null)
   assert.ok(declined.didWell[0].includes("didn't pick up"))
+  assert.equal(declined.recommendation, bank.nextTime)
   const missed = buildCallDebrief(bank, { from: 'record', result: { outcome: 'missed', success: true } })
   assert.equal(missed.tone, 'success')
-  const unscored = buildCallDebrief(bank, { from: 'record', result: { outcome: 'error', success: null } })
+  const unscored = buildCallDebrief(bank, { from: 'record', result: { outcome: 'error', success: null }, transcript })
   assert.equal(unscored.tone, 'unscored')
+  assert.equal(unscored.ask, null)
   assert.equal(buildCallDebrief(bank, { from: 'record', result: null }).tone, 'unscored')
   assert.equal(buildCallDebrief(bank, { from: 'practice', result: practiceResult('hang_up') }).practice, true)
+})
+
+test('riskyExchange finds the ask and a reply that went along, ignoring refusals', () => {
+  assert.equal(riskyExchange([]), null)
+  assert.equal(riskyExchange(transcript).reply, null)
+  assert.equal(riskyExchange([{ role: 'agent', message: 'Hello there.', timeInCallSecs: 0 }]), null)
+  const gave = riskyExchange([
+    { role: 'agent', message: 'What is your date of birth?', timeInCallSecs: 3 },
+    { role: 'user', message: 'Um, [NUMBER:8 digits]? No wait.', timeInCallSecs: 6 },
+  ])
+  assert.equal(gave.reply.time, '0:06', 'a redacted number in the reply counts even next to a "no"')
+})
+
+// A generated call as GET /api/training/call-scenarios/:id returns it (backend/app/scenarios/generator.ts).
+const generated = {
+  id: 'gen-call-1b4e28ba-2fa1-4d3b-a3f5-ef19f6b1c2d3', type: 'call', title: 'IT needs your sign-in code',
+  summary: 'Your IT helpdesk calls about an urgent sign-in upgrade and asks for your MFA code.', situation: 'You sign in to work systems with a code.',
+  difficulty: 'medium', callerLabel: 'IT Service Desk', callerNumber: '+1 (604) 555-0158', tactics: ['authority', 'otp_request'],
+  indicators: [{ title: 'Asking you to read out a code', detail: 'A one-time code is only for you.' }],
+  explanation: 'This is a helpdesk impersonation scam.', nextTime: 'Real IT staff never need your sign-in code.',
+  practice: { lines: ['Hi, this is Sarah.', 'Read me the code.'], complyLabel: 'Read out the sign-in code' },
+  scamCategory: 'workplace', generated: { source: 'fallback', reason: 'Matched to your work as an accountant.' },
+}
+
+test('a generated call debriefs like a built-in one and never becomes the recommendation', () => {
+  const view = buildCallDebrief(generated, { from: 'record', result: { outcome: 'resisted', success: true }, signals: ['engaged', 'asked_to_verify'], tactics: generated.tactics })
+  assert.equal(view.pretext, generated.summary)
+  assert.deepEqual(view.tactics, ['Posing as someone in charge', 'Asking for a one-time code'])
+  assert.ok(view.didWell.includes('You said you would check who was really calling.'))
+  assert.equal(view.recommendation, generated.nextTime)
+  assert.equal(getScenario(generated.id), undefined, 'generated ids load from the API, not the local list')
+  assert.notEqual(recommend({}, generated.id)?.id, generated.id)
+})
+
+test('requestPersonalisedCall lives outside the call chunk', () => {
+  const source = readFileSync(new URL('../src/features/training/call/requestCall.ts', import.meta.url), 'utf8')
+  assert.ok(!/@elevenlabs|useSimulatedCall|livekit/.test(source.replace(/^\s*\/\/.*$/gm, '')))
+  assert.match(source, /'\/training\/call-scenarios', \{ method: 'POST', body: '\{\}'/)
 })
 
 test('importantMoments keeps the opener and pressure lines in order, capped', () => {

@@ -94,6 +94,8 @@
 
 /* ---------- Call debrief ---------- */
 .call-debrief .debrief-lede strong { color: var(--color-foreground); font-weight: 600; }
+.call-pretext, .call-nearmiss { margin-top: 8px; font-size: 15px; line-height: 1.6; color: var(--color-muted-strong); }
+.call-nearmiss { padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface)); color: var(--color-foreground); }
 .call-debrief-note { margin-top: 10px; padding: 8px 12px; border-radius: 8px; background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); color: var(--color-accent-strong); font-size: 13px; }
 .call-tactics { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
 .call-tactics li { padding: 5px 11px; border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface)); color: var(--color-primary-strong); font-size: 13px; }
