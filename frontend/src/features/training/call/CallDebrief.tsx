@@ -1,6 +1,6 @@
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Check, CircleAlert, Lightbulb } from 'lucide-react'
 import { m } from 'motion/react'
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Mascot } from '../../../components/Mascot'
 import { RevealText } from '../../../components/RevealText'
 import { TransitionLink } from '../../../components/TransitionLink'
@@ -17,6 +17,12 @@ export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDe
   // One next step: the adaptive panel's "Next scenario made for you" when it shows, the path's next otherwise.
   const actions = debriefActions({ hasNext: Boolean(next), adaptive: Boolean(learned) })
   useEffect(() => heading.current?.focus(), [])
+  // One list that reads by tone: the slip leads when the caller got through.
+  const good = view.didWell.map((line) => [true, line] as const)
+  const slip = view.nearMiss ? [[false, view.nearMiss.line] as const] : []
+  const notes = view.tone === 'missed' ? [...slip, ...good] : [...good, ...slip]
+  // The caller's ask is only quoted up top as part of a near-miss pair; otherwise it joins the transcript moments.
+  const moments = view.ask && !view.nearMiss?.exchange?.reply ? [view.ask, ...view.moments] : view.moments
 
   return (
     <m.section className={`debrief call-debrief is-${view.tone}`} aria-labelledby="debrief-title"
@@ -28,52 +34,43 @@ export function CallDebrief({ view, next, callerLabel, learned }: { view: CallDe
         <RevealText as="h2" id="debrief-title" ref={heading} tabIndex={-1} text={view.title} delay={140} />
       </div>
       <p className="debrief-lede"><strong>{view.outcomeLine}</strong> {view.explanation}</p>
-      {view.practice && <p className="call-debrief-note">Caption-only practice result. It's saved in this browser only.</p>}
 
-      <h3>{view.answered ? 'What the caller tried' : 'What the caller was going to try'}</h3>
       <p className="call-pretext">{view.pretext}</p>
       {view.tactics.length > 0 && <ul className="call-tactics" aria-label="Tactics the caller used">{view.tactics.map((tactic) => <li key={tactic}>{tactic}</li>)}</ul>}
-      {view.ask && !view.nearMiss?.exchange?.reply && <Quotes callerLabel={callerLabel} moments={[view.ask]} />}
 
-      {view.didWell.length > 0 && (
+      {notes.length > 0 && (
         <>
-          <h3>What you resisted</h3>
-          <ul className="call-list is-good">{view.didWell.map((item) => <li key={item}>{item}</li>)}</ul>
+          <h3>{view.tone === 'missed' ? 'Where the caller got through' : 'What you resisted'}</h3>
+          <ul className="call-list">
+            {notes.map(([good, line]) => (
+              <li key={line} className={good ? 'is-good' : 'is-slip'}>
+                {good ? <Check size={16} aria-hidden="true" /> : <CircleAlert size={16} aria-hidden="true" />}<span>{line}</span>
+              </li>
+            ))}
+          </ul>
+          {view.nearMiss?.exchange?.reply && <Quotes callerLabel={callerLabel} moments={[view.nearMiss.exchange.ask, view.nearMiss.exchange.reply]} />}
         </>
       )}
 
-      {view.nearMiss && (
-        <>
-          <h3>{view.tone === 'missed' ? 'Where the caller got through' : 'What you nearly fell for'}</h3>
-          <p className="call-nearmiss">{view.nearMiss.line}</p>
-          {view.nearMiss.exchange?.reply && <Quotes callerLabel={callerLabel} moments={[view.nearMiss.exchange.ask, view.nearMiss.exchange.reply]} />}
-        </>
-      )}
-
-      {view.moments.length > 0 && (
-        <>
-          <h3>Moments from the call</h3>
-          <p className="debrief-hint">From the saved transcript, with personal details removed.</p>
-          <Quotes callerLabel={callerLabel} moments={view.moments} />
-        </>
-      )}
-
-      <h3>Warning signs in this call</h3>
-      <ol className="debrief-clues">
-        {view.warningSigns.map((sign, i) => (
-          <li key={sign.title} style={{ '--n': i } as CSSProperties}>
-            <span className="clue-num" aria-hidden="true">{i + 1}</span>
-            <div><strong>{sign.title}</strong><p>{sign.detail}</p></div>
-          </li>
+      <h3>Warning signs</h3>
+      <ul className="call-signs" aria-label="Warning signs in this call">
+        {view.warningSigns.map((sign) => (
+          <li key={sign.title}><details><summary>{sign.title}</summary><p>{sign.detail}</p></details></li>
         ))}
-      </ol>
+      </ul>
 
-      <div className="debrief-next">
-        <h3>{view.tone === 'success' ? 'One thing to keep practising' : 'One thing to do differently'}</h3>
-        <p>{view.recommendation}</p>
-      </div>
+      <p className="call-tip"><Lightbulb size={18} aria-hidden="true" /><span>{view.recommendation}</span></p>
 
-      {credit && <p className="debrief-hint">{credit}</p>}
+      {moments.length > 0 && (
+        <details className="call-transcript">
+          <summary>See moments from the call</summary>
+          <p className="debrief-hint">From the saved transcript, with personal details removed.</p>
+          <Quotes callerLabel={callerLabel} moments={moments} />
+        </details>
+      )}
+
+      {view.practice && <p className="call-debrief-note">Caption-only practice result. It's saved in this browser only.</p>}
+      {credit && <p className="call-debrief-note">{credit}</p>}
 
       {learned}
 
