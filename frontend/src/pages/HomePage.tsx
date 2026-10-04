@@ -4,6 +4,7 @@ import { CountUp } from '../components/CountUp'
 import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
+import { GenerateEmailButton } from '../features/training/components/GenerateEmailButton'
 import { PracticePath } from '../features/training/components/PracticePath'
 import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { currentLevel, recommend, summarize, timeline } from '../features/training/progress'
@@ -58,6 +59,7 @@ export function HomePage() {
             <TransitionLink className="train-primary" to={`/train/${target.id}`}>{cta}<ArrowRight size={17} aria-hidden="true" /></TransitionLink>
             <p>{next ? 'Up next' : 'Starts with'}: <strong>{target.title}</strong></p>
           </div>
+          <GenerateEmailButton />
 
           <section className="home-progress" aria-labelledby="progress-title">
             <h2 id="progress-title">Your practice so far</h2>
