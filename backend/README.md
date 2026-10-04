@@ -24,6 +24,31 @@ TigerData TLS keeps certificate and hostname verification enabled. For a custom 
 
 Migrations in `app/db/migrations` are transactional, serialized, and recorded in `schema_migrations`; `npm run migrate` applies any that are new. `001` creates `user_profiles`; `002` creates `training_attempts` (id = comms attempt id, so re-posts are no-ops; canonical channel/difficulty/outcome enforced by CHECKs; `metadata` holds only the redacted summary and transcript) and `generated_call_scenarios` (`gen-…` ids, the comms `CallScenario` JSON, `source` = `gemini` or `fallback`). Migration commands are repeatable and do not drop existing tables. Run migrations explicitly before serving traffic; API startup does not modify the schema.
 
+## Structure
+
+Organised by feature. Each feature owns its routes, schema, repository and logic; shared concerns live beside them.
+
+```
+app/
+  main.ts               composition root: config → db pool → repositories → app → listen
+  server.ts             HTTP assembly: shared middleware, then each feature's router
+  config.ts             env schema (zod)
+  repositories.ts       builds every feature's repository from one pool
+  shared/vocabulary.ts  canonical channel, difficulty, outcome and tactic (docs/call-integration.md)
+  http/                 errors, Firebase auth, internal-token auth, app-origin guard, rate limit
+  db/                   pool, migrate, migrations/*.sql
+  users/                onboarding profile: routes, repository, schema
+  training/             attempts and progress: browser routes, internal route, repository, schema, progress (pure)
+  scenarios/            generated call scenarios: routes, repository, call-scenario schema, generator (Gemini)
+```
+
+Dependency rules:
+
+- Features depend on `shared/`, `http/` and `db/`, never the reverse. `server.ts` and `main.ts` are the only places that know every feature.
+- The one feature-to-feature link is `scenarios → training/progress` (difficulty and weak categories personalise a scenario).
+- Repositories are the only modules that run SQL. Routes get their repositories injected (`createApp({ repos })`), so tests use in-memory fakes.
+- The API never imports comms code. It keeps its own copy of the call-scenario contract, and `tests/call-scenario.test.ts` fails if it drifts from comms.
+
 ## API
 
 Every profile and training request requires `Authorization: Bearer <Firebase ID token>`; the uid always comes from the verified token.
@@ -50,7 +75,7 @@ Mounted at `/api/internal/*` before the browser Origin/JSON checks, with a 256kb
 
 ### Environment
 
-`DATABASE_URL`, `FIREBASE_PROJECT_ID`, `HOST`, `PORT`, `APP_ORIGIN`, `NODE_ENV`, plus optional `INTERNAL_API_TOKEN` (≥ 32 chars, same value in comms) and `GEMINI_API_KEY` (unset or failing Gemini uses built-in scenarios and reports `source: "fallback"`). All are read from `backend/.env` by `app/core/config.ts`.
+`DATABASE_URL`, `FIREBASE_PROJECT_ID`, `HOST`, `PORT`, `APP_ORIGIN`, `NODE_ENV`, plus optional `INTERNAL_API_TOKEN` (≥ 32 chars, same value in comms) and `GEMINI_API_KEY` (unset or failing Gemini uses built-in scenarios and reports `source: "fallback"`). All are read from `backend/.env` by `app/config.ts`.
 
 GET creates an incomplete profile on first sign-in. Its returned fields are `id`, `uid`, `email`, `emailVerified`, `name`, `phone`, `profession`, `interests`, `onboardingComplete`, `createdAt`, and `updatedAt`. Email and verification status follow Firebase; subsequent logins preserve the user's saved personal name and preferences.
 

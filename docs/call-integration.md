@@ -7,7 +7,7 @@ If an implementation needs to differ, update this file in the same change.
 
 - Every service identifies a user by their **Firebase uid**, taken only from a **verified** Firebase ID token
   (`firebase-admin` `verifyIdToken`). Never from a request body, query or header other than `Authorization`.
-- Comms must verify tokens cryptographically (same pattern as `backend/app/core/security.ts`, with an injectable
+- Comms must verify tokens cryptographically (same pattern as `backend/app/http/auth.ts`, with an injectable
   verifier for tests). Expired, malformed, unsigned or forged tokens are `401`.
 - Dev-only anonymous user: allowed **only** when `NODE_ENV !== 'production'` **and** `COMMS_ALLOW_DEV_USER=true`.
   In production that combination must refuse to start. Default is off.

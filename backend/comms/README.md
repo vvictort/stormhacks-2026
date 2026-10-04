@@ -47,7 +47,7 @@ Browser requests carry the signed-in user's Firebase ID token:
 - `Authorization: Bearer <token>` on every route except `/health`, `/scenarios`, `/l/:token` and `/dev/*`.
 - The SSE stream takes it as `?access_token=<token>` instead, because `EventSource` can't send headers.
 
-Tokens are verified with firebase-admin `verifyIdToken` against `FIREBASE_PROJECT_ID` (signature, expiry, audience, issuer), the same as `backend/app/core/security.ts`. The uid comes only from the verified token (`createAuth` in `src/auth.ts`, with an injectable verifier for tests).
+Tokens are verified with firebase-admin `verifyIdToken` against `FIREBASE_PROJECT_ID` (signature, expiry, audience, issuer), the same as `backend/app/http/auth.ts`. The uid comes only from the verified token (`createAuth` in `src/auth.ts`, with an injectable verifier for tests).
 
 - A missing, expired, malformed, unsigned or forged token returns `401 { error: 'unauthorized', reason }`, with `reason` one of `missing_token`, `malformed_token`, `invalid_token`, `token_expired`.
 - Another user's thread or call returns `404`, so results pages only work for the signed-in owner.
