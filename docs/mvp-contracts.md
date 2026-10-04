@@ -63,13 +63,34 @@ ids from `scenarios.ts`, generated ones from a GET that returns the **frontend `
 
 ## Behaviour events and metrics (Agent 2)
 
-- `POST /api/training/events` `{ events: [...] }` (batched, small). Each: `type`, `channel`, `scenarioId`,
-  `attemptId`, optional `scamCategory`, `difficulty`, `outcome`, `responseTimeMs`, `metadata`, `at`. The uid comes from
-  the token only. Texts and emails: a `scenario_completed` event with an outcome also records a `training_attempts`
-  row (id = `attemptId`, idempotent), so the vulnerability profile and adaptive difficulty cover every channel.
-- Calls: events are derived server-side from the call lifecycle (the sim event sink); the browser does not post them.
-- `GET /api/training/metrics`: accuracy, report rate, average detection time, a then-vs-now trend, per-category
-  stats, most improved category, per-day timeline. Empty history returns nulls/empty arrays, never an error.
+Code: `backend/app/behavior/` (routes, repository, call bridge), `frontend/src/features/insights/` (tracker, card).
+
+- `POST /api/training/events` `{ events: [...] }` → `202 { accepted: n }`; 1–50 events, any invalid event rejects the whole
+  batch (400). The uid comes from the token only. Each browser event:
+  `type` (any `BehaviorEventType` except the `call_*` ones), `channel` (`sms` | `email`; calls are server-side only),
+  `scenarioId`, `scenarioTitle` (required: category inference and the attempt row need it), `attemptId` (a browser
+  `crypto.randomUUID()`, one per run), `difficulty` (required), optional `scamCategory` (else `inferCategory`),
+  `outcome` (a message outcome; required on `scenario_completed`, not allowed elsewhere), `responseTimeMs` (since the run
+  opened), `metadata` (≤ 8 flat string/number/boolean keys, ≤ 512 bytes; sensitive-looking keys dropped, strings
+  redacted; never anything the user typed), `at` (clamped to [server now − 10 min, server now]; missing = server now).
+  One multi-row INSERT into `behavior_events`.
+- Texts and emails: a `scenario_completed` also records a `training_attempts` row (id = `attemptId`, idempotent,
+  `success = outcomeSuccess(outcome)`, `scam_category` set, `tactics: []`, started/duration from `responseTimeMs`), so
+  the vulnerability profile and adaptive difficulty cover every channel. The frontend keeps its local text/email
+  progress; `mergeProgress` folds in only `channel === 'call'` server attempts, so nothing is counted twice.
+- Calls: `CallBehaviorSink` wraps the sim `EventSink` (wired in `main.ts`): `call.ringing` → `call_received`,
+  `call.accepted` → `call_answered`, `call.declined` / `call.missed` → `call_declined` / `call_missed` + `scenario_completed`
+  (`declined` / `missed`), `call.ended` → `call_ended`, `call.analyzed` → `scenario_completed` (canonical outcome).
+  `responseTimeMs` = time since the phone started ringing. Abandoned and failed calls add no scored event. Never throws.
+- `GET /api/training/metrics` (own data only; empty history → zeros/nulls/empty lists, 200):
+  `{ attempts, accuracy, reportRate, avgDetectionMs, trend: { window, then: Period, now: Period } | null,
+     categories: [{ category, attempts, accuracy, avgDetectionMs }], mostImproved: { category, then, now } | null,
+     timeline: [{ day: 'YYYY-MM-DD', attempts, correct, avgDetectionMs }] }`, `Period = { accuracy, avgDetectionMs }`.
+  Over completed, scored attempts (one per `attempt_id`, errors excluded). Percentages are 0–100 integers.
+  `reportRate` = scam texts/emails reported ÷ scam texts/emails seen. Detection time = decision time on texts/emails and
+  time-to-decline on declined calls (answered calls have none). `trend` compares the first k with the latest k attempts,
+  k = min(5, ⌊n/2⌋) (null under 2). `mostImproved`: per category, the same halves; the biggest accuracy gain, or with
+  equal accuracy the biggest drop in detection time; null without a real gain. `timeline` is per UTC day.
 
 ## Vulnerability analysis (Agent 3)
 
