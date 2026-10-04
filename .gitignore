@@ -35,3 +35,7 @@ logs/
 .idea/
 *.swp
 *.swo
+
+# Local database certificate bundles and test artifacts
+backend/.certs/
+backend/.local/

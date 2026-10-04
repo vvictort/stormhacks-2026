@@ -4,15 +4,18 @@ import { AuthLayout } from './features/auth/components/AuthLayout'
 import { RedirectIfAuthed, RequireAuth } from './features/auth/RouteGuards'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { OnboardingPage } from './pages/OnboardingPage'
+import { ProfileProvider } from './features/profile/ProfileProvider'
 import { ScenarioPage } from './pages/ScenarioPage'
 import { SignupPage } from './pages/SignupPage'
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <ProfileProvider><BrowserRouter>
         <Routes>
           <Route element={<RequireAuth />}>
+            <Route element={<AuthLayout />}><Route path="/onboarding" element={<OnboardingPage />} /></Route>
             <Route path="/home" element={<HomePage />} />
             <Route path="/train/:scenarioId" element={<ScenarioPage />} />
           </Route>
@@ -25,7 +28,7 @@ function App() {
           {/* `/` and unknown paths go home; RequireAuth sends logged-out visitors on to /login. */}
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
-      </BrowserRouter>
+      </BrowserRouter></ProfileProvider>
     </AuthProvider>
   )
 }

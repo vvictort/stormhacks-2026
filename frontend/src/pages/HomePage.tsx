@@ -7,16 +7,18 @@ import { TrainingHeader } from '../features/training/components/TrainingHeader'
 import { currentLevel, recommend, summarize, timeline } from '../features/training/progress'
 import { getScenario, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
+import { useProfile } from '../features/profile/ProfileContext'
 
 export function HomePage() {
   const { user, profileWarning, dismissProfileWarning } = useAuth()
+  const { profile } = useProfile()
   const { progress } = useProgress(user?.uid)
   const { done, total, correct } = summarize(progress)
   const next = recommend(progress)
   const level = currentLevel(progress)
   const recent = timeline(progress).slice(-8)
   const target = next ?? scenarios[0]
-  const firstName = user?.displayName?.trim().split(/\s+/)[0]
+  const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
   const name = firstName ? `, ${firstName}` : ''
 
   const heading = done === 0
@@ -36,6 +38,11 @@ export function HomePage() {
         <div className="home-intro">
           <h1>{heading}</h1>
           <p className="home-lede">Tellio sends practice scam texts and emails to a phone in your browser. You decide what you'd do, then see what gave it away. Nothing real is ever at risk.</p>
+
+          <section className="profile-summary" aria-label="Your saved profile">
+            <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
+            <Link className="text-link" to="/onboarding">Edit profile<ArrowRight size={14} aria-hidden="true" /></Link>
+          </section>
 
           {profileWarning && (
             <div className="train-notice" role="status">
