@@ -1,5 +1,5 @@
 import { ArrowLeft, LoaderCircle, Mail, MessageSquareText, Phone } from 'lucide-react'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
@@ -57,21 +57,37 @@ function CallRun({ scenario }: { scenario: CallScenario }) {
   return (
     <main className="scenario-main">
       <ScenarioIntro scenario={scenario} />
-      <Suspense fallback={<CallLoading />}>
-        <CallExperience scenario={scenario} progress={progress} record={record} />
-      </Suspense>
+      <CallChunkBoundary>
+        <Suspense fallback={<CallLoading />}>
+          <CallExperience scenario={scenario} progress={progress} record={record} />
+        </Suspense>
+      </CallChunkBoundary>
     </main>
   )
 }
 
-function CallLoading() {
+function CallLoading({ failed = false }: { failed?: boolean }) {
   return (
     <section className="phone-wrap" aria-label="Practice phone">
       <PhoneFrame time="">
-        <p className="call-loading" role="status"><LoaderCircle size={20} className="spinner" aria-hidden="true" /> Getting the phone ready…</p>
+        {failed
+          ? (
+            <div className="call-loading" role="alert">
+              <p>We couldn't load the call screen. Check your connection and try again.</p>
+              <button type="button" className="train-ghost" onClick={() => window.location.reload()}>Reload</button>
+            </div>
+          )
+          : <p className="call-loading" role="status"><LoaderCircle size={20} className="spinner" aria-hidden="true" /> Getting the phone ready…</p>}
       </PhoneFrame>
     </section>
   )
+}
+
+/** The call chunk can fail to download (offline, or a deploy replaced it): show a way out instead of a blank phone. */
+class CallChunkBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() { return this.state.failed ? <CallLoading failed /> : this.props.children }
 }
 
 function ScenarioRun({ scenario }: { scenario: MessageScenario }) {

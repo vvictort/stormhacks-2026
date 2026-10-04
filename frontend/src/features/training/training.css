@@ -252,7 +252,8 @@
 .email-view { animation: rise-in 380ms var(--ease-out-quint) 120ms backwards; --rise: 14px; }
 
 /* Placeholder while the call screen's code loads (call.css arrives with it). */
-.call-loading { margin: auto; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #6E6253; }
+.call-loading { margin: auto; padding: 0 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; font-size: 14px; line-height: 1.5; color: #6E6253; text-align: center; }
+p.call-loading { flex-direction: row; gap: 8px; }
 
 /* ---------- /caught: where practice links land ---------- */
 .caught-main { width: min(620px, calc(100% - 32px)); margin: 24px auto 72px; }
