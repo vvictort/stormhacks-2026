@@ -4,7 +4,7 @@ import { passwordChecks } from '../validation'
 // Live password rules. After a failed submit, unmet rules turn into errors.
 export function PasswordChecklist({ id, password, confirmPassword, showErrors }: { id: string; password: string; confirmPassword: string; showErrors: boolean }) {
   return (
-    <ul id={id} className="password-checklist" aria-label="Password requirements">
+    <ul id={id} className="password-checklist" aria-label="Password requirements" aria-live="polite">
       {passwordChecks(password, confirmPassword).map((check) => {
         const state = check.met ? 'met' : showErrors ? 'unmet' : 'pending'
         const Icon = state === 'met' ? Check : state === 'unmet' ? X : Circle

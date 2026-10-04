@@ -27,10 +27,10 @@ export async function signUp(email: string, password: string, name: string) {
     if (policy.containsLowercaseLetter === false) requirements.push('a lowercase letter')
     if (policy.containsUppercaseLetter === false) requirements.push('an uppercase letter')
     if (policy.containsNumericCharacter === false) requirements.push('a number')
-    if (policy.containsNonAlphanumericCharacter === false) {
-      requirements.push(`a special character (${policy.passwordPolicy.allowedNonAlphanumericCharacters})`)
-    }
-    throw new PasswordPolicyError(`Your password needs ${requirements.join(', ') || 'to meet the account password requirements'}.`)
+    if (policy.containsNonAlphanumericCharacter === false) requirements.push('a symbol')
+    // Short enough for the form's error row (no symbol list); "a, b and c" reads better than a comma dump.
+    const list = requirements.length > 1 ? `${requirements.slice(0, -1).join(', ')} and ${requirements.at(-1)}` : requirements[0]
+    throw new PasswordPolicyError(`Your password needs ${list ?? 'to meet the account requirements'}.`)
   }
 
   const credential = await createUserWithEmailAndPassword(auth, email, password)
