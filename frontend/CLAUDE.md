@@ -11,6 +11,7 @@ The contract between the frontend and the backend is `docs/call-integration.md`.
 ## Phone calls
 
 - `features/training/scenarios.ts` holds `CallScenario`: teaching metadata only (title, tactics, indicators, a caption-only practice script). The caller's script and voice live on the backend. The ids must match `backend/fixtures/scenarios/call-*.json` exactly.
+- Route pages are lazy chunks (`lib/lazyPage.ts`, wired in `App.tsx`): the page on screen loads first, the rest preload right after the first render, and `TransitionLink` waits for them so a View Transition never animates to the loading fallback. Vendor chunks (react, firebase, livekit, elevenlabs, icons) are set in `vite.config.ts`.
 - `/train/:id` for a call renders `CallRun` in `ScenarioPage`, which lazy-loads `features/training/call/CallExperience.tsx`. That chunk is the only place `@elevenlabs/react` (and LiveKit) is imported: never import `useSimulatedCall` or `@elevenlabs/react` from anything in the main bundle. Check with `npm run build`.
 - `CallExperience` mounts `<ConversationProvider>` once per call run (keyed by scenario id), around `useSimulatedCall()`. The provider must not unmount mid-call.
 - Results: components never decide success. Read it through `features/training/callOutcome.ts` (`readCallResult`), which takes the call record's `training` field or the backend attempt and holds the contract table as a safety net.

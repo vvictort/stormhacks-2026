@@ -1,18 +1,24 @@
 import { LazyMotion, MotionConfig } from 'motion/react'
+import { Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { AuthLayout } from './features/auth/components/AuthLayout'
-import { RedirectIfAuthed, RequireAuth } from './features/auth/RouteGuards'
-import { CaughtPage } from './pages/CaughtPage'
-import { HomePage } from './pages/HomePage'
-import { LoginPage } from './pages/LoginPage'
-import { OnboardingPage } from './pages/OnboardingPage'
+import { RedirectIfAuthed, RequireAuth, SessionLoading } from './features/auth/RouteGuards'
 import { ProfileProvider } from './features/profile/ProfileProvider'
-import { ScenarioPage } from './pages/ScenarioPage'
-import { SignupPage } from './pages/SignupPage'
+import { lazyPage, preloadPages } from './lib/lazyPage'
 import { loadMotionFeatures } from './lib/motion'
 
+// Each page is its own chunk; the one on screen loads first, the rest right after the first render.
+const HomePage = lazyPage(() => import('./pages/HomePage').then((m) => m.HomePage))
+const ScenarioPage = lazyPage(() => import('./pages/ScenarioPage').then((m) => m.ScenarioPage))
+const OnboardingPage = lazyPage(() => import('./pages/OnboardingPage').then((m) => m.OnboardingPage))
+const LoginPage = lazyPage(() => import('./pages/LoginPage').then((m) => m.LoginPage))
+const SignupPage = lazyPage(() => import('./pages/SignupPage').then((m) => m.SignupPage))
+const CaughtPage = lazyPage(() => import('./pages/CaughtPage').then((m) => m.CaughtPage))
+
 function App() {
+  useEffect(() => { preloadPages().catch(() => {}) }, [])
+
   return (
     <LazyMotion features={loadMotionFeatures} strict>
     {/* Reduced motion: Motion drops transform animations (slides, pops) and keeps fades. */}
@@ -20,6 +26,7 @@ function App() {
     <AuthProvider>
       {/* Synchronous route updates let a View Transition capture the new screen (see lib/viewTransition). */}
       <ProfileProvider><BrowserRouter useTransitions={false}>
+        <Suspense fallback={<SessionLoading />}>
         <Routes>
           <Route element={<RequireAuth />}>
             <Route element={<AuthLayout />}><Route path="/onboarding" element={<OnboardingPage />} /></Route>
@@ -37,6 +44,7 @@ function App() {
           {/* `/` and unknown paths go home; RequireAuth sends logged-out visitors on to /login. */}
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
+        </Suspense>
       </BrowserRouter></ProfileProvider>
     </AuthProvider>
     </MotionConfig>
