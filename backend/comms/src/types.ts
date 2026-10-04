@@ -107,6 +107,8 @@ export interface TextThread {
   signals: Signal[];
   /** Scammer replies sent after the opening message (follow-up nudges excluded). */
   scammerTurns: number;
+  /** How many user messages have been passed to the reply provider. */
+  userMessagesHandled: number;
   linkToken?: string;
   linkFirstSentAt?: string;
   firstClickAt?: string;

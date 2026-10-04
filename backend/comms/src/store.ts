@@ -4,20 +4,20 @@ import type { CallRecord, TextThread } from './types.ts';
 
 /**
  * Persistence for comms state. Async so it can later move to Postgres/TigerData.
- * `update*` applies `fn` to a copy atomically and returns the updated copy;
+ * `update*` applies `fn` to a copy atomically and returns the updated copy plus `fn`'s return value;
  * returned objects are always copies, so mutate only inside `update*`.
  */
 export interface CommsStore {
   createThread(thread: TextThread): Promise<void>;
   getThread(id: string): Promise<TextThread | null>;
-  updateThread(id: string, fn: (thread: TextThread) => void): Promise<TextThread>;
+  updateThread<R>(id: string, fn: (thread: TextThread) => R): Promise<{ thread: TextThread; result: R }>;
   listActiveThreads(): Promise<TextThread[]>;
   findActiveThreadByUser(userId: string): Promise<TextThread | null>;
   findThreadByLinkToken(token: string): Promise<TextThread | null>;
 
   createCall(call: CallRecord): Promise<void>;
   getCall(id: string): Promise<CallRecord | null>;
-  updateCall(id: string, fn: (call: CallRecord) => void): Promise<CallRecord>;
+  updateCall<R>(id: string, fn: (call: CallRecord) => R): Promise<{ call: CallRecord; result: R }>;
   listCallsByStatus(status: CallRecord['status']): Promise<CallRecord[]>;
 }
 
@@ -55,14 +55,14 @@ export class JsonFileStore implements CommsStore {
     return t ? structuredClone(t) : null;
   }
 
-  async updateThread(id: string, fn: (thread: TextThread) => void) {
+  async updateThread<R>(id: string, fn: (thread: TextThread) => R) {
     const current = this.threads.get(id);
     if (!current) throw new Error(`thread not found: ${id}`);
     const next = structuredClone(current);
-    fn(next);
+    const result = fn(next);
     this.threads.set(id, next);
     this.schedulePersist();
-    return structuredClone(next);
+    return { thread: structuredClone(next), result };
   }
 
   async listActiveThreads() {
@@ -89,14 +89,14 @@ export class JsonFileStore implements CommsStore {
     return c ? structuredClone(c) : null;
   }
 
-  async updateCall(id: string, fn: (call: CallRecord) => void) {
+  async updateCall<R>(id: string, fn: (call: CallRecord) => R) {
     const current = this.calls.get(id);
     if (!current) throw new Error(`call not found: ${id}`);
     const next = structuredClone(current);
-    fn(next);
+    const result = fn(next);
     this.calls.set(id, next);
     this.schedulePersist();
-    return structuredClone(next);
+    return { call: structuredClone(next), result };
   }
 
   async listCallsByStatus(status: CallRecord['status']) {
