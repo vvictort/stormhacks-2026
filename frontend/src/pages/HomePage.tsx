@@ -2,7 +2,6 @@ import { ArrowRight, Check, History, Info, Mail, MessageSquareText, Phone, Rotat
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
-import { RevealText } from '../components/RevealText'
 import { TransitionLink } from '../components/TransitionLink'
 import { useAuth } from '../features/auth/AuthContext'
 import { InstinctsCard } from '../features/insights/InstinctsCard'
@@ -29,16 +28,15 @@ export function HomePage() {
   const next = recommend(progress)
   const all = timeline(progress)
   const firstName = (profile?.name || user?.displayName)?.trim().split(/\s+/)[0]
-  const name = firstName ? `, ${firstName}` : ''
 
-  const heading = all.length === 0 && !adaptive?.attempts.length ? `Welcome${name}. Let's find your blind spots.` : `Ready when you are${name}.`
+  const greeting = all.length === 0 && !adaptive?.attempts.length ? 'Welcome' : 'Welcome back'
   const flagsSeen = [...new Set(scenarios
     .filter((scenario) => progress[scenario.id] && isScam(scenario))
     .flatMap((scenario) => scenario.indicators.map((indicator) => indicator.title)))]
 
   useEffect(() => { document.title = 'Home · Tellio' }, [])
 
-  // Tabs live in the URL (Back and reload keep them); filters are dropped when you leave History.
+  // Tabs live in the URL (Back and reload keep them); filters are dropped when you leave the Library.
   function show(id: Tab) {
     setParams(id === 'practice' ? {} : { tab: id }, { replace: true })
   }
@@ -57,7 +55,7 @@ export function HomePage() {
     <div className="train-shell">
       <TrainingHeader />
       <main className="home-main">
-        <RevealText as="h1" className="home-title" text={heading} highlight={firstName} />
+        <div className="home-welcome"><h1 className="home-title">{greeting}{firstName && <>, <span>{firstName}</span></>}.</h1><p>A little practice. A sharper instinct.</p></div>
 
         <div className="home-tabs segmented" role="tablist" aria-label="Home" onKeyDown={onTabKey}>
           {tabs.map((t) => (

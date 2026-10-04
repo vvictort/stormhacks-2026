@@ -1,4 +1,4 @@
-import { ArrowRight, Award, Check, LoaderCircle, Mail, MessageSquareText, RotateCcw, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, LoaderCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mascot } from '../../../components/Mascot'
@@ -31,15 +31,14 @@ export function MissionProgress({ mission, currentId }: { mission?: Mission | nu
   )
 }
 
-const badgeIcons = { 'first-steps': Sparkles, 'good-catch': Award, comeback: RotateCcw }
 export function BadgeCollection({ earned }: { earned: Partial<Record<BadgeId, number>> }) {
   return <section className="badge-collection" aria-labelledby="badges-title">
-    <div className="home-section-head"><h2 id="badges-title">Little wins, lasting instincts</h2><span>{Object.keys(earned).length} of 3 earned</span></div>
-    <ul>{badges.map(badge => {
-      const Icon = badgeIcons[badge.id]
+    <div className="home-section-head"><h2 id="badges-title">Your milestones</h2><span>{Object.keys(earned).length} of 3 earned</span></div>
+    <ul>{badges.map((badge, index) => {
       return <li key={badge.id} className={earned[badge.id] !== undefined ? 'is-earned' : ''}>
-        <span className="badge-icon" aria-hidden="true"><Icon size={22} /></span>
-        <div><strong>{badge.name}</strong><span className="badge-status">{earned[badge.id] !== undefined ? 'Earned' : 'To earn'}</span><p>{badge.condition}</p></div>
+        <span className="milestone-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+        <div><strong>{badge.name}</strong><p>{badge.condition}</p></div>
+        <span className="badge-status">{earned[badge.id] !== undefined ? 'Earned' : 'Not yet'}</span>
       </li>
     })}</ul>
   </section>
@@ -48,7 +47,7 @@ export function BadgeCollection({ earned }: { earned: Partial<Record<BadgeId, nu
 export function NewBadges({ ids }: { ids: BadgeId[] }) {
   if (!ids.length) return null
   return <div className="new-badges" role="status">
-    {ids.map(id => <p key={id}><Award size={18} aria-hidden="true" /><span><strong>{badges.find(b => b.id === id)!.name} earned!</strong> {badges.find(b => b.id === id)!.condition}</span></p>)}
+    {ids.map(id => <p key={id}><span><strong>{badges.find(b => b.id === id)!.name} earned!</strong> {badges.find(b => b.id === id)!.condition}</span></p>)}
   </div>
 }
 
@@ -100,18 +99,18 @@ export function MissionCard({ uid, progress, adaptive, difficulty, loading }: { 
   return <>
     <section className={`mission-card${complete ? ' is-complete' : ''}`} aria-labelledby="mission-title">
       <div className="mission-card-heading">
-        <div><p className="mission-eyebrow"><Sparkles size={15} aria-hidden="true" />A little practice. A sharper instinct.</p>
-          <h2 id="mission-title">{complete ? 'Mission accomplished.' : 'Your next mission'}</h2></div>
+        <div><p className="mission-eyebrow">Three messages. A few careful decisions.</p>
+          <h2 id="mission-title">{complete ? 'Mission accomplished.' : mission?.completed.length ? 'Pick up where you left off.' : 'Your next mission'}</h2></div>
         <div className={`mission-mascot${complete ? ' is-celebrating' : ' is-waving'}`}><Mascot mood={complete ? 'happy' : 'curious'} /></div>
       </div>
-      <p className="mission-objective">{complete ? 'Three messages investigated. Every decision helped you learn.' : 'Investigate three messages. Work out what deserves your trust.'}</p>
+      <p className="mission-objective">{complete ? 'You made time to practise. That’s how good habits stick.' : 'Read the message, check the details, then decide what you’d do.'}</p>
       <MissionProgress mission={mission} />
-      <div className="mission-focus"><span>{loading ? 'Finding your next focus…' : next.title.replace(/, made for you$/, '')}</span><span>{levelName(next.difficulty)}</span></div>
+      <div className="mission-focus"><span>{loading ? 'Finding your next focus…' : next.title.replace(/, made for you$/, '')}</span><span>{levelName(next.difficulty)} practice</span></div>
       <div className="mission-start">
         <button type="button" className="train-primary" disabled={pending || !uid} aria-busy={pending} onClick={() => void start()}>
           {pending ? <><LoaderCircle size={17} className="spinner" aria-hidden="true" />Preparing your mission…</> : <>{failure ? 'Retry' : complete ? 'Start another mission' : mission ? 'Continue mission' : 'Start mission'}<ArrowRight size={17} aria-hidden="true" /></>}
         </button>
-        <span><Mail size={15} aria-hidden="true" /><MessageSquareText size={15} aria-hidden="true" />Texts &amp; emails</span>
+        <span>Texts &amp; emails</span>
       </div>
       <p className="mission-loading" role="status">{pending ? 'Writing a personal email. Your three selected scenarios are saved.' : ''}</p>
       {failure && <p className="mission-error" role="alert">{failure}</p>}
