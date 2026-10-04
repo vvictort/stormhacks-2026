@@ -151,9 +151,12 @@ export function currentLevel(
     if (!attempt.correct && difficulty <= level) {
       level = Math.max(0, level - 1)
       streak = 0
-    } else if (attempt.correct && difficulty >= level && ++streak === 2) {
-      level = Math.min(levels.length - 1, level + 1)
-      streak = 0
+    } else if (attempt.correct && difficulty >= level) {
+      streak++
+      if (streak === 2) {
+        level = Math.min(levels.length - 1, level + 1)
+        streak = 0
+      }
     }
   }
   return levels[level]

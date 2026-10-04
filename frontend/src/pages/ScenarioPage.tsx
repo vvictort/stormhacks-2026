@@ -315,11 +315,12 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
     if (submitted.current || !run.current) return
     submitted.current = true
 
+    const { attemptId } = run.current
     const correct = action === scenario.correctAction
     const before = adventure.earned
     const after = updateAdventure(user?.uid, (state) =>
       completeAdventure(state, {
-        attemptId: run.current!.attemptId,
+        attemptId,
         scenarioId: scenario.id,
         correct,
         scam: scenario.correctAction === 'report',
@@ -340,7 +341,7 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
     setConfidence(conf)
     const score = scoreFlags(flaggedPhrases, scenario.indicators)
     setFlagScore(score)
-    record(scenario.id, action === scenario.correctAction)
+    record(scenario.id, correct)
 
     track(action === 'report' ? 'message_reported' : 'message_marked_safe')
     track('scenario_completed', {
@@ -356,8 +357,6 @@ function ScenarioRun({ scenario }: { scenario: MessageScenario }) {
     // The debrief shows as soon as there is a choice.
     track('debrief_viewed')
 
-    const attemptId = run.current?.attemptId
-    if (!attemptId) return void tracker.flush()
     setFinished({ attemptId, sent: false })
     void tracker.flush().then(() => setFinished({ attemptId, sent: true }))
   }

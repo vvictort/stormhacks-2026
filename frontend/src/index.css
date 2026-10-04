@@ -553,11 +553,6 @@ h1:focus,
 
 .primary-button,
 .social-button {
-  transition:
-    background-color var(--motion-quick) var(--ease-out-quint),
-    border-color var(--motion-quick) var(--ease-out-quint),
-    opacity var(--motion-quick) var(--ease-out-quint),
-    translate 120ms var(--ease-out-quint);
   min-height: 44px;
   width: 100%;
   display: flex;
