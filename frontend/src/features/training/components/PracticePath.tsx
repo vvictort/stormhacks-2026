@@ -2,6 +2,7 @@ import { Check, History as HistoryIcon, Mail, MessageSquareText, Phone, RotateCc
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { TransitionLink } from '../../../components/TransitionLink'
+import { spring } from '../../../lib/motion'
 import type { Progress } from '../progress'
 import { timeline } from '../progress'
 import { getCachedScenarioMeta } from '../scenarioCache'
@@ -140,6 +141,7 @@ export function PracticePath({ progress }: { progress: Progress }) {
             </button>
           ))}
         </div>
+        {/* Toggles: pressing the active result again shows every result. */}
         <div className="path-chips" role="group" aria-label="Result">
           {statusTabs.map((tab) => (
             <button

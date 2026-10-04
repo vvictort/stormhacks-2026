@@ -1,6 +1,7 @@
 import { ArrowRight, Check, History, Info, Mail, MessageSquareText, Phone, RotateCcw, X } from 'lucide-react'
+import { m } from 'motion/react'
 import { useEffect, useRef, type KeyboardEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CountUp } from '../components/CountUp'
 import { RevealText } from '../components/RevealText'
 import { TellIcon } from '../components/TellIcon'
@@ -17,6 +18,7 @@ import { channelStats, currentLevel, summarize, timeline, type Progress } from '
 import { getScenario, isScam, scenarios } from '../features/training/scenarios'
 import { useProgress } from '../features/training/useProgress'
 import { useProfile } from '../features/profile/ProfileContext'
+import { spring } from '../lib/motion'
 
 const tabs = [
   { id: 'practice', label: 'Practice' },
@@ -84,6 +86,8 @@ export function HomePage() {
               onClick={() => show(t.id)}
             >
               {t.label}
+              {/* layout="x": the bar is sticky, so a scroll jump must not make it fly vertically. */}
+              {tab === t.id && <m.span className="seg-thumb" layoutId="home-tab" layout="x" transition={spring} />}
             </button>
           ))}
         </div>
@@ -186,10 +190,10 @@ export function HomePage() {
               <InstinctsCard uid={user?.uid} />
               <ScamProfileCard uid={user?.uid} />
               {flagsSeen.length > 0 && (
-                <section className="home-progress" aria-labelledby="flags-title">
-                  <h2 id="flags-title">Red flags you've met</h2>
+                <details className="home-more">
+                  <summary>Red flags you've met<span>{flagsSeen.length}</span></summary>
                   <ul className="home-flags">{flagsSeen.map((flag) => <li key={flag}>{flag}</li>)}</ul>
-                </section>
+                </details>
               )}
               <section className="profile-summary" aria-label="Your saved profile">
                 <div><strong>{profile?.name}</strong><span>{profile?.email} · {profile?.phone}</span></div>
@@ -211,8 +215,8 @@ const channelRows = [
 ] as const
 const percent = (part: number, whole: number) => whole ? Math.round((part / whole) * 100) : 0
 
-/** Insights' numbers, all from this user's attempts: overall rate, coverage, what to revisit, per channel and lately. */
-function ResultsSummary({ progress, saved, onMissed }: { progress: Progress; saved: boolean; onMissed: () => void }) {
+/** Progress' numbers, all from this user's attempts: one headline rate with its counts, then per channel and lately. */
+function ResultsSummary({ progress, saved }: { progress: Progress; saved: boolean }) {
   const all = timeline(progress)
   const right = all.filter((attempt) => attempt.correct).length
   const recent = all.slice(-8)
@@ -220,21 +224,25 @@ function ResultsSummary({ progress, saved, onMissed }: { progress: Progress; sav
   const missed = done - correct
   const channels = channelStats(progress)
 
-  if (all.length === 0) return <section className="home-stats"><p>Nothing yet. Finish a scenario and your results show up here.</p></section>
+  if (all.length === 0) {
+    return (
+      <section className="home-stats" aria-label="Your results">
+        <p>Nothing yet. Finish a scenario and your results show up here.</p>
+        <Link className="text-link" to="/home">Start practising<ArrowRight size={14} aria-hidden="true" /></Link>
+      </section>
+    )
+  }
 
   return (
-    <section className="home-stats" aria-labelledby="results-title">
-      <h2 id="results-title" className="sr-only">Your results</h2>
-      <dl className="home-stat-grid">
-        <div><dt>Right-call rate</dt><dd><CountUp value={percent(right, all.length)} />%</dd><dd className="home-stat-sub">{right} of {all.length} attempts</dd></div>
-        <div><dt>Scenarios tried</dt><dd><CountUp value={done} /></dd><dd className="home-stat-sub">of {total} in the library</dd></div>
-        <div className={missed ? 'is-missed' : undefined}>
-          <dt>To revisit</dt><dd><CountUp value={missed} /></dd>
-          <dd className="home-stat-sub">{missed ? <button type="button" className="text-link" onClick={onMissed}>Missed last time<ArrowRight size={13} aria-hidden="true" /></button> : 'Nothing missed'}</dd>
-        </div>
-      </dl>
+    <section className="home-stats" aria-label="Your results">
+      <p className="home-rate"><strong><CountUp value={percent(right, all.length)} />%</strong> right calls</p>
+      <p className="home-rate-sub">
+        <span>{right} of {all.length} attempts</span>
+        <span>{done} of {total} scenarios tried</span>
+        {missed ? <Link className="text-link" to="/home?tab=library&status=missed">{missed} to revisit<ArrowRight size={13} aria-hidden="true" /></Link> : <span>Nothing to revisit</span>}
+      </p>
 
-      <div className="home-stat-head"><h3>By channel</h3><span>Right-call rate</span></div>
+      <div className="home-stat-head"><h2>By channel</h2></div>
       <ul className="home-channels">
         {channelRows.filter((row) => row.key !== 'other' || channels.other.attempts).map(({ key, label, Icon }) => {
           const { attempts, right: ok } = channels[key]
@@ -250,7 +258,7 @@ function ResultsSummary({ progress, saved, onMissed }: { progress: Progress; sav
       </ul>
 
       <div className="home-stat-head">
-        <h3>Last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h3>
+        <h2>Last {recent.length === 1 ? 'attempt' : `${recent.length} attempts`}</h2>
         <span>{recent.filter((attempt) => attempt.correct).length} right</span>
       </div>
       <ol className="home-recent" aria-label="Oldest first">

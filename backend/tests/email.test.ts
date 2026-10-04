@@ -14,6 +14,7 @@ import {
   toScenario,
 } from "../app/scenarios/email-generator.ts";
 import type { JsonModel } from "../app/scenarios/gemini.ts";
+import { GENUINE_EMAILS, ScamLibrary } from "../app/scenarios/library.ts";
 import { Difficulty, ScamCategory } from "../app/shared/vocabulary.ts";
 
 const identity = (uid: string) =>
@@ -83,6 +84,41 @@ const modelEmail = (overrides: Record<string, unknown> = {}) => ({
     "Check payroll changes with your HR team directly, never through an email link.",
   ...overrides,
 });
+
+/** A genuine email as the model would write it: one real domain, named in the situation, and reassuring signs. */
+const genuineEmail = (link = "https://ledgerline.ca/portal") =>
+  modelEmail({
+    situation:
+      "Your employer pays you through Ledgerline, whose website is ledgerline.ca, and today is pay day.",
+    senderEmail: "payroll@ledgerline.ca",
+    subject: "Your pay statement is ready",
+    body: [
+      "Hi there,",
+      "Your pay statement for this pay period is ready.",
+      "Sign in to the staff portal the way you normally do to see it.",
+      "Payroll Services",
+    ],
+    links: [link],
+    expectedAction: "safe",
+    tactics: [],
+    redFlags: [
+      {
+        quote: "payroll@ledgerline.ca",
+        title: "The address is the provider's own",
+        reason: "It ends in ledgerline.ca, the site you already use.",
+      },
+      {
+        quote: "the way you normally do",
+        title: "Nothing new to sign in to",
+        reason: "It sends you to the portal you already know.",
+      },
+      {
+        quote: link,
+        title: "The link goes to the real site",
+        reason: "Read up to the first single slash: that is the site.",
+      },
+    ],
+  });
 
 /** A fake structured-output model that answers from a list and records every prompt. */
 function fakeModel(...answers: (string | Error)[]) {
@@ -342,6 +378,81 @@ test('real brands, "safe" answers and model errors never reach the browser', asy
   assert.equal(prompts.length, 1, "no retry once the time budget is spent");
 });
 
+test("a genuine request gives a safe email with no tactics; a scam or uncheckable answer falls back to a built-in scam", async () => {
+  const { model, prompts } = fakeModel(JSON.stringify(genuineEmail()));
+  const { scenario, source } = await generateEmailScenario({
+    model,
+    difficulty: "medium",
+    genuine: true,
+    vulnerableTactics: ["urgency"],
+  });
+  assert.equal(source, "gemini");
+  assert.deepEqual([scenario.correctAction, scenario.tactics], ["safe", []]);
+  assert.equal(EmailScenario.safeParse(scenario).success, true);
+  assert.match(prompts[0], /ONE realistic GENUINE email/);
+  assert.doesNotMatch(prompts[0], /FALLEN FOR|It is a scam/);
+  for (const answer of [
+    JSON.stringify(modelEmail()),
+    // The link leaves the sender's domain, so the trainee could not check it.
+    JSON.stringify(genuineEmail("https://ledgerline-portal.net/login")),
+  ]) {
+    const retried = fakeModel(answer, answer);
+    const result = await generateEmailScenario({
+      model: retried.model,
+      difficulty: "medium",
+      genuine: true,
+    });
+    assert.deepEqual(
+      [result.source, result.scenario.correctAction],
+      ["fallback", "report"],
+    );
+    assert.equal(retried.prompts.length, 2);
+  }
+  // No model: there is no built-in genuine email.
+  assert.equal(
+    (await generateEmailScenario({ difficulty: "easy", genuine: true }))
+      .scenario.correctAction,
+    "report",
+  );
+});
+
+test("a genuine email is grounded in the library's hand-picked legitimate emails, its category's first", async () => {
+  const library = ScamLibrary.load(); // the committed library: the picks are ids in it
+  const all = library.genuineEmails("banking", Infinity);
+  assert.deepEqual(
+    new Set(all.map((e) => e.id)),
+    new Set(Object.keys(GENUINE_EMAILS)),
+    "every pick is in the library, legitimate and free of real brands",
+  );
+  assert.ok(all.every((e) => e.channel === "email" && e.kind === "legitimate"));
+  assert.deepEqual(
+    all.slice(0, 3).map((e) => GENUINE_EMAILS[e.id] === "banking"),
+    [true, true, false],
+  );
+  assert.deepEqual(new ScamLibrary().genuineEmails("banking"), []);
+
+  const { model, prompts } = fakeModel(JSON.stringify(genuineEmail()));
+  const { scenario } = await generateEmailScenario({
+    model,
+    library,
+    difficulty: "medium",
+    genuine: true,
+    focus: ["banking"],
+  });
+  assert.deepEqual(scenario.generated.grounding, {
+    exampleCount: 3,
+    source: "scam-library",
+  });
+  assert.match(
+    prompts[0],
+    /Use only for how real, legitimate emails are structured and worded\./,
+  );
+  assert.match(prompts[0], /1\. EXCERPT; a real, legitimate email\n/);
+  assert.match(prompts[0], /Scheduled Payment Alert/);
+  assert.match(prompts[0], /category, difficulty and trainee context above/);
+  assert.doesNotMatch(prompts[0], /scam behaviour|tactics: /);
+});
+
 test("without a model the built-in email follows focus, then weak categories, and says why", async () => {
   const focused = await generateEmailScenario({
     difficulty: "easy",
@@ -404,7 +515,8 @@ function routes(repos: Repositories = fakeRepos(), jsonModel?: JsonModel) {
   };
 }
 
-test("POST uses the server profile, never the request body, and only the owner can read the result", async () => {
+test("POST uses the server profile, never the request body, and only the owner can read the result", async (t) => {
+  t.mock.method(Math, "random", () => 0.9); // the draw for a scam, not a genuine email
   const repos: Repositories = fakeRepos();
   repos.users.ensureUser = async (token) => ({
     id: token.uid,
@@ -440,6 +552,14 @@ test("POST uses the server profile, never the request body, and only the owner c
     .set("Origin", origin)
     .send({})
     .expect(401);
+});
+
+test("POST returns a genuine email when the draw says so", async (t) => {
+  t.mock.method(Math, "random", () => 0);
+  const { model } = fakeModel(JSON.stringify(genuineEmail()));
+  const { scenario } = (await routes(fakeRepos(), model).generate().expect(201))
+    .body;
+  assert.deepEqual([scenario.correctAction, scenario.tactics], ["safe", []]);
 });
 
 test("POST without Gemini returns a built-in email, and is rate limited per user", async () => {

@@ -101,4 +101,8 @@ Cues per scam example: 1: 38, 2: 164, 3: 106, 4: 60, 5: 26, 6: 4.
   script, but never present them as a quoted real message. Their cues quote the summary's own phrases.
 - Bracketed placeholders (`[Bank]`, `[Name]`, `[number]`) appear in excerpts; substitute Tellio's fictional brands.
 - `category: null` rows are real scams outside Tellio's six categories; exclude them from category retrieval.
+- Legitimate emails are mostly mailing-list posts, blog feeds and personal mail, and their categories are keyword
+  guesses. Only the 19 hand-picked in `GENUINE_EMAILS` (`backend/app/scenarios/library.ts`), which read like an
+  organisation writing to a customer or to staff, are used: they ground generated genuine emails. Legitimate texts
+  (personal chat) and call patterns are not used.
 - Email excerpts are real phishing: some are messy (all-caps, broken spacing). Prefer `cues.length >= 2`.

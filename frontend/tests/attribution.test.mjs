@@ -9,6 +9,7 @@ test('Gemini is credited only when it wrote the scenario; grounding only with li
   assert.equal(generatedCredit(generated()), 'Written by Gemini')
   assert.equal(generatedCredit(generated({ grounding: { exampleCount: 0, source: 'scam-library' } })), 'Written by Gemini')
   assert.equal(generatedCredit(generated({ grounding: { exampleCount: 2, source: 'scam-library' } })), 'Written by Gemini · Grounded in real-world scam patterns')
+  assert.equal(generatedCredit(generated({ grounding: { exampleCount: 3, source: 'scam-library' } }), true), 'Written by Gemini · Grounded in real-world genuine emails', 'a genuine email never claims scam patterns')
 })
 
 test('ElevenLabs is credited only for a call answered with live voice', () => {

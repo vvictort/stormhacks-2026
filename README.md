@@ -19,9 +19,9 @@ flowchart LR
 
 | Piece | What it does | Where you see it |
 |---|---|---|
-| **Scam library** | An offline Python pipeline ([`data-pipeline/`](data-pipeline/)) curates ~600 real phishing emails, spam texts and scam-call patterns from public datasets into `backend/fixtures/scam-library.json`. Gemini gets 2–3 matching examples (by channel, scam type, tactics and difficulty). The practice path is built from it too: real phishing emails with invented names, real scam-call patterns, and texts Gemini wrote from library examples; only the genuine "looks safe" messages are hand-written. No embeddings, no runtime Python. | "Grounded in real-world scam patterns", and each practice scenario's source line |
-| **Gemini** | Writes a personalised scam email or call script aimed at your current weak spot. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback. | "Written by Gemini" |
-| **ElevenLabs** | Voices the live scam call you answer and talk to, then scores what you gave away (codes, card, personal details). | Call debrief: "powered by ElevenLabs" |
+| **Scam library** | An offline Python pipeline ([`data-pipeline/`](data-pipeline/)) curates ~600 real phishing emails, spam texts and scam-call patterns from public datasets into `backend/fixtures/scam-library.json`. Gemini gets 2–3 matching examples (by channel, scam type, tactics and difficulty); for a genuine email it gets hand-picked real legitimate emails from the same datasets instead. The practice path is built from it too: real phishing emails with invented names, real scam-call patterns, and texts Gemini wrote from library examples; only the genuine "looks safe" messages are hand-written. No embeddings, no runtime Python. | "Grounded in real-world scam patterns" (or "genuine emails"), and each practice scenario's source line, shown once you've answered |
+| **Gemini** | Writes a personalised scam email or call script aimed at your current weak spot. About one generated email in three is genuine instead, so Report is not always the right answer. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback. | "Written by Gemini" |
+| **ElevenLabs** | Runs the live scam call you answer and talk to (a voice agent with Gemini 2.5 Flash as its LLM), then scores what you gave away (codes, card, personal details). | Call debrief: "powered by ElevenLabs" |
 | **TigerData** | Stores every tap and decision, with the scam tactics involved, in a TimescaleDB hypertable and turns it into metrics over time. | **Your scam instincts** card and chart |
 | **Snowflake** | Compares pseudonymous aggregates across trainees to find which tactic combinations fool you (e.g. authority with urgency); with Cortex on, writes the summary. | **What Tellio has learned**, labelled by what actually ran |
 | **Firebase** | Sign-in (email/password or Google). | Login |
@@ -32,8 +32,9 @@ Every optional service degrades honestly: without ElevenLabs, calls become capti
 
 - **Three channels on one practice phone**
   - **Texts:** a scam (or genuine) SMS to judge: tap the link to see where it really goes (it never opens), then report it or mark it safe.
-  - **Emails:** a phishing email with sender details and links to inspect.
+  - **Emails:** a phishing (or genuine) email with sender details and links to inspect.
   - **Calls:** a live AI voice caller you can answer, talk to and hang up on, with live captions.
+- **Not everything is a scam:** close to half of the practice path's texts and emails are genuine, and about one generated email in three is too, so you practise telling real from fake instead of reporting everything. Calls are always scams.
 - **Debriefs that teach:** after each scenario you see what gave it away (urgency, unexpected fees, look-alike addresses, requests for codes) and what to check next time, then **What Tellio learned from this** shows what changed in your profile and offers the next scenario made for you.
 - **Adaptive practice:** scenarios get harder as you make the right calls and ease off after misses, and Home's **Next for you** names the scam type Tellio will train next and why.
 
@@ -64,15 +65,17 @@ The cross-cutting rules are written down in [`docs/call-integration.md`](docs/ca
 
 | Layer | Technologies |
 |---|---|
-| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4, React Router 7, Motion (animations), Lucide icons, View Transitions API |
-| Voice | ElevenLabs Conversational AI (`@elevenlabs/react`, WebRTC), lazy-loaded with the call screen |
-| Auth | Firebase Authentication (client SDK in the browser, `firebase-admin` token verification on the server) |
-| Backend | Node.js 22, Express 5, TypeScript (run with `tsx`), zod validation, helmet |
-| Database | TigerData (managed PostgreSQL) via `pg`, versioned SQL migrations |
-| AI content | Google Gemini (`@google/genai`) for personalised emails and call scenarios, with built-in fallbacks |
-| Analytics | TigerData hypertable (`behavior_events`) for behaviour metrics; Snowflake SQL API (optional Cortex) for the vulnerability analysis |
-| Data | Python 3.12 + pandas, offline only ([`data-pipeline/`](data-pipeline/)); Kaggle phishing-email and scam-call datasets |
-| Tests | Node's built-in test runner; supertest for the API; Python `unittest` for the pipeline |
+| Frontend | React 19, TypeScript 6, Vite 8, React Router 7. Styling is hand-written CSS on top of Tailwind CSS 4's base layer and `@theme` design tokens, with Motion for animation, Lucide icons, the View Transitions API, and Inter and Newsreader from Google Fonts |
+| Texts | Server-sent events: the backend streams the simulated thread and the browser reads it with `EventSource` |
+| Voice | ElevenLabs Conversational AI: `@elevenlabs/react` over WebRTC (LiveKit underneath), lazy-loaded with the call screen. The voice agent's LLM is Gemini 2.5 Flash (`ELEVENLABS_LLM`). The backend calls the ElevenLabs REST API for session tokens, agent setup and the post-call analysis |
+| Auth | Firebase Authentication: email/password, Google sign-in and password reset through the client SDK; the server verifies ID tokens with `firebase-admin` (no service-account key). Firebase Analytics loads only when a measurement ID is set |
+| Backend | Node.js 22.18+, Express 5, TypeScript 6 run directly with `tsx` (no build step), zod 4 for config and request validation, helmet |
+| Database | TigerData (managed PostgreSQL with TimescaleDB) through `pg`; plain SQL migrations applied by a small runner (`npm run migrate`) |
+| AI content | Google Gemini through `@google/genai`, using JSON-schema structured output. It tries `gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`, then `gemini-3.8-flash`, and falls back to scenarios built from the scam library |
+| Analytics | The `behavior_events` TimescaleDB hypertable (a plain table on ordinary Postgres) for behaviour metrics. Snowflake through its SQL REST API with a programmatic access token (no driver) for the vulnerability analysis, optionally worded by Cortex `COMPLETE` |
+| Data | Python 3.12, pandas and kagglehub, offline only ([`data-pipeline/`](data-pipeline/)). Sources: a Kaggle phishing-email dataset, a Kaggle scam-call dataset and the UCI SMS Spam Collection ([`docs/dataset.md`](docs/dataset.md)) |
+| Tests and tooling | Node's built-in test runner (backend through `tsx` with supertest; frontend with Node's type stripping), Python `unittest` for the pipeline, ESLint 10 with typescript-eslint, Prettier (backend), `tsc` type checks |
+| Development | Built with Claude Code; the project's subagents are in [`.claude/agents/`](.claude/agents/) |
 
 ## Repository layout
 
