@@ -75,6 +75,11 @@ export function fakeRepos() {
         return true;
       },
     },
+    // Behaviour events need SQL (tests/behavior.test.ts runs them on Postgres); wrap `record` to observe writes.
+    behavior: {
+      async record() {},
+      async metrics(): Promise<never> { throw new Error('unused'); },
+    },
   } satisfies Repositories;
 }
 
