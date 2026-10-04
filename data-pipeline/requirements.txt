@@ -1,0 +1,3 @@
+# Offline dataset pipeline only; nothing at Tellio runtime imports this.
+pandas==3.0.6
+kagglehub==1.0.2

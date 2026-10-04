@@ -1,0 +1,4 @@
+id,text,label
+1,SYNTHETIC: Your parcel is held at the depot. Pay the redelivery fee within 24 hours at http://bit.ly/x1 or it will be returned.,spam
+2,"SYNTHETIC: See you at 6, I will bring the snacks.",ham
+3,SYNTHETIC: unlabeled row,

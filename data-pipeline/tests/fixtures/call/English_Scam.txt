@@ -1,0 +1,5 @@
+1.	[Greetings], this is the fraud department of your bank. We noticed suspicious activity on your account. Please read me the one-time code we sent so we can secure it, and confirm your card number. You must act immediately or the account will be frozen today.
+
+2.	[Name], it is me! I am in trouble and need money for bail. Please do not tell anyone and wire the funds right away.
+
+3.	Congratulations! You have won a free vacation package. To claim your prize, we need a processing fee paid by gift card.

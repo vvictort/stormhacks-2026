@@ -1,0 +1,3 @@
+[Greetings], this is [Company] Medical Clinic. We are calling to confirm your appointment on [Date] at [Time].
+
+[Greetings], this is [Company] Retail. Your order #[Number] has been shipped and should arrive by [Date].
