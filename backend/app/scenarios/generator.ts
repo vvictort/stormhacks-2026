@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 import { CallScenario, difficultyName } from '../shared/types.ts';
 import type { Difficulty, ScamCategory, Tactic } from '../shared/vocabulary.ts';
+import { geminiJson } from './gemini.ts';
 import { CALLER_ID_INDICATOR, CATEGORY_NAMES, COMPLY_LABELS, DIFFICULTY_STYLE, FALLBACK_CALLS, TACTIC_INDICATORS, TACTIC_LINES } from './callContent.ts';
 import type { ScenarioSource, StoredCallScenario } from './scenarios.repository.ts';
 
@@ -158,18 +158,9 @@ SPECIFICATION RULES:
 5. "summary", "situation", "explanation", "nextTime": short, plain, warm sentences for the trainee (no jargon, no fearmongering).
 `;
 
-  let timer: NodeJS.Timeout | undefined;
   try {
-    const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Gemini timed out')), 8000); });
-    const interaction = await Promise.race([
-      new GoogleGenAI({ apiKey: request.apiKey }).interactions.create({
-        model: 'gemini-3.8-flash',
-        input: prompt,
-        response_format: { type: 'text', mime_type: 'application/json', schema: callScenarioJsonSchema },
-      }),
-      timeout,
-    ]);
-    const raw = (interaction.output_text?.trim() || '{}').replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const output = await geminiJson(request.apiKey)(prompt, callScenarioJsonSchema, 15_000);
+    const raw = (output || '{}').replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
     const parsed = JSON.parse(raw);
     const scenario = CallScenario.parse({
       id,
@@ -186,8 +177,6 @@ SPECIFICATION RULES:
   } catch (error) {
     console.warn('[Gemini] Call scenario generation failed, using a built-in scenario:', (error as Error).name);
     return { scenario: fallbackCallScenario(id, category, request, reason), source: 'fallback' };
-  } finally {
-    clearTimeout(timer);
   }
 }
 

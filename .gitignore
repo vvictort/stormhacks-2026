@@ -40,3 +40,6 @@ logs/
 backend/.certs/
 backend/certs/
 backend/.local/
+
+# Local simulation data dumps
+backend/comms/
