@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { initialThreadState, parseThreadEvent, threadReducer, threadStatus } from '../src/comms/threadState.ts'
-import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer } from '../src/comms/callState.ts'
+import { callReducer, connectDrop, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer } from '../src/comms/callState.ts'
+import { guardsNavigation } from '../src/lib/navigationGuard.ts'
 import { CommsError, createCommsClient, describeError } from '../src/comms/client.ts'
 
 const T = 'thread-1'
@@ -344,4 +345,23 @@ test('only stages where the server call still rings are abandoned when the call 
   for (const stage of ['ringing', 'answering']) assert.equal(ringsOnServer(stage), true, stage)
   // starting: no call yet; in_call/analyzing: reported via /ended; done: already settled.
   for (const stage of ['starting', 'in_call', 'analyzing', 'done']) assert.equal(ringsOnServer(stage), false, stage)
+})
+
+test('a call stuck connecting is abandoned before accept lands and ended after; a connected call is left alone', () => {
+  // answering: the microphone prompt or the accept request is pending, so the call may still ring on the server.
+  assert.equal(connectDrop('answering', false), 'abandon')
+  // in_call without onConnect: the server has it in_call, so /ended without a conversation completes it as error.
+  assert.equal(connectDrop('in_call', false), 'end')
+  assert.equal(connectDrop('in_call', true), null)
+  for (const stage of ['starting', 'ringing', 'analyzing', 'done']) assert.equal(connectDrop(stage, false), null, stage)
+})
+
+test('cancelling or timing out while connecting lands on the error phase and releases the navigation guard', () => {
+  const connecting = callReducer(callReducer(INITIAL_CALL_STATE, { type: 'ringing', callId: 'c1', callerLabel: 'Bank', record: {} }), { type: 'connecting', callId: 'c1' })
+  assert.equal(guardsNavigation(connecting.phase), true)
+  for (const error of ['connect_cancelled', 'connect_timeout']) {
+    const dropped = callReducer(connecting, { type: 'failed', callId: 'c1', error, phase: 'error' })
+    assert.deepEqual([dropped.phase, dropped.error], ['error', error])
+    assert.equal(guardsNavigation(dropped.phase), false)
+  }
 })

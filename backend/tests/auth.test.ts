@@ -24,7 +24,6 @@ const claims = {
 test('the real Firebase verifier rejects unsigned and forged tokens offline', async () => {
   const firebase = getAuth(initializeApp({ projectId: 'tellio-test' }, 'auth-test'));
   const app = startApp({ verify: (token) => firebase.verifyIdToken(token) });
-  after(app.close);
   const unsigned = `${b64({ alg: 'none', typ: 'JWT' })}.${b64(claims)}.`;
   const forged = `${b64({ alg: 'RS256', typ: 'JWT' })}.${b64(claims)}.${Buffer.from('not-a-signature').toString('base64url')}`;
   const hmac = `${b64({ alg: 'HS256', typ: 'JWT', kid: 'k1' })}.${b64(claims)}.${Buffer.from('sig').toString('base64url')}`;
@@ -36,7 +35,6 @@ test('the real Firebase verifier rejects unsigned and forged tokens offline', as
 
 test('a verified token is accepted and its uid is the only identity used', async () => {
   const app = startApp();
-  after(app.close);
   const res = await app.api('POST', '/calls', { token: 'valid:alice', body: { scenarioId: 'bank-fraud-dept-otp-1' } });
   assert.equal(res.status, 201);
   assert.equal(res.body.call.userId, 'alice');
@@ -51,8 +49,6 @@ test('missing, invalid and expired tokens are 401', async () => {
   };
   const app = startApp();
   const expiredApp = startApp({ verify: expired });
-  after(app.close);
-  after(expiredApp.close);
 
   const missing = await app.api('POST', '/calls', { token: null });
   assert.deepEqual([missing.status, missing.body.error.code], [401, 'UNAUTHENTICATED']);
@@ -66,7 +62,6 @@ test('missing, invalid and expired tokens are 401', async () => {
 
 test('?access_token= is verified the same way and accepted only on the SSE stream', async () => {
   const app = startApp();
-  after(app.close);
   const bad = await app.api('GET', '/texts/txt_x/stream?access_token=forged', { token: null });
   assert.deepEqual([bad.status, bad.body.error.code], [401, 'INVALID_TOKEN']);
   // Verified, so it reaches the ownership check.
@@ -78,7 +73,6 @@ test('?access_token= is verified the same way and accepted only on the SSE strea
 
 test('browser writes need the app Origin and JSON; the scenario list and tracked links need no token', async () => {
   const app = startApp();
-  after(app.close);
   const { default: supertest } = await import('supertest');
   const post = () => supertest(app.app).post('/api/comms/calls').set('Authorization', 'Bearer valid:alice');
   assert.equal((await post().send({})).status, 403);
@@ -96,7 +90,7 @@ test('the SSE stream replays the thread through the real middleware, and a track
   const app = startApp();
   const server = app.app.listen(0, '127.0.0.1');
   await once(server, 'listening');
-  after(async () => { server.closeAllConnections(); server.close(); await app.close(); });
+  after(async () => { server.closeAllConnections(); server.close(); });
   mockOutbound(() => json({}, 500));
 
   const started = await app.api('POST', '/texts', { body: { scenarioId: 'pkg-redelivery-fee-1' } });

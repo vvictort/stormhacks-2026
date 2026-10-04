@@ -1,7 +1,7 @@
 import { useConversation } from '@elevenlabs/react'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { comms } from './api'
-import { callReducer, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer, type CallCaption, type CallPhase } from './callState'
+import { callReducer, connectDrop, INITIAL_CALL_STATE, microphoneBlocker, microphoneErrorCode, ringsOnServer, type CallCaption, type CallPhase } from './callState'
 import { CommsError, describeError, isAbortError } from './client'
 import { pollUntilCompleted } from './poll'
 import type { CallRecord, DeclineReason, Outcome } from './types'
@@ -24,6 +24,8 @@ export interface SimulatedCallHandle {
   decline: () => Promise<void>
   /** In call only. */
   hangUp: () => void
+  /** Connecting only: gives up on a call whose voice session hasn't connected; the phase becomes `error`. */
+  cancel: () => void
   /** Not while connecting or in a call. A call still ringing on the server is abandoned (unscored, never posted). */
   reset: () => void
   /** Leaving the page mid-call: ends the voice session and resolves once the server has been told (best effort). */
@@ -42,6 +44,8 @@ interface Session {
   conversationId: string | null
   /** The ElevenLabs session connected (onConnect fired). */
   connected: boolean
+  /** The current answer attempt's connect timeout; a retried answer replaces it. */
+  connectTimer?: ReturnType<typeof setTimeout>
 }
 
 const BUSY: Stage[] = ['starting', 'answering', 'in_call', 'analyzing']
@@ -49,8 +53,12 @@ const BUSY: Stage[] = ['starting', 'answering', 'in_call', 'analyzing']
 /** Drops a session whose call still rings on the server: it is closed unscored (best effort, not tied to the session signal). */
 function abandonRinging(s: Session | null) {
   if (!s?.callId || !ringsOnServer(s.stage)) return
+  const { callId } = s
   s.stage = 'done'
-  comms.abandonCall(s.callId).catch(() => {})
+  comms.abandonCall(callId).catch((error: unknown) => {
+    // An accept already on its way won the race, so the call is in_call: end it instead (unscored, no conversation).
+    if (error instanceof CommsError && error.code === 'not_ringing') comms.callEnded(callId, s.conversationId ?? undefined).catch(() => {})
+  })
 }
 
 /**
@@ -60,7 +68,7 @@ function abandonRinging(s: Session | null) {
  * must not unmount mid-call (unmounting it ends the voice session). Unmounting this hook
  * mid-call hangs up.
  */
-export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: number } = {}): SimulatedCallHandle {
+export function useSimulatedCall({ ringTimeoutMs = 30_000, connectTimeoutMs = 20_000 }: { ringTimeoutMs?: number; connectTimeoutMs?: number } = {}): SimulatedCallHandle {
   const [state, dispatch] = useReducer(callReducer, INITIAL_CALL_STATE)
   const session = useRef<Session | null>(null)
   const lifetime = useRef<AbortController | null>(null)
@@ -132,6 +140,25 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     },
   })
 
+  // Cancel or the connect timeout: give up on a call that hasn't connected, then show the failure screen.
+  const dropConnecting = useCallback((error: string) => {
+    const s = session.current
+    const drop = s?.callId ? connectDrop(s.stage, s.connected) : null
+    if (!s?.callId || !drop) return
+    const { callId } = s
+    s.abort.abort()
+    if (drop === 'abandon') abandonRinging(s)
+    else {
+      s.stage = 'done'
+      endSession()
+      // Not tied to the aborted signal. Without a connected conversation the server completes the call as `error`.
+      comms.callEnded(callId, s.conversationId ?? undefined).catch(() => {})
+    }
+    dispatch({ type: 'failed', callId, error, phase: 'error' })
+  }, [endSession])
+
+  const cancel = useCallback(() => dropConnecting('connect_cancelled'), [dropConnecting])
+
   useEffect(() => {
     const controller = new AbortController()
     lifetime.current = controller
@@ -200,20 +227,23 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     }
     if (session.current !== s || s.signal.aborted) return
 
+    // Started after the microphone prompt, which can rightly take a while: from here on the call should connect.
+    clearTimeout(s.connectTimer)
+    if (connectTimeoutMs > 0) s.connectTimer = setTimeout(() => { if (session.current === s) dropConnecting('connect_timeout') }, connectTimeoutMs)
     try {
       const { conversationToken, conversationId, overrides } = await comms.acceptCall(callId, s.signal)
-      if (session.current !== s) return
+      if (session.current !== s || s.stage !== 'answering') return
       s.stage = 'in_call'
       s.conversationId = conversationId ?? null
       startSession({ conversationToken, connectionType: 'webrtc', overrides })
     } catch (error) {
-      if (session.current !== s || isAbortError(error)) return
+      if (session.current !== s || s.stage !== 'answering' || isAbortError(error)) return
       // 502/503: ElevenLabs is unavailable and the server left the call ringing.
       const ringing = error instanceof CommsError && (error.status === 502 || error.status === 503)
       s.stage = ringing ? 'ringing' : 'done'
       dispatch({ type: 'failed', callId, error: describeError(error), phase: ringing ? 'ringing' : 'error' })
     }
-  }, [startSession])
+  }, [startSession, connectTimeoutMs, dropConnecting])
 
   const declineAs = useCallback(async (reason: DeclineReason) => {
     const s = session.current
@@ -281,6 +311,7 @@ export function useSimulatedCall({ ringTimeoutMs = 30_000 }: { ringTimeoutMs?: n
     accept,
     decline,
     hangUp,
+    cancel,
     reset,
     leave,
   }

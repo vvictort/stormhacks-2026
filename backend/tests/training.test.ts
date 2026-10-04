@@ -7,7 +7,6 @@ import { createDatabase, type Database } from '../app/db/database.ts';
 import { migrate } from '../app/db/migrate.ts';
 import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
-import { rateLimitPerUser } from '../app/http/rate-limit.ts';
 import { cleanProfileText } from '../app/scenarios/generator.ts';
 import { inferCategory, summarizeAttempts, type ScoredAttempt } from '../app/training/progress.ts';
 import { attemptSchema, type AttemptInput } from '../app/training/attempts.schema.ts';
@@ -28,7 +27,6 @@ const attempt = (overrides: Record<string, unknown> = {}) => ({
 
 function routes(repos: Repositories = fakeRepos()) {
   const sims = testServices(repos);
-  after(sims.close);
   const app = createApp({ repos, services: sims.services, origin, verifyToken });
   return {
     app,
@@ -102,17 +100,6 @@ test('scenario generation is rate limited per user', async () => {
   await generate('sam').expect(201);
 });
 
-test('rate limiter enforces the daily cap and frees the minute window', () => {
-  let now = 0;
-  const limit = rateLimitPerUser(2, 3, () => now);
-  const hit = () => { try { limit({ user: { uid: 'alex' } } as never, {} as never, () => {}); return 'ok'; } catch (error) { return (error as { code: string }).code; } };
-  assert.deepEqual([hit(), hit(), hit()], ['ok', 'ok', 'RATE_LIMITED']);
-  now += 60_000;
-  assert.deepEqual([hit(), hit()], ['ok', 'RATE_LIMITED']);
-  now += 24 * 60 * 60_000;
-  assert.equal(hit(), 'ok');
-});
-
 test('category inference covers the contract call scenarios', () => {
   const ids = { 'bank-fraud-dept-otp-1': 'banking', 'cra-tax-arrears-1': 'government', 'courier-customs-fee-1': 'shipping', 'tech-support-remote-1': 'account_security', 'exec-vendor-payment-1': 'workplace' };
   for (const [id, category] of Object.entries(ids)) assert.equal(inferCategory({ id, title: '' }), category, id);
@@ -146,7 +133,7 @@ describe('Postgres training persistence', { skip: !url }, () => {
     repo = createRepositories(db);
     await migrate(db);
   });
-  beforeEach(async () => { await db.query('TRUNCATE training_attempts, generated_call_scenarios'); });
+  beforeEach(async () => { await db.query('TRUNCATE training_attempts, generated_call_scenarios, scenario_generation_requests'); });
   after(async () => { await db?.end(); });
 
   test('saved attempts persist once and only the owner reads them back', async () => {
@@ -195,6 +182,30 @@ describe('Postgres training persistence', { skip: !url }, () => {
     assert.deepEqual(saved, { outcome: 'declined', success: true, difficulty: 'easy' });
     assert.equal((await getAttempt(callId).expect(200)).body.scenarioId, 'courier-customs-fee-1');
     await getAttempt(callId, 'sam').expect(404);
+  });
+
+  test('the generation rate limit holds across app instances and concurrent requests', async () => {
+    // Two repositories (and apps) on one database stand in for two processes, or one restarted.
+    const other = createRepositories(db);
+    const claims = await Promise.all(Array.from({ length: 8 }, (_, i) => (i % 2 ? repo : other).scenarios.claimGeneration('alex', 5, 30)));
+    assert.equal(claims.filter(Boolean).length, 5);
+    await db.query('TRUNCATE scenario_generation_requests');
+    const [first, second] = [routes(repo), routes(other)];
+    for (let i = 0; i < 5; i++) await (i % 2 ? first : second).generate().expect(201);
+    assert.equal((await second.generate().expect(429)).body.error.code, 'RATE_LIMITED');
+    await first.generate().expect(429);
+    await first.generate('sam').expect(201);
+  });
+
+  test('the generation rate limit frees the minute window, then caps the day', async () => {
+    const claim = () => repo.scenarios.claimGeneration('alex', 2, 3);
+    const age = (interval: string) => db.query(`UPDATE scenario_generation_requests SET requested_at = requested_at - interval '${interval}'`);
+    assert.deepEqual([await claim(), await claim(), await claim()], [true, true, false]);
+    await age('61 seconds');
+    assert.deepEqual([await claim(), await claim()], [true, false], 'a new minute, but only one left today');
+    await age('1 day');
+    assert.equal(await claim(), true);
+    assert.equal((await db.query('SELECT count(*)::int AS n FROM scenario_generation_requests')).rows[0].n, 1, 'expired requests are deleted');
   });
 
   test('database constraints reject non-canonical values', async () => {

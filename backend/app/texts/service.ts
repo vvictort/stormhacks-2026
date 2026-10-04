@@ -81,7 +81,8 @@ export class TextService {
     thread.messages.push(opening);
     if (opening.links) thread.linkFirstSentAt = at;
 
-    await this.store.createThread(thread);
+    // Another request (or process) started one since the check above: report that one instead.
+    if (!(await this.store.createThread(thread))) return this.start(userId, scenario);
     await this.events.emit(textEvent('text.thread_started', thread, { senderLabel: scenario.senderLabel, difficulty: scenario.difficulty }));
     await this.events.emit(
       textEvent('text.message_sent', thread, { messageId: opening.id, body: opening.body, hasLink: !!opening.links, turn: 0 }),
