@@ -15,7 +15,7 @@ export function getAuthErrorMessage(error: unknown): string {
     case 'auth/user-not-found':
       return 'That email and password don’t match. Please check them and try again.'
     case 'auth/email-already-in-use':
-      return 'There’s already an account with this email. Try logging in or resetting your password.'
+      return 'This email already has an account. Log in or reset your password.'
     case 'auth/invalid-email':
       return 'Please enter a valid email address.'
     case 'auth/weak-password':
@@ -31,12 +31,12 @@ export function getAuthErrorMessage(error: unknown): string {
     case 'auth/user-cancelled':
       return 'Google sign-in was cancelled. You can try again when you’re ready.'
     case 'auth/popup-blocked':
-      return 'Your browser blocked the sign-in window. Allow popups for this site and try again.'
+      return 'Your browser blocked the Google window. Allow popups and try again.'
     case 'auth/web-storage-unsupported':
     case 'auth/operation-not-supported-in-this-environment':
-      return 'Your browser settings are blocking sign-in. Allow cookies and site data for this site, or try another browser.'
+      return 'Your browser is blocking sign-in. Allow cookies for this site.'
     case 'auth/account-exists-with-different-credential':
-      return 'This email uses another sign-in method. Try the method you used to create your account.'
+      return 'This email uses a different sign-in method. Try that one instead.'
     case 'auth/user-disabled':
       return 'This account has been disabled, so it can’t sign in right now.'
     case 'auth/operation-not-allowed':

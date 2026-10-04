@@ -77,7 +77,7 @@ h1:focus, #auth-content:focus { outline: none; }
 .card-heading { margin-bottom: 28px; }
 .card-heading h1 { font-family: var(--font-editorial); font-size: 37px; line-height: 1.12; font-weight: 400; letter-spacing: -1.2px; margin: 0 0 10px; text-wrap: balance; }
 .card-description { font-size: 14px; line-height: 1.6; }
-.auth-fields { display: grid; gap: 18px; padding: 0; margin: 0; border: 0; min-width: 0; }
+.auth-fields { display: grid; gap: 2px; padding: 0; margin: 0; border: 0; min-width: 0; }
 .form-field { min-width: 0; }
 .form-field label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; line-height: 1.5; }
 .input-wrap { position: relative; }
@@ -93,8 +93,12 @@ h1:focus, #auth-content:focus { outline: none; }
 .password-toggle:hover { color: var(--color-primary-strong); background: var(--color-background); }
 .password-toggle svg, .dialog-close svg { transition: scale 120ms var(--ease-out-quint); }
 .password-toggle:active:not(:disabled) svg, .dialog-close:active svg { scale: .88; }
-.field-hint, .field-error { margin-top: 7px; font-size: 13px; line-height: 1.5; text-wrap: pretty; }
-.field-error { color: var(--color-danger-strong); --rise: -4px; animation: rise-in 200ms var(--ease-out-quint) backwards; }
+/* One reserved line under every field; hint and error stack in the same cell and crossfade. */
+.field-message { display: grid; min-height: 1.5em; margin-top: 5px; font-size: 13px; line-height: 1.5; text-wrap: pretty; }
+.field-message > * { grid-area: 1 / 1; }
+.field-hint { transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s; }
+.field-hint[data-hidden] { opacity: 0; visibility: hidden; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s var(--motion-quick); }
+.field-error { color: var(--color-danger-strong); --rise: -4px; animation: rise-in 220ms var(--ease-out-quint) backwards; }
 .forgot-row { display: flex; justify-content: flex-end; margin-top: 9px; margin-bottom: -2px; }
 .text-link { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--color-primary-strong); font-size: inherit; font-weight: 600; text-decoration: underline 1px transparent; text-underline-offset: 4px; transition: color var(--motion-quick) var(--ease-out-quint), text-decoration-color var(--motion-quick) var(--ease-out-quint), opacity var(--motion-quick) var(--ease-out-quint); }
 .text-link:hover:not(:disabled, [aria-disabled="true"]) { text-decoration-color: currentColor; }
@@ -113,7 +117,13 @@ h1:focus, #auth-content:focus { outline: none; }
 .primary-button:active:not(:disabled), .social-button:active:not(:disabled) { translate: 0 calc(1px * var(--motion-scale)); }
 .primary-button:active:not(:disabled) { background-color: var(--color-primary-deep); }
 .social-button:active:not(:disabled) { background: color-mix(in srgb, var(--color-border) 45%, var(--color-background)); }
-.auth-divider { display: flex; align-items: center; gap: 14px; font-size: 12px; margin: 21px 0; }
+/* The divider's 60px row doubles as the form-level error slot (three lines of text fit). */
+.form-feedback { display: grid; align-items: center; min-height: 60px; }
+.form-feedback > * { grid-area: 1 / 1; }
+.auth-divider { display: flex; align-items: center; gap: 14px; font-size: 12px; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s; }
+.auth-divider[data-hidden] { opacity: 0; visibility: hidden; transition: opacity var(--motion-quick) var(--ease-out-quint), visibility 0s var(--motion-quick); }
+.form-alert p { display: flex; align-items: flex-start; gap: 8px; color: var(--color-danger-strong); font-size: 13px; line-height: 1.5; text-wrap: pretty; --rise: -4px; animation: rise-in 220ms var(--ease-out-quint) backwards; }
+.form-alert svg { flex-shrink: 0; margin-top: 2px; }
 .auth-divider > span { flex: 1; height: 1px; background: var(--color-border); }
 .auth-switch { margin-top: 25px; font-size: 12px; text-align: center; line-height: 2; }
 .auth-switch a { min-height: 44px; margin-block: -10px; }

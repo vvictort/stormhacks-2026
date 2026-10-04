@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowRight, Check, LoaderCircle, LogOut } from 'lucide-react'
+import { flushSync } from 'react-dom'
+import { ArrowRight, Check, CircleAlert, LoaderCircle, LogOut } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { validateAuthForm, type AuthFieldName, type FieldErrors } from '../validation'
@@ -39,7 +40,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     if (pending) return
     clearError()
     const nextErrors = validateAuthForm(values, isSignup)
-    setErrors(nextErrors)
+    // Commit the errors first so the focused field is already described by its message.
+    flushSync(() => setErrors(nextErrors))
     const firstInvalidField = Object.keys(nextErrors)[0]
     if (firstInvalidField) {
       form.current?.querySelector<HTMLInputElement>(`[name="${firstInvalidField}"]`)?.focus()
@@ -80,6 +82,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
 
   const disabled = Boolean(pending)
   const formPending = pending === mode
+  const formError = resetOpen ? null : error
   return (
     <>
       <AuthCard title={isSignup ? 'Create your account' : 'Welcome back'} description={isSignup ? 'Get scam simulations matched to your level and see how you improve over time.' : 'Log in to pick up where you left off.'}>
@@ -92,12 +95,17 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             {isSignup && <PasswordInput id="auth-confirm-password" name="confirmPassword" label="Confirm password" autoComplete="new-password" required placeholder="Enter your password again" value={values.confirmPassword} error={errors.confirmPassword} onChange={(event) => change('confirmPassword', event.target.value)} />}
           </fieldset>
           {!isSignup && <div className="forgot-row"><button type="button" className="text-link" disabled={disabled} onClick={() => { clearError(); setResetOpen(true) }}>Forgot password?</button></div>}
-          {error && !resetOpen && <AuthNotice>{error}</AuthNotice>}
           <button type="submit" className="primary-button bg-primary" disabled={disabled} aria-busy={formPending}>
             {formPending ? <><LoaderCircle size={18} className="spinner" aria-hidden="true" />{isSignup ? 'Creating your account…' : 'Logging in…'}</> : <>{isSignup ? 'Create account' : 'Log in'}<ArrowRight size={18} aria-hidden="true" /></>}
           </button>
         </form>
-        <div className="auth-divider text-muted-strong"><span />or<span /></div>
+        {/* Form-level errors take the divider's place between the two buttons: next to whichever was pressed, and no extra height. */}
+        <div className="form-feedback">
+          <div className="auth-divider text-muted-strong" data-hidden={formError ? '' : undefined} aria-hidden={formError ? true : undefined}><span />or<span /></div>
+          <div className="form-alert" role="alert">
+            {formError && <p key={formError}><CircleAlert size={17} aria-hidden="true" />{formError}</p>}
+          </div>
+        </div>
         <SocialLoginButton signup={isSignup} pending={pending === 'google'} disabled={disabled} onClick={async () => {
           rememberFocus()
           if (await google()) setValues({ name: '', email: '', password: '', confirmPassword: '' })

@@ -9,7 +9,8 @@ export interface AuthFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function AuthField({ id, label, error, hint, trailingAction, className = '', ...inputProps }: AuthFieldProps) {
-  const description = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ') || undefined
+  // The error takes the hint's place, so describe the field by whichever is showing.
+  const description = error ? `${id}-error` : hint ? `${id}-hint` : undefined
 
   return (
     <div className="form-field">
@@ -24,8 +25,11 @@ export function AuthField({ id, label, error, hint, trailingAction, className = 
         />
         {trailingAction}
       </div>
-      {hint && <p id={`${id}-hint`} className="field-hint text-muted-strong">{hint}</p>}
-      {error && <p id={`${id}-error`} className="field-error">{error}</p>}
+      {/* A reserved message line: hint and error share it, so feedback never resizes the form. */}
+      <div className="field-message">
+        {hint && <p id={`${id}-hint`} className="field-hint text-muted-strong" data-hidden={error ? '' : undefined}>{hint}</p>}
+        {error && <p key={error} id={`${id}-error`} className="field-error">{error}</p>}
+      </div>
     </div>
   )
 }

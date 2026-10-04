@@ -12,7 +12,7 @@ export function validateAuthForm(values: Record<AuthFieldName, string>, isSignup
   const emailError = validateEmail(values.email)
   if (emailError) errors.email = emailError
   if (!values.password) errors.password = 'Please enter your password.'
-  else if (isSignup && values.password.length < 8) errors.password = 'Use at least 8 characters for your password.'
+  else if (isSignup && values.password.length < 8) errors.password = 'Use at least 8 characters.'
   if (isSignup) {
     if (!values.confirmPassword) errors.confirmPassword = 'Please confirm your password.'
     else if (values.password !== values.confirmPassword) errors.confirmPassword = 'Your passwords don’t match yet.'
