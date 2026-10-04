@@ -43,7 +43,7 @@ export function OnboardingPage() {
         <AuthField id="profile-email" label="Account email" type="email" value={profile?.email || user?.email || ''} readOnly hint="Managed by your login account." />
         <div className="phone-fields">
           <AuthField id="profile-country-code" name="countryCode" label="Code" type="tel" autoComplete="tel-country-code" maxLength={4} placeholder="+1" value={values.countryCode} required error={errors.countryCode} onChange={(event) => change('countryCode', event.target.value)} />
-          <AuthField id="profile-phone" name="phone" label="Phone number" type="tel" autoComplete="tel-national" maxLength={40} placeholder="604 555 1234" value={values.phone} required hint="Any format works. Practice messages stay in the app." error={errors.phone} onChange={(event) => change('phone', event.target.value)} />
+          <AuthField id="profile-phone" name="phone" label="Phone number" type="tel" autoComplete="tel-national" maxLength={40} placeholder="604 555 1234" value={values.phone} required error={errors.phone} onChange={(event) => change('phone', event.target.value)} />
         </div>
         <AuthField id="profile-profession" name="profession" label="Profession (optional)" maxLength={200} placeholder="Student, designer, nurse…" value={values.profession} error={errors.profession} onChange={(event) => change('profession', event.target.value)} />
         <AuthField id="profile-interests" name="interests" label="Interests (optional)" placeholder="Gaming, shopping, travel" hint="Separate interests with commas." value={values.interests} error={errors.interests} onChange={(event) => change('interests', event.target.value)} />
