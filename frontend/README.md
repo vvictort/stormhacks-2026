@@ -6,8 +6,11 @@ A responsive authentication experience for Tellio, a scam-awareness training web
 
 ```sh
 npm install
+cp .env.example .env
 npm run dev
 ```
+
+Fill in `.env` with the values from the Firebase console (Project settings → Your apps → Web app). `.env` is git-ignored; never commit it. For a deployed build, set the same `VITE_FIREBASE_*` variables in the host's build environment. The app throws on startup, naming any missing variable.
 
 Open the Vite URL using **localhost**. The configured Firebase project's authorized domains currently include `localhost`, `stormhacks-2026.firebaseapp.com`, and `stormhacks-2026.web.app`. The IP address `127.0.0.1` is not currently authorized for Google sign-in.
 
@@ -31,7 +34,7 @@ The dependency-free unit tests use Node's built-in test runner and TypeScript st
 
 ## Authentication integration
 
-`src/lib/firebase.ts` owns the existing Firebase app and Auth instance. `src/features/auth/service.ts` owns provider operations, and `src/features/auth/AuthProvider.tsx` exposes session state and pending/error states to the forms. The auth-state subscription is cleaned up on unmount; Firebase manages session persistence.
+`src/lib/firebase.ts` owns the Firebase app and Auth instance, configured from `VITE_FIREBASE_*` environment variables. `src/features/auth/service.ts` owns provider operations, and `src/features/auth/AuthProvider.tsx` exposes session state and pending/error states to the forms. The auth-state subscription is cleaned up on unmount; Firebase manages session persistence.
 
 Email/password registration checks Firebase's current password policy, creates the account, and saves the supplied name with `updateProfile`. The interface requires at least eight characters; a stricter Firebase policy is also enforced and explained inline. Login accepts existing passwords without imposing the new-account minimum. Password whitespace is preserved.
 
