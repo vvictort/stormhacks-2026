@@ -77,7 +77,8 @@ test('nextForYou explains the focus from real numbers, and stays plain without t
 
   assert.deepEqual(nextForYou(null, 'hard'), {
     title: 'An email made for you',
-    reason: "chatisthisreal writes it around your profile and how you've done so far.",
+    reason:
+      "chatisthisreal writes it around your profile and how you've done so far.",
     difficulty: 'hard',
   })
 })

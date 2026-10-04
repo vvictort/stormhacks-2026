@@ -343,8 +343,8 @@ export function LiveCallScreen(props: LiveProps) {
           />
           <p className="call-mic-note">
             <Mic size={16} aria-hidden="true" />
-            If your browser asks, allow the microphone. chatisthisreal only uses it
-            during this practice call.
+            If your browser asks, allow the microphone. chatisthisreal only uses
+            it during this practice call.
           </p>
           <div className="call-actions is-single">
             <RoundButton

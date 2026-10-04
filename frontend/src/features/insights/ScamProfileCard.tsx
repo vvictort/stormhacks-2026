@@ -24,8 +24,8 @@ export function ScamProfileCard({ uid }: { uid: string | null | undefined }) {
         </div>
       ) : state.view.empty ? (
         <p>
-          Nothing to read yet. After a few scenarios, chatisthisreal sums up what you
-          catch and what to work on.
+          Nothing to read yet. After a few scenarios, chatisthisreal sums up
+          what you catch and what to work on.
         </p>
       ) : (
         <>
