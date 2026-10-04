@@ -1,4 +1,5 @@
-import { fakeRepos, json, mockOutbound, startApp, testServices } from './harness.ts';
+import { fakeRepos, json, mockOutbound, origin, startApp, testServices } from './harness.ts';
+import supertest from 'supertest';
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { trainingAttempt } from '../app/calls/attempt.ts';
@@ -10,13 +11,13 @@ import type { AttemptInput } from '../app/training/attempts.schema.ts';
 const ELEVENLABS = 'https://api.elevenlabs.io';
 
 /** ElevenLabs stub: issues tokens (optionally with a conversation id) and serves finished conversations. */
-function elevenLabs(url: string, { tokenConversationId }: { tokenConversationId?: string } = {}) {
+function elevenLabs(url: string, { tokenConversationId, conversation }: { tokenConversationId?: string; conversation?: object } = {}) {
   if (url.startsWith(`${ELEVENLABS}/v1/convai/conversation/token`)) {
     return json({ token: 'webrtc-token', ...(tokenConversationId ? { conversation_id: tokenConversationId } : {}) });
   }
   const id = /\/v1\/convai\/conversations\/([^/?]+)/.exec(url)?.[1];
   if (url.startsWith(ELEVENLABS) && id) {
-    return json({
+    return json(conversation ? { conversation_id: id, ...conversation } : {
       conversation_id: id,
       status: 'done',
       transcript: [
@@ -83,6 +84,53 @@ test('generated scenarios resolve only for their owner', async () => {
   assert.equal(res.body.call.scenario.id, 'gen-1');
   const other = await app.api('POST', '/calls', { token: 'valid:bob', body: { scenarioId: 'gen-1' } });
   assert.deepEqual([other.status, other.body.error.code], [404, 'scenario_not_found']);
+});
+
+test('a generated gen-call- scenario runs end to end with server-owned outcomes', async () => {
+  const { repos, inserted, nextSave } = recordingRepos();
+  const app = startApp({ repos });
+  const generated = await supertest(app.app).post('/api/training/call-scenarios').set('Origin', origin).set('Authorization', 'Bearer valid:alice').send({});
+  const { scenarioId } = generated.body;
+  assert.match(scenarioId, /^gen-call-/);
+
+  /** Rings the generated call, answers it, and hangs up after a conversation that went like `conversation`. */
+  const run = async (conversation?: object) => {
+    mockOutbound((url) => elevenLabs(url, { tokenConversationId: 'conv_gen', conversation }) ?? json({}, 500));
+    const { callId, call } = (await app.api('POST', '/calls', { body: { scenarioId } })).body;
+    assert.equal(call.scenario.id, scenarioId);
+    assert.equal((await app.api('POST', `/calls/${callId}/accept`)).status, 200);
+    const saved = nextSave();
+    assert.equal((await app.api('POST', `/calls/${callId}/ended`, { body: { conversationId: 'conv_gen' } })).status, 202);
+    await saved;
+    return (await app.api('GET', `/calls/${callId}`)).body as CallRecord;
+  };
+  const done = (results: Record<string, boolean>) => ({
+    status: 'done',
+    transcript: [{ role: 'agent', message: 'Read me the code.', time_in_call_secs: 2 }, { role: 'user', message: 'No, I will call IT myself.', time_in_call_secs: 6 }],
+    analysis: { transcript_summary: 'The user refused.', data_collection_results: Object.fromEntries(Object.entries(results).map(([k, value]) => [k, { value }])) },
+  });
+
+  const resisted = await run(done({ shared_otp: false, challenged_caller: true, asked_to_verify: true }));
+  assert.deepEqual(resisted.training, { outcome: 'resisted', success: true, difficulty: 'easy' });
+  assert.deepEqual(resisted.signals.sort(), ['asked_to_verify', 'challenged', 'engaged']);
+
+  const compromised = await run(done({ shared_payment_info: false, agreed_to_action: true, challenged_caller: true }));
+  assert.deepEqual(compromised.training, { outcome: 'compromised', success: false, difficulty: 'easy' });
+
+  const failed = await run({ status: 'failed', transcript: [], analysis: null });
+  assert.deepEqual([failed.training, failed.error], [{ outcome: 'error', success: null, difficulty: 'easy' }, 'ElevenLabs conversation failed']);
+
+  const { callId } = (await app.api('POST', '/calls', { body: { scenarioId } })).body;
+  const saved = nextSave();
+  assert.deepEqual((await app.api('POST', `/calls/${callId}/decline`)).body.training, { outcome: 'declined', success: true, difficulty: 'easy' });
+  await saved;
+
+  assert.deepEqual(inserted.map((a) => [a.scenarioId, a.outcome, a.success, a.scamCategory]), [
+    [scenarioId, 'resisted', true, 'workplace'],
+    [scenarioId, 'compromised', false, 'workplace'],
+    [scenarioId, 'error', null, 'workplace'],
+    [scenarioId, 'declined', true, 'workplace'],
+  ]);
 });
 
 test('the token conversation id is bound on accept; a different one is 409', async () => {

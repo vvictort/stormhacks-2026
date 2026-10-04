@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Tactic, type Difficulty, type Outcome } from './vocabulary.ts';
+import { ScamCategory, Tactic, type Difficulty, type Outcome } from './vocabulary.ts';
 
 // Simulation (text and call) shapes. Canonical words live in vocabulary.ts.
 
@@ -65,6 +65,8 @@ export const CallScenario = z.object({
   systemPrompt: z.string().min(1),
   firstMessage: z.string().min(1),
   voiceId: z.string().min(1).optional(),
+  /** Known for generated calls; fixtures leave it out and the backend infers it (training/progress.ts). */
+  scamCategory: ScamCategory.optional(),
 });
 export type CallScenario = z.infer<typeof CallScenario>;
 

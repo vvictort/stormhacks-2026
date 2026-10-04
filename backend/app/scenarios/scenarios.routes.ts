@@ -5,9 +5,12 @@ import type { Repositories } from '../repositories.ts';
 import { difficultyName } from '../shared/types.ts';
 import { HISTORY_LIMIT, summarizeAttempts } from '../training/progress.ts';
 import type { ScenarioCatalog } from './catalog.ts';
-import { generateCallScenario } from './generator.ts';
+import { generateCallScenario, trainingCallScenario } from './generator.ts';
 
-/** POST /api/training/call-scenarios: a personalised call scenario, stored server-side. The prompt never leaves the server. */
+/**
+ * /api/training/call-scenarios. POST: a personalised call scenario, stored server-side. GET /:id: its teaching copy in
+ * the frontend `CallScenario` shape, owner only. The prompt never leaves the server through these routes.
+ */
 export function scenariosRouter({ users, attempts, scenarios }: Repositories, options: { geminiApiKey?: string }) {
   const router = Router();
   router.post('/', async (req, res) => {
@@ -18,11 +21,17 @@ export function scenariosRouter({ users, attempts, scenarios }: Repositories, op
     const { vulnerability, difficulty } = summarizeAttempts(history);
     const { scenario, source } = await generateCallScenario({
       apiKey: options.geminiApiKey, difficulty, weakCategories: vulnerability.weakCategories,
-      profession: profile.profession, interests: profile.interests,
+      name: profile.name, profession: profile.profession, interests: profile.interests,
     });
     await scenarios.save(req.user!.uid, scenario, source);
     const { id: scenarioId, title, callerLabel, tactics } = scenario;
     res.status(201).json({ scenarioId, title, callerLabel, difficulty: difficultyName[scenario.difficulty], tactics, source });
+  });
+  router.get('/:id', async (req, res) => {
+    // Another user's id is a 404 like an unknown one, so ids can't be probed.
+    const stored = req.params.id.startsWith('gen-') ? await scenarios.get(req.user!.uid, req.params.id) : null;
+    if (!stored) throw new AppError(404, 'scenario_not_found', 'Scenario not found.');
+    res.json(trainingCallScenario(stored));
   });
   return router;
 }

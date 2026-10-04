@@ -77,7 +77,7 @@ export class CallService {
   async start(userId: string, scenario: CallScenario): Promise<CallRecord> {
     const call: CallRecord = { id: newId('call'), userId, scenario, status: 'ringing', createdAt: nowIso(), signals: [] };
     await this.store.createCall(call);
-    await this.events.emit(callEvent('call.ringing', call, { callerLabel: scenario.callerLabel, difficulty: scenario.difficulty }));
+    await this.events.emit(callEvent('call.ringing', call, { callerLabel: scenario.callerLabel, difficulty: scenario.difficulty, scamCategory: scenario.scamCategory }));
     return call;
   }
 

@@ -7,7 +7,7 @@ import { createDatabase, type Database } from '../app/db/database.ts';
 import { migrate } from '../app/db/migrate.ts';
 import { createRepositories, type Repositories } from '../app/repositories.ts';
 import { createApp } from '../app/server.ts';
-import { cleanProfileText } from '../app/scenarios/generator.ts';
+import { cleanProfileText, generateCallScenario, pickCategory } from '../app/scenarios/generator.ts';
 import { inferCategory, summarizeAttempts, type ScoredAttempt } from '../app/training/progress.ts';
 import { attemptSchema, type AttemptInput } from '../app/training/attempts.schema.ts';
 
@@ -36,6 +36,7 @@ function routes(repos: Repositories = fakeRepos()) {
     progress: (user = 'alex') => supertest(app).get('/api/training/progress').set('Authorization', `Bearer ${user}`),
     getAttempt: (id: string, user = 'alex') => supertest(app).get(`/api/training/attempts/${id}`).set('Authorization', `Bearer ${user}`),
     generate: (user = 'alex') => supertest(app).post('/api/training/call-scenarios').set('Origin', origin).set('Authorization', `Bearer ${user}`).send({}),
+    getScenario: (id: string, user = 'alex') => supertest(app).get(`/api/training/call-scenarios/${id}`).set('Authorization', `Bearer ${user}`),
   };
 }
 
@@ -82,7 +83,7 @@ test('scenario generation falls back without Gemini, stores the scenario and onl
   const { generate, startCall } = routes();
   const created = (await generate().expect(201)).body;
   assert.equal(created.source, 'fallback');
-  assert.match(created.scenarioId, /^gen-/);
+  assert.match(created.scenarioId, /^gen-call-[0-9a-f-]{36}$/);
   assert.deepEqual(Object.keys(created).sort(), ['callerLabel', 'difficulty', 'scenarioId', 'source', 'tactics', 'title']);
   assert.equal(created.difficulty, 'easy');
   const { call } = (await startCall(created.scenarioId).expect(201)).body;
@@ -98,6 +99,51 @@ test('scenario generation is rate limited per user', async () => {
   const limited = await generate().expect(429);
   assert.equal(limited.body.error.code, 'RATE_LIMITED');
   await generate('sam').expect(201);
+});
+
+test('a generated call reads back as the frontend CallScenario, owner only and without the prompt', async () => {
+  const { generate, getScenario, startCall } = routes();
+  const { scenarioId } = (await generate().expect(201)).body;
+  const scenario = (await getScenario(scenarioId).expect(200)).body;
+  assert.deepEqual(Object.keys(scenario).sort(), ['callerLabel', 'callerNumber', 'difficulty', 'explanation', 'generated', 'id', 'indicators', 'nextTime', 'practice', 'scamCategory', 'situation', 'summary', 'tactics', 'title', 'type']);
+  assert.equal(scenario.id, scenarioId);
+  assert.equal(scenario.type, 'call');
+  assert.equal(scenario.difficulty, 'easy');
+  // The fake profile works as an accountant.
+  assert.equal(scenario.scamCategory, 'workplace');
+  assert.equal(scenario.generated.source, 'fallback');
+  assert.match(scenario.generated.reason, /accountant/);
+  assert.ok(scenario.indicators.length >= 2 && scenario.indicators.every((i: { title: string; detail: string; quote?: string }) => i.title && i.detail && !('quote' in i)));
+  assert.ok(scenario.practice.lines.length >= 3 && scenario.practice.complyLabel);
+
+  const { call } = (await startCall(scenarioId).expect(201)).body;
+  const json = JSON.stringify(scenario);
+  for (const secret of ['systemPrompt', 'firstMessage', 'voiceId', 'teaching', call.scenario.systemPrompt]) assert.ok(!json.includes(secret), secret);
+  assert.equal(call.scenario.scamCategory, 'workplace');
+
+  assert.equal((await getScenario(scenarioId, 'sam').expect(404)).body.error.code, 'scenario_not_found');
+  await getScenario('gen-call-00000000-0000-0000-0000-000000000000').expect(404);
+  await getScenario('bank-fraud-dept-otp-1').expect(404);
+  await supertest(routes().app).get(`/api/training/call-scenarios/${scenarioId}`).expect(401);
+});
+
+test('call generation prefers the training focus, then weak areas, then the profile', async () => {
+  assert.equal(pickCategory({ difficulty: 'easy', focus: ['government'], weakCategories: ['banking'], profession: 'nurse' }).category, 'government');
+  assert.equal(pickCategory({ difficulty: 'easy', weakCategories: ['promotional'], profession: 'nurse' }).category, 'promotional');
+  assert.equal(pickCategory({ difficulty: 'easy', interests: ['online shopping'] }).category, 'shipping');
+  assert.equal(pickCategory({ difficulty: 'easy', profession: 'Student' }).category, 'banking');
+  for (const category of ['banking', 'government', 'shipping', 'account_security', 'workplace', 'promotional'] as const) {
+    const { scenario, source } = await generateCallScenario({ difficulty: 'hard', focus: [category], name: 'Alex Rivera', profession: 'nurse' });
+    assert.equal(source, 'fallback');
+    assert.equal(scenario.scamCategory, category);
+    assert.equal(scenario.difficulty, 3);
+    assert.match(scenario.firstMessage, /^\S+ Alex[,!]/, category);
+    assert.match(scenario.systemPrompt, /Difficulty: advanced[\s\S]*first name is Alex;/);
+    assert.ok(!/\{(first|work)\}/.test(scenario.systemPrompt + scenario.firstMessage), category);
+    assert.match(scenario.teaching!.generated.reason, /training focus/);
+  }
+  const anonymous = await generateCallScenario({ difficulty: 'easy' });
+  assert.ok(!/\{first\}|Hi,? ,/.test(anonymous.scenario.firstMessage));
 });
 
 test('category inference covers the contract call scenarios', () => {
@@ -165,8 +211,11 @@ describe('Postgres training persistence', { skip: !url }, () => {
   });
 
   test('generated scenarios are stored as CallScenario JSON and owner-scoped', async () => {
-    const { generate, startCall } = routes(repo);
+    const { generate, startCall, getScenario } = routes(repo);
     const created = (await generate().expect(201)).body;
+    const teaching = (await getScenario(created.scenarioId).expect(200)).body;
+    assert.deepEqual([teaching.id, teaching.generated.source, teaching.practice.lines.length], [created.scenarioId, 'fallback', 4]);
+    await getScenario(created.scenarioId, 'sam').expect(404);
     const row = (await db.query('SELECT firebase_uid, source FROM generated_call_scenarios WHERE id=$1', [created.scenarioId])).rows[0];
     assert.deepEqual(row, { firebase_uid: 'alex', source: 'fallback' });
     assert.equal((await startCall(created.scenarioId).expect(201)).body.call.scenario.id, created.scenarioId);

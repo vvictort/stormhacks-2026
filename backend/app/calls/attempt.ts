@@ -19,6 +19,7 @@ export function trainingAttempt(call: CallRecord): AttemptInput {
     scenarioId: call.scenario.id,
     scenarioTitle: clip(call.scenario.title, MAX_TITLE),
     difficulty: training.difficulty,
+    scamCategory: call.scenario.scamCategory ?? null,
     tactics: call.scenario.tactics,
     outcome: training.outcome,
     success: training.success,
