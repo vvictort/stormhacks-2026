@@ -9,8 +9,12 @@
   - **Emails:** a phishing email with sender details and links to inspect.
   - **Calls:** a live AI voice caller (ElevenLabs) you can answer, talk to and hang up on, with live captions.
 - **Debriefs that teach:** after each scenario you see what gave it away (urgency, unexpected fees, look-alike addresses, requests for codes) and what to check next time. Calls get their own debrief built from the redacted transcript.
-- **Adaptive practice:** scenarios get harder as you make the right calls and ease off after misses. Call results are saved server-side and feed a per-user vulnerability profile.
-- **Works without AI keys:** without ElevenLabs, calls fall back to a caption-only practice mode; without Gemini, built-in scenarios are used.
+- **Adaptive practice:** an adaptive scam simulator that learns how you get fooled and trains against your weaknesses. Every text, email and call result is saved server-side; scenarios get harder as you make the right calls and ease off after misses, and Home's **Next for you** names the scam type Tellio will train next and why.
+  - **Gemini** writes the personalised scam emails and call scenarios, aimed at your current training focus.
+  - **TigerData** stores every behaviour event (opens, sender checks, link taps, decisions, call answers and declines) in a hypertable and computes **Your scam instincts** (decision time, right calls, report rate, trend).
+  - **Snowflake** analyses pseudonymous per-category aggregates across trainees for **What Tellio has learned** (strongest skill, biggest weakness, what to practise next).
+  - **ElevenLabs** voices the live scam call.
+- **Works without the optional keys:** without ElevenLabs, calls fall back to a caption-only practice mode; without Gemini, built-in personalised scenarios are used; without Snowflake, the same analysis runs in the backend ("Built-in analysis").
 
 ## How it works
 
@@ -23,14 +27,15 @@ flowchart LR
   B -- conversation token,<br/>call analysis --> E[ElevenLabs]
   U <-- live voice (WebRTC) --> E
   B -- scenario generation --> G[Gemini]
+  B -- pseudonymous aggregates --> S[(Snowflake)]
 ```
 
 1. You sign in with **Firebase** (email/password or Google). Every API request carries the Firebase ID token, which the backend verifies.
 2. The **backend** (one Express server) stores your profile, runs text and call simulations under `/api/comms`, and saves every finished attempt to **Postgres**.
 3. For a **call**, the backend hands the browser a short-lived ElevenLabs token; you talk to the voice agent directly. After you hang up, the backend fetches ElevenLabs' analysis, decides the outcome (did you share a code, card or personal info?) and saves a redacted record.
-4. Progress and your vulnerability profile are computed server-side from those attempts.
+4. Texts and emails send small behaviour events (`POST /api/training/events`) to TigerData, and a finished one is saved as an attempt too. Progress, adaptive difficulty, metrics and your vulnerability analysis (Snowflake, or the built-in fallback) are computed server-side from those attempts and events.
 
-The cross-cutting rules (canonical outcomes, scenario ids, auth) are written down in [`docs/call-integration.md`](docs/call-integration.md).
+The cross-cutting rules are written down in [`docs/call-integration.md`](docs/call-integration.md) (calls, outcomes, auth) and [`docs/mvp-contracts.md`](docs/mvp-contracts.md) (the adaptive loop: events, metrics, insights, generated scenarios).
 
 ## Tech stack
 
@@ -41,7 +46,8 @@ The cross-cutting rules (canonical outcomes, scenario ids, auth) are written dow
 | Auth | Firebase Authentication (client SDK in the browser, `firebase-admin` token verification on the server) |
 | Backend | Node.js 22, Express 5, TypeScript (run with `tsx`), zod validation, helmet |
 | Database | TigerData (managed PostgreSQL) via `pg`, versioned SQL migrations |
-| AI content | Google Gemini (`@google/genai`) for personalised call scenarios, with built-in fallbacks |
+| AI content | Google Gemini (`@google/genai`) for personalised emails and call scenarios, with built-in fallbacks |
+| Analytics | TigerData hypertable (`behavior_events`) for behaviour metrics; Snowflake SQL API (optional Cortex) for the vulnerability analysis |
 | Tests | Node's built-in test runner; supertest for the API |
 
 ## Repository layout
@@ -51,10 +57,10 @@ frontend/   React app: auth, onboarding, home, practice phone (texts, emails, ca
   src/features/   auth · profile · training (scenarios, progress, call/ screen and debrief)
   src/comms/      client and hooks for simulated texts and calls (useSimulatedCall, useTextThread)
 backend/    Express API, one server
-  app/            users · training · scenarios · texts · calls · sim · http · db · shared
+  app/            users · training · scenarios · behavior · insights · texts · calls · sim · http · db · shared
   fixtures/       built-in text and call scenarios
-  scripts/        setup-agent.ts (creates the ElevenLabs voice agent)
-docs/       call-integration.md: the shared contract (outcomes, scenario ids, auth rules)
+  scripts/        setup-agent.ts (creates the ElevenLabs voice agent), snowflake-setup.sql
+docs/       call-integration.md (calls, outcomes, auth) and mvp-contracts.md (the adaptive loop)
 PRODUCT.md  who Tellio is for and the product principles
 ```
 
@@ -88,6 +94,8 @@ npm run migrate   # applies any new migrations; safe to re-run
 npm run dev       # http://localhost:3000/api
 ```
 
+Run `npm run migrate` again after pulling changes: the API refuses to start, naming the missing migrations, while the database is behind the code.
+
 ### 2. Frontend
 
 In a second terminal:
@@ -109,9 +117,13 @@ Without these, calls still work in caption-only practice mode.
 2. From `backend/`, run `npm run setup:agent`, then set the printed `ELEVENLABS_AGENT_ID` in `backend/.env`.
 3. Restart the backend and answer a call scenario.
 
-### 4. Optional: AI-generated call scenarios
+### 4. Optional: Gemini-written emails and calls
 
-Set `GEMINI_API_KEY` in `backend/.env`. Without it, generation uses built-in scenarios (and says so).
+Set `GEMINI_API_KEY` in `backend/.env`. Without it, generation uses built-in personalised scenarios; only Gemini-written ones show "Written by Gemini".
+
+### 5. Optional: Snowflake vulnerability analysis
+
+Run `backend/scripts/snowflake-setup.sql` once in Snowflake, create a programmatic access token for the service user, then set `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE` and `SNOWFLAKE_ID_SALT` (16+ characters, keep it stable) in `backend/.env` (optionally `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL`). The startup log says which analysis is in use, and Home's card says "Analysed in Snowflake" only when it was. Snowflake only receives an HMAC of the user id and per-category/per-tactic counts and rates.
 
 ## Tests and checks
 
@@ -133,7 +145,9 @@ Only names are listed here; never commit real values. `.env` files are gitignore
 | `HOST`, `PORT`, `APP_ORIGIN`, `NODE_ENV` | backend | no | Defaults: `127.0.0.1`, `3000`, `http://localhost:5173`, `development` |
 | `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID` | backend | no | Live voice calls |
 | `ELEVENLABS_DEFAULT_VOICE_ID`, `ELEVENLABS_LLM`, `CALL_MAX_SECONDS` | backend | no | Voice agent tuning |
-| `GEMINI_API_KEY` | backend | no | AI-generated call scenarios |
+| `GEMINI_API_KEY` | backend | no | Gemini-written emails and call scenarios |
+| `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`, `SNOWFLAKE_ID_SALT` | backend | no (all five for Snowflake) | Snowflake vulnerability analysis; the salt keys the pseudonymous trainee id |
+| `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL` | backend | no | Defaults: `PUBLIC`, the token user's role, no Cortex wording |
 | `TEXT_FOLLOWUP_SEC`, `TEXT_IDLE_END_SEC` | backend | no | Simulated text timing |
 | `TEST_DATABASE_URL` | backend | no | Database tests (name must end in `_test`) |
 | `VITE_FIREBASE_*` | frontend | yes | Firebase web-app config (public) |
@@ -149,5 +163,6 @@ Only names are listed here; never commit real values. `.env` files are gitignore
 
 - [`PRODUCT.md`](PRODUCT.md): users, positioning and product principles
 - [`docs/call-integration.md`](docs/call-integration.md): the call contract (outcomes, scenario ids, auth, data handling)
+- [`docs/mvp-contracts.md`](docs/mvp-contracts.md): the adaptive loop (behaviour events, metrics, insights, generated scenarios)
 - [`backend/README.md`](backend/README.md): API routes, structure and dependency rules, simulation state, ElevenLabs setup
 - [`frontend/README.md`](frontend/README.md): app flow, phone calls and the fallback mode, configuration

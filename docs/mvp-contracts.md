@@ -131,5 +131,6 @@ Code: `backend/app/behavior/` (routes, repository, call bridge), `frontend/src/f
 ## UI copy
 
 - Personalised content says so plainly ("Generated for your training profile"), without leaning on "AI".
+  A generated scenario adds "Written by Gemini" only when `generated.source === 'gemini'`.
 - Each sponsor-backed panel carries one quiet, **honest** source line (e.g. "Analysed in Snowflake" only when it was;
   "Built-in analysis" on the fallback).

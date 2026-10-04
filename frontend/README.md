@@ -22,7 +22,7 @@ Start the backend separately from `backend/` after configuring its `.env` and ru
 - Saving opens the existing `/home` training page. Its profile summary links back to edit onboarding details.
 - `/train/:scenarioId` retains the current messaging simulator and debrief. Phone-call scenarios open a call screen on the practice phone instead (see below).
 - `/caught?sim=<threadId>` is a public page that tracked practice links redirect to. It explains the simulated link and the red flags to check.
-- Profile data survives refresh, sign-out/login and browser changes. Phone-call results are saved by the backend; text and email practice progress still uses browser-local storage.
+- Profile data survives refresh, sign-out/login and browser changes. Every result (calls, texts and emails) is saved by the backend and drives Next for you, Your scam instincts and What Tellio has learned; the practice path's text and email progress also stays in browser-local storage.
 
 The profile provider clears displayed data when account identities differ and ignores responses from cancelled loads. While the profile is loading, protected routes show a loader. Failed profile loads show retry/sign-out controls; failed saves keep all form input. Firebase remains the sole authentication provider: application code never stores passwords or copies Firebase tokens into TigerData.
 
