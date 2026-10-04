@@ -33,21 +33,41 @@ export function MissionProgress({ mission, currentId }: { mission?: Mission | nu
 
 export function BadgeCollection({ earned }: { earned: Partial<Record<BadgeId, number>> }) {
   return <section className="badge-collection" aria-labelledby="badges-title">
-    <div className="home-section-head"><h2 id="badges-title">Your milestones</h2><span>{Object.keys(earned).length} of 3 earned</span></div>
-    <ul>{badges.map((badge, index) => {
-      return <li key={badge.id} className={earned[badge.id] !== undefined ? 'is-earned' : ''}>
-        <span className="milestone-index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-        <div><strong>{badge.name}</strong><p>{badge.condition}</p></div>
-        <span className="badge-status">{earned[badge.id] !== undefined ? 'Earned' : 'Not yet'}</span>
+    <div className="home-section-head"><h2 id="badges-title">Your achievements</h2><span>{Object.keys(earned).length} of 3 earned</span></div>
+    <ul>{badges.map(badge => {
+      const unlocked = earned[badge.id] !== undefined
+      return <li key={badge.id} className={`achievement-card achievement-${badge.id}${unlocked ? ' is-earned' : ''}`}>
+        <BadgeEmblem id={badge.id} />
+        <div className="achievement-copy"><strong>{badge.name}</strong><p>{badge.condition}</p></div>
+        <span className="badge-status">{unlocked ? <><Check size={13} aria-hidden="true" />Earned</> : 'Locked'}</span>
       </li>
     })}</ul>
   </section>
 }
 
+/** Small collectible seals: each achievement has its own mark, with shared ribbon details. */
+function BadgeEmblem({ id }: { id: BadgeId }) {
+  const edge = Array.from({ length: 48 }, (_, i) => {
+    const angle = i * Math.PI / 24 - Math.PI / 2
+    const radius = i % 2 ? 30 : 32
+    return `${40 + Math.cos(angle) * radius},${38 + Math.sin(angle) * radius}`
+  }).join(' ')
+  return <svg className="achievement-emblem" viewBox="0 0 80 92" aria-hidden="true" focusable="false">
+    <path className="achievement-ribbon" d="M23 53 18 85 30 78 40 86 42 55M38 55 40 86 50 78 62 85 57 53" />
+    <polygon className="achievement-seal" points={edge} />
+    <circle className="achievement-ring" cx="40" cy="38" r="24" />
+    <g className="achievement-mark" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {id === 'first-steps' ? <><path d="M33 51V25m0 1c9-6 13 6 22 0v15c-9 6-13-6-22 0" /><path d="M27 52h13" /></>
+        : id === 'good-catch' ? <><circle cx="37" cy="35" r="10" /><path d="m44 43 9 10m-20-18 3 3 5-6" /></>
+        : <><path d="M54 35a14 14 0 1 0-4 14M54 25v10H44" /><path d="m35 39 4 4 7-8" /></>}
+    </g>
+  </svg>
+}
+
 export function NewBadges({ ids }: { ids: BadgeId[] }) {
   if (!ids.length) return null
   return <div className="new-badges" role="status">
-    {ids.map(id => <p key={id}><span><strong>{badges.find(b => b.id === id)!.name} earned!</strong> {badges.find(b => b.id === id)!.condition}</span></p>)}
+    {ids.map(id => <p key={id} className={`achievement-${id} is-earned`}><BadgeEmblem id={id} /><span><strong>{badges.find(b => b.id === id)!.name} earned!</strong> {badges.find(b => b.id === id)!.condition}</span></p>)}
   </div>
 }
 
