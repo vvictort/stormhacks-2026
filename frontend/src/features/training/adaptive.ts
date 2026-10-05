@@ -3,9 +3,8 @@ import type { InsightSource } from '../insights/scamProfile.ts'
 import type { Difficulty, ScamCategory } from './scenarios.ts'
 
 // The server's adaptive state (GET /api/training/progress `difficulty` and
-// `focus`, docs/mvp-contracts.md): exactly what the next generated email or
-// call will use. Pure, so Home and both debriefs agree and it's testable
-// in Node.
+// `focus`): exactly what the next generated email or call will use. Pure, so
+// Home and both debriefs agree and it's testable in Node.
 
 export interface Adaptive {
   difficulty: Difficulty

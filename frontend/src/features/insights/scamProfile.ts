@@ -22,7 +22,7 @@ const sourceLabels: Record<InsightSource, string> = {
 export const insightSourceLabel = (value: unknown) =>
   sourceLabels[insightSource(value)]
 
-/** `GET /api/training/insights` (docs/mvp-contracts.md). */
+/** `GET /api/training/insights`. */
 export interface Insights {
   strongestAreas: string[]
   weakAreas: string[]

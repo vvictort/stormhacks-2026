@@ -17,14 +17,14 @@ flowchart LR
   S --> W
 ```
 
-| Piece | What it does | Where you see it |
-|---|---|---|
+| Piece            | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Where you see it                                                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | **Scam library** | An offline Python pipeline ([`data-pipeline/`](data-pipeline/)) curates ~600 real phishing emails, spam texts and scam-call patterns from public datasets into `backend/fixtures/scam-library.json`. Gemini gets 2–3 matching examples (by channel, scam type, tactics and difficulty); for a genuine email it gets hand-picked real legitimate emails from the same datasets instead. The practice path is built from it too: real phishing emails with invented names, real scam-call patterns, and texts Gemini wrote from library examples; only the genuine "looks safe" messages are hand-written. No embeddings, no runtime Python. | "Grounded in real-world scam patterns" (or "genuine emails"), and each practice scenario's source line, shown once you've answered |
-| **Gemini** | Writes a personalised scam email or call script aimed at your current weak spot. About one generated email in three is genuine instead, so Report is not always the right answer. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback. | "Written by Gemini" |
-| **ElevenLabs** | Runs the live scam call you answer and talk to (a voice agent with Gemini 2.5 Flash as its LLM), then scores what you gave away (codes, card, personal details). | Call debrief: "powered by ElevenLabs" |
-| **TigerData** | Stores every tap and decision, with the scam tactics involved, in a TimescaleDB hypertable and turns it into metrics over time. | **Your scam instincts** card and chart |
-| **Snowflake** | Compares pseudonymous aggregates across trainees to find which tactic combinations fool you (e.g. authority with urgency); with Cortex on, writes the summary. | **What Tellio has learned**, labelled by what actually ran |
-| **Firebase** | Sign-in (email/password or Google). | Login |
+| **Gemini**       | Writes a personalised scam email or call script aimed at your current weak spot. About one generated email in three is genuine instead, so Report is not always the right answer. Every result is validated (red flags must quote the text exactly, no real brands) with a fallback.                                                                                                                                                                                                                                                                                                                                                       | "Written by Gemini"                                                                                                                |
+| **ElevenLabs**   | Runs the live scam call you answer and talk to (a voice agent with Gemini 2.5 Flash as its LLM), then scores what you gave away (codes, card, personal details).                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Call debrief: "powered by ElevenLabs"                                                                                              |
+| **TigerData**    | Stores every tap and decision, with the scam tactics involved, in a TimescaleDB hypertable and turns it into metrics over time.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **Your scam instincts** card and chart                                                                                             |
+| **Snowflake**    | Compares pseudonymous aggregates across trainees to find which tactic combinations fool you (e.g. authority with urgency); with Cortex on, writes the summary.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | **What Tellio has learned**, labelled by what actually ran                                                                         |
+| **Firebase**     | Sign-in (email/password or Google).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Login                                                                                                                              |
 
 Every optional service degrades honestly: without ElevenLabs, calls become caption-only practice; without Gemini, scenarios are built from the scam library; without Snowflake, the backend's own analysis runs ("Built-in analysis"). At startup the API prints one line per integration saying what's on.
 
@@ -59,23 +59,23 @@ flowchart LR
 3. For a **call**, the backend hands the browser a short-lived ElevenLabs token; you talk to the voice agent directly. After you hang up, the backend fetches ElevenLabs' analysis, decides the outcome and saves a redacted record.
 4. Texts and emails send small behaviour events (`POST /api/training/events`) with the scenario's tactics to **TigerData**, and each finished scenario is saved as an attempt. Progress, difficulty, metrics and the vulnerability analysis (**Snowflake**, or the built-in fallback) are computed server-side from those attempts and events.
 
-The cross-cutting rules are written down in [`docs/call-integration.md`](docs/call-integration.md) (calls, outcomes, auth), [`docs/mvp-contracts.md`](docs/mvp-contracts.md) (the adaptive loop) and [`docs/dataset.md`](docs/dataset.md) (dataset sources and licences).
+The cross-cutting rules are written down in [`docs/call-integration.md`](docs/call-integration.md) (calls, outcomes, auth) and [`docs/dataset.md`](docs/dataset.md) (dataset sources and licences).
 
 ## Tech stack
 
-| Layer | Technologies |
-|---|---|
-| Frontend | React 19, TypeScript 6, Vite 8, React Router 7. Styling is hand-written CSS on top of Tailwind CSS 4's base layer and `@theme` design tokens, with Motion for animation, Lucide icons, the View Transitions API, and Inter and Newsreader from Google Fonts |
-| Texts | Server-sent events: the backend streams the simulated thread and the browser reads it with `EventSource` |
-| Voice | ElevenLabs Conversational AI: `@elevenlabs/react` over WebRTC (LiveKit underneath), lazy-loaded with the call screen. The voice agent's LLM is Gemini 2.5 Flash (`ELEVENLABS_LLM`). The backend calls the ElevenLabs REST API for session tokens, agent setup and the post-call analysis |
-| Auth | Firebase Authentication: email/password, Google sign-in and password reset through the client SDK; the server verifies ID tokens with `firebase-admin` (no service-account key). Firebase Analytics loads only when a measurement ID is set |
-| Backend | Node.js 22.18+, Express 5, TypeScript 6 run directly with `tsx` (no build step), zod 4 for config and request validation, helmet |
-| Database | TigerData (managed PostgreSQL with TimescaleDB) through `pg`; plain SQL migrations applied by a small runner (`npm run migrate`) |
-| AI content | Google Gemini through `@google/genai`, using JSON-schema structured output. It tries `gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`, then `gemini-3.8-flash`, and falls back to scenarios built from the scam library |
-| Analytics | The `behavior_events` TimescaleDB hypertable (a plain table on ordinary Postgres) for behaviour metrics. Snowflake through its SQL REST API with a programmatic access token (no driver) for the vulnerability analysis, optionally worded by Cortex `COMPLETE` |
-| Data | Python 3.12, pandas and kagglehub, offline only ([`data-pipeline/`](data-pipeline/)). Sources: a Kaggle phishing-email dataset, a Kaggle scam-call dataset and the UCI SMS Spam Collection ([`docs/dataset.md`](docs/dataset.md)) |
-| Tests and tooling | Node's built-in test runner (backend through `tsx` with supertest; frontend with Node's type stripping), Python `unittest` for the pipeline, ESLint 10 with typescript-eslint, Prettier (backend), `tsc` type checks |
-| Development | Built with Claude Code; the project's subagents are in [`.claude/agents/`](.claude/agents/) |
+| Layer             | Technologies                                                                                                                                                                                                                                                                             |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend          | React 19, TypeScript 6, Vite 8, React Router 7. Styling is hand-written CSS on top of Tailwind CSS 4's base layer and `@theme` design tokens, with Motion for animation, Lucide icons, the View Transitions API, and Inter and Newsreader from Google Fonts                              |
+| Texts             | Server-sent events: the backend streams the simulated thread and the browser reads it with `EventSource`                                                                                                                                                                                 |
+| Voice             | ElevenLabs Conversational AI: `@elevenlabs/react` over WebRTC (LiveKit underneath), lazy-loaded with the call screen. The voice agent's LLM is Gemini 2.5 Flash (`ELEVENLABS_LLM`). The backend calls the ElevenLabs REST API for session tokens, agent setup and the post-call analysis |
+| Auth              | Firebase Authentication: email/password, Google sign-in and password reset through the client SDK; the server verifies ID tokens with `firebase-admin` (no service-account key). Firebase Analytics loads only when a measurement ID is set                                              |
+| Backend           | Node.js 22.18+, Express 5, TypeScript 6 run directly with `tsx` (no build step), zod 4 for config and request validation, helmet                                                                                                                                                         |
+| Database          | TigerData (managed PostgreSQL with TimescaleDB) through `pg`; plain SQL migrations applied by a small runner (`npm run migrate`)                                                                                                                                                         |
+| AI content        | Google Gemini through `@google/genai`, using JSON-schema structured output. It tries `gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`, then `gemini-3.8-flash`, and falls back to scenarios built from the scam library                                                             |
+| Analytics         | The `behavior_events` TimescaleDB hypertable (a plain table on ordinary Postgres) for behaviour metrics. Snowflake through its SQL REST API with a programmatic access token (no driver) for the vulnerability analysis, optionally worded by Cortex `COMPLETE`                          |
+| Data              | Python 3.12, pandas and kagglehub, offline only ([`data-pipeline/`](data-pipeline/)). Sources: a Kaggle phishing-email dataset, a Kaggle scam-call dataset and the UCI SMS Spam Collection ([`docs/dataset.md`](docs/dataset.md))                                                        |
+| Tests and tooling | Node's built-in test runner (backend through `tsx` with supertest; frontend with Node's type stripping), Python `unittest` for the pipeline, ESLint 10 with typescript-eslint, Prettier (backend), `tsc` type checks                                                                     |
+| Development       | Built with Claude Code                                                                                                                                                                                                                                                                   |
 
 ## Repository layout
 
@@ -88,8 +88,7 @@ backend/    Express API, one server
   fixtures/       scam-library.json (the curated dataset library) and the practice-path call/text scenarios built from it
   scripts/        setup-agent.ts (ElevenLabs voice agent), build-practice.ts (practice path from the library), snowflake-setup.sql
 data-pipeline/  offline Python that builds backend/fixtures/scam-library.json from Kaggle datasets (never runs in the app)
-docs/       dataset.md (sources, licences, counts), call-integration.md (calls, outcomes, auth) and mvp-contracts.md (the adaptive loop)
-PRODUCT.md  who Tellio is for and the product principles
+docs/       dataset.md (sources, licences, counts) and call-integration.md (calls, outcomes, auth)
 ```
 
 Each folder has its own README with the details: [`frontend/README.md`](frontend/README.md), [`backend/README.md`](backend/README.md), [`data-pipeline/README.md`](data-pipeline/README.md).
@@ -171,20 +170,20 @@ Backend database tests run only when `TEST_DATABASE_URL` points at a dedicated d
 
 Only names are listed here; never commit real values. `.env` files are gitignored.
 
-| Variable | Where | Required | Purpose |
-|---|---|---|---|
-| `DATABASE_URL` | backend | yes | Postgres connection (TLS verified) |
-| `FIREBASE_PROJECT_ID` | backend | yes | Verifies users' ID tokens |
-| `HOST`, `PORT`, `APP_ORIGIN`, `NODE_ENV` | backend | no | Defaults: `127.0.0.1`, `3000`, `http://localhost:5173`, `development` |
-| `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID` | backend | no | Live voice calls |
-| `ELEVENLABS_DEFAULT_VOICE_ID`, `ELEVENLABS_LLM`, `CALL_MAX_SECONDS` | backend | no | Voice agent tuning |
-| `GEMINI_API_KEY` | backend | no | Gemini-written emails and call scenarios |
-| `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`, `SNOWFLAKE_ID_SALT` | backend | no (all five for Snowflake) | Snowflake vulnerability analysis; the salt keys the pseudonymous trainee id |
-| `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL` | backend | no | Defaults: `PUBLIC`, the token user's role, no Cortex wording |
-| `TEXT_FOLLOWUP_SEC`, `TEXT_IDLE_END_SEC` | backend | no | Simulated text timing |
-| `TEST_DATABASE_URL` | backend | no | Database tests (name must end in `_test`) |
-| `VITE_FIREBASE_*` | frontend | yes | Firebase web-app config (public) |
-| `VITE_COMMS_BASE_URL` | frontend | no | Override for `/api/comms` |
+| Variable                                                                                               | Where    | Required                    | Purpose                                                                     |
+| ------------------------------------------------------------------------------------------------------ | -------- | --------------------------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                                                         | backend  | yes                         | Postgres connection (TLS verified)                                          |
+| `FIREBASE_PROJECT_ID`                                                                                  | backend  | yes                         | Verifies users' ID tokens                                                   |
+| `HOST`, `PORT`, `APP_ORIGIN`, `NODE_ENV`                                                               | backend  | no                          | Defaults: `127.0.0.1`, `3000`, `http://localhost:5173`, `development`       |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`                                                            | backend  | no                          | Live voice calls                                                            |
+| `ELEVENLABS_DEFAULT_VOICE_ID`, `ELEVENLABS_LLM`, `CALL_MAX_SECONDS`                                    | backend  | no                          | Voice agent tuning                                                          |
+| `GEMINI_API_KEY`                                                                                       | backend  | no                          | Gemini-written emails and call scenarios                                    |
+| `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PAT`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`, `SNOWFLAKE_ID_SALT` | backend  | no (all five for Snowflake) | Snowflake vulnerability analysis; the salt keys the pseudonymous trainee id |
+| `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_CORTEX_MODEL`                                         | backend  | no                          | Defaults: `PUBLIC`, the token user's role, no Cortex wording                |
+| `TEXT_FOLLOWUP_SEC`, `TEXT_IDLE_END_SEC`                                                               | backend  | no                          | Simulated text timing                                                       |
+| `TEST_DATABASE_URL`                                                                                    | backend  | no                          | Database tests (name must end in `_test`)                                   |
+| `VITE_FIREBASE_*`                                                                                      | frontend | yes                         | Firebase web-app config (public)                                            |
+| `VITE_COMMS_BASE_URL`                                                                                  | frontend | no                          | Override for `/api/comms`                                                   |
 
 ## Deploying
 
@@ -194,9 +193,7 @@ Only names are listed here; never commit real values. `.env` files are gitignore
 
 ## Further reading
 
-- [`PRODUCT.md`](PRODUCT.md): users, positioning and product principles
 - [`docs/call-integration.md`](docs/call-integration.md): the call contract (outcomes, scenario ids, auth, data handling)
 - [`docs/dataset.md`](docs/dataset.md): dataset sources, licences, what is committed and coverage
-- [`docs/mvp-contracts.md`](docs/mvp-contracts.md): the adaptive loop (behaviour events, metrics, insights, generated scenarios)
 - [`backend/README.md`](backend/README.md): API routes, structure and dependency rules, simulation state, ElevenLabs setup
 - [`frontend/README.md`](frontend/README.md): app flow, phone calls and the fallback mode, configuration

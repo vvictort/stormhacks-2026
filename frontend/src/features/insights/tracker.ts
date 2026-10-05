@@ -6,10 +6,9 @@ import type {
   ScamCategory,
 } from '../training/scenarios.ts'
 
-// Behaviour events for texts and emails, batched to POST /api/training/events
-// (docs/mvp-contracts.md). The backend stores them in its behaviour events
-// table; calls are recorded server-side from the call lifecycle. Tracking never
-// affects the UI.
+// Behaviour events for texts and emails, batched to POST /api/training/events.
+// The backend stores them in its behaviour events table; calls are recorded
+// server-side from the call lifecycle. Tracking never affects the UI.
 
 export type TrackedType =
   | 'scenario_started'

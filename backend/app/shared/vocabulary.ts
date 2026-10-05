@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // The canonical words shared with the frontend and the database; see
-// docs/call-integration.md and docs/mvp-contracts.md.
+// docs/call-integration.md.
 
 export const Channel = z.enum(["sms", "email", "call"]);
 export const Difficulty = z.enum(["easy", "medium", "hard"]);
